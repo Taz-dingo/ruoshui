@@ -54,11 +54,11 @@
 
 最优先建议先做下面这一个：
 
-- 创建并填写 `Iteration 001` 的第一轮实验记录
+- 为 `Iteration 001` 补充实际工具、命令、参数和结果
 
 建议标准包括：
 
-- 先基于 `docs/iterations/iteration-001.md` 建立真实实验记录文件
+- 基于 `docs/iterations/iteration-001-validation.md` 填入实际实验信息
 - 明确使用均匀抽样生成的 `data/poc-001-files.txt` 作为唯一输入子集
-- 按 `docs/assets/asset-validation-template.md` 记录过程与结果
+- 优先记录实际工具、命令和关键参数
 - 优先验证位姿恢复是否稳定
