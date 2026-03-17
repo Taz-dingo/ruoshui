@@ -35,16 +35,16 @@ When this skill is active:
 Read these files first when they are relevant:
 
 - `README.md`
-- `docs/spec.md`
-- `docs/plan.md`
-- `docs/tasks.md`
+- `docs/project/spec.md`
+- `docs/project/plan.md`
+- `docs/project/tasks.md`
 
 Use these files to keep status grounded:
 
-- `docs/asset-inventory.md`
-- `docs/poc-001.md`
-- `docs/3dgs-experiment-path.md`
-- `docs/asset-validation-template.md`
+- `docs/assets/asset-inventory.md`
+- `docs/assets/poc-001.md`
+- `docs/assets/3dgs-experiment-path.md`
+- `docs/assets/asset-validation-template.md`
 
 ## Decision Heuristics
 

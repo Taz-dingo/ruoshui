@@ -12,7 +12,7 @@ from typing import Iterable
 ROOT = Path(__file__).resolve().parent.parent
 RAW_DIR = ROOT / 'assets' / 'raw'
 OUTPUT_JSON = ROOT / 'data' / 'asset_inventory.json'
-OUTPUT_MD = ROOT / 'docs' / 'asset-inventory.md'
+OUTPUT_MD = ROOT / 'docs' / 'assets' / 'asset-inventory.md'
 
 JPEG_SOFS = {
     0xC0, 0xC1, 0xC2, 0xC3,

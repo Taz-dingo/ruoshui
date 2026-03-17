@@ -42,7 +42,7 @@
 
 第一轮实验至少应产出：
 
-- 一份实验记录，使用 `docs/asset-validation-template.md`
+- 一份实验记录，使用 `docs/assets/asset-validation-template.md`
 - 一版可截图或录屏的结果
 - 对质量、体积、加载潜力的主观判断
 - 对下一轮要扩大素材还是调整链路的结论

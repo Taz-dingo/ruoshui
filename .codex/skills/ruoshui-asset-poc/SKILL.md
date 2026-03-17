@@ -17,7 +17,7 @@ Assume these are the current known facts unless the data is regenerated:
 - file names are not unique across directories
 - relative path is the only reliable asset identifier
 - current inventory output lives in `data/asset_inventory.json`
-- current report lives in `docs/asset-inventory.md`
+- current report lives in `docs/assets/asset-inventory.md`
 - `PoC 001` currently uses a proportional uniform sample written to `data/poc-001-files.txt`
 
 ## Required Workflow
@@ -31,7 +31,7 @@ When source images change, rerun:
 This regenerates:
 
 - `data/asset_inventory.json`
-- `docs/asset-inventory.md`
+- `docs/assets/asset-inventory.md`
 
 ### 2. Treat file identity correctly
 
@@ -55,10 +55,10 @@ To regenerate the current sample style, run:
 
 When defining or updating a validation run, keep these docs in sync:
 
-- `docs/poc-001.md`
-- `docs/3dgs-experiment-path.md`
-- `docs/asset-validation-template.md`
-- `docs/tasks.md`
+- `docs/assets/poc-001.md`
+- `docs/assets/3dgs-experiment-path.md`
+- `docs/assets/asset-validation-template.md`
+- `docs/project/tasks.md`
 
 ## Default First-Pass Heuristics
 

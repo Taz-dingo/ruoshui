@@ -7,9 +7,9 @@
 交付物：
 
 - `README.md`
-- `docs/spec.md`
-- `docs/plan.md`
-- `docs/tasks.md`
+- `docs/project/spec.md`
+- `docs/project/plan.md`
+- `docs/project/tasks.md`
 
 完成标准：
 

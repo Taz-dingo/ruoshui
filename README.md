@@ -29,9 +29,11 @@
 
 ## 文档索引
 
-- `docs/spec.md`：项目规格说明
-- `docs/plan.md`：阶段计划与里程碑
-- `docs/tasks.md`：近期任务清单与迭代记录模板
+- `docs/README.md`：文档总索引
+- `docs/project/spec.md`：项目规格说明
+- `docs/project/plan.md`：阶段计划与里程碑
+- `docs/project/tasks.md`：近期任务清单与迭代记录模板
+- `docs/project/state.md`：项目状态快照
 
 ## 协作方式
 

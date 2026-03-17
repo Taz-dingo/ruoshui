@@ -14,13 +14,13 @@ This skill is the recovery entrypoint for 若水广场. Use it at the start of a
 When this skill is active, do these steps in order before implementing anything substantial:
 
 1. Read `AGENTS.md`
-2. Read `docs/project-state.md` first if it exists
-3. Read `README.md`, `docs/spec.md`, `docs/plan.md`, and `docs/tasks.md`
+2. Read `docs/project/state.md` first if it exists
+3. Read `README.md`, `docs/project/spec.md`, `docs/project/plan.md`, and `docs/project/tasks.md`
 4. If asset work is involved, also use `$ruoshui-asset-poc` and read:
-   - `docs/asset-inventory.md`
-   - `docs/poc-001.md`
-   - `docs/3dgs-experiment-path.md`
-   - `docs/asset-validation-template.md`
+   - `docs/assets/asset-inventory.md`
+   - `docs/assets/poc-001.md`
+   - `docs/assets/3dgs-experiment-path.md`
+   - `docs/assets/asset-validation-template.md`
 5. Check repo freshness with:
    - `git status --short`
    - `git log --oneline --decorate -5`
@@ -53,8 +53,8 @@ After the resume flow, the agent should be able to state clearly:
 
 When a meaningful step lands, keep these files in sync as needed:
 
-- `docs/project-state.md`
-- `docs/tasks.md`
+- `docs/project/state.md`
+- `docs/project/tasks.md`
 - any focused decision doc created in that iteration
 
 ## Trigger Hints

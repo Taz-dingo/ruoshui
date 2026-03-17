@@ -28,6 +28,7 @@
 - 已确认 `PoC 001` 采用“全量分层均匀抽样”而不是连续序列
 - 已确定第一条 `3DGS` 可行性验证链路
 - 已沉淀项目 skill：项目总控、资产 `PoC`、恢复入口
+- 已完成 `docs` 目录归类，拆分为 `project` 与 `assets`
 
 ## 当前已知素材状态
 
@@ -55,23 +56,25 @@
 优先读取：
 
 - `README.md`
-- `docs/spec.md`
-- `docs/plan.md`
-- `docs/tasks.md`
-- `docs/project-state.md`
+- `docs/project/spec.md`
+- `docs/project/plan.md`
+- `docs/project/tasks.md`
+- `docs/project/state.md`
 
 资产验证相关：
 
-- `docs/asset-inventory.md`
-- `docs/poc-001.md`
-- `docs/3dgs-experiment-path.md`
-- `docs/asset-validation-template.md`
+- `docs/assets/asset-inventory.md`
+- `docs/assets/poc-001.md`
+- `docs/assets/3dgs-experiment-path.md`
+- `docs/assets/asset-validation-template.md`
+- `docs/assets/raw-asset-policy.md`
 - `data/poc-001-files.txt`
 - `scripts/analyze_assets.py`
 - `scripts/select_poc_subset.py`
 
 ## 最近关键决策
 
+- 原始素材区当前不做重命名，保留 `assets/raw` 作为只读原始归档
 - 第一版不做开放发帖社区
 - 第一版不退回 `mesh` 作为主方案
 - `PoC 001` 不采用连续单向照片，而采用全量分层均匀抽样
@@ -81,7 +84,7 @@
 
 当新线程里用户只说“继续”时，优先执行：
 
-1. 阅读本文件与 `docs/tasks.md`
+1. 阅读本文件与 `docs/project/tasks.md`
 2. 检查 `git status --short` 与最近 `5` 个 commit
 3. 用简短语言总结背景、现状、当前任务、下一步
 4. 建立一个短计划
