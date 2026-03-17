@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ruoshui Resume"
+  short_description: "Recover project context and resume with a plan"
+  default_prompt: "Use $ruoshui-resume to continue the 若水广场 project from the latest state."
