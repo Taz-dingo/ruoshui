@@ -54,11 +54,11 @@
 
 最优先建议先做下面这一个：
 
-- 跑通 `PoC 001` 的第一轮实验记录
+- 创建并填写 `Iteration 001` 的第一轮实验记录
 
 建议标准包括：
 
+- 先基于 `docs/iterations/iteration-001.md` 建立真实实验记录文件
 - 明确使用均匀抽样生成的 `data/poc-001-files.txt` 作为唯一输入子集
 - 按 `docs/assets/asset-validation-template.md` 记录过程与结果
 - 优先验证位姿恢复是否稳定
-- 优先判断是否需要先做人工五向分类再继续
