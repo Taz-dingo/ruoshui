@@ -54,11 +54,11 @@
 
 最优先建议先做下面这一个：
 
-- 为 `Iteration 001` 补充实际工具、命令、参数和结果
+- 安装并跑通 `Iteration 001` 的首轮命令
 
 建议标准包括：
 
-- 基于 `docs/iterations/iteration-001-validation.md` 填入实际实验信息
-- 明确使用均匀抽样生成的 `data/poc-001-files.txt` 作为唯一输入子集
-- 优先记录实际工具、命令和关键参数
+- 先按 `docs/iterations/iteration-001-execution.md` 安装缺失依赖
+- 明确 staging 输入来自 `assets/staging/poc-001/images`
+- 将实际安装方式、命令和参数写回 `docs/iterations/iteration-001-validation.md`
 - 优先验证位姿恢复是否稳定

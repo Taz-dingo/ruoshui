@@ -18,4 +18,5 @@
 
 - `docs/iterations/iteration-001.md`：Iteration 001 的实验准备记录
 - `docs/iterations/iteration-001-validation.md`：Iteration 001 的真实实验记录
+- `docs/iterations/iteration-001-execution.md`：Iteration 001 的执行清单
 - 预留给后续每轮迭代记录，例如 `docs/iterations/iteration-002.md`
