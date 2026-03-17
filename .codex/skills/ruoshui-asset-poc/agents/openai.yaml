@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ruoshui Asset PoC"
+  short_description: "Asset inventory, PoC sampling, and validation workflow"
+  default_prompt: "Use $ruoshui-asset-poc to analyze source images, select a PoC subset, or update asset validation docs."

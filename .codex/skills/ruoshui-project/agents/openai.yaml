@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ruoshui Project"
+  short_description: "Project scope, priorities, and iteration rules"
+  default_prompt: "Use $ruoshui-project to continue planning or implementing the 若水广场 project."
