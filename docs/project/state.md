@@ -43,10 +43,12 @@
 - 已定位并修复 `gsplat` 在 CUDA 机器上的真实阻塞：默认 shell 未暴露 `nvcc` 与 `ninja` 到 `PATH`
 - 已生成首个 CUDA 训练 checkpoint：`step-000002000.ckpt`
 - 已完成 `Iteration 001` 首轮 `splatfacto` 训练，并生成最终 checkpoint：`step-000029999.ckpt`
+- 已确认最终 checkpoint `step-000029999.ckpt` 文件大小约 `3.2 GB`
 - 已完成 `Iteration 001` 首轮 headless 评估，并产出 `metrics.json`、`17` 张 `eval` 渲染图与 `interpolate.mp4`
 - 已确认 `nerfstudio 1.1.5` 在 `torch 2.10.0+cu128` 下做 `ns-eval` 时，需要显式导出 `TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1`
 - 已确认当前 `NVIDIA` 机器 shell 中没有系统级 `ffmpeg`；插值视频通过 Nerfstudio 导出帧序列后再用 `OpenCV` 封装生成
 - 已得到首轮质量结论：校园主结构可辨识，但 `floaters` 与边缘拉花仍明显，暂不进入 `Web` 原型阶段
+- 已确认当前 Nerfstudio 数据链路支持在 `transforms.json` 的每帧加入 `mask_path`；若边缘大量落在校外区域，下一轮可优先用 per-image campus mask 降低无关边缘干扰
 
 ## 当前已知素材状态
 
@@ -61,16 +63,18 @@
 
 当前最重要的任务是：
 
-- 基于 `Iteration 001` 的首轮评估结果，优先改做更细的五向分组，再决定是否扩大素材范围
+- 基于 `Iteration 001` 的首轮评估结果，优先改做更细的五向分组，并评估 per-image campus mask，再决定是否扩大素材范围
 
 当前已确认的最近阻塞：
 
 - 原始硬件阻塞与 headless 评估阻塞都已解除
 - 当前主要阻塞已切到素材组织层：均匀混合抽样虽然能恢复主结构，但在多个视角里仍产生明显 `floaters` 与边缘拉花
+- 边缘质量问题并不全是校园主体失败；一部分弱区域本身落在校外或产品不关心的范围里，当前缺少显式 mask 来告诉模型“这些区域可以忽略”
 
 这一步的目标不是前端展示，而是验证：
 
 - 更细的五向分组是否能显著减少 `floaters`、遮挡伪影和局部结构不稳定
+- per-image campus mask 是否能让模型少学学校外部的无关边缘
 - 是否应先在方向结构上做清洗，而不是立即把素材范围继续放大
 - 何时才值得进入 `Web` 原型阶段
 
@@ -105,6 +109,7 @@
 - 在 `NVIDIA` 机器上，`gsplat` 的 JIT 编译依赖 `nvcc` 与 `ninja` 都能被当前 shell 直接发现
 - `Iteration 001` 首轮结果已经达到“可判断”但未达到“可展示”的质量
 - 下一步不直接扩大素材范围，先回到更细的五向分组或连续段分组
+- 若边缘主要对应校外区域，优先尝试 per-image campus mask，而不是要求模型把所有边缘都学干净
 
 ## 推荐恢复动作
 

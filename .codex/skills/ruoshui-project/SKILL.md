@@ -1,6 +1,6 @@
 ---
 name: ruoshui-project
-description: Use when planning, scoping, documenting, or implementing the 若水广场 repo. Trigger this skill for project-definition work, roadmap changes, iteration planning, commit-sized delivery, or when a new thread needs the current product boundaries and priorities.
+description: Use when planning, scoping, documenting, saving current progress, preparing a handoff, or implementing the 若水广场 repo. Trigger this skill for project-definition work, roadmap changes, iteration planning, status sync, progress-save requests, commit-sized delivery, or when a new thread needs the current product boundaries and priorities.
 ---
 
 # Ruoshui Project
@@ -29,6 +29,7 @@ When this skill is active:
 3. Update the relevant doc when a decision changes
 4. Commit after each meaningful step when the result is coherent
 5. Prefer clarifying risk early over building speculative features
+6. If the user asks to save progress, record current status, or prepare a handoff, sync `docs/project/state.md`, `docs/project/tasks.md`, and the iteration doc before stopping
 
 ## Source of Truth
 
@@ -61,3 +62,12 @@ A step is in good shape when it has all of the following:
 - one visible output
 - one minimal validation result
 - one small commit
+
+## Trigger Hints
+
+This skill should also be used aggressively for prompts like:
+
+- “保存当前进度”
+- “记录当前状态”
+- “做个交接”
+- “把重要信息写进文档”

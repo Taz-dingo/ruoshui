@@ -99,6 +99,7 @@ export MAX_JOBS=8
 - 当前进度快照：训练已完整跑到 `29999 / 30000` step，并正常退出
 - 已生成产物：`config.yml`、`events.out.tfevents...`、`nerfstudio_models/step-000029999.ckpt`
 - 当前训练目录体积：`du -sh` 实测约 `3.8 GB`
+- 最终 checkpoint 体积：`3.2 GB`（`3421422445` bytes）
 
 ### 2026-03-18 headless 评估与插值导出
 
@@ -137,8 +138,9 @@ export TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1
 - 优点：在较好的视角下，道路、楼体、球场和跑道等校园主结构可以辨识，说明当前素材并非完全无效
 - 问题区域：当前 CUDA 机器虽然具备工具链，但 shell 默认 `PATH` 未包含 `/usr/local/cuda/bin` 与 `./.venv-iteration001/bin`；若不显式导出，`gsplat` 会误判“无 CUDA toolkit”
 - 问题区域：树木密集、边缘覆盖不足或视角变化较大的区域最不稳定；若干评估视角中，画面左侧、底部或前景会被大块刷状伪影遮挡
+- 问题区域：当前边缘较差的部分并不全是校园主体；有一部分本身落在校外区域。对产品判断来说，这些区域不应与校园核心区域被等权对待
 - 噪点 / 漂浮情况：存在明显且不可忽视的 `floaters`。它们不是零星噪点，而是大片叶片状、拉丝状 splat 漂浮物，在多段插值视频中会持续闯入近景并遮挡主体结构
-- 文件体积：训练目录 `outputs/iteration-001/train/unnamed/splatfacto/2026-03-18_230630` 实测约 `3.8 GB`；评估目录 `outputs/iteration-001/eval` 约 `33 MB`；插值视频 `interpolate.mp4` 约 `29 MB`
+- 文件体积：训练目录 `outputs/iteration-001/train/unnamed/splatfacto/2026-03-18_230630` 实测约 `3.8 GB`；最终 checkpoint `step-000029999.ckpt` 约 `3.2 GB`；评估目录 `outputs/iteration-001/eval` 约 `33 MB`；插值视频 `interpolate.mp4` 约 `29 MB`
 - 加载体验：当前仅完成 headless 评估；`metrics.json` 记录的离线评估推理速度约为 `2.52 fps`，尚不能直接等价为 `Web` 端加载体验
 - 截图或视频记录：`outputs/iteration-001/eval/metrics.json`、`outputs/iteration-001/eval/renders/`（`17` 张）、`outputs/iteration-001/eval/interpolate-frames/`（`320` 帧）、`outputs/iteration-001/eval/interpolate.mp4`
 
@@ -147,6 +149,7 @@ export TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1
 - 当前素材是否足以继续：足以继续做下一轮验证，但还不足以支撑直接进入 `Web` 展示阶段
 - 当前链路是否值得继续：值得继续；`COLMAP -> splatfacto -> headless eval` 的链路已经闭环，当前主要问题更像素材组织与覆盖结构，而不是训练环境本身
 - 下一轮最该调整什么：先做更细的五向分组或连续段分组，再复跑位姿恢复与训练，不建议在当前均匀混合抽样结果上直接盲目扩大素材范围
+- 下一轮最该调整什么：若边缘弱区主要落在校外范围，优先为 `transforms.json` 的每帧补 `mask_path`，使用单通道 PNG campus mask（`255 = keep`、`0 = ignore`），避免让模型把学校外部边缘当成同等重要目标
 - 是否进入 Web 原型阶段：暂不进入。当前结果能证明“链路可跑通、结构可辨识”，但 `floaters`、边缘拉花和局部结构不稳定还明显过重
 
 ## 记录规范
