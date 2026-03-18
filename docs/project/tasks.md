@@ -37,6 +37,9 @@
 - 大方向使用 `Web` 是正确的，因为它最容易被打开、传播和体验
 - 第一版不先做数据库、登录和社区系统
 - 当前最关键风险仍然是素材能否支撑可看的空中版 `3DGS`
+- `Iteration 001` 首轮 headless 评估指标为 `PSNR 20.25 / SSIM 0.599 / LPIPS 0.338`
+- 当前结果已能辨识校园主结构，但存在明显 `floaters`、边缘拉花和局部遮挡伪影
+- 下一步优先做更细的五向分组，不直接在当前均匀混合抽样结果上扩大素材范围
 
 ## 迭代记录模板
 
@@ -50,22 +53,31 @@
 - 问题：
 - 下一步：
 
+### Iteration 001
+
+- 目标：完成 `PoC 001` 首轮 `splatfacto` 训练后的 headless 质量评估
+- 输入：`180` 张均匀抽样图片、`outputs/iteration-001/processed`、训练目录 `outputs/iteration-001/train/unnamed/splatfacto/2026-03-18_230630`
+- 输出：`outputs/iteration-001/eval/metrics.json`、`outputs/iteration-001/eval/renders/`、`outputs/iteration-001/eval/interpolate.mp4`
+- 验证方式：运行 `ns-eval`，检查 `PSNR / SSIM / LPIPS`，抽查 `17` 张 `eval` 渲染图，并检查 `320` 帧插值视频
+- 结果：校园道路、楼体、球场和跑道在部分视角中可辨识，说明链路和素材并非无效；但多视角存在明显 `floaters` 和边缘拉花，暂不进入 `Web` 原型阶段
+- 问题：`nerfstudio 1.1.5` 在 `torch 2.10` 下做 `ns-eval` 需要 `TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1`；当前机器 shell 无系统 `ffmpeg`，插值视频需走导帧加 `OpenCV` 封装
+- 下一步：先做更细的五向分组或连续段分组，再复跑位姿恢复与训练，最后再决定是否扩大素材范围
+
 ## 下一步建议
 
 最优先建议先做下面这一个：
 
-- 对 `Iteration 001` 的首轮 `splatfacto` 训练结果做截图、录屏和主观质量判断
+- 先把 `Iteration 001` 的均匀混合抽样结果拆回更细的五向分组，再做下一轮可比性验证
 
 建议标准包括：
 
-- 训练目录 `outputs/iteration-001/train/unnamed/splatfacto/2026-03-18_230630` 已完整产出
-- 已生成最终 checkpoint
-- 已将 CUDA 机器上的真实环境变量要求写回 `docs/iterations/iteration-001-validation.md`
-- 已将 `nvcc` / `ninja` 的 `PATH` 要求写回 `docs/iterations/iteration-001-cuda-handoff.md`
-- 下一步需要补齐主观质量、问题区域与是否进入 Web 原型阶段的判断
+- 至少形成 `1-2` 个方向更纯净的候选子集
+- 每个候选子集都继续使用相对路径作为素材标识
+- 能对比新分组与当前均匀混合抽样结果的 `floaters`、结构完整度和位姿恢复稳定性
+- 若分组后质量仍明显不够，再决定是否扩大素材范围
 
 当前更小的下一步可拆成：
 
-- 记录最终 checkpoint 与训练目录体积
-- 导出截图或录屏，补充可视质量判断
-- 根据结果决定是扩大素材范围，还是回头做更细的五向分组
+- 从现有 `PoC 001` 或原始素材中整理更细的五向/连续段候选分组
+- 为下一轮分组实验定义最小样本数和对比标准
+- 复用现有训练链路，只改变素材组织方式

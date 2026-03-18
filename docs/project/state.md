@@ -1,6 +1,6 @@
 # 项目状态快照
 
-最后更新：`2026-03-18`
+最后更新：`2026-03-19`
 
 ## 项目背景
 
@@ -35,7 +35,7 @@
 - 已补齐 `PoC` staging 物化脚本与映射方案
 - 已在本机验证 `PoC 001` staging 物化命令可成功生成 `180` 个唯一命名输入
 - 已为 `Iteration 001` 建立独立 `Python 3.11` 虚拟环境 `./.venv-iteration001`
-- 已安装 `COLMAP`、`FFmpeg` 与 `Nerfstudio` CLI
+- 已安装 `COLMAP` 与 `Nerfstudio` CLI
 - 已修复 `numpy` / `opencv` ABI 冲突
 - 已为 `COLMAP 4.0.1` 增加兼容 wrapper：`scripts/colmap_compat.sh`
 - 已完成 `Iteration 001` 首轮 `ns-process-data`，`179 / 180` 张图成功恢复位姿，并产出 `transforms.json`
@@ -43,6 +43,10 @@
 - 已定位并修复 `gsplat` 在 CUDA 机器上的真实阻塞：默认 shell 未暴露 `nvcc` 与 `ninja` 到 `PATH`
 - 已生成首个 CUDA 训练 checkpoint：`step-000002000.ckpt`
 - 已完成 `Iteration 001` 首轮 `splatfacto` 训练，并生成最终 checkpoint：`step-000029999.ckpt`
+- 已完成 `Iteration 001` 首轮 headless 评估，并产出 `metrics.json`、`17` 张 `eval` 渲染图与 `interpolate.mp4`
+- 已确认 `nerfstudio 1.1.5` 在 `torch 2.10.0+cu128` 下做 `ns-eval` 时，需要显式导出 `TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1`
+- 已确认当前 `NVIDIA` 机器 shell 中没有系统级 `ffmpeg`；插值视频通过 Nerfstudio 导出帧序列后再用 `OpenCV` 封装生成
+- 已得到首轮质量结论：校园主结构可辨识，但 `floaters` 与边缘拉花仍明显，暂不进入 `Web` 原型阶段
 
 ## 当前已知素材状态
 
@@ -57,18 +61,18 @@
 
 当前最重要的任务是：
 
-- 评估 `Iteration 001` 首轮训练结果的可视质量，并决定是否扩大素材范围
+- 基于 `Iteration 001` 的首轮评估结果，优先改做更细的五向分组，再决定是否扩大素材范围
 
 当前已确认的最近阻塞：
 
-- 原始硬件阻塞已解除，首轮训练已完整跑完
-- 当前剩余阻塞已切到结果判断：还未做截图、录屏和主观可视质量评估
+- 原始硬件阻塞与 headless 评估阻塞都已解除
+- 当前主要阻塞已切到素材组织层：均匀混合抽样虽然能恢复主结构，但在多个视角里仍产生明显 `floaters` 与边缘拉花
 
 这一步的目标不是前端展示，而是验证：
 
-- 均匀抽样后的五向素材是否足以恢复稳定相机位姿
-- 是否能得到可辨识的空中版 `3DGS` 结果
-- 是否值得继续扩大素材范围或先做人工五向分类
+- 更细的五向分组是否能显著减少 `floaters`、遮挡伪影和局部结构不稳定
+- 是否应先在方向结构上做清洗，而不是立即把素材范围继续放大
+- 何时才值得进入 `Web` 原型阶段
 
 ## 当前关键文件
 
@@ -99,6 +103,8 @@
 - `PoC 001` 不采用连续单向照片，而采用全量分层均匀抽样
 - 需要小步迭代，并在每个 coherent step 后及时 commit
 - 在 `NVIDIA` 机器上，`gsplat` 的 JIT 编译依赖 `nvcc` 与 `ninja` 都能被当前 shell 直接发现
+- `Iteration 001` 首轮结果已经达到“可判断”但未达到“可展示”的质量
+- 下一步不直接扩大素材范围，先回到更细的五向分组或连续段分组
 
 ## 推荐恢复动作
 

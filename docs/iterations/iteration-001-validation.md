@@ -23,10 +23,10 @@
 ## 实验链路
 
 - 相机位姿恢复方案：`COLMAP`
-- 训练方案：首轮沿用基础 `3DGS` 训练链路，具体实现待补充
-- 导出方案：待补充
+- 训练方案：`nerfstudio==1.1.5` + `splatfacto`
+- 导出方案：`ns-eval` 导出评估指标与静态渲染；插值视频在无系统 `ffmpeg` 的当前机器上通过 Nerfstudio Python API 导出帧序列，再用 `OpenCV VideoWriter` 封装成 `mp4`
 - Viewer / Web 集成方案：本轮暂不进入集成，仅评估结果是否值得继续
-- 关键参数：待记录
+- 关键参数：评估阶段需显式导出 `CUDA_HOME=/usr/local/cuda`、`PATH=./.venv-iteration001/bin:/usr/local/cuda/bin:$PATH`、`MAX_JOBS=8`、`TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1`
 
 ## 本轮实际执行记录
 
@@ -98,33 +98,56 @@ export MAX_JOBS=8
 - 成功续跑目录：`outputs/iteration-001/train/unnamed/splatfacto/2026-03-18_230630`
 - 当前进度快照：训练已完整跑到 `29999 / 30000` step，并正常退出
 - 已生成产物：`config.yml`、`events.out.tfevents...`、`nerfstudio_models/step-000029999.ckpt`
-- 当前训练目录体积：约 `4.2 GB`
+- 当前训练目录体积：`du -sh` 实测约 `3.8 GB`
+
+### 2026-03-18 headless 评估与插值导出
+
+- 评估命令：
+
+```bash
+export CUDA_HOME=/usr/local/cuda
+export PATH=/path/to/ruoshui/.venv-iteration001/bin:/usr/local/cuda/bin:$PATH
+export MAX_JOBS=8
+export TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1
+./.venv-iteration001/bin/ns-eval \
+  --load-config outputs/iteration-001/train/unnamed/splatfacto/2026-03-18_230630/config.yml \
+  --output-path outputs/iteration-001/eval/metrics.json \
+  --render-output-path outputs/iteration-001/eval/renders
+```
+
+- 评估结果：成功加载 `step-000029999.ckpt` 并输出 `metrics.json` 与 `17` 张 `eval` 渲染图
+- 已确认：在 `torch 2.10.0+cu128` 下，`nerfstudio 1.1.5` 的 `ns-eval` 需要显式导出 `TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1`，否则会被 `torch.load` 的默认 `weights_only=True` 行为阻塞
+- 首次插值视频尝试：直接运行 `ns-render interpolate ... --output-path outputs/iteration-001/eval/interpolate.mp4` 时失败；失败原因不是 checkpoint，而是当前机器 shell 中无系统级 `ffmpeg`
+- 当前绕路：以 Nerfstudio Python API 调用 `RenderInterpolated(output_format='images')` 导出 `320` 帧 PNG 到 `outputs/iteration-001/eval/interpolate-frames/`，再用 `OpenCV VideoWriter` 封装成 `outputs/iteration-001/eval/interpolate.mp4`
+- 已生成视频：`outputs/iteration-001/eval/interpolate.mp4`，文件大小约 `29 MB`
 
 ## 验证方式
 
 - 是否完成稀疏重建：已完成，`COLMAP` 为 `179 / 180` 张图片恢复位姿
-- 是否得到可查看的 splat / 模型：已完成首轮训练并生成最终 checkpoint；但还未做导出截图与主观可视质量复核
-- 是否可在本地打开：待补充
-- 是否可切换机位：待补充
-- 是否具备基本纪念展示价值：待补充
+- 是否得到可查看的 splat / 模型：已完成首轮训练并生成最终 checkpoint；已补齐 `metrics.json`、`17` 张 `eval` 渲染图与 `320` 帧插值视频
+- 是否可在本地打开：已在无界面环境完成 headless 导出；当前未做 GUI viewer 打开验证
+- 是否可切换机位：已通过 `pose-source eval` 的插值轨迹成功导出连续视频，说明当前模型支持离线连续机位渲染
+- 是否具备基本纪念展示价值：具备“可判断”的纪念展示基础，但质量尚不足以直接进入 `Web` 原型阶段
 
 ## 结果记录
 
-- 质量判断：位姿恢复结果明显好于“仅能跑通”的最低标准，`179 / 180` 张图成功出位姿；训练链路已在 `NVIDIA CUDA` 机器上完整跑通
+- 质量判断：首轮结果已超过“完全失败”的门槛，校园主结构在部分视角中可辨识，但整体仍属于“可判断、不可发布”的质量。`ns-eval` 指标为 `PSNR 20.25`、`SSIM 0.599`、`LPIPS 0.338`
 - 优点：`PoC 001` 输入 staging 稳定；位姿恢复覆盖率达到 `99.44%`；`transforms.json` 与 `sparse_pc.ply` 已产出
 - 优点：`splatfacto` 已在 `RTX 5090` 机器上完整跑完，并产出 `step-000029999.ckpt`
+- 优点：在较好的视角下，道路、楼体、球场和跑道等校园主结构可以辨识，说明当前素材并非完全无效
 - 问题区域：当前 CUDA 机器虽然具备工具链，但 shell 默认 `PATH` 未包含 `/usr/local/cuda/bin` 与 `./.venv-iteration001/bin`；若不显式导出，`gsplat` 会误判“无 CUDA toolkit”
-- 噪点 / 漂浮情况：待补充
-- 文件体积：当前训练目录 `outputs/iteration-001/train/unnamed/splatfacto/2026-03-18_230630` 约 `4.2 GB`
-- 加载体验：待补充
-- 截图或视频记录：待补充
+- 问题区域：树木密集、边缘覆盖不足或视角变化较大的区域最不稳定；若干评估视角中，画面左侧、底部或前景会被大块刷状伪影遮挡
+- 噪点 / 漂浮情况：存在明显且不可忽视的 `floaters`。它们不是零星噪点，而是大片叶片状、拉丝状 splat 漂浮物，在多段插值视频中会持续闯入近景并遮挡主体结构
+- 文件体积：训练目录 `outputs/iteration-001/train/unnamed/splatfacto/2026-03-18_230630` 实测约 `3.8 GB`；评估目录 `outputs/iteration-001/eval` 约 `33 MB`；插值视频 `interpolate.mp4` 约 `29 MB`
+- 加载体验：当前仅完成 headless 评估；`metrics.json` 记录的离线评估推理速度约为 `2.52 fps`，尚不能直接等价为 `Web` 端加载体验
+- 截图或视频记录：`outputs/iteration-001/eval/metrics.json`、`outputs/iteration-001/eval/renders/`（`17` 张）、`outputs/iteration-001/eval/interpolate-frames/`（`320` 帧）、`outputs/iteration-001/eval/interpolate.mp4`
 
 ## 结论
 
-- 当前素材是否足以继续：从位姿恢复结果看，值得继续
-- 当前链路是否值得继续：值得继续，且已在 `NVIDIA CUDA` 机器上完成真正续跑
-- 下一轮最该调整什么：先导出截图或录屏做主观质量判断，再决定是扩大素材范围还是回头做更细的五向分组
-- 是否进入 Web 原型阶段：待补充
+- 当前素材是否足以继续：足以继续做下一轮验证，但还不足以支撑直接进入 `Web` 展示阶段
+- 当前链路是否值得继续：值得继续；`COLMAP -> splatfacto -> headless eval` 的链路已经闭环，当前主要问题更像素材组织与覆盖结构，而不是训练环境本身
+- 下一轮最该调整什么：先做更细的五向分组或连续段分组，再复跑位姿恢复与训练，不建议在当前均匀混合抽样结果上直接盲目扩大素材范围
+- 是否进入 Web 原型阶段：暂不进入。当前结果能证明“链路可跑通、结构可辨识”，但 `floaters`、边缘拉花和局部结构不稳定还明显过重
 
 ## 记录规范
 
