@@ -42,6 +42,7 @@
 - 已在 `NVIDIA RTX 5090` 机器上成功启动 `Iteration 001` 首轮 `splatfacto` 训练
 - 已定位并修复 `gsplat` 在 CUDA 机器上的真实阻塞：默认 shell 未暴露 `nvcc` 与 `ninja` 到 `PATH`
 - 已生成首个 CUDA 训练 checkpoint：`step-000002000.ckpt`
+- 已完成 `Iteration 001` 首轮 `splatfacto` 训练，并生成最终 checkpoint：`step-000029999.ckpt`
 
 ## 当前已知素材状态
 
@@ -56,12 +57,12 @@
 
 当前最重要的任务是：
 
-- 让当前 `NVIDIA CUDA` 机器上的 `Iteration 001` 首轮 `splatfacto` 训练继续完成，并评估结果质量
+- 评估 `Iteration 001` 首轮训练结果的可视质量，并决定是否扩大素材范围
 
 当前已确认的最近阻塞：
 
-- 原始硬件阻塞已解除，训练现已在 `NVIDIA RTX 5090` 机器上持续运行
-- 当前新增的环境注意事项是：运行训练前必须显式导出 `CUDA_HOME=/usr/local/cuda`，并将 `/usr/local/cuda/bin` 与 `./.venv-iteration001/bin` 放进 `PATH`
+- 原始硬件阻塞已解除，首轮训练已完整跑完
+- 当前剩余阻塞已切到结果判断：还未做截图、录屏和主观可视质量评估
 
 这一步的目标不是前端展示，而是验证：
 

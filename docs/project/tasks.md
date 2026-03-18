@@ -54,19 +54,18 @@
 
 最优先建议先做下面这一个：
 
-- 保持当前 CUDA 训练继续收敛，并在训练结束后判断 `Iteration 001` 的首轮 `splatfacto` 结果质量
+- 对 `Iteration 001` 的首轮 `splatfacto` 训练结果做截图、录屏和主观质量判断
 
 建议标准包括：
 
-- 训练目录 `outputs/iteration-001/train/unnamed/splatfacto/2026-03-18_230630` 持续更新
-- 已生成至少一个 checkpoint
+- 训练目录 `outputs/iteration-001/train/unnamed/splatfacto/2026-03-18_230630` 已完整产出
+- 已生成最终 checkpoint
 - 已将 CUDA 机器上的真实环境变量要求写回 `docs/iterations/iteration-001-validation.md`
 - 已将 `nvcc` / `ninja` 的 `PATH` 要求写回 `docs/iterations/iteration-001-cuda-handoff.md`
-- 训练结束后补齐主观质量、问题区域与是否进入 Web 原型阶段的判断
+- 下一步需要补齐主观质量、问题区域与是否进入 Web 原型阶段的判断
 
 当前更小的下一步可拆成：
 
-- 继续观察当前训练是否稳定收敛到结束
-- 记录最终 checkpoint、总耗时与训练目录体积
+- 记录最终 checkpoint 与训练目录体积
 - 导出截图或录屏，补充可视质量判断
 - 根据结果决定是扩大素材范围，还是回头做更细的五向分组

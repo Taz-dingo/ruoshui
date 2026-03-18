@@ -96,26 +96,26 @@ export MAX_JOBS=8
 ```
 
 - 成功续跑目录：`outputs/iteration-001/train/unnamed/splatfacto/2026-03-18_230630`
-- 当前进度快照：训练已稳定越过首个 step，并持续运行到 `step 3200+`
-- 已生成产物：`config.yml`、`events.out.tfevents...`、`nerfstudio_models/step-000002000.ckpt`
-- 当前训练目录体积：约 `689 MB`
+- 当前进度快照：训练已完整跑到 `29999 / 30000` step，并正常退出
+- 已生成产物：`config.yml`、`events.out.tfevents...`、`nerfstudio_models/step-000029999.ckpt`
+- 当前训练目录体积：约 `4.2 GB`
 
 ## 验证方式
 
 - 是否完成稀疏重建：已完成，`COLMAP` 为 `179 / 180` 张图片恢复位姿
-- 是否得到可查看的 splat / 模型：训练已在 `NVIDIA CUDA` 机器上稳定运行，并已生成首个 checkpoint；最终可视质量仍待训练完成后评估
+- 是否得到可查看的 splat / 模型：已完成首轮训练并生成最终 checkpoint；但还未做导出截图与主观可视质量复核
 - 是否可在本地打开：待补充
 - 是否可切换机位：待补充
 - 是否具备基本纪念展示价值：待补充
 
 ## 结果记录
 
-- 质量判断：位姿恢复结果明显好于“仅能跑通”的最低标准，`179 / 180` 张图成功出位姿；训练链路现已在 `NVIDIA CUDA` 机器上跑通并持续迭代
+- 质量判断：位姿恢复结果明显好于“仅能跑通”的最低标准，`179 / 180` 张图成功出位姿；训练链路已在 `NVIDIA CUDA` 机器上完整跑通
 - 优点：`PoC 001` 输入 staging 稳定；位姿恢复覆盖率达到 `99.44%`；`transforms.json` 与 `sparse_pc.ply` 已产出
-- 优点：`splatfacto` 已在 `RTX 5090` 机器上稳定跑到 `step 3200+`，并产出 `step-000002000.ckpt`
+- 优点：`splatfacto` 已在 `RTX 5090` 机器上完整跑完，并产出 `step-000029999.ckpt`
 - 问题区域：当前 CUDA 机器虽然具备工具链，但 shell 默认 `PATH` 未包含 `/usr/local/cuda/bin` 与 `./.venv-iteration001/bin`；若不显式导出，`gsplat` 会误判“无 CUDA toolkit”
 - 噪点 / 漂浮情况：待补充
-- 文件体积：当前训练目录 `outputs/iteration-001/train/unnamed/splatfacto/2026-03-18_230630` 约 `689 MB`
+- 文件体积：当前训练目录 `outputs/iteration-001/train/unnamed/splatfacto/2026-03-18_230630` 约 `4.2 GB`
 - 加载体验：待补充
 - 截图或视频记录：待补充
 
@@ -123,7 +123,7 @@ export MAX_JOBS=8
 
 - 当前素材是否足以继续：从位姿恢复结果看，值得继续
 - 当前链路是否值得继续：值得继续，且已在 `NVIDIA CUDA` 机器上完成真正续跑
-- 下一轮最该调整什么：先让当前训练继续收敛并导出可视结果，再判断是否需要扩大素材范围或调整抽样策略
+- 下一轮最该调整什么：先导出截图或录屏做主观质量判断，再决定是扩大素材范围还是回头做更细的五向分组
 - 是否进入 Web 原型阶段：待补充
 
 ## 记录规范
@@ -141,7 +141,7 @@ export MAX_JOBS=8
 - 点云文件：`outputs/iteration-001/processed/sparse_pc.ply`
 - 训练尝试配置：`outputs/iteration-001/train/unnamed/splatfacto/2026-03-18_024928/config.yml`
 - CUDA 续跑目录：`outputs/iteration-001/train/unnamed/splatfacto/2026-03-18_230630`
-- 首个 checkpoint：`outputs/iteration-001/train/unnamed/splatfacto/2026-03-18_230630/nerfstudio_models/step-000002000.ckpt`
+- 最终 checkpoint：`outputs/iteration-001/train/unnamed/splatfacto/2026-03-18_230630/nerfstudio_models/step-000029999.ckpt`
 
 
 ## CUDA 续跑入口
