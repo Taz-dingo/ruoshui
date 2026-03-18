@@ -33,6 +33,12 @@
 - 已实例化 `Iteration 001` 的真实实验记录文件
 - 已补齐 `Iteration 001` 的执行清单与 staging 方案
 - 已补齐 `PoC` staging 物化脚本与映射方案
+- 已在本机验证 `PoC 001` staging 物化命令可成功生成 `180` 个唯一命名输入
+- 已为 `Iteration 001` 建立独立 `Python 3.11` 虚拟环境 `./.venv-iteration001`
+- 已安装 `COLMAP`、`FFmpeg` 与 `Nerfstudio` CLI
+- 已修复 `numpy` / `opencv` ABI 冲突
+- 已为 `COLMAP 4.0.1` 增加兼容 wrapper：`scripts/colmap_compat.sh`
+- 已完成 `Iteration 001` 首轮 `ns-process-data`，`179 / 180` 张图成功恢复位姿，并产出 `transforms.json`
 
 ## 当前已知素材状态
 
@@ -47,7 +53,12 @@
 
 当前最重要的任务是：
 
-- 安装并跑通 `Iteration 001` 的首轮命令
+- 在 `NVIDIA CUDA` 环境中完成 `Iteration 001` 的首轮 `splatfacto` 训练
+
+当前已确认的最近阻塞：
+
+- 当前主要阻塞已切换为训练硬件：本机可完成位姿恢复，但无法在 `Apple Silicon + MPS` 上完成 `gsplat` 训练
+- 已补充 `docs/iterations/iteration-001-cuda-handoff.md`，用于在 NVIDIA CUDA 机器上无缝接续训练
 
 这一步的目标不是前端展示，而是验证：
 

@@ -54,11 +54,19 @@
 
 最优先建议先做下面这一个：
 
-- 安装并跑通 `Iteration 001` 的首轮命令
+- 在 CUDA 环境中继续并判断 `Iteration 001` 的首轮 `splatfacto` 训练结果
 
 建议标准包括：
 
-- 先按 `docs/iterations/iteration-001-execution.md` 安装缺失依赖
+- 已按 `docs/iterations/iteration-001-execution.md` 补齐环境依赖
+- 继续沿用 `./.venv-iteration001` 作为 `Nerfstudio` 的独立运行环境
 - 明确 staging 输入来自 `assets/staging/poc-001/images`
-- 将实际安装方式、命令和参数写回 `docs/iterations/iteration-001-validation.md`
-- 优先验证位姿恢复是否稳定
+- 已将实际安装方式、命令和参数持续写回 `docs/iterations/iteration-001-validation.md`
+- 当前优先准备 CUDA 环境继续首轮训练
+
+当前更小的下一步可拆成：
+
+- 已确认 `outputs/iteration-001/processed/transforms.json` 与 `outputs/iteration-001/processed/sparse_pc.ply` 已生成
+- 先按 `docs/iterations/iteration-001-cuda-handoff.md` 在 CUDA 机器上恢复环境
+- 在 CUDA 机器上运行 `ns-train splatfacto --output-dir outputs/iteration-001/train nerfstudio-data --data outputs/iteration-001/processed`
+- 记录训练产物路径、耗时与可视质量
