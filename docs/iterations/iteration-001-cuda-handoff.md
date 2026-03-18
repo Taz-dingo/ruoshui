@@ -67,16 +67,17 @@ rsync -av --progress \
 
 建议在新机器上满足以下条件：
 
-- 已安装 `Python 3.11`
-- 已安装 `uv`
+- 已安装 `Python`
 - `torch.cuda.is_available()` 返回 `True`
 - 有可用的 `NVIDIA` 驱动与 `CUDA` 运行环境
+- `PATH` 中可找到 `nvcc`
 
 注意：
 
 - 不要直接复制本机的 `./.venv-iteration001`
 - 建议在 `NVIDIA` 机器上重新创建一个干净环境
 - 当前仓库里的本地兼容补丁主要是为 `Apple Silicon` 过渡验证服务；在干净的 `CUDA` 环境里，优先先试纯净安装
+- `gsplat` 会在首次运行时做本地 JIT 编译，因此 `ninja` 也必须在 `PATH` 中可见
 
 ## NVIDIA 机器的最短执行步骤
 
@@ -86,6 +87,15 @@ rsync -av --progress \
 cd /path/to/ruoshui
 uv venv .venv-iteration001 --python 3.11
 uv pip install --python .venv-iteration001/bin/python --prerelease=allow 'nerfstudio==1.1.5'
+```
+
+如果机器上没有 `uv` 或 `python3.11`，当前已验证的 fallback 是：
+
+```bash
+cd /path/to/ruoshui
+python3 -m venv .venv-iteration001
+./.venv-iteration001/bin/pip install -U pip setuptools wheel
+./.venv-iteration001/bin/pip install 'nerfstudio==1.1.5'
 ```
 
 先确认 CUDA 可用：
@@ -115,6 +125,9 @@ test -d outputs/iteration-001/processed/colmap/sparse/0 && echo sparse-dir-ok
 最后直接启动训练：
 
 ```bash
+export CUDA_HOME=/usr/local/cuda
+export PATH=/path/to/ruoshui/.venv-iteration001/bin:/usr/local/cuda/bin:$PATH
+export MAX_JOBS=8
 .venv-iteration001/bin/ns-train splatfacto \
   --output-dir outputs/iteration-001/train \
   --vis tensorboard \
@@ -133,6 +146,12 @@ test -d outputs/iteration-001/processed/colmap/sparse/0 && echo sparse-dir-ok
    - `outputs/iteration-001/train/unnamed/splatfacto/<timestamp>/events.out.tfevents...`
    - `outputs/iteration-001/train/unnamed/splatfacto/<timestamp>/nerfstudio_models/`
 4. 进入真正的训练 step，而不是在初始化时报错
+
+当前已验证的真实成功目录：
+
+- `outputs/iteration-001/train/unnamed/splatfacto/2026-03-18_230630/config.yml`
+- `outputs/iteration-001/train/unnamed/splatfacto/2026-03-18_230630/events.out.tfevents...`
+- `outputs/iteration-001/train/unnamed/splatfacto/2026-03-18_230630/nerfstudio_models/step-000002000.ckpt`
 
 ## 成功标准
 
@@ -179,12 +198,31 @@ PY
 
 期望版本：`1.1.5`
 
+### 4. 日志里出现 `gsplat: No CUDA toolkit found`
+
+这通常不是没有显卡，而是运行 `ns-train` 的 shell 没把 `nvcc` 放进 `PATH`。
+
+先确认：
+
+```bash
+which nvcc
+which ninja
+```
+
+如果没命中，先导出：
+
+```bash
+export CUDA_HOME=/usr/local/cuda
+export PATH=/path/to/ruoshui/.venv-iteration001/bin:/usr/local/cuda/bin:$PATH
+export MAX_JOBS=8
+```
+
 ## 明确交接句
 
 如果只看一句话，下一台 `NVIDIA CUDA` 机器要做的是：
 
 - 复用 `outputs/iteration-001/processed`
-- 新建干净 `Python 3.11` 环境
+- 新建干净训练环境
 - 安装 `nerfstudio==1.1.5`
-- 直接运行 `ns-train splatfacto ... nerfstudio-data --data outputs/iteration-001/processed`
-
+- 确保 `nvcc` 与 `ninja` 在 `PATH` 中
+- 再运行 `ns-train splatfacto ... nerfstudio-data --data outputs/iteration-001/processed`

@@ -39,6 +39,9 @@
 - 已修复 `numpy` / `opencv` ABI 冲突
 - 已为 `COLMAP 4.0.1` 增加兼容 wrapper：`scripts/colmap_compat.sh`
 - 已完成 `Iteration 001` 首轮 `ns-process-data`，`179 / 180` 张图成功恢复位姿，并产出 `transforms.json`
+- 已在 `NVIDIA RTX 5090` 机器上成功启动 `Iteration 001` 首轮 `splatfacto` 训练
+- 已定位并修复 `gsplat` 在 CUDA 机器上的真实阻塞：默认 shell 未暴露 `nvcc` 与 `ninja` 到 `PATH`
+- 已生成首个 CUDA 训练 checkpoint：`step-000002000.ckpt`
 
 ## 当前已知素材状态
 
@@ -53,12 +56,12 @@
 
 当前最重要的任务是：
 
-- 在 `NVIDIA CUDA` 环境中完成 `Iteration 001` 的首轮 `splatfacto` 训练
+- 让当前 `NVIDIA CUDA` 机器上的 `Iteration 001` 首轮 `splatfacto` 训练继续完成，并评估结果质量
 
 当前已确认的最近阻塞：
 
-- 当前主要阻塞已切换为训练硬件：本机可完成位姿恢复，但无法在 `Apple Silicon + MPS` 上完成 `gsplat` 训练
-- 已补充 `docs/iterations/iteration-001-cuda-handoff.md`，用于在 NVIDIA CUDA 机器上无缝接续训练
+- 原始硬件阻塞已解除，训练现已在 `NVIDIA RTX 5090` 机器上持续运行
+- 当前新增的环境注意事项是：运行训练前必须显式导出 `CUDA_HOME=/usr/local/cuda`，并将 `/usr/local/cuda/bin` 与 `./.venv-iteration001/bin` 放进 `PATH`
 
 这一步的目标不是前端展示，而是验证：
 
@@ -94,6 +97,7 @@
 - 第一版不退回 `mesh` 作为主方案
 - `PoC 001` 不采用连续单向照片，而采用全量分层均匀抽样
 - 需要小步迭代，并在每个 coherent step 后及时 commit
+- 在 `NVIDIA` 机器上，`gsplat` 的 JIT 编译依赖 `nvcc` 与 `ninja` 都能被当前 shell 直接发现
 
 ## 推荐恢复动作
 
