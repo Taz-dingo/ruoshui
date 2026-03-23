@@ -17,6 +17,7 @@
 
 - 它是当前最值得优先核查的压缩路线
 - 但第一步不是直接上手跑，而是先确认当前 checkpoint 或导出高斯能否映射到它期望的输入格式
+- 基于本地 checkpoint 与 `PLY` 头部核查，当前更合理的判断是：存在“可桥接”可能，但不能直接喂现有产物
 
 ### 结论 2
 
@@ -44,6 +45,21 @@
 - 但这里的“已有结果”更接近 Graphdeco 官方 `3D-GS` 生态，而不是自动等同于 `nerfstudio splatfacto`
 - 因此它和若水广场当前结果之间，最大的真实问题不是“值不值得看”，而是“输入格式能不能对上”
 
+本地对照结果：
+
+- 当前训练结果只有 `nerfstudio_models/step-000029999.ckpt`，没有 Graphdeco 风格的 point-cloud iteration 目录
+- 本地 checkpoint 顶层键为 `step / pipeline / optimizers / schedulers / scalers`
+- 其中高斯参数保存在 `pipeline._model.gauss_params.features_dc / features_rest / means / opacities / quats / scales`
+- 当前 `rgb PLY` 头部字段为 `x/y/z + nx/ny/nz + red/green/blue + opacity + scale_0..2 + rot_0..3`
+
+兼容性判断：
+
+- 这说明当前资产在语义层面与 `3D-GS` 高斯参数是相近的，但封装形式明显属于 `nerfstudio splatfacto`
+- 因此更现实的预期不是“LightGaussian 直接读取现有 checkpoint”
+- 更现实的两条路是：
+  - 找到 `LightGaussian` 是否接受足够接近的 `PLY` / 参数导出
+  - 或补一个 `splatfacto -> official 3D-GS` 参数归一化转换层
+
 对若水广场的实际意义：
 
 - 如果能接上，它是当前最务实的交付减重路线
@@ -53,6 +69,7 @@
 
 - 明确 `LightGaussian` 期望的模型目录、checkpoint 结构与 `ply` 字段
 - 对照当前 `outputs/iteration-001` 与 `outputs/iteration-002/export-rgb/splat.ply`，判断差异点
+- 优先确认它到底吃的是“official checkpoint 目录”还是也能接受足够接近的 `PLY`
 
 ### B. `Scaffold-GS`
 
@@ -123,6 +140,23 @@
 - `Scaffold-GS` 排第二，是因为它最像“最容易接上现有 `COLMAP` 数据的结构化 `GS`”
 - `Octree-GS` 紧随其后，因为它对 `LOD` 与大场景渲染非常相关，但参数复杂度略高
 - `CityGaussian` 价值很高，但更适合在确定要进入更重的大场景训练流程后投入
+
+## 当前最终判断
+
+### `LightGaussian`
+
+- 值得继续推进
+- 但当前状态应定义为“需要桥接”，而不是“可直接试跑”
+
+### `Scaffold-GS`
+
+- 值得作为第一个结构化 `GS` 训练候选
+- 原因是数据入口与当前 `COLMAP` 结果最顺，且流程比 `CityGaussian` 更轻
+
+### `Octree-GS`
+
+- 值得作为第二个结构化候选
+- 如果后续重点从“训练入口”转为“LOD 与多尺度交付”，它可能会上升为第一优先级
 
 ## 下一步建议
 
