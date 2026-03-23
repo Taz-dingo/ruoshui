@@ -120,4 +120,4 @@
 
 - `docs/iterations/iteration-003.md` 已创建，并已补入算法路线筛选轴：`2DGS`、大场景 `GS`、压缩型 `GS`
 - `docs/iterations/iteration-003-algorithm-screening.md` 已创建，并将当前优先级收敛为：大场景结构化 `GS` / 压缩型 `GS` 优先，`2DGS / Mip-Splatting` 次之
-- 当前最小下一步已调整为：先形成一份算法路线筛选记录，再决定是否继续推进现有 `PLY` 的定向清理实验
+- 当前最小下一步已进一步收敛为三问：`LightGaussian` 是否能衔接现有结果、`CityGaussian / Octree-GS / Scaffold-GS` 哪条接入门槛最低、`2DGS / Mip-Splatting` 是否应降为第二阶段质量增强分支
