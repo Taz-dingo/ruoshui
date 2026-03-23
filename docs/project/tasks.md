@@ -49,6 +49,7 @@
 - `Iteration 002` 已拿到首轮交付体积基线：默认 `sh_coeffs` 导出约 `1.10 GiB`，`rgb` 导出约 `267 MiB`
 - `ns-export` 在当前 `torch 2.10` 环境下也需要显式导出 `TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1`
 - 仅切换到 `rgb` 颜色表示即可比默认导出减重约 `76%`，但当前单文件资产仍偏重，不适合直接作为 `Web MVP` 首屏完整场景
+- `rgb` 导出做 `gzip -9` / `zstd -19` 后也只能压到约 `206.61 MiB` / `201.41 MiB`，说明传输压缩不是当前问题的主解
 - 现阶段不建议从 `180` 张直接跳到 `1600+` 张全量训练；当前主要风险已转向交付体积，而不是先赌“更多图一定更好”
 - 若沿用当前 `COLMAP exhaustive matching` 思路，图像对数量会从 `180` 张时的 `16110` 对抬到 `1600` 张时的 `1279200` 对，或 `1637` 张时的 `1339066` 对，约为当前的 `79x-83x`
 - 若要扩量，优先做 `300-600` 张的结构化扩容实验，而不是直接全量灌入
@@ -79,11 +80,11 @@
 
 - 目标：导出当前场景的真实交付资产，建立 `Web MVP` 评估所需的体积基线
 - 输入：`docs/iterations/iteration-002.md`、训练目录 `outputs/iteration-001/train/unnamed/splatfacto/2026-03-18_230630`
-- 输出：`outputs/iteration-002/export-default/splat.ply`、`outputs/iteration-002/export-rgb/splat.ply`
-- 验证方式：运行 `ns-export gaussian-splat` 的默认导出与 `rgb` 对照导出，记录高斯数量与产物体积
-- 结果：默认 `sh_coeffs` 导出约 `1.10 GiB`，`rgb` 导出约 `267 MiB`；导出共过滤 `66317` 个低 opacity 高斯，最终落地 `4752215 / 4818532` 个高斯
-- 问题：`ns-export` 在当前环境下也需要 `TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1`；即使切到 `rgb`，单文件资产仍偏重，不适合直接作为 `Web MVP` 首屏完整场景
-- 下一步：补测 `rgb` 导出的传输压缩体积与 viewer 兼容性，并为路线 A / B / C 补齐验证方式、风险和停止条件
+- 输出：`outputs/iteration-002/export-default/splat.ply`、`outputs/iteration-002/export-rgb/splat.ply`、`outputs/iteration-002/transfer/splat.rgb.ply.gz`、`outputs/iteration-002/transfer/splat.rgb.ply.zst`
+- 验证方式：运行 `ns-export gaussian-splat` 的默认导出与 `rgb` 对照导出，并对 `rgb` 产物继续做 `gzip -9` / `zstd -19` 压缩，记录高斯数量与产物体积
+- 结果：默认 `sh_coeffs` 导出约 `1.10 GiB`，`rgb` 导出约 `267 MiB`；`rgb + gzip -9` 约 `206.61 MiB`，`rgb + zstd -19` 约 `201.41 MiB`；导出共过滤 `66317` 个低 opacity 高斯，最终落地 `4752215 / 4818532` 个高斯
+- 问题：`ns-export` 在当前环境下也需要 `TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1`；即使切到 `rgb` 并叠加传输压缩，资产仍处于 `200 MiB` 量级，不适合直接作为 `Web MVP` 首屏完整场景
+- 下一步：确认目标 viewer 的格式兼容性，并开始更高收益的减重实验，例如裁切、剪枝和双阶段加载
 
 ## 下一步建议
 
@@ -100,6 +101,6 @@
 
 当前更小的下一步可拆成：
 
-- 测量 `outputs/iteration-002/export-rgb/splat.ply` 的压缩后体积，并确认目标 viewer 是否支持对应加载方式
+- 确认目标 viewer 是否支持当前 `PLY` / 压缩传输方式
 - 列出现有 `3DGS` 路线下的减重手段：裁切、剪枝、简化颜色表示、分层加载
 - 为路线 A / B / C 补一版带验证方式和停止条件的调研卡
