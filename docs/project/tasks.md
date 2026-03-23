@@ -122,4 +122,5 @@
 - `docs/iterations/iteration-003-algorithm-screening.md` 已创建，并在“允许重训”的前提下将当前优先级重排为：`Scaffold-GS -> Octree-GS -> CityGaussian` 为训练主线，`LightGaussian / 2DGS / Mip-Splatting` 为第二层优化分支
 - `docs/iterations/iteration-003-access-check.md` 已创建；当前接入核查结论已重排为：结构化 `GS` 的最小入口优先看 `Scaffold-GS`，其次是 `Octree-GS`，`LightGaussian` 后移为交付压缩候选
 - `docs/iterations/iteration-003-scaffoldgs-entry.md` 已创建；当前核查结论为：若水广场现有 `processed/images + colmap/sparse/0` 已足够进入 `Scaffold-GS` 最小重训准备阶段，主要只差一层 staging 目录
-- 当前最小下一步已收敛为：为 `Scaffold-GS` 建立 staging 场景目录，并记录第一轮真实训练命令
+- 已新增 `scripts/prepare_scaffoldgs_stage.sh` 与 `scripts/run_scaffoldgs_train.sh`，并完成一次 mock 干跑验证
+- 当前最小下一步已收敛为：在真实训练机器上执行 `scripts/run_scaffoldgs_train.sh --scaffold-dir /path/to/Scaffold-GS --execute`，拿到第一轮真实训练结果
