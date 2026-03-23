@@ -150,6 +150,7 @@
 - 当前算法筛选已收敛出三个紧接着要回答的问题：`LightGaussian` 能否衔接现有结果、哪条大场景结构化 `GS` 路线对自定义 `COLMAP` 场景接入门槛最低、`2DGS / Mip-Splatting` 是否更适合作为第二阶段质量增强分支
 - 当前接入核查已经得到新的优先级结论：在“允许重训”的前提下，结构化 `GS` 的最小入口优先是 `Scaffold-GS`，其次是 `Octree-GS`，`CityGaussian` 作为更重的后续主线候选
 - 本地 checkpoint 与导出 `PLY` 的进一步核查已坐实：当前 `splatfacto` 结果在参数语义上接近 `3D-GS`，但封装结构属于 `nerfstudio` 生态；因此 `LightGaussian` 仍值得保留，但应后移为训练路线收敛后的交付压缩候选，而不是当前第一条真实实验主线
+- 当前对 `Scaffold-GS` 的最小入口核查已经完成：若水广场现有 `outputs/iteration-001/processed/images` 与 `outputs/iteration-001/processed/colmap/sparse/0` 已满足其自定义场景核心数据要求；当前主要缺口不是数据本身，而是 staging 目录层级与首轮训练命令落地
 - 未经整理直接全量训练不是当前推荐下一步；如果沿用当前 `COLMAP exhaustive matching` 思路，`1600-1637` 张会把图像对数量抬到约 `1279200-1339066` 对，约为当前 `180` 张实验的 `79x-83x`
 - 若要扩量，应优先走结构化扩容，而不是一次性全量灌入：先做 `300-600` 张级别的分组、连续段或加 `mask` 实验，再决定是否值得上更大规模
 
