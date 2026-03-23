@@ -249,6 +249,36 @@
         }
       };
 
+      const scaleOptions = {
+        "6": {
+          label: "6x，保守放大",
+          value: 6
+        },
+        "10": {
+          label: "10x，默认推荐",
+          value: 10
+        },
+        "14": {
+          label: "14x，更偏近景交互",
+          value: 14
+        }
+      };
+
+      const scalePicker = document.createElement("div");
+      scalePicker.className = "asset-picker";
+      scalePicker.innerHTML = `
+        <label for="scale-select">
+          场景 scale
+          <select id="scale-select">
+            <option value="6">6x，保守放大</option>
+            <option value="10" selected>10x，默认推荐</option>
+            <option value="14">14x，更偏近景交互</option>
+          </select>
+        </label>
+      `;
+      document.querySelector(".asset-picker").after(scalePicker);
+      const scaleSelect = document.getElementById("scale-select");
+
       let viewer;
 
       const setStatus = (text, isError = false) => {
@@ -258,8 +288,9 @@
 
       const updateAssetMeta = () => {
         const asset = assets[assetSelect.value];
+        const scale = scaleOptions[scaleSelect.value];
         assetPathEl.innerHTML = `<strong>输入资产</strong> <code>${asset.path}</code>`;
-        assetSizeEl.innerHTML = `<strong>体积</strong> <code>${asset.size}</code>`;
+        assetSizeEl.innerHTML = `<strong>体积</strong> <code>${asset.size}</code> · <strong>scale</strong> <code>${scale.label}</code>`;
       };
 
       const buildViewer = () => {
@@ -267,7 +298,7 @@
           rootElement: viewerRoot,
           selfDrivenMode: true,
           cameraUp: [0, 0, 1],
-          initialCameraPosition: [0, -18, 7],
+          initialCameraPosition: [0, -24, 10],
           initialCameraLookAt: [0, 0, 1.2],
           sharedMemoryForWorkers: false,
           gpuAcceleratedSort: false
@@ -276,15 +307,19 @@
 
       updateAssetMeta();
       assetSelect.addEventListener("change", updateAssetMeta);
+      scaleSelect.addEventListener("change", updateAssetMeta);
 
       buildViewer();
 
       loadBtn.addEventListener("click", async () => {
         const asset = assets[assetSelect.value];
+        const scale = scaleOptions[scaleSelect.value];
         loadBtn.disabled = true;
         resetBtn.disabled = false;
         setStatus(
-          `开始加载：${asset.label}\n如果浏览器、网络或内存扛不住，这一步会直接暴露问题。`
+          `开始加载：${asset.label}
+场景 scale：${scale.label}
+如果浏览器、网络或内存扛不住，这一步会直接暴露问题。`
         );
 
         try {
@@ -292,11 +327,14 @@
             progressiveLoad: true,
             showLoadingUI: true,
             splatAlphaRemovalThreshold: 5,
-            format: GaussianSplats3D.SceneFormat.Ply
+            format: GaussianSplats3D.SceneFormat.Ply,
+            scale: [scale.value, scale.value, scale.value]
           });
           viewer.start();
           setStatus(
-            `场景已交给 GaussianSplats3D：${asset.label}\n下一步需要人工观察首屏等待、底部噪声变化、交互流畅度和内存占用。`
+            `场景已交给 GaussianSplats3D：${asset.label}
+当前 scale：${scale.label}
+下一步需要人工观察首屏等待、底部噪声变化、交互流畅度和内存占用。`
           );
         } catch (error) {
           console.error(error);

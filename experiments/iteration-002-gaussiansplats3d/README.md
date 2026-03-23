@@ -30,6 +30,8 @@ http://127.0.0.1:8000/experiments/iteration-002-gaussiansplats3d/
   - `../../outputs/iteration-002/crop-zmin-p005/splat.ply`
   - `../../outputs/iteration-002/crop-p05-p995/splat.ply`
 - 加载模式：`progressiveLoad = true`
+- 默认场景 scale：`10x`
+- 试页可切换 scale：`6x / 10x / 14x`
 - 约束：当前仍然是原始 `PLY` 直读，不是 `ksplat`
 
 ## 观察项
@@ -38,6 +40,8 @@ http://127.0.0.1:8000/experiments/iteration-002-gaussiansplats3d/
 - 页面是否能稳定开始显示 splats
 - 相机操作时是否出现明显卡顿
 - 浏览器是否出现明显内存或标签页崩溃问题
+- 不同 scale 下，是否仍需要长时间手动缩放才能进入舒服视角
+- 哪个 scale 的交互手感最好
 - 底部噪声高斯在 `z` 裁切后是否明显减少
 - 三轴 box 裁切是否会误伤主体结构
 - 当前 `267 MiB` 级别原始 `PLY` 是否已经超出这条路线的可承受范围
