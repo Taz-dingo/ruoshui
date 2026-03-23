@@ -123,4 +123,5 @@
 - `docs/iterations/iteration-003-access-check.md` 已创建；当前接入核查结论已重排为：结构化 `GS` 的最小入口优先看 `Scaffold-GS`，其次是 `Octree-GS`，`LightGaussian` 后移为交付压缩候选
 - `docs/iterations/iteration-003-scaffoldgs-entry.md` 已创建；当前核查结论为：若水广场现有 `processed/images + colmap/sparse/0` 已足够进入 `Scaffold-GS` 最小重训准备阶段，主要只差一层 staging 目录
 - 已新增 `scripts/prepare_scaffoldgs_stage.sh` 与 `scripts/run_scaffoldgs_train.sh`，并完成一次 mock 干跑验证
-- 当前最小下一步已收敛为：在真实训练机器上执行 `scripts/run_scaffoldgs_train.sh --scaffold-dir /path/to/Scaffold-GS --execute`，拿到第一轮真实训练结果
+- 已在本机下载完整源码压缩包：`/tmp/scaffoldgs-download/scaffoldgs.zip`；当前按停机要求停在“未解压、未安装依赖、未启动真实训练”
+- 当前最小下一步已收敛为：从 `/tmp/scaffoldgs-download/scaffoldgs.zip` 解压出一个干净的 `Scaffold-GS` 源码目录，安装依赖后执行 `scripts/run_scaffoldgs_train.sh --scaffold-dir /path/to/Scaffold-GS --execute`

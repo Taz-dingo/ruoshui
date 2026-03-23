@@ -90,6 +90,8 @@ third_party/Scaffold-GS/data/ruoshui/iteration001/
 - `outputs/iteration-003/scaffoldgs-stage/ruoshui/iteration001/images`
 - `outputs/iteration-003/scaffoldgs-stage/ruoshui/iteration001/sparse/0`
 - 并已用 mock `Scaffold-GS` 目录验证：`run_scaffoldgs_train.sh` 可正确创建 `data/ruoshui/iteration001` 软链接并输出 baseline 训练命令
+- 已在本机下载完整源码压缩包：`/tmp/scaffoldgs-download/scaffoldgs.zip`
+- 已验证该压缩包完整可解压，但当前按停机要求停在“未解压、未安装依赖、未启动真实训练”
 
 ## 最小训练入口
 
@@ -145,6 +147,12 @@ bash ./train.sh -d ruoshui/iteration001 -l baseline --gpu 0 --voxel_size 0.001 -
 1. 已落一个 `Scaffold-GS` staging 脚本并完成一次实际 staging
 2. 下一步是在真实训练机器上执行 `scripts/run_scaffoldgs_train.sh --scaffold-dir /path/to/Scaffold-GS --execute`
 3. 跑第一轮 `baseline` 命令，再记录真实显存、耗时和主观结果
+
+## 本次停点
+
+- 可直接复用的源码包位置：`/tmp/scaffoldgs-download/scaffoldgs.zip`
+- 当前仓库存在未完成尝试留下的本地目录：`experiments/Scaffold-GS/` 与 `.venv-scaffoldgs/`
+- 下次开始时，优先使用已下载的 zip 解压到一个干净目录，再决定是否复用或清理上述未完成目录
 
 ## 参考来源
 
