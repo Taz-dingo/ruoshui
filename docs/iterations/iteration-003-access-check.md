@@ -127,26 +127,26 @@
 
 ## 当前排序
 
-如果按“尽快得到对若水广场有价值的最小实验入口”排序：
+如果按“接受重训前提下，尽快得到对若水广场有价值的最小实验入口”排序：
 
-1. `LightGaussian`
-2. `Scaffold-GS`
-3. `Octree-GS`
-4. `CityGaussian`
+1. `Scaffold-GS`
+2. `Octree-GS`
+3. `CityGaussian`
+4. `LightGaussian`
 
 说明：
 
-- `LightGaussian` 排第一，是因为它最可能在不重训的前提下直接回应交付体积问题
-- `Scaffold-GS` 排第二，是因为它最像“最容易接上现有 `COLMAP` 数据的结构化 `GS`”
-- `Octree-GS` 紧随其后，因为它对 `LOD` 与大场景渲染非常相关，但参数复杂度略高
+- `Scaffold-GS` 排第一，是因为它最像“最容易接上现有 `COLMAP` 数据的结构化 `GS`”
+- `Octree-GS` 紧随其后，因为它对 `LOD` 与大场景渲染非常相关，且比 `CityGaussian` 更适合第二个实验入口
 - `CityGaussian` 价值很高，但更适合在确定要进入更重的大场景训练流程后投入
+- `LightGaussian` 降到第四，不是因为它不重要，而是因为在接受重训后，它更适合作为训练路线收敛后的交付压缩层
 
 ## 当前最终判断
 
 ### `LightGaussian`
 
 - 值得继续推进
-- 但当前状态应定义为“需要桥接”，而不是“可直接试跑”
+- 但当前状态应定义为“后续交付压缩候选”，而不是当前第一条真实实验主线
 
 ### `Scaffold-GS`
 
@@ -160,9 +160,9 @@
 
 ## 下一步建议
 
-1. 先做 `LightGaussian` 输入格式核查
-2. 再做 `Scaffold-GS` 最小训练入口核查
-3. 如果 `Scaffold-GS` 入口可控，再判断是否还需要并行核查 `Octree-GS`
+1. 先做 `Scaffold-GS` 最小训练入口核查
+2. 再做 `Octree-GS` 的 `LOD` 训练入口核查
+3. `LightGaussian` 暂时后移，等训练主线收敛后再回来看压缩交付层
 
 ## 参考来源
 

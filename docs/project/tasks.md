@@ -119,7 +119,6 @@
 最新进展：
 
 - `docs/iterations/iteration-003.md` 已创建，并已补入算法路线筛选轴：`2DGS`、大场景 `GS`、压缩型 `GS`
-- `docs/iterations/iteration-003-algorithm-screening.md` 已创建，并将当前优先级收敛为：大场景结构化 `GS` / 压缩型 `GS` 优先，`2DGS / Mip-Splatting` 次之
-- `docs/iterations/iteration-003-access-check.md` 已创建；当前接入核查结论为：`LightGaussian` 最值得优先核查输入兼容性，结构化 `GS` 的最小入口优先看 `Scaffold-GS`，其次是 `Octree-GS`
-- 当前对 `LightGaussian` 的判断已进一步收敛为：值得继续推进，但需要桥接，不能直接把当前 `splatfacto` checkpoint 当成官方 `3D-GS` checkpoint 试跑
-- 当前最小下一步已收敛为：继续核查 `LightGaussian` 期望的输入目录与字段定义，判断是否存在 `splatfacto -> official 3D-GS` 的最小转换层
+- `docs/iterations/iteration-003-algorithm-screening.md` 已创建，并在“允许重训”的前提下将当前优先级重排为：`Scaffold-GS -> Octree-GS -> CityGaussian` 为训练主线，`LightGaussian / 2DGS / Mip-Splatting` 为第二层优化分支
+- `docs/iterations/iteration-003-access-check.md` 已创建；当前接入核查结论已重排为：结构化 `GS` 的最小入口优先看 `Scaffold-GS`，其次是 `Octree-GS`，`LightGaussian` 后移为交付压缩候选
+- 当前最小下一步已收敛为：先核查 `Scaffold-GS` 的最小训练入口和关键配置，再决定是否紧接着跟进 `Octree-GS`
