@@ -80,20 +80,22 @@ third_party/Scaffold-GS/data/ruoshui/iteration001/
 - 不会破坏当前 `Iteration 001` 的原始实验产物
 - 后续切到别的结构化 `GS` 路线时也容易复用
 
+当前仓库已落地的 staging 脚本：
+
+- `scripts/prepare_scaffoldgs_stage.sh`
+
+已实际执行并生成：
+
+- `outputs/iteration-003/scaffoldgs-stage/ruoshui/iteration001/images`
+- `outputs/iteration-003/scaffoldgs-stage/ruoshui/iteration001/sparse/0`
+
 ## 最小训练入口
 
 基于官方脚本，若水广场最小可执行入口可收敛为：
 
 ```bash
-cd third_party/Scaffold-GS
-bash ./train.sh \
-  -d ruoshui/iteration001 \
-  -l baseline \
-  --gpu 0 \
-  --voxel_size 0.001 \
-  --update_init_factor 16 \
-  --appearance_dim 0 \
-  --ratio 1
+cd /path/to/Scaffold-GS
+bash ./train.sh -d ruoshui/iteration001 -l baseline --gpu 0 --voxel_size 0.001 --update_init_factor 16 --appearance_dim 0 --ratio 1
 ```
 
 说明：
@@ -101,6 +103,7 @@ bash ./train.sh \
 - `ruoshui/iteration001` 对应 `data/ruoshui/iteration001`
 - `voxel_size=0.001`、`update_init_factor=16`、`appearance_dim=0`、`ratio=1` 来自官方 `single_train.sh` 默认示例
 - 这些值现在更适合作为“第一轮能跑起来”的起点，而不是已经调优过的最终配置
+- 若使用当前仓库 staging 结果，只需把 `outputs/iteration-003/scaffoldgs-stage/ruoshui/iteration001` 映射或链接到 `Scaffold-GS/data/ruoshui/iteration001`
 
 ## 当前最小风险
 
@@ -136,9 +139,9 @@ bash ./train.sh \
 
 ## 下一步建议
 
-1. 落一个 `Scaffold-GS` staging 目录方案
-2. 记录第一轮实际训练命令
-3. 在真实机器上先跑一轮最小实验，再看是否继续跟进 `Octree-GS`
+1. 已落一个 `Scaffold-GS` staging 脚本并完成一次实际 staging
+2. 下一步是在真实训练机器上把该 staging 场景接到 `Scaffold-GS/data/ruoshui/iteration001`
+3. 跑第一轮 `baseline` 命令，再记录真实显存、耗时和主观结果
 
 ## 参考来源
 
