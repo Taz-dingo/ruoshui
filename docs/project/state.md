@@ -148,6 +148,7 @@
 - 下一 session 应优先先做算法路线筛选，再从 `GS` 模型侧解决这些问题，例如更精确的校园区域裁切、per-image campus mask、五向/连续段重组或更小规模复训实验
 - 算法筛选至少覆盖三类方向：`2DGS / Mip-Splatting` 一类的几何与伪影优化路线、`Scaffold-GS / Octree-GS / CityGaussian / VastGaussian` 一类的大场景结构化路线、以及 `LightGaussian` 一类的压缩交付路线
 - 当前算法筛选已收敛出三个紧接着要回答的问题：`LightGaussian` 能否衔接现有结果、哪条大场景结构化 `GS` 路线对自定义 `COLMAP` 场景接入门槛最低、`2DGS / Mip-Splatting` 是否更适合作为第二阶段质量增强分支
+- 当前接入核查已经得到一版初步结论：`LightGaussian` 更像“现有结果后的压缩链路”，但需先确认与 `nerfstudio splatfacto` 输出的格式兼容性；结构化 `GS` 中更适合作为最小入口的优先是 `Scaffold-GS`，其次是 `Octree-GS`
 - 未经整理直接全量训练不是当前推荐下一步；如果沿用当前 `COLMAP exhaustive matching` 思路，`1600-1637` 张会把图像对数量抬到约 `1279200-1339066` 对，约为当前 `180` 张实验的 `79x-83x`
 - 若要扩量，应优先走结构化扩容，而不是一次性全量灌入：先做 `300-600` 张级别的分组、连续段或加 `mask` 实验，再决定是否值得上更大规模
 
