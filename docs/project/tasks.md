@@ -53,6 +53,9 @@
 - PlayCanvas `splat-transform` 虽声明支持 `.ply`，但对当前 Nerfstudio 导出的 `export-rgb/splat.ply` 实测报 `Unsupported data`
 - 当前更现实的首个 Web 原型候选是 `GaussianSplats3D` 的 `PLY / ksplat` 路线，而不是先押注 PlayCanvas `compressed.ply / sog`
 - 已新增 `GaussianSplats3D` 最小试页：`experiments/iteration-002-gaussiansplats3d/index.html`
+- 用户已实测：原始 `rgb PLY` 在浏览器里交互流畅，但底部噪声高斯明显，整体体积范围远大于有效区域
+- 已新增 `scripts/gaussian_ply_tools.py`，并产出 `export-rgb-summary.json`、`crop-zmin-p005`、`crop-p05-p995`
+- 当前主要脏区不是“很多普通离群点”，而是“少量极大尺度离群高斯”；仅裁掉 `z` 轴最低 `0.5%` 高斯，就能去掉几乎全部底部尺度体积代理
 - 现阶段不建议从 `180` 张直接跳到 `1600+` 张全量训练；当前主要风险已转向交付体积，而不是先赌“更多图一定更好”
 - 若沿用当前 `COLMAP exhaustive matching` 思路，图像对数量会从 `180` 张时的 `16110` 对抬到 `1600` 张时的 `1279200` 对，或 `1637` 张时的 `1339066` 对，约为当前的 `79x-83x`
 - 若要扩量，优先做 `300-600` 张的结构化扩容实验，而不是直接全量灌入
@@ -85,9 +88,9 @@
 - 输入：`docs/iterations/iteration-002.md`、训练目录 `outputs/iteration-001/train/unnamed/splatfacto/2026-03-18_230630`
 - 输出：`outputs/iteration-002/export-default/splat.ply`、`outputs/iteration-002/export-rgb/splat.ply`、`outputs/iteration-002/transfer/splat.rgb.ply.gz`、`outputs/iteration-002/transfer/splat.rgb.ply.zst`
 - 验证方式：运行 `ns-export gaussian-splat` 的默认导出与 `rgb` 对照导出，并对 `rgb` 产物继续做 `gzip -9` / `zstd -19` 压缩；再用 PlayCanvas `splat-transform` 与官方 viewer 文档做首轮兼容性核查
-- 结果：默认 `sh_coeffs` 导出约 `1.10 GiB`，`rgb` 导出约 `267 MiB`；`rgb + gzip -9` 约 `206.61 MiB`，`rgb + zstd -19` 约 `201.41 MiB`；PlayCanvas `splat-transform` 对当前 Nerfstudio `PLY` 实测报 `Unsupported data`；已补一个 `GaussianSplats3D` 最小试页并验证静态访问路径成立
-- 问题：`ns-export` 在当前环境下也需要 `TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1`；即使切到 `rgb` 并叠加传输压缩，资产仍处于 `200 MiB` 量级，不适合直接作为 `Web MVP` 首屏完整场景；同时 PlayCanvas 路线对当前 `PLY schema` 不能假设直接兼容；当前仍缺真实浏览器加载观察
-- 下一步：打开 `GaussianSplats3D` 试页，记录首屏等待、内存和交互情况，再决定是否继续投入 `PLY -> ksplat` 或 PlayCanvas 格式归一化
+- 结果：默认 `sh_coeffs` 导出约 `1.10 GiB`，`rgb` 导出约 `267 MiB`；`rgb + gzip -9` 约 `206.61 MiB`，`rgb + zstd -19` 约 `201.41 MiB`；PlayCanvas `splat-transform` 对当前 Nerfstudio `PLY` 实测报 `Unsupported data`；已补一个 `GaussianSplats3D` 最小试页并验证静态访问路径成立；用户已实测原始 `rgb PLY` 可流畅交互
+- 问题：`ns-export` 在当前环境下也需要 `TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1`；即使切到 `rgb` 并叠加传输压缩，资产仍处于 `200 MiB` 量级，不适合直接作为 `Web MVP` 首屏完整场景；同时底部大尺度离群高斯会把场景体积范围拉得远大于有效区域
+- 下一步：在试页中对比原始、`z` 裁切和 box 裁切三版资产，确认底部噪声是否明显改善，再决定是否继续投入 `PLY -> ksplat` 或更精确的校园区域裁切
 
 ## 下一步建议
 
@@ -104,7 +107,7 @@
 
 当前更小的下一步可拆成：
 
-- 做一个基于 `GaussianSplats3D` 的最小 `PLY` viewer 原型
-- 评估是否值得继续追 `PLY -> ksplat` 转换，还是直接先做原始 `PLY` 的加载体验判断
+- 用现有试页对比原始 `rgb PLY`、`crop-zmin-p005` 和 `crop-p05-p995`
+- 评估是否值得继续追 `PLY -> ksplat` 转换，还是先沿着空间裁切 / 剪枝继续清理大尺度离群高斯
 - 列出现有 `3DGS` 路线下的减重手段：裁切、剪枝、简化颜色表示、分层加载
 - 为路线 A / B / C 补一版带验证方式和停止条件的调研卡

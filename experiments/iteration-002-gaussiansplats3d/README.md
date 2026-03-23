@@ -1,6 +1,6 @@
 # Iteration 002 GaussianSplats3D Viewer Check
 
-这是一个隔离的最小试页，用来验证当前 `rgb PLY` 是否能作为 `GaussianSplats3D` 的直接输入进入浏览器原型。
+这是一个隔离的最小试页，用来验证当前 `rgb PLY` 以及两版裁切候选，是否能作为 `GaussianSplats3D` 的直接输入进入浏览器原型。
 
 ## 目标
 
@@ -25,7 +25,10 @@ http://127.0.0.1:8000/experiments/iteration-002-gaussiansplats3d/
 ## 当前试验设置
 
 - Viewer：`@mkkellogg/gaussian-splats-3d@0.4.7`
-- 输入资产：`../../outputs/iteration-002/export-rgb/splat.ply`
+- 输入资产：
+  - `../../outputs/iteration-002/export-rgb/splat.ply`
+  - `../../outputs/iteration-002/crop-zmin-p005/splat.ply`
+  - `../../outputs/iteration-002/crop-p05-p995/splat.ply`
 - 加载模式：`progressiveLoad = true`
 - 约束：当前仍然是原始 `PLY` 直读，不是 `ksplat`
 
@@ -35,6 +38,8 @@ http://127.0.0.1:8000/experiments/iteration-002-gaussiansplats3d/
 - 页面是否能稳定开始显示 splats
 - 相机操作时是否出现明显卡顿
 - 浏览器是否出现明显内存或标签页崩溃问题
+- 底部噪声高斯在 `z` 裁切后是否明显减少
+- 三轴 box 裁切是否会误伤主体结构
 - 当前 `267 MiB` 级别原始 `PLY` 是否已经超出这条路线的可承受范围
 
 ## 备注
