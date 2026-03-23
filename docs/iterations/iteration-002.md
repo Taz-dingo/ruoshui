@@ -101,8 +101,29 @@
 - 如果沿用当前 `exhaustive matching` 思路，图像对数量会从 `180` 张时的 `16110` 对上升到 `1600` 张时的 `1279200` 对，或 `1637` 张时的 `1339066` 对，处理成本约为当前的 `79x-83x`
 - 更合理的扩量方式应是先做结构化扩容，例如 `300-600` 张的分组或连续段实验，再决定是否值得进入更大规模训练
 
+## 最新 viewer 兼容性核查
+
+### 2026-03-23
+
+- 本地执行 `npx -y @playcanvas/splat-transform --help`，确认 `splat-transform v1.9.2` 的声明输入格式包含 `.ply / .compressed.ply / .sog`，输出格式包含 `.compressed.ply / .sog / .html`
+- 本地执行 `npx -y @playcanvas/splat-transform -w outputs/iteration-002/export-rgb/splat.ply outputs/iteration-002/playcanvas/splat.compressed.ply`，实际结果为 `Unsupported data in file`
+- 当前 `export-rgb/splat.ply` 的头部字段为 Nerfstudio 风格：`x/y/z`、`red/green/blue`、`opacity`、`scale_0..2`、`rot_0..3`
+- 这说明 PlayCanvas 路线虽然在文档层面支持 `.ply`，但对当前 Nerfstudio 导出的 `PLY schema` 不能假设直接兼容
+- 官方 `GaussianSplats3D` 文档明确声明 viewer 可直接加载 `.ply / .splat / .ksplat`，并建议将 `.ply` 转成 `.ksplat` 以获得更快加载和更好的内部数据布局
+- 同一份官方文档也明确提醒：该仓库当前已不再活跃维护，并推荐关注 `Spark` 作为更活跃的替代路线
+- 已新增最小试页：`experiments/iteration-002-gaussiansplats3d/index.html`
+- 已本地验证该试页和 `../../outputs/iteration-002/export-rgb/splat.ply` 在同源静态服务下均可返回 `HTTP 200`
+
+## 当前 viewer 判断
+
+- 如果目标是尽快验证“当前 Nerfstudio 导出能不能进入 Web 原型”，短期更现实的候选是 `GaussianSplats3D` 一类的 `PLY / ksplat` 路线，而不是先押注 PlayCanvas 的 `compressed.ply / sog`
+- 如果后续仍想走 PlayCanvas 路线，下一步不是继续压缩当前 `PLY`，而是先解决 schema 兼容问题，例如找到可靠的格式归一化或替代导出路径
+- `mkkellogg` 路线的工程风险在于上游不活跃、CPU splat sort 和大场景性能限制；PlayCanvas 路线的工程风险在于当前输入格式并不直接兼容
+- 因此当前最小可执行下一步，应优先做一个基于 `GaussianSplats3D` 的最小 viewer 原型，验证当前 `rgb PLY` 的真实加载与浏览表现
+- 当前仓库已经具备这个最小原型的静态入口；接下来需要真实打开浏览器，记录首屏等待、内存占用和可操作性
+
 ## 本轮之后的最小下一步
 
-- 确认目标 `Web viewer` 是否接受当前 `PLY` / 压缩传输方式，避免后续减重做在错误格式上
+- 基于 `GaussianSplats3D` 做一个最小 viewer 原型，验证当前 `rgb PLY` 的实际加载、首屏等待和可浏览性
 - 为路线 A / B / C 分别补充验证方式、输入产物和失败条件
-- 开始优先级更高的资产减重实验，例如校园核心区域裁切、剪枝或低配预览资产
+- 再决定是优先推进 `PLY -> ksplat` 转换，还是先做校园核心区域裁切 / 剪枝实验

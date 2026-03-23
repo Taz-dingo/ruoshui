@@ -55,6 +55,11 @@
 - 已确认 `ns-export` 在当前 `torch 2.10.0+cu128` / `nerfstudio 1.1.5` 环境下，同样需要显式导出 `TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1`
 - 已得到首轮真实交付体积基线：默认 `sh_coeffs` 导出约 `1.10 GiB`，`rgb` 导出约 `267 MiB`
 - 已完成 `rgb` 导出的首轮传输压缩测量：`gzip -9` 后约 `206.61 MiB`，`zstd -19` 后约 `201.41 MiB`
+- 已完成首轮 viewer 兼容性核查：PlayCanvas `splat-transform` 虽声明支持 `.ply`，但对当前 Nerfstudio 导出的 `export-rgb/splat.ply` 实测报 `Unsupported data`
+- 已确认 `export-rgb/splat.ply` 当前是 Nerfstudio 风格高斯 `PLY schema`：`xyz + rgb + opacity + scale + quaternion`
+- 已确认 `GaussianSplats3D` 官方文档声明支持直接加载 `.ply / .splat / .ksplat`，并建议将 `.ply` 转成 `.ksplat` 以获得更快加载
+- 已为 `GaussianSplats3D` 增加最小本地试页：`experiments/iteration-002-gaussiansplats3d/`
+- 已在本机验证试页与 `rgb PLY` 资产均可通过同源静态服务访问
 
 ## 当前已知素材状态
 
@@ -77,7 +82,9 @@
 - 当前主要阻塞已从“素材能不能成”切到“当前结果怎么交付”：训练 checkpoint `3.2 GB`、训练目录 `3.8 GB`，还不是 `Web` 可直接承受的资产形态
 - 当前首轮导出基线已经拿到，但默认 `sh_coeffs` 导出约 `1.10 GiB`，即使切到 `rgb` 导出也仍有约 `267 MiB`，离 `Web MVP` 直接加载仍有距离
 - 当前还已确认：对 `rgb` 二进制 `PLY` 做传输压缩，`gzip` / `zstd` 只能再压到约 `200 MiB` 出头，仍不足以把问题变成“可直接上线”
+- 当前 viewer 方向也已初步收敛：PlayCanvas 当前不应被假设为“直接吃 Nerfstudio `PLY`”，短期更现实的原型候选是 `GaussianSplats3D` 一类的 `PLY / ksplat` 路线
 - 现有结果的主观质量已经达到可接受范围，因此下一步不是继续证明“能不能重建”，而是证明“能不能被部署、加载和体验”
+- 当前下一步已从“文档层兼容性核查”推进到“最小浏览器入口已准备好，等待真实加载观察”
 - 关于“是否直接全量训练”的判断也已经明确：当前不建议从 `180` 张直接跳到 `1600+` 张全量训练
 
 这一步的目标不是前端展示，而是验证：
@@ -124,6 +131,8 @@
 - `Web` 交付判断不能再只看 checkpoint；必须同时观察默认 `sh_coeffs` 与 `rgb` 两种导出体积
 - 仅切换到 `rgb` 颜色表示即可把当前导出体积降低约 `76%`，但仍不足以直接作为 `Web MVP` 的完整首屏资产
 - 对当前二进制 `PLY` 而言，传输压缩只能提供中等幅度帮助；真正的主线仍是减少高斯数量、缩小场景范围或引入双阶段加载
+- “viewer 兼容性”不能只看文档支持的扩展名；同为 `.ply` 也可能因为高斯字段 schema 不同而无法直接互通
+- 当前最值得优先验证的原型路线是 `GaussianSplats3D` 的原始 `PLY` / `ksplat` 加载，再决定是否还要为 PlayCanvas 额外做格式归一化
 - 未经整理直接全量训练不是当前推荐下一步；如果沿用当前 `COLMAP exhaustive matching` 思路，`1600-1637` 张会把图像对数量抬到约 `1279200-1339066` 对，约为当前 `180` 张实验的 `79x-83x`
 - 若要扩量，应优先走结构化扩容，而不是一次性全量灌入：先做 `300-600` 张级别的分组、连续段或加 `mask` 实验，再决定是否值得上更大规模
 

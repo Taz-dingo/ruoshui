@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Iteration 002 GaussianSplats3D Viewer Check</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #06131a;
+        --panel: rgba(8, 25, 33, 0.82);
+        --border: rgba(160, 213, 226, 0.24);
+        --text: #eaf8fb;
+        --muted: #8eb8c2;
+        --accent: #76e0da;
+        --danger: #ff8d73;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "IBM Plex Sans", "Noto Sans SC", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top left, rgba(25, 88, 106, 0.45), transparent 30%),
+          radial-gradient(circle at bottom right, rgba(43, 93, 86, 0.35), transparent 28%),
+          linear-gradient(180deg, #08141b 0%, #050a0e 100%);
+      }
+
+      #app {
+        position: relative;
+        min-height: 100vh;
+        overflow: hidden;
+      }
+
+      #viewer {
+        position: absolute;
+        inset: 0;
+      }
+
+      .panel {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        width: min(420px, calc(100vw - 40px));
+        padding: 18px 18px 16px;
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        background: var(--panel);
+        backdrop-filter: blur(16px);
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+        z-index: 10;
+      }
+
+      .eyebrow {
+        margin: 0 0 8px;
+        font-size: 12px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+
+      h1 {
+        margin: 0 0 10px;
+        font-size: 28px;
+        line-height: 1.1;
+      }
+
+      p {
+        margin: 0 0 12px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .meta {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+        margin: 14px 0 16px;
+        padding: 12px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .meta strong {
+        color: var(--text);
+      }
+
+      .actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 14px;
+      }
+
+      button {
+        appearance: none;
+        border: 0;
+        border-radius: 999px;
+        padding: 12px 18px;
+        font: inherit;
+        font-weight: 600;
+        color: #06242a;
+        background: var(--accent);
+        cursor: pointer;
+      }
+
+      button.secondary {
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      button:disabled {
+        opacity: 0.55;
+        cursor: wait;
+      }
+
+      #status {
+        margin: 0;
+        padding: 12px 14px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text);
+        white-space: pre-wrap;
+      }
+
+      #status.error {
+        color: #ffd4cb;
+        background: rgba(255, 141, 115, 0.12);
+      }
+
+      .tips {
+        margin-top: 14px;
+        font-size: 14px;
+      }
+
+      .tips code,
+      .meta code {
+        font-family: "IBM Plex Mono", "SFMono-Regular", monospace;
+        font-size: 0.92em;
+      }
+
+      @media (max-width: 720px) {
+        .panel {
+          top: auto;
+          bottom: 12px;
+          left: 12px;
+          right: 12px;
+          width: auto;
+        }
+
+        h1 {
+          font-size: 24px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main id="app">
+      <div id="viewer" aria-hidden="true"></div>
+      <section class="panel">
+        <p class="eyebrow">Iteration 002</p>
+        <h1>GaussianSplats3D Viewer Check</h1>
+        <p>
+          这个试页只验证一件事：当前 <code>rgb PLY</code> 能否作为
+          <code>GaussianSplats3D</code> 的原始输入进入浏览器原型。
+        </p>
+        <div class="meta">
+          <div><strong>输入资产</strong> <code>../../outputs/iteration-002/export-rgb/splat.ply</code></div>
+          <div><strong>体积</strong> 约 <code>267 MiB</code></div>
+          <div><strong>模式</strong> 原始 <code>PLY</code> 直读，<code>progressiveLoad = true</code></div>
+        </div>
+        <div class="actions">
+          <button id="load-btn" type="button">加载场景</button>
+          <button id="reset-btn" class="secondary" type="button" disabled>重置页面</button>
+        </div>
+        <pre id="status">等待开始加载。</pre>
+        <p class="tips">
+          运行方式：在仓库根目录启动静态服务器，例如
+          <code>python3 -m http.server 8000</code>，然后打开
+          <code>/experiments/iteration-002-gaussiansplats3d/</code>。
+        </p>
+      </section>
+    </main>
+
+    <script type="module">
+      import * as GaussianSplats3D from "https://cdn.jsdelivr.net/npm/@mkkellogg/gaussian-splats-3d@0.4.7/+esm";
+
+      const assetPath = "../../outputs/iteration-002/export-rgb/splat.ply";
+      const statusEl = document.getElementById("status");
+      const loadBtn = document.getElementById("load-btn");
+      const resetBtn = document.getElementById("reset-btn");
+      const viewerRoot = document.getElementById("viewer");
+
+      let viewer;
+
+      const setStatus = (text, isError = false) => {
+        statusEl.textContent = text;
+        statusEl.classList.toggle("error", isError);
+      };
+
+      const buildViewer = () => {
+        viewer = new GaussianSplats3D.Viewer({
+          rootElement: viewerRoot,
+          selfDrivenMode: true,
+          cameraUp: [0, 0, 1],
+          initialCameraPosition: [0, -18, 7],
+          initialCameraLookAt: [0, 0, 1.2],
+          sharedMemoryForWorkers: false,
+          gpuAcceleratedSort: false
+        });
+      };
+
+      buildViewer();
+
+      loadBtn.addEventListener("click", async () => {
+        loadBtn.disabled = true;
+        resetBtn.disabled = false;
+        setStatus(
+          "开始加载原始 rgb PLY。\n如果浏览器、网络或内存扛不住，这一步会直接暴露问题。"
+        );
+
+        try {
+          await viewer.addSplatScene(assetPath, {
+            progressiveLoad: true,
+            showLoadingUI: true,
+            splatAlphaRemovalThreshold: 5,
+            format: GaussianSplats3D.SceneFormat.Ply
+          });
+          viewer.start();
+          setStatus(
+            "场景已交给 GaussianSplats3D。\n下一步需要人工观察首屏等待、交互流畅度和内存占用。"
+          );
+        } catch (error) {
+          console.error(error);
+          setStatus(`加载失败：${error instanceof Error ? error.message : String(error)}`, true);
+          loadBtn.disabled = false;
+        }
+      });
+
+      resetBtn.addEventListener("click", () => {
+        window.location.reload();
+      });
+    </script>
+  </body>
+</html>
