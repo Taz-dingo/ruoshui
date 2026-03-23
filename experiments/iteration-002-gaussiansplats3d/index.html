@@ -194,8 +194,8 @@
         </p>
         <div class="meta">
           <div><strong>模式</strong> 原始 <code>PLY</code> 直读，<code>progressiveLoad = true</code></div>
-          <div id="asset-path"><strong>输入资产</strong> <code>../../outputs/iteration-002/export-rgb/splat.ply</code></div>
-          <div id="asset-size"><strong>体积</strong> 约 <code>267 MiB</code></div>
+          <div id="asset-path"><strong>输入资产</strong> <code>../../outputs/iteration-002/crop-p05-p995/splat.ply</code></div>
+          <div id="asset-size"><strong>体积</strong> 约 <code>261 MiB</code> · <strong>scale</strong> <code>14x，更偏近景交互</code></div>
         </div>
         <div class="asset-picker">
           <label for="asset-select">
@@ -203,7 +203,7 @@
             <select id="asset-select">
               <option value="original">原始 rgb PLY，约 267 MiB</option>
               <option value="zcrop">只裁底部 z 尾部，约 266 MiB</option>
-              <option value="boxcrop">三轴 p0.5-p99.5 box，约 261 MiB</option>
+              <option value="boxcrop" selected>三轴 p0.5-p99.5 box，约 261 MiB</option>
             </select>
           </label>
         </div>
@@ -271,8 +271,8 @@
           场景 scale
           <select id="scale-select">
             <option value="6">6x，保守放大</option>
-            <option value="10" selected>10x，默认推荐</option>
-            <option value="14">14x，更偏近景交互</option>
+            <option value="10">10x</option>
+            <option value="14" selected>14x，默认推荐</option>
           </select>
         </label>
       `;

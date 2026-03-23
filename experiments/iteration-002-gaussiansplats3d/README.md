@@ -30,7 +30,7 @@ http://127.0.0.1:8000/experiments/iteration-002-gaussiansplats3d/
   - `../../outputs/iteration-002/crop-zmin-p005/splat.ply`
   - `../../outputs/iteration-002/crop-p05-p995/splat.ply`
 - 加载模式：`progressiveLoad = true`
-- 默认场景 scale：`10x`
+- 当前默认组合：`boxcrop + 14x`
 - 试页可切换 scale：`6x / 10x / 14x`
 - 约束：当前仍然是原始 `PLY` 直读，不是 `ksplat`
 
@@ -49,4 +49,5 @@ http://127.0.0.1:8000/experiments/iteration-002-gaussiansplats3d/
 ## 备注
 
 - 这是 `Stage 1.5` 的交付验证实验，不代表最终页面结构
+- 当前主观默认候选已收敛为：`boxcrop + 14x`
 - 如果这一步都无法稳定加载，后续主线应优先转向 `PLY -> ksplat`、裁切、剪枝或双阶段加载
