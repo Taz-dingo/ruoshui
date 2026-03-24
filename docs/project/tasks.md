@@ -17,7 +17,9 @@
 - [x] 输出当前场景的可交付体积基线
 - [x] 形成体积优化与渐进式加载调研计划
 - [x] 评估当前 `3DGS`、`2DGS`、大场景 `GS` 优化算法与双阶段加载方案的取舍
-- [ ] 完成 `Iteration 003` 的 `GS` 模型优化首个定向清理实验
+- [x] 完成 `Iteration 003` 的 `GS` 模型优化首个定向清理实验
+- [ ] 复看并确认 `z + max_scale` 联合清理是否应成为默认预览前置步骤
+- [ ] 设计 `per-image campus mask` 的最小样本方案
 
 ### P1
 
@@ -141,4 +143,7 @@
   - 结果目录约 `1021 MiB`
 - 已完成 `Scaffold-GS` 首轮结果的主观质量复核；当前结论是：工程入口已打通，但 baseline 在主结构稳定性、局部清晰度和整体指标上都明显落后于 `Iteration 001 splatfacto`
 - 因此 `Scaffold-GS` 当前应降为“带参数假设的备选路线”，而不是立即接管默认训练主线
-- 当前最小下一步应改为：围绕现有 `splatfacto` 结果设计首个定向清理实验，优先考虑更精确的空间裁切、per-image campus mask、素材重组或小规模复训
+- 已为 `scripts/gaussian_ply_tools.py` 增加 `max_scale` 汇总、`filter-cleanup` 与 `sweep-cleanup`
+- 已完成首轮定向清理扫描：`z + max_scale` 联合过滤能用 `0.2%-0.5%` 级别的删除比例显著收缩 bbox，但文件体积仍基本停留在 `267 MiB` 量级
+- 当前首个更平衡的清理候选是：`outputs/iteration-003/cleanup-scan/zp0.2-sp99.95/splat.ply`
+- 当前最小下一步应改为：先对该联合清理候选做一次 viewer 主观复看；若主体未伤，再转入 `per-image campus mask` 的最小样本方案

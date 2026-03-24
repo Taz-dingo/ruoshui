@@ -84,9 +84,81 @@ def load_vertices(path: Path) -> tuple[np.ndarray, bytes, list[str]]:
     return arr, header_bytes, header_lines
 
 
-def percentile_dict(values: np.ndarray, percentiles: list[float]) -> dict[str, float]:
+def percentile_values(values: np.ndarray, percentiles: list[float]) -> tuple[np.ndarray, dict[str, float]]:
     result = np.percentile(values.astype(np.float64), percentiles)
-    return {str(p): float(v) for p, v in zip(percentiles, result)}
+    return result, {str(p): float(v) for p, v in zip(percentiles, result)}
+
+
+def percentile_dict(values: np.ndarray, percentiles: list[float]) -> dict[str, float]:
+    _, summary = percentile_values(values, percentiles)
+    return summary
+
+
+def compute_max_scale(vertices: np.ndarray) -> np.ndarray | None:
+    names = vertices.dtype.names or ()
+    scale_fields = [name for name in ("scale_0", "scale_1", "scale_2") if name in names]
+    if not scale_fields:
+        return None
+    return np.maximum.reduce([vertices[name].astype(np.float64) for name in scale_fields])
+
+
+def compute_bbox(vertices: np.ndarray) -> dict[str, dict[str, float]]:
+    bbox = {}
+    for axis in ("x", "y", "z"):
+        axis_values = vertices[axis].astype(np.float64)
+        bbox[axis] = {
+            "min": float(axis_values.min()),
+            "max": float(axis_values.max()),
+            "extent": float(axis_values.max() - axis_values.min()),
+        }
+    return bbox
+
+
+def cleanup_mask(
+    vertices: np.ndarray,
+    *,
+    z_min: float | None = None,
+    max_scale_max: float | None = None,
+) -> np.ndarray:
+    mask = np.ones(vertices.shape[0], dtype=bool)
+    if z_min is not None:
+        mask &= vertices["z"] >= z_min
+    if max_scale_max is not None:
+        max_scale = compute_max_scale(vertices)
+        if max_scale is None:
+            raise ValueError("PLY vertex schema must contain scale_0/1/2 properties")
+        mask &= max_scale <= max_scale_max
+    return mask
+
+
+def cleanup_summary(
+    vertices: np.ndarray,
+    *,
+    mask: np.ndarray,
+    z_min: float | None,
+    max_scale_max: float | None,
+    z_min_percentile: float | None = None,
+    max_scale_percentile: float | None = None,
+) -> dict[str, object]:
+    filtered = np.asarray(vertices[mask])
+    summary: dict[str, object] = {
+        "original_count": int(vertices.shape[0]),
+        "kept_count": int(filtered.shape[0]),
+        "removed_count": int(vertices.shape[0] - filtered.shape[0]),
+        "kept_ratio": float(filtered.shape[0] / vertices.shape[0]),
+        "removed_ratio": float(1.0 - filtered.shape[0] / vertices.shape[0]),
+        "bounds": {
+            "z_min": z_min,
+            "max_scale_max": max_scale_max,
+        },
+        "percentiles": {
+            "z_min_percentile": z_min_percentile,
+            "max_scale_percentile": max_scale_percentile,
+        },
+    }
+    if filtered.shape[0]:
+        summary["bbox"] = compute_bbox(filtered)
+    return summary
 
 
 def summary_command(args: argparse.Namespace) -> int:
@@ -115,6 +187,13 @@ def summary_command(args: argparse.Namespace) -> int:
         summary["percentiles"]["opacity"] = percentile_dict(
             vertices["opacity"].astype(np.float64),
             [0, 1, 5, 10, 25, 50, 75, 90, 95, 99, 100],
+        )
+
+    max_scale = compute_max_scale(vertices)
+    if max_scale is not None:
+        summary["percentiles"]["max_scale"] = percentile_dict(
+            max_scale,
+            [0, 0.1, 0.5, 1, 2, 5, 10, 25, 50, 75, 90, 95, 98, 99, 99.5, 99.9, 99.95, 99.99, 100],
         )
 
     for lo, hi in ((0.1, 99.9), (0.5, 99.5), (1, 99), (2, 98), (5, 95)):
@@ -190,6 +269,97 @@ def filter_box_command(args: argparse.Namespace) -> int:
     return 0
 
 
+def filter_cleanup_command(args: argparse.Namespace) -> int:
+    input_path = Path(args.input)
+    output_path = Path(args.output)
+    vertices, _, header_lines = load_vertices(input_path)
+    if not {"x", "y", "z"}.issubset(vertices.dtype.names or ()):
+        raise ValueError("PLY vertex schema must contain x/y/z properties")
+
+    z_min = args.z_min
+    z_min_percentile = None
+    if args.z_min_percentile is not None:
+        z_min_percentile = args.z_min_percentile
+        z_min = float(np.percentile(vertices["z"].astype(np.float64), z_min_percentile))
+
+    max_scale_max = args.max_scale_max
+    max_scale_percentile = None
+    if args.max_scale_percentile is not None:
+        max_scale_percentile = args.max_scale_percentile
+        max_scale = compute_max_scale(vertices)
+        if max_scale is None:
+            raise ValueError("PLY vertex schema must contain scale_0/1/2 properties")
+        max_scale_max = float(np.percentile(max_scale, max_scale_percentile))
+
+    mask = cleanup_mask(vertices, z_min=z_min, max_scale_max=max_scale_max)
+    filtered = np.asarray(vertices[mask])
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with output_path.open("wb") as fh:
+        fh.write(rewrite_header_vertex_count(header_lines, filtered.shape[0]))
+        fh.write(filtered.tobytes())
+
+    summary = cleanup_summary(
+        vertices,
+        mask=mask,
+        z_min=z_min,
+        max_scale_max=max_scale_max,
+        z_min_percentile=z_min_percentile,
+        max_scale_percentile=max_scale_percentile,
+    )
+    summary["input"] = str(input_path)
+    summary["output"] = str(output_path)
+    if args.summary_json:
+        Path(args.summary_json).parent.mkdir(parents=True, exist_ok=True)
+        Path(args.summary_json).write_text(json.dumps(summary, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(json.dumps(summary, indent=2, ensure_ascii=False))
+    return 0
+
+
+def sweep_cleanup_command(args: argparse.Namespace) -> int:
+    vertices, _, _ = load_vertices(Path(args.input))
+    if not {"x", "y", "z"}.issubset(vertices.dtype.names or ()):
+        raise ValueError("PLY vertex schema must contain x/y/z properties")
+
+    z_percentiles = [float(item) for item in args.z_min_percentiles.split(",") if item.strip()]
+    scale_percentiles = [float(item) for item in args.max_scale_percentiles.split(",") if item.strip()]
+    z_thresholds, z_summary = percentile_values(vertices["z"].astype(np.float64), z_percentiles)
+    max_scale = compute_max_scale(vertices)
+    if max_scale is None:
+        raise ValueError("PLY vertex schema must contain scale_0/1/2 properties")
+    scale_thresholds, scale_summary = percentile_values(max_scale, scale_percentiles)
+
+    candidates = []
+    for z_p, z_min in zip(z_percentiles, z_thresholds):
+        for s_p, scale_max in zip(scale_percentiles, scale_thresholds):
+            mask = cleanup_mask(vertices, z_min=float(z_min), max_scale_max=float(scale_max))
+            candidate = cleanup_summary(
+                vertices,
+                mask=mask,
+                z_min=float(z_min),
+                max_scale_max=float(scale_max),
+                z_min_percentile=z_p,
+                max_scale_percentile=s_p,
+            )
+            candidate["id"] = f"zp{z_p}-sp{s_p}"
+            candidates.append(candidate)
+
+    candidates.sort(key=lambda item: (item["kept_ratio"], item["percentiles"]["z_min_percentile"], item["percentiles"]["max_scale_percentile"]))  # type: ignore[index]
+    payload = {
+        "input": args.input,
+        "vertex_count": int(vertices.shape[0]),
+        "z_percentiles": z_summary,
+        "max_scale_percentiles": scale_summary,
+        "candidates": candidates,
+    }
+    output = json.dumps(payload, indent=2, ensure_ascii=False)
+    if args.output:
+        output_path = Path(args.output)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(output + "\n", encoding="utf-8")
+    print(output)
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Analyze and crop Gaussian PLY files.")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -210,6 +380,37 @@ def build_parser() -> argparse.ArgumentParser:
     filter_box.add_argument("--z-max", type=float)
     filter_box.add_argument("--summary-json", help="Optional JSON summary path")
     filter_box.set_defaults(func=filter_box_command)
+
+    filter_cleanup = subparsers.add_parser(
+        "filter-cleanup",
+        help="Filter a Gaussian PLY by bottom-z threshold and/or max scale threshold.",
+    )
+    filter_cleanup.add_argument("input", help="Input PLY file")
+    filter_cleanup.add_argument("output", help="Output PLY file")
+    filter_cleanup.add_argument("--z-min", type=float)
+    filter_cleanup.add_argument("--z-min-percentile", type=float)
+    filter_cleanup.add_argument("--max-scale-max", type=float)
+    filter_cleanup.add_argument("--max-scale-percentile", type=float)
+    filter_cleanup.add_argument("--summary-json", help="Optional JSON summary path")
+    filter_cleanup.set_defaults(func=filter_cleanup_command)
+
+    sweep_cleanup = subparsers.add_parser(
+        "sweep-cleanup",
+        help="Scan cleanup candidates over z-min and max-scale percentiles.",
+    )
+    sweep_cleanup.add_argument("input", help="Input PLY file")
+    sweep_cleanup.add_argument(
+        "--z-min-percentiles",
+        default="0.1,0.2,0.5,1.0",
+        help="Comma-separated lower-z percentiles to test",
+    )
+    sweep_cleanup.add_argument(
+        "--max-scale-percentiles",
+        default="99.0,99.5,99.9,99.95,99.99",
+        help="Comma-separated upper max-scale percentiles to test",
+    )
+    sweep_cleanup.add_argument("--output", help="Optional JSON output path")
+    sweep_cleanup.set_defaults(func=sweep_cleanup_command)
 
     return parser
 
