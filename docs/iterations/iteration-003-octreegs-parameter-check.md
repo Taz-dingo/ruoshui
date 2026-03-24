@@ -202,3 +202,54 @@ extra_up=0.01
 1. 开始 `Octree-GS` 源码下载与环境落地
 2. 优先尝试复用当前已知可用的 CUDA 扩展编译经验，而不是先深挖调参
 3. 一旦环境打通，第一轮只跑一个最贴官方默认的 baseline
+
+## 2026-03-25 落地补记
+
+这一步已经从“值得不值得落环境”推进到了“本机是否能真实落地”。
+
+当前已确认：
+
+- 已下载源码包到 `/tmp/octreegs-download/octreegs.zip`
+- 已解压到干净目录：`experiments/octreegs-src-20260325/Octree-GS-main`
+- 其依赖族谱与 `Scaffold-GS` 高度接近，核心扩展仍是：
+  - `submodules/diff-gaussian-rasterization`
+  - `submodules/simple-knn`
+- `simple-knn` 在当前机器上同样需要补入 `<cfloat>` 以兼容 `CUDA 12.8`
+
+### 本机环境验证结果
+
+当前已直接复用：
+
+- `./.venv-iteration001`
+- `/usr/local/cuda/bin`
+
+并完成：
+
+- 安装 `colorama / einops / lpips / laspy / jaxtyping / wandb / opencv-python / ninja`
+- 用 `--no-build-isolation` 成功编译并安装：
+  - `submodules/diff-gaussian-rasterization`
+  - `submodules/simple-knn`
+- 成功通过最小 import 验证：
+  - `import diff_gaussian_rasterization`
+  - `import simple_knn`
+  - `import train`
+
+这意味着：
+
+- `Octree-GS` 当前已经不再停留在“纸面值得做”
+- 它在若水广场本机上已经具备进入真实 baseline 训练的环境前提
+
+### 当前判断更新
+
+原来的待答问题是：
+
+- `Octree-GS` 是否值得进入源码下载与环境落地
+
+现在这个问题已经可以回答为：
+
+- 值得，而且源码与环境落地已经完成到足以发起首轮 baseline 的程度
+
+当前剩下的更小下一步不再是“要不要装”，而是：
+
+- 是否补一个若水广场专用 launcher / staging 触发脚本
+- 然后直接启动首轮 `Octree-GS baseline`

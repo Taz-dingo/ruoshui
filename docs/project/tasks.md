@@ -19,7 +19,9 @@
 - [x] 评估当前 `3DGS`、`2DGS`、大场景 `GS` 优化算法与双阶段加载方案的取舍
 - [x] 完成 `Iteration 003` 的 `GS` 模型优化首个定向清理实验
 - [x] 完成 `Octree-GS` 单场景训练参数核查
-- [ ] 判断 `Octree-GS` 是否值得进入源码下载与环境落地
+- [x] 判断 `Octree-GS` 是否值得进入源码下载与环境落地
+- [ ] 补一条若水广场专用 `Octree-GS` 启动入口
+- [ ] 发起首轮 `Octree-GS baseline` 训练
 
 ### P1
 
@@ -148,4 +150,5 @@
 - 当前首个更平衡的清理候选是：`outputs/iteration-003/cleanup-scan/zp0.2-sp99.95/splat.ply`
 - 已新增 `docs/iterations/iteration-003-octreegs-entry.md`；当前判断已转向：不再继续把 `splatfacto` 当主要优化主线，而是优先推进 `Octree-GS` 的最小入口与参数核查
 - 已新增 `docs/iterations/iteration-003-octreegs-parameter-check.md`；当前已确认 `Octree-GS` 的最小单场景 baseline 命令、官方默认参数以及必须复用 undistorted staging 这三个关键前提
-- 当前最小下一步应改为：判断 `Octree-GS` 是否值得开始源码下载与环境落地；若继续推进，优先先做源码和环境准备，而不是继续纸面比较
+- 已在本机完成 `Octree-GS` 源码下载与环境落地准备：源码已解压到 `experiments/octreegs-src-20260325/Octree-GS-main`，并已成功编译 `diff-gaussian-rasterization` 与 `simple-knn`
+- 当前最小下一步应改为：补一条若水广场专用 `Octree-GS` 启动入口，然后直接发起首轮 baseline 训练

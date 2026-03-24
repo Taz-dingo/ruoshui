@@ -94,6 +94,7 @@
 - 已完成 `Iteration 003` 的首轮定向清理扫描：当前已确认极端大尺度高斯几乎完全落在低 `z` 尾部，`z + max_scale` 联合过滤可用极小删除比例显著收缩场景 bbox，但对字节体积帮助很有限
 - 已确认当前不再继续把 `splatfacto` 当作主要优化主线；下一条更合理的真实实验已转向 `Octree-GS` 的最小入口核查
 - 已完成 `Octree-GS` 单场景参数核查：当前已确认其数据入口与 `Scaffold-GS` 一致，且读取 `COLMAP` 时同样只接受 undistorted 相机模型；若继续推进，应直接复用现有 undistorted staging
+- 已完成 `Octree-GS` 的首轮源码与环境落地准备：源码已解压到 `experiments/octreegs-src-20260325/Octree-GS-main`，并已用 `./.venv-iteration001 + /usr/local/cuda/bin` 成功编译 `diff-gaussian-rasterization` 与 `simple-knn`，且通过了最小 import 验证
 
 ## 当前已知素材状态
 
@@ -188,6 +189,7 @@
 - 当前首轮定向清理扫描已经给出新的更细判断：导出后联合清理可以作为默认预览/清理前置步骤，但不能替代后续 `mask`、素材重组或复训主线
 - 当前主线判断已进一步收敛：`splatfacto` 保留为现有最好基线，但不再作为继续深挖的首选；更合理的下一步是转向 `Octree-GS` 这类真正引入 `LOD` 与多尺度结构的路线
 - 当前 `Octree-GS` 的最小单场景 baseline 也已经足够清晰：可先按官方 `single_train.sh` 默认参数起步，并复用现有 undistorted `images + sparse/0` staging；当前真正未解的主要是环境落地，而不是数据入口
+- 当前 `Octree-GS` 已经跨过“是否值得装环境”这个门槛；更小的下一步已变成：补一条若水广场专用 launcher / staging 触发方式，然后发起首轮 baseline 训练
 - 未经整理直接全量训练不是当前推荐下一步；如果沿用当前 `COLMAP exhaustive matching` 思路，`1600-1637` 张会把图像对数量抬到约 `1279200-1339066` 对，约为当前 `180` 张实验的 `79x-83x`
 - 若要扩量，应优先走结构化扩容，而不是一次性全量灌入：先做 `300-600` 张级别的分组、连续段或加 `mask` 实验，再决定是否值得上更大规模
 
