@@ -20,8 +20,8 @@
 - [x] 完成 `Iteration 003` 的 `GS` 模型优化首个定向清理实验
 - [x] 完成 `Octree-GS` 单场景训练参数核查
 - [x] 判断 `Octree-GS` 是否值得进入源码下载与环境落地
-- [ ] 补一条若水广场专用 `Octree-GS` 启动入口
-- [ ] 发起首轮 `Octree-GS baseline` 训练
+- [x] 补一条若水广场专用 `Octree-GS` 启动入口
+- [x] 发起首轮 `Octree-GS baseline` 训练
 
 ### P1
 
@@ -151,4 +151,14 @@
 - 已新增 `docs/iterations/iteration-003-octreegs-entry.md`；当前判断已转向：不再继续把 `splatfacto` 当主要优化主线，而是优先推进 `Octree-GS` 的最小入口与参数核查
 - 已新增 `docs/iterations/iteration-003-octreegs-parameter-check.md`；当前已确认 `Octree-GS` 的最小单场景 baseline 命令、官方默认参数以及必须复用 undistorted staging 这三个关键前提
 - 已在本机完成 `Octree-GS` 源码下载与环境落地准备：源码已解压到 `experiments/octreegs-src-20260325/Octree-GS-main`，并已成功编译 `diff-gaussian-rasterization` 与 `simple-knn`
-- 当前最小下一步应改为：补一条若水广场专用 `Octree-GS` 启动入口，然后直接发起首轮 baseline 训练
+- 已新增 `scripts/prepare_octreegs_stage.sh` 与 `scripts/run_octreegs_train.sh`，并用若水广场专用 staging 成功发起首轮 `Octree-GS baseline`
+- 已完成 `Octree-GS baseline` 真实训练、测试渲染与指标汇总，结果目录为 `experiments/octreegs-src-20260325/Octree-GS-main/outputs/ruoshui/iteration001/baseline/2026-03-25_01:20:00`
+- 当前首轮真实结果为：
+  - 测试 `PSNR 16.2087`
+  - 测试 `SSIM 0.3091`
+  - 测试 `LPIPS 0.5587`
+  - 测试渲染 `FPS 251.80`
+  - 结果目录约 `1.8G`
+- 已确认自动收尾阶段在当前环境里会被 `numpy` 移除 `np.int` 卡住；已做最小兼容修补并单独补跑 `render.py + metrics.py`
+- 当前判断已更新为：`Octree-GS` 工程入口已打通，但首轮 baseline 质量未超过现有 `splatfacto`，也没有明显优于 `Scaffold-GS`
+- 当前最小下一步应改为：先做首轮 `Octree-GS` 渲染结果的主观复核，再决定是小范围参数扫，还是直接转向下一条结构化路线
