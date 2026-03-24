@@ -16,7 +16,7 @@
 - [x] 输出资产可行性验证记录模板
 - [x] 输出当前场景的可交付体积基线
 - [x] 形成体积优化与渐进式加载调研计划
-- [ ] 评估当前 `3DGS`、`2DGS`、大场景 `GS` 优化算法与双阶段加载方案的取舍
+- [x] 评估当前 `3DGS`、`2DGS`、大场景 `GS` 优化算法与双阶段加载方案的取舍
 - [ ] 完成 `Iteration 003` 的 `GS` 模型优化首个定向清理实验
 
 ### P1
@@ -123,5 +123,22 @@
 - `docs/iterations/iteration-003-access-check.md` 已创建；当前接入核查结论已重排为：结构化 `GS` 的最小入口优先看 `Scaffold-GS`，其次是 `Octree-GS`，`LightGaussian` 后移为交付压缩候选
 - `docs/iterations/iteration-003-scaffoldgs-entry.md` 已创建；当前核查结论为：若水广场现有 `processed/images + colmap/sparse/0` 已足够进入 `Scaffold-GS` 最小重训准备阶段，主要只差一层 staging 目录
 - 已新增 `scripts/prepare_scaffoldgs_stage.sh` 与 `scripts/run_scaffoldgs_train.sh`，并完成一次 mock 干跑验证
-- 已在本机下载完整源码压缩包：`/tmp/scaffoldgs-download/scaffoldgs.zip`；当前按停机要求停在“未解压、未安装依赖、未启动真实训练”
-- 当前最小下一步已收敛为：从 `/tmp/scaffoldgs-download/scaffoldgs.zip` 解压出一个干净的 `Scaffold-GS` 源码目录，安装依赖后执行 `scripts/run_scaffoldgs_train.sh --scaffold-dir /path/to/Scaffold-GS --execute`
+- 已在本机下载完整源码压缩包：`/tmp/scaffoldgs-download/scaffoldgs.zip`，并已额外解压到干净目录：`experiments/scaffoldgs-src-20260324/Scaffold-GS-main`
+- 已确认当前机器的真实环境阻塞：`/usr/local/cuda/bin/nvcc` 存在但默认 shell 未入 `PATH`，系统中也暂无 `ninja`
+- 已确认当前在线创建官方 `Scaffold-GS` `conda` 环境仍受 `repodata` 超时与空响应解析失败阻塞，尚未成功进入真实训练
+- `scripts/run_scaffoldgs_train.sh` 已补充 `--conda-prefix`、`--cuda-bin` 与 `nvcc/ninja` 前置检查，避免环境未就绪时直接黑箱失败
+- 已验证可直接复用 `./.venv-iteration001` 作为当前 `Scaffold-GS` 运行环境，并成功补齐 `torch-scatter`、`diff_gaussian_rasterization` 与 `simple_knn`
+- 已成功发起一次真实 `Scaffold-GS` baseline 训练；期间已确认原始 `outputs/iteration-001/processed/colmap/sparse/0/cameras.bin` 为 `OPENCV` 相机模型，因此读取阶段会失败
+- 已在本机通过 `apt` 安装 `COLMAP 3.7`
+- 已完成 `COLMAP image_undistorter`，产出去畸变场景目录：`outputs/iteration-003/scaffoldgs-undistorted`
+- 已确认去畸变后的 `cameras.bin` 变为 `PINHOLE`
+- 已基于 undistorted 数据重新发起真实 `Scaffold-GS` baseline 训练，并完整跑完 `30000` step、测试渲染和指标评估
+- 当前首轮真实结果已拿到：
+  - 测试 `PSNR 16.2589`
+  - 测试 `SSIM 0.3200`
+  - 测试 `LPIPS 0.5592`
+  - 渲染测试 `FPS` 约 `298.15`
+  - 结果目录约 `1021 MiB`
+- 已完成 `Scaffold-GS` 首轮结果的主观质量复核；当前结论是：工程入口已打通，但 baseline 在主结构稳定性、局部清晰度和整体指标上都明显落后于 `Iteration 001 splatfacto`
+- 因此 `Scaffold-GS` 当前应降为“带参数假设的备选路线”，而不是立即接管默认训练主线
+- 当前最小下一步应改为：围绕现有 `splatfacto` 结果设计首个定向清理实验，优先考虑更精确的空间裁切、per-image campus mask、素材重组或小规模复训

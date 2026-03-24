@@ -66,6 +66,31 @@
 - 已将 `crop-p05-p995 + 14x` 确认为当前默认预览组合
 - 已创建 `Iteration 003`，将下一轮工作正式拆为两条主线：算法路线筛选，以及现有模型的定向清理与复训候选
 - 已新增 `Iteration 003` 算法筛选记录，当前初步优先级为：大场景结构化 `GS` 与压缩型 `GS` 优先，`2DGS / Mip-Splatting` 作为几何与伪影优化备选
+- 已将 `Scaffold-GS` 源码包解压到干净目录：`experiments/scaffoldgs-src-20260324/Scaffold-GS-main`
+- 已确认当前机器的 `CUDA 12.8` 工具链可见于 `/usr/local/cuda/bin/nvcc`，但默认 shell 尚未将其加入 `PATH`
+- 已确认当前系统 shell 中暂无 `ninja`
+- 已确认当前在线创建官方 `Scaffold-GS` `conda` 环境时，`conda 24.4.0` 会在拉取频道 `repodata` 时遇到超时与空响应解析失败；因此当前真实阻塞已从“训练入口脚本”转为“运行环境未落地”
+- 已为 `Scaffold-GS` 训练入口补上环境前置检查：`scripts/run_scaffoldgs_train.sh` 现已支持 `--conda-prefix`、`--cuda-bin`，并会在 `nvcc / ninja` 缺失时给出明确报错
+- 已验证 `./.venv-iteration001` 可作为当前 `Scaffold-GS` 的替代运行环境：已成功补装 `colorama / einops / lpips / laspy / torch-scatter`，并编译通过 `diff_gaussian_rasterization` 与 `simple_knn`
+- 已对 `Scaffold-GS` 源码中的 `submodules/simple-knn/simple_knn.cu` 做最小兼容修补：补入 `<cfloat>` 以适配当前 `CUDA 12.8` 编译
+- 已成功启动一次真实 `Scaffold-GS` baseline 训练，确认当前 Python 环境、CUDA 扩展和 staging 链路均已打通
+- 已确认原始 `outputs/iteration-001/processed/colmap/sparse/0/cameras.bin` 当前为 `OPENCV` 相机模型，而 `Scaffold-GS` 读取器只接受 `PINHOLE / SIMPLE_PINHOLE`（以及代码中的 `SIMPLE_RADIAL`）
+- 已在本机通过 `apt` 安装 `COLMAP 3.7`
+- 已完成 `COLMAP image_undistorter`，产出去畸变后的场景目录：`outputs/iteration-003/scaffoldgs-undistorted`
+- 已确认去畸变后的 `outputs/iteration-003/scaffoldgs-undistorted/sparse/cameras.bin` 变为 `PINHOLE`
+- 已基于 undistorted 结果新增 staging：`outputs/iteration-003/scaffoldgs-stage-undistorted/ruoshui/iteration001`
+- 已成功以该 undistorted staging 重启真实 `Scaffold-GS` baseline 训练，并完整跑完 `30000` step、测试渲染和指标评估
+- 当前这轮真实结果的关键事实：
+  - 输入相机 `179`
+  - 初始化点数约 `56079`
+  - 训练速度大致稳定在 `28-31 it/s`
+  - 峰值观察显存约 `6.7 GiB / 32.6 GiB`
+  - 完整训练耗时约 `16` 分钟 `19` 秒
+  - 测试渲染 `FPS` 约 `298.15`
+  - 测试指标：`PSNR 16.2589 / SSIM 0.3200 / LPIPS 0.5592`
+  - 输出目录：`experiments/scaffoldgs-src-20260324/Scaffold-GS-main/outputs/ruoshui/iteration001/baseline/2026-03-24_22:55:43`
+  - 结果目录总大小约 `1021 MiB`
+- 已完成首轮 `Scaffold-GS` 主观复核；当前判断是：这条链路已打通，但首轮 baseline 在主结构稳定性、局部清晰度与整体指标上都明显落后于 `Iteration 001 splatfacto`，暂不升级为默认主线
 
 ## 当前已知素材状态
 
@@ -80,7 +105,7 @@
 
 当前最重要的任务是：
 
-- 基于当前已可接受的首轮效果，优先筛选更适合当前校园大场景的 `GS` 算法路线，再决定是否继续深挖当前 `splatfacto` 输出的后处理和复训
+- 基于已完成的路线筛选与 `Scaffold-GS` 基线复核，优先设计当前 `splatfacto` 结果的首个定向清理/复训实验，再决定是否有必要带着明确假设回头调 `Scaffold-GS`
 
 当前已确认的最近阻塞：
 
@@ -151,9 +176,12 @@
 - 当前接入核查已经得到新的优先级结论：在“允许重训”的前提下，结构化 `GS` 的最小入口优先是 `Scaffold-GS`，其次是 `Octree-GS`，`CityGaussian` 作为更重的后续主线候选
 - 本地 checkpoint 与导出 `PLY` 的进一步核查已坐实：当前 `splatfacto` 结果在参数语义上接近 `3D-GS`，但封装结构属于 `nerfstudio` 生态；因此 `LightGaussian` 仍值得保留，但应后移为训练路线收敛后的交付压缩候选，而不是当前第一条真实实验主线
 - 当前对 `Scaffold-GS` 的最小入口核查已经完成：若水广场现有 `outputs/iteration-001/processed/images` 与 `outputs/iteration-001/processed/colmap/sparse/0` 已满足其自定义场景核心数据要求；当前主要缺口不是数据本身，而是 staging 目录层级与首轮训练命令落地
-- 当前 `Scaffold-GS` 的 staging 与训练触发脚本都已落地，并已通过 mock 目录完成一次 dry-run；因此下一步不再是补路径，而是去真实训练机器上执行首轮 baseline 训练
-- 已在本机下载完整 `Scaffold-GS` 源码压缩包：`/tmp/scaffoldgs-download/scaffoldgs.zip`，并验证压缩包完整；当前按停机要求停在“未解压、未安装依赖、未启动真实训练”
-- 当前工作树还存在两处未完成尝试留下的本地目录：`.venv-scaffoldgs/` 与 `experiments/Scaffold-GS/`；下次继续时应优先从已下载 zip 解压到干净目录，再决定是否清理这两处目录
+- 当前 `Scaffold-GS` 的 staging 与训练触发脚本都已落地，并已完成真实 baseline 训练；后续不再需要重复验证“能否启动”，而是只需判断“是否值得继续投入”
+- 已在本机下载完整 `Scaffold-GS` 源码压缩包：`/tmp/scaffoldgs-download/scaffoldgs.zip`，并验证压缩包完整；当前也已解压出干净源码目录并完成一轮真实训练
+- 当前工作树还存在两处未完成尝试留下的本地目录：`.venv-scaffoldgs/` 与 `experiments/Scaffold-GS/`；当前应优先围绕干净源码目录 `experiments/scaffoldgs-src-20260324/Scaffold-GS-main` 继续，而不是复用旧尝试目录
+- 当前已经不需要再把“如何创建官方 `conda` 环境”或“如何把 `OPENCV` 相机转成 `PINHOLE`”当成主阻塞；这条链路的工程入口与首轮基线都已拿到，下一步应转向“是否值得继续投入”和“若不值得，主线该回到哪里”
+- 当前 `Scaffold-GS` 首轮结果复核已经完成；新的判断是：工程入口已经打通，但 baseline 质量明显回退，因此短期内不应盲目继续把主要时间投入在 `Scaffold-GS` 连续重跑上
+- 对当前项目更合理的主线是：回到现有 `splatfacto` 结果，优先验证更精确的空间裁切、per-image campus mask、素材重组或小规模复训，而把 `Scaffold-GS` 保留为带参数假设的备选路线
 - 未经整理直接全量训练不是当前推荐下一步；如果沿用当前 `COLMAP exhaustive matching` 思路，`1600-1637` 张会把图像对数量抬到约 `1279200-1339066` 对，约为当前 `180` 张实验的 `79x-83x`
 - 若要扩量，应优先走结构化扩容，而不是一次性全量灌入：先做 `300-600` 张级别的分组、连续段或加 `mask` 实验，再决定是否值得上更大规模
 
