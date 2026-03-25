@@ -83,6 +83,55 @@
 
 - `1.8G`
 
+## 体积与 Web 链路补记
+
+这一步需要把“质量”“体积”“Web 可用性”拆开看，不能只用一套指标替代三件事。
+
+当前已确认的事实有两条：
+
+### 1. 裸 `PLY` 体积并不更差
+
+- `Octree-GS` 最终 `point_cloud/iteration_40000/point_cloud.ply`：约 `256 MiB`
+- 现有 `splatfacto rgb ply`：约 `268 MiB`
+
+因此如果只看“最终单个 `PLY` 文件大小”，`Octree-GS` 至少没有比当前 `splatfacto rgb` 更重。
+
+### 2. 但它不能直接复用当前 Web 原型链
+
+当前已实际核对 `PLY header`：
+
+- `splatfacto rgb ply` 是当前 viewer 可直接尝试的高斯 schema：
+  - `x y z`
+  - `red green blue`
+  - `opacity`
+  - `scale_0/1/2`
+  - `rot_0/1/2/3`
+- `Octree-GS point_cloud.ply` 则不是这个形态，而是：
+  - `x y z`
+  - `level / extra_level / info`
+  - `f_offset_*`
+  - `f_anchor_feat_*`
+  - `opacity`
+  - `scale_0..5`
+  - `rot_0..3`
+
+同时它的最终模型目录还依赖：
+
+- `color_mlp.pt`
+- `opacity_mlp.pt`
+- `cov_mlp.pt`
+
+这意味着：
+
+- `Octree-GS` 当前结果不是“一个单独的、现成可喂给现有 `GaussianSplats3D` 试页的 `PLY` 文件”
+- 它的可视表示依赖额外的 learned MLP，而不是单文件内显式写出的 `rgb`
+- 因此它在“是否能直接接进当前 Web 原型链”这个问题上，当前答案不是已验证可行，而是当前链路下不直接兼容
+
+更准确地说：
+
+- 它在“裸文件体积”上没有吃亏
+- 但在“直接进入当前 Web viewer 链路”的便利性上，当前反而弱于现有 `splatfacto rgb ply`
+
 ## 与现有基线对比
 
 ### 对比 `Iteration 001 splatfacto`
@@ -113,12 +162,14 @@
 - `Octree-GS` 的工程入口已经被真实打通
 - 它确实能在若水广场现有 undistorted `COLMAP` 资产上跑完整训练
 - 但官方默认 baseline 在当前子集上的质量并没有证明自己优于已有路线
+- 它的最终 `PLY` 单文件体积并不更差，但现阶段不能直接复用当前 Web 原型链
 
 因此当前更准确的定位应改为：
 
 - `Octree-GS` 是一条已验证可跑通的结构化 `LOD` 备选路线
 - 它暂时不能替代 `splatfacto` 作为质量基线
-- 是否继续投入，应取决于后续主观复核和小范围参数扫是否能显著改善质量
+- 它也还没有证明自己能在当前项目里形成“更容易 Web 交付”的实际优势
+- 是否继续投入，应取决于后续是否愿意专门为它补一条新的 Web 资产转换链，而不只是继续刷训练参数
 
 ## 2026-03-25 主观复核补记
 
@@ -144,6 +195,7 @@
 
 - `Octree-GS` 当前不仅在指标上没有赢
 - 在主观复核里也没有证明自己比 `Scaffold-GS` 或现有 `splatfacto` 更适合若水广场当前目标
+- 在当前 Web 原型链下，它也不是比 `splatfacto rgb ply` 更直接可用的交付资产
 - 短期内不值得继续围绕官方默认参数做连续深挖
 
 ## 下一步建议
