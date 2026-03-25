@@ -172,6 +172,27 @@
 - 但它在若水广场当前 `180` 张子集上的首轮 baseline 已经证明：默认参数下并没有优于现有 `splatfacto`
 - 因此它现在应被视为“值得带假设继续验证的结构化备选路线”，而不是默认接管主线
 
+## 2026-03-25 双路线判定后补记
+
+在 `Octree-GS` 也完成真实训练、指标汇总与主观复核后，这里的顺序需要再更新一次。
+
+当前新增事实是：
+
+- `Octree-GS baseline`：`PSNR 16.2087 / SSIM 0.3091 / LPIPS 0.5587`
+- 主观复核未观察到它相对 `Scaffold-GS` 或 `splatfacto` 的隐藏视觉优势
+
+因此当前结构化路线的排序应改为：
+
+1. `CityGaussian`
+2. `Scaffold-GS`
+3. `Octree-GS`
+
+原因：
+
+- `Scaffold-GS` 与 `Octree-GS` 都已经回答了“轻量结构化 baseline 是否可能直接优于现有 `splatfacto`”这个问题，而当前答案是否定的
+- 继续在这两条线上做默认参数小调，信息增量已经明显下降
+- `CityGaussian` 虽然更重，但它回答的是更贴近若水广场后续扩量与分块组织的问题，因此成为下一条最值得核查的结构化路线
+
 ### 不该忽略但暂排第二层的路线
 
 #### `LightGaussian / 2DGS / Mip-Splatting`

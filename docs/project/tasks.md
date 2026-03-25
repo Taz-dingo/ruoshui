@@ -161,4 +161,6 @@
   - 结果目录约 `1.8G`
 - 已确认自动收尾阶段在当前环境里会被 `numpy` 移除 `np.int` 卡住；已做最小兼容修补并单独补跑 `render.py + metrics.py`
 - 当前判断已更新为：`Octree-GS` 工程入口已打通，但首轮 baseline 质量未超过现有 `splatfacto`，也没有明显优于 `Scaffold-GS`
-- 当前最小下一步应改为：先做首轮 `Octree-GS` 渲染结果的主观复核，再决定是小范围参数扫，还是直接转向下一条结构化路线
+- 已完成 `Octree-GS` 首轮渲染结果的主观复核；当前未观察到比 `Scaffold-GS` 更稳的结构表现，也没有出现“更适合桌面 Web 漫游”的隐藏优势
+- 当前最小下一步应改为：停止继续深挖 `Octree-GS` 官方默认参数，直接转向下一条更有信息增量的结构化路线
+- 已新增 `docs/iterations/iteration-003-citygaussian-entry.md`；当前判断已收敛为：在 `Scaffold-GS` 与 `Octree-GS` 都完成真实判定后，`CityGaussian` 是下一条最值得继续核查的大场景结构化路线
