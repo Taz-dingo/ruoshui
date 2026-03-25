@@ -176,18 +176,31 @@
 - coarse 配置的 `source_path` 形态是 `data/<scene>/train`
 - 分块配置需要额外提供 `partition_name` 与 `pretrain_path`
 - 若水广场当前最小 dry-run 目录已经可以按 `train/test/images + sparse/0` 生成
+- 官方 `run_citygs.sh` 的顺序已经核实为：`train_large.py` coarse -> `data_partition.py` -> 逐块 `train_large.py --block_id` -> `merge.py` -> `render_large.py` -> `metrics_large.py`
 
 当前仍未完全坐实的部分也需要明确写下：
 
-- 官方 `custom_dataset` 文档与 `run_citygs.sh` 还没有在本地完整抓取成功
-- 因此这一步先不伪造完整官方命令，只先把 staging 形态固定
-- 真正开始 baseline 之前，仍需再核对一次 `V1-original` 的自定义数据说明与主脚本参数
+- 当前还没有把若水广场自己的 coarse / finetune yaml 实际写入 `CityGaussian/config`
+- 因此这一步先固定启动顺序和路径映射，不提前拍脑袋生成 `block_dim`、`aabb` 与 `ssim_threshold`
+- 真正开始 baseline 之前，仍需先补两份若水广场专用配置文件
+
+## 本轮新增落地结果
+
+本轮又补了一条若水广场专用 dry-run 启动入口：
+
+- `scripts/run_citygaussian_v1_train.sh`
+
+它当前负责三件事：
+
+- 把 `outputs/iteration-003/citygaussian-v1-stage/ruoshui/iteration001` 链接到 `CityGaussian/data/ruoshui/iteration001`
+- 固定 `V1-original` 的官方执行顺序
+- 在真正 `--execute` 之前，要求 coarse / finetune config 已经存在，避免黑箱起跑
 
 ## 下一步建议
 
 1. 下一 session 直接从 `CityGaussian` 分支选择与最小入口核查开始。
 2. 当前默认先按 `V1-original` 准备最小真实入口，直接运行 `scripts/prepare_citygaussian_v1_stage.sh` 生成若水广场专用 `train/test` scene root。
-3. 下一步只补 `V1-original` 的官方命令和最小配置模板，不再重复整理数据目录。
+3. 直接复用 `scripts/run_citygaussian_v1_train.sh` 做 dry-run，下一步只补 `V1-original` 的 coarse / finetune 配置模板，不再重复整理数据目录。
 4. 若后续要把素材扩到 `300-600` 张，或要直接验证官方较新的大场景完整流程，再切到 `main`，补下采样、深度先验和 coarse/partition/merge 链。
 
 ## 交接补记
