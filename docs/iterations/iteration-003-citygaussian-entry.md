@@ -87,12 +87,15 @@
 - 默认输入：`outputs/iteration-003/scaffoldgs-undistorted`
 - 默认输出：`outputs/iteration-003/citygaussian-stage/ruoshui/iteration001`
 - 当前脚本只负责把现有 undistorted `images + sparse/0` 映射成 `CityGaussian` 可复用的自定义场景根目录
+- 在进一步收口到 `V1-original` 后，又新增了 `scripts/prepare_citygaussian_v1_stage.sh`
+- 这条 `V1` 脚本会把同一份 undistorted 场景映射成 `train/` 与 `test/` 两层目录，输出到 `outputs/iteration-003/citygaussian-v1-stage/ruoshui/iteration001`
 
 这样做的意义是：
 
 - 先复用已经验证可用的 undistorted `COLMAP` 资产
 - 不污染现有 `processed`、`scaffoldgs`、`octreegs` staging
 - 让下一步分支选择、下采样和深度生成都围绕一个稳定 scene root 继续
+- 让 `V1-original` 所需的 `train/test/images + sparse/0` 目录形态先在若水广场侧落地
 
 ## 当前风险
 
@@ -166,11 +169,25 @@
 
 这条建议是基于官方文档和若水广场当前资产规模做出的推断，不是官方对我们场景的直接结论。
 
+## V1 最小入口现状
+
+当前已经确认的 `V1-original` 入口前提有三点：
+
+- coarse 配置的 `source_path` 形态是 `data/<scene>/train`
+- 分块配置需要额外提供 `partition_name` 与 `pretrain_path`
+- 若水广场当前最小 dry-run 目录已经可以按 `train/test/images + sparse/0` 生成
+
+当前仍未完全坐实的部分也需要明确写下：
+
+- 官方 `custom_dataset` 文档与 `run_citygs.sh` 还没有在本地完整抓取成功
+- 因此这一步先不伪造完整官方命令，只先把 staging 形态固定
+- 真正开始 baseline 之前，仍需再核对一次 `V1-original` 的自定义数据说明与主脚本参数
+
 ## 下一步建议
 
 1. 下一 session 直接从 `CityGaussian` 分支选择与最小入口核查开始。
-2. 当前默认先按 `V1-original` 准备最小真实入口，直接复用 `scripts/prepare_citygaussian_stage.sh` 生成若水广场专用 scene root。
-3. 如果 `V1-original` 的入口参数与目录映射清楚，再决定是否下载源码并发起首轮 baseline。
+2. 当前默认先按 `V1-original` 准备最小真实入口，直接运行 `scripts/prepare_citygaussian_v1_stage.sh` 生成若水广场专用 `train/test` scene root。
+3. 下一步只补 `V1-original` 的官方命令和最小配置模板，不再重复整理数据目录。
 4. 若后续要把素材扩到 `300-600` 张，或要直接验证官方较新的大场景完整流程，再切到 `main`，补下采样、深度先验和 coarse/partition/merge 链。
 
 ## 交接补记

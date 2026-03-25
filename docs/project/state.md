@@ -118,6 +118,7 @@
 - 已通过远端分支核查确认 `CityGaussian` 官方真实分支名为 `V1-original`，不是此前文档里的 `V1-Original`
 - 已新增 `scripts/prepare_citygaussian_stage.sh`，并把若水广场侧最小 `CityGaussian` scene root 固定到 `outputs/iteration-003/citygaussian-stage/ruoshui/iteration001`
 - 已结合官方 `main` 文档与若水广场当前 `179` 张 undistorted 资产规模，收敛出新的工程建议：若只追求最小真实入口，下一步应优先从 `CityGaussian` 的 `V1-original` 分支开始，而把 `main` 留给后续 `300-600` 张级别的结构化扩量与完整预处理链验证
+- 已新增 `scripts/prepare_citygaussian_v1_stage.sh`，并把若水广场侧最小 `V1-original` scene root 固定到 `outputs/iteration-003/citygaussian-v1-stage/ruoshui/iteration001`
 
 ## 当前已知素材状态
 
@@ -149,6 +150,7 @@
 - 关于“是否直接全量训练”的判断也已经明确：当前不建议从 `180` 张直接跳到 `1600+` 张全量训练
 - 当前围绕大场景结构化路线的更小阻塞已收缩为三件事：选 `main` 还是 `V1-original`、补下采样、补深度先验
 - 当前这个分支选择已初步收口：若只求最小真实入口，优先 `V1-original`；若进入更大规模结构化扩量，再切 `main`
+- 当前围绕 `V1-original` 的最小未解点也已收缩：主要只剩官方 `custom_dataset` 和 `run_citygs.sh` 里的命令细节核对，而不是数据目录重整
 
 这一步的目标不是前端展示，而是验证：
 
