@@ -12,6 +12,8 @@ UPDATE_INIT_FACTOR="16"
 APPEARANCE_DIM="0"
 RATIO="1"
 EXECUTE="0"
+CONDA_PREFIX_PATH=""
+CUDA_BIN_PATH=""
 
 usage() {
   cat <<EOF
@@ -31,6 +33,8 @@ Options:
   --update-init-factor N    Passed to train.sh
   --appearance-dim N        Passed to train.sh
   --ratio VALUE             Passed to train.sh
+  --conda-prefix PATH       Run train.sh inside this conda env prefix
+  --cuda-bin PATH           Prepend this CUDA bin dir to PATH before training
   --execute                 Actually run train.sh. Default is dry-run.
   -h, --help                Show this help
 EOF
@@ -78,6 +82,14 @@ while [[ $# -gt 0 ]]; do
       RATIO="$2"
       shift 2
       ;;
+    --conda-prefix)
+      CONDA_PREFIX_PATH="$2"
+      shift 2
+      ;;
+    --cuda-bin)
+      CUDA_BIN_PATH="$2"
+      shift 2
+      ;;
     --execute)
       EXECUTE="1"
       shift
@@ -111,6 +123,53 @@ if [[ ! -f "${TRAIN_SH}" ]]; then
   exit 1
 fi
 
+if [[ -n "${CONDA_PREFIX_PATH}" && ! -d "${CONDA_PREFIX_PATH}" ]]; then
+  echo "Missing conda prefix: ${CONDA_PREFIX_PATH}" >&2
+  exit 1
+fi
+
+if [[ -n "${CUDA_BIN_PATH}" ]]; then
+  if [[ ! -d "${CUDA_BIN_PATH}" ]]; then
+    echo "Missing CUDA bin dir: ${CUDA_BIN_PATH}" >&2
+    exit 1
+  fi
+  export PATH="${CUDA_BIN_PATH}:${PATH}"
+elif ! command -v nvcc >/dev/null 2>&1; then
+  for candidate in /usr/local/cuda/bin /usr/local/cuda-12.8/bin; do
+    if [[ -x "${candidate}/nvcc" ]]; then
+      export PATH="${candidate}:${PATH}"
+      CUDA_BIN_PATH="${candidate}"
+      break
+    fi
+  done
+fi
+
+if [[ -n "${CUDA_BIN_PATH}" ]]; then
+  export CUDA_HOME="$(cd "${CUDA_BIN_PATH}/.." && pwd)"
+fi
+
+if ! command -v nvcc >/dev/null 2>&1; then
+  cat <<EOF >&2
+nvcc is not available in PATH.
+
+Suggested fix:
+  export PATH=/usr/local/cuda/bin:\$PATH
+  export CUDA_HOME=/usr/local/cuda
+EOF
+  exit 1
+fi
+
+if [[ -z "${CONDA_PREFIX_PATH}" ]] && ! command -v ninja >/dev/null 2>&1; then
+  cat <<EOF >&2
+ninja is not available in PATH.
+
+Suggested fix:
+  1. Install ninja into the Scaffold-GS environment
+  2. Re-run this script with --conda-prefix /path/to/env
+EOF
+  exit 1
+fi
+
 if [[ ! -d "${STAGE_ROOT}/images" || ! -d "${STAGE_ROOT}/sparse/0" ]]; then
   "${ROOT_DIR}/scripts/prepare_scaffoldgs_stage.sh" "${STAGE_ROOT}"
 fi
@@ -141,11 +200,23 @@ Prepared Scaffold-GS train linkage:
 
 Training command:
   (cd ${SCAFFOLD_DIR} && ${CMD[*]})
+Environment summary:
+  conda_prefix: ${CONDA_PREFIX_PATH:-<none>}
+  cuda_bin:     ${CUDA_BIN_PATH:-$(dirname "$(command -v nvcc)")}
+  nvcc:         $(command -v nvcc)
+  ninja:        $(command -v ninja || echo "<missing in current shell>")
 EOF
 
 if [[ "${EXECUTE}" == "1" ]]; then
-  (
-    cd "${SCAFFOLD_DIR}"
-    "${CMD[@]}"
-  )
+  if [[ -n "${CONDA_PREFIX_PATH}" ]]; then
+    (
+      cd "${SCAFFOLD_DIR}"
+      conda run -p "${CONDA_PREFIX_PATH}" env PATH="${PATH}" CUDA_HOME="${CUDA_HOME:-}" "${CMD[@]}"
+    )
+  else
+    (
+      cd "${SCAFFOLD_DIR}"
+      "${CMD[@]}"
+    )
+  fi
 fi
