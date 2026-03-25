@@ -179,3 +179,4 @@
 - 已新增 `scripts/prepare_citygaussian_v1_stage.sh`，并将若水广场侧最小 `V1-original` scene root 固定为 `train/test` 同时映射现有 undistorted `images + sparse/0`
 - 已新增 `scripts/run_citygaussian_v1_train.sh`，并将 `V1-original` 的官方执行顺序固定为若水广场可复用的 dry-run 入口；当前真正未落地的只剩 coarse / finetune 配置文件
 - 已新增 `configs/citygaussian-v1/ruoshui_iteration001_coarse.yaml`、`configs/citygaussian-v1/ruoshui_iteration001_c1_r1.yaml` 与 `scripts/install_citygaussian_v1_configs.sh`；当前默认先按 `block_dim=[1,1,1]` 的单块 bootstrap 验证 `V1-original` 链路
+- 已新增 `scripts/fetch_citygaussian_v1_source.sh`，后续若需要重新拉源码，可直接复用该入口而不是手敲 `codeload` 下载命令

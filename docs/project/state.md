@@ -121,6 +121,7 @@
 - 已新增 `scripts/prepare_citygaussian_v1_stage.sh`，并把若水广场侧最小 `V1-original` scene root 固定到 `outputs/iteration-003/citygaussian-v1-stage/ruoshui/iteration001`
 - 已新增 `scripts/run_citygaussian_v1_train.sh`，并把 `V1-original` 的官方执行顺序固定为若水广场可复用的 dry-run 入口
 - 已新增 `configs/citygaussian-v1/` 下的两份若水广场专用 `V1-original` yaml 模板，以及 `scripts/install_citygaussian_v1_configs.sh` 安装脚本；当前默认先按 `block_dim=[1,1,1]` 的单块 bootstrap 入口推进
+- 已新增 `scripts/fetch_citygaussian_v1_source.sh`，用于把 `CityGaussian V1-original` 源码统一抓取到 `experiments/`，避免后续重复手敲下载命令
 
 ## 当前已知素材状态
 
