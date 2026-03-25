@@ -1,6 +1,6 @@
 # 项目状态快照
 
-最后更新：`2026-03-25`
+最后更新：`2026-03-26`
 
 ## 项目背景
 
@@ -16,7 +16,7 @@
 
 ## 当前实现情况
 
-当前仓库仍处于文档驱动和资产验证阶段，尚未开始前端原型开发。
+当前仓库已从纯文档驱动与资产验证阶段进入首个前端原型阶段，`Web MVP` 已启动。
 
 已完成：
 
@@ -124,6 +124,12 @@
 - 已新增 `scripts/fetch_citygaussian_v1_source.sh`，用于把 `CityGaussian V1-original` 源码统一抓取到 `experiments/`，避免后续重复手敲下载命令
 - 已对 `CityGaussian V1-original` 做多轮真实源码拉取尝试；当前本机多次得到的归档仍会在 `tar -tzf` 阶段报 `Unexpected EOF in archive`，说明真实阻塞仍是远端下载不稳定，而不是若水广场侧的 staging、dry-run 脚本或 yaml 模板
 - 已记录新的交付侧线索：用户在《知天下》站点得到了一份效果很好的 `30 MiB` 级 `.sog` 高斯资产；当前判断是 `.sog` 应视为 `PlayCanvas` 体系的压缩交付格式，值得作为下一轮 Web 交付验证分支单独跟进
+- 已确认本地 `assets/hhuc.sog` 可解包为 `meta.json + webp` 纹理包，当前应把它视为直接交付资产，而不是训练输入格式
+- 已启动首个正式 `Web MVP` 前端项目：`web/`
+- 已选定当前正式 viewer 路线为 `PlayCanvas Engine API + gsplat + SOG` 直加载
+- 已通过 `web/vite.config.mjs` 将仓库根目录 `assets/hhuc.sog` 映射为前端运行时 `/models/hhuc.sog`，避免维护重复模型副本
+- 已通过 `web/public/content/mvp.json` 固定首版文案、导览镜头与记忆锚点的 `JSON` 结构
+- 当前前端原型已具备：全屏场景、加载状态、镜头预设、记忆锚点面板与桌面端浏览交互
 
 ## 当前已知素材状态
 

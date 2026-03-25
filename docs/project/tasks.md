@@ -30,11 +30,11 @@
 
 ### P1
 
-- [ ] 初始化前端项目
-- [ ] 选定 `3DGS Web viewer` 集成方案
-- [ ] 定义热点内容 `JSON` 结构
-- [ ] 设计首页与场景页信息结构
-- [ ] 明确首页纪念文案的表达方向
+- [x] 初始化前端项目
+- [x] 选定 `3DGS Web viewer` 集成方案
+- [x] 定义热点内容 `JSON` 结构
+- [x] 设计首页与场景页信息结构
+- [x] 明确首页纪念文案的表达方向
 
 ### P2
 
@@ -182,3 +182,7 @@
 - 已新增 `scripts/fetch_citygaussian_v1_source.sh`，后续若需要重新拉源码，可直接复用该入口而不是手敲 `codeload` 下载命令
 - 已对 `CityGaussian V1-original` 做多轮真实源码下载校验；当前实际阻塞仍是归档损坏，报错为 `Unexpected EOF in archive`
 - 已新增一条新的交付侧线索：用户已在《知天下》站点得到效果很好的 `30 MiB` 级 `.sog` 资产；下一轮值得优先核查这条 `PlayCanvas/SOG` 加载链路，而不是继续只盯训练路线
+- 已新增首个正式 `Web MVP` 前端项目：`web/`
+- 当前 `Web MVP` 已切换为 `PlayCanvas Engine + SOG` 直接加载路线，不再先走 `PLY` 试页验证
+- 已通过 `web/public/content/mvp.json` 固定首版首页文案、导览镜头和记忆锚点结构
+- 已通过 `web/vite.config.mjs` 把根目录 `assets/hhuc.sog` 映射为前端可访问的 `/models/hhuc.sog`，避免复制模型文件
