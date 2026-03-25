@@ -115,6 +115,8 @@
 - 已完成一轮 `Octree-GS` 最小 `LOD` 参数短跑验证：`base_layer=-1 / levels=5 / init_level=1 / visible_threshold=-1 / iterations=10000` 这组参数已把最终有效层级从此前的 `2` 档拉到 `3` 档；其中 `LOD1` 已能保住主要结构，说明 `Octree-GS` 的 `LOD` 价值并非不可调，只是当前默认 baseline 没把它拉出来
 - 已新增 `docs/iterations/iteration-003-citygaussian-entry.md`；当前路线判断已继续收敛：在 `Scaffold-GS` 与 `Octree-GS` 都已完成真实判定后，`CityGaussian` 是下一条最值得继续做入口核查的大场景结构化路线
 - 已结合用户最新主观判断完成主线切换：`Scaffold-GS` 与 `Octree-GS` 当前都不再继续投入；下一 session 的默认 baseline 入口直接改为 `CityGaussian`
+- 已通过远端分支核查确认 `CityGaussian` 官方真实分支名为 `V1-original`，不是此前文档里的 `V1-Original`
+- 已新增 `scripts/prepare_citygaussian_stage.sh`，并把若水广场侧最小 `CityGaussian` scene root 固定到 `outputs/iteration-003/citygaussian-stage/ruoshui/iteration001`
 
 ## 当前已知素材状态
 
@@ -129,7 +131,7 @@
 
 当前最重要的任务是：
 
-- 基于已完成的路线筛选与 `Scaffold-GS` 基线复核，优先设计当前 `splatfacto` 结果的首个定向清理/复训实验，再决定是否有必要带着明确假设回头调 `Scaffold-GS`
+- 基于已完成的结构化路线筛选结果，继续推进 `CityGaussian` 的分支选择、最小 scene root 映射与数据预处理入口核查，再决定是否值得进入源码落地与真实 baseline
 
 当前已确认的最近阻塞：
 
@@ -144,6 +146,7 @@
 - 当前 viewer 试验已经收敛到够用状态，下一 session 的重点不再是 viewer 小调，而是 `GS` 模型本身的优化
 - 当前新增的关键判断是：`GS` 模型优化不应只理解为“裁切 / mask / 复训”，还必须前置评估 `2DGS`、大场景 `GS` 与压缩型 `GS` 路线
 - 关于“是否直接全量训练”的判断也已经明确：当前不建议从 `180` 张直接跳到 `1600+` 张全量训练
+- 当前围绕大场景结构化路线的更小阻塞已收缩为三件事：选 `main` 还是 `V1-original`、补下采样、补深度先验
 
 这一步的目标不是前端展示，而是验证：
 
@@ -152,6 +155,7 @@
 - 渐进式加载应通过什么方式落地，例如双阶段加载、预览资产或多层级场景
 - 是否需要保留当前 `3DGS` 路线，还是转向其他高斯相关表示
 - 哪类 `GS` 算法更适合当前问题形态：几何更准的 `2DGS`、更适合大场景的结构化 `GS`，还是更适合交付端的压缩型 `GS`
+- `CityGaussian` 这条更重的 divide-and-conquer 路线，是否真的值得为当前 `180` 张子集或后续 `300-600` 张结构化扩量投入环境与训练成本
 
 ## 当前关键文件
 

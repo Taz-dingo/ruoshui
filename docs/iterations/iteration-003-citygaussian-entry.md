@@ -28,14 +28,15 @@
 
 ## 官方入口要点
 
-根据官方 `README`、`doc/data_preparation.md` 与 `doc/run&eval.md`，当前主分支已经重构到 `Gaussian Lightning v0.10.1`，并强调：
+根据官方仓库说明与远端分支核查，当前需要先接受一个事实：`CityGaussian` 现在不是单一代码入口，而是至少有两条实际可选分支：
 
-- 主仓库现在同时承载 `CityGaussian` 与 `CityGaussianV2`
-- 若要看原始 `V1` 流程，需要切到 `V1-Original` 分支
-- 自定义数据预处理的目标场景目录仍然是：
+- 远端当前可见稳定分支至少包括 `main` 与 `V1-original`
+- `main` 已对齐到较新的 `Gaussian Lightning v0.10.1` 体系
+- 若要看原始 `V1` 流程，需要切到远端真实分支名 `V1-original`
+- 自定义数据预处理的目标场景目录仍然围绕：
   - `data/your_scene/images`
   - `data/your_scene/sparse/0`
-- 对自定义数据，官方额外要求：
+- 在当前主线文档表述里，自定义数据通常还要求：
   - 先按目标比例做图像下采样
   - 生成 `Depth Anything V2` 深度用于正则
 - 正式运行链路不是单阶段训练，而是：
@@ -48,6 +49,7 @@
 
 - 若水广场现有 undistorted `COLMAP` 资产并没有被官方数据格式直接排斥
 - 真正新增的复杂度，不在“能不能接入 `COLMAP`”，而在“是否愿意进入完整的大场景分块训练链”
+- 在真正下载源码前，先把“分支选哪条”和“若水广场 staging 如何映射”写清楚，信息增量最高
 
 ## 对若水广场的意义
 
@@ -70,21 +72,36 @@
 
 ### 还缺的关键前置
 
-- 需要为 `CityGaussian` 明确主分支还是 `V1-Original` 分支
+- 需要为 `CityGaussian` 明确主分支还是 `V1-original` 分支
 - 需要确认若水广场是按“单场景 custom dataset”接入，还是需要提前定义 block / scene 命名
 - 需要补一条最小数据预处理链：
   - 图像下采样
   - `Depth Anything V2` 深度生成
 - 需要理解 coarse / partition / finetune / merge 的最小配置文件入口
 
+## 本轮新增落地结果
+
+这次恢复后，已经把若水广场侧最小 staging 入口先固定下来：
+
+- 新增脚本：`scripts/prepare_citygaussian_stage.sh`
+- 默认输入：`outputs/iteration-003/scaffoldgs-undistorted`
+- 默认输出：`outputs/iteration-003/citygaussian-stage/ruoshui/iteration001`
+- 当前脚本只负责把现有 undistorted `images + sparse/0` 映射成 `CityGaussian` 可复用的自定义场景根目录
+
+这样做的意义是：
+
+- 先复用已经验证可用的 undistorted `COLMAP` 资产
+- 不污染现有 `processed`、`scaffoldgs`、`octreegs` staging
+- 让下一步分支选择、下采样和深度生成都围绕一个稳定 scene root 继续
+
 ## 当前风险
 
 ### 风险 1：当前主分支已不是最早的 `CityGaussian V1`
 
-官方 README 已明确：
+官方与远端分支核查已经明确：
 
 - 主分支已 rebased 到 `Gaussian Lightning v0.10.1`
-- 原始 `V1` 需切到 `V1-Original`
+- 原始 `V1` 需切到远端真实分支名 `V1-original`
 
 这意味着：
 
@@ -131,8 +148,9 @@
 ## 下一步建议
 
 1. 下一 session 直接从 `CityGaussian` 分支选择与最小入口核查开始。
-2. 明确若水广场若沿这条路线推进，最小场景根目录、配置文件和数据预处理链怎么映射。
-3. 只有在这些入口条件清楚后，才决定是否真的开始源码下载与环境落地。
+2. 直接复用 `scripts/prepare_citygaussian_stage.sh` 生成若水广场专用 scene root。
+3. 在此基础上明确若水广场若沿这条路线推进，最小配置文件、下采样目录和深度生成链怎么映射。
+4. 只有在这些入口条件清楚后，才决定是否真的开始源码下载与环境落地。
 
 ## 交接补记
 
@@ -152,6 +170,7 @@
 - `README`：<https://github.com/Linketic/CityGaussian>
 - `Data Preparation`：<https://github.com/Linketic/CityGaussian/blob/main/doc/data_preparation.md>
 - `Run & Eval`：<https://github.com/Linketic/CityGaussian/blob/main/doc/run%26eval.md>
+- 远端分支核查：`git ls-remote --heads https://github.com/Linketic/CityGaussian.git`
 
 ## 备注
 

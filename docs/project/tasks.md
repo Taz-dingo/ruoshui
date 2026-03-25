@@ -22,6 +22,8 @@
 - [x] 判断 `Octree-GS` 是否值得进入源码下载与环境落地
 - [x] 补一条若水广场专用 `Octree-GS` 启动入口
 - [x] 发起首轮 `Octree-GS baseline` 训练
+- [x] 明确 `CityGaussian` 为下一条结构化主线候选
+- [x] 补一条若水广场专用 `CityGaussian` staging 入口
 
 ### P1
 
@@ -168,3 +170,5 @@
 - 已结合用户当前主观判断收口：`Scaffold-GS` 与 `Octree-GS` 这两条路线在本轮都不再继续投入
 - 当前最小下一步应改为：在新 session 中直接开始 `CityGaussian` 的分支选择与最小入口核查
 - 已新增 `docs/iterations/iteration-003-citygaussian-entry.md`；当前判断已收敛为：在 `Scaffold-GS` 与 `Octree-GS` 都完成真实判定后，`CityGaussian` 是下一条最值得继续核查的大场景结构化路线
+- 已新增 `scripts/prepare_citygaussian_stage.sh`，并将若水广场侧最小 scene root 固定为复用 `outputs/iteration-003/scaffoldgs-undistorted` 的 `images + sparse/0` 映射
+- 已通过远端分支核查确认官方真实分支名是 `V1-original`，后续不应继续把它写成 `V1-Original`
