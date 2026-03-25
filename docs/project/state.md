@@ -117,6 +117,7 @@
 - 已结合用户最新主观判断完成主线切换：`Scaffold-GS` 与 `Octree-GS` 当前都不再继续投入；下一 session 的默认 baseline 入口直接改为 `CityGaussian`
 - 已通过远端分支核查确认 `CityGaussian` 官方真实分支名为 `V1-original`，不是此前文档里的 `V1-Original`
 - 已新增 `scripts/prepare_citygaussian_stage.sh`，并把若水广场侧最小 `CityGaussian` scene root 固定到 `outputs/iteration-003/citygaussian-stage/ruoshui/iteration001`
+- 已结合官方 `main` 文档与若水广场当前 `179` 张 undistorted 资产规模，收敛出新的工程建议：若只追求最小真实入口，下一步应优先从 `CityGaussian` 的 `V1-original` 分支开始，而把 `main` 留给后续 `300-600` 张级别的结构化扩量与完整预处理链验证
 
 ## 当前已知素材状态
 
@@ -131,7 +132,7 @@
 
 当前最重要的任务是：
 
-- 基于已完成的结构化路线筛选结果，继续推进 `CityGaussian` 的分支选择、最小 scene root 映射与数据预处理入口核查，再决定是否值得进入源码落地与真实 baseline
+- 基于已完成的结构化路线筛选结果，按 `CityGaussian V1-original` 方向继续推进最小 scene root、目录映射与首轮 baseline 入口核查，再决定是否值得进入源码落地与真实训练
 
 当前已确认的最近阻塞：
 
@@ -147,6 +148,7 @@
 - 当前新增的关键判断是：`GS` 模型优化不应只理解为“裁切 / mask / 复训”，还必须前置评估 `2DGS`、大场景 `GS` 与压缩型 `GS` 路线
 - 关于“是否直接全量训练”的判断也已经明确：当前不建议从 `180` 张直接跳到 `1600+` 张全量训练
 - 当前围绕大场景结构化路线的更小阻塞已收缩为三件事：选 `main` 还是 `V1-original`、补下采样、补深度先验
+- 当前这个分支选择已初步收口：若只求最小真实入口，优先 `V1-original`；若进入更大规模结构化扩量，再切 `main`
 
 这一步的目标不是前端展示，而是验证：
 
