@@ -114,6 +114,7 @@
 - 已补做 `Octree-GS` 的 `LOD` 价值验证：`LOD0` 与 `LOD1` 确实构成真实层级裁剪，但当前 `LOD0` 在代表视角里已明显丢失主结构稳定性，而 `LOD1` 又基本接近完整结果；因此现阶段还不能把它视为“已拿到可直接用于 Web 粗预览层”的优势
 - 已完成一轮 `Octree-GS` 最小 `LOD` 参数短跑验证：`base_layer=-1 / levels=5 / init_level=1 / visible_threshold=-1 / iterations=10000` 这组参数已把最终有效层级从此前的 `2` 档拉到 `3` 档；其中 `LOD1` 已能保住主要结构，说明 `Octree-GS` 的 `LOD` 价值并非不可调，只是当前默认 baseline 没把它拉出来
 - 已新增 `docs/iterations/iteration-003-citygaussian-entry.md`；当前路线判断已继续收敛：在 `Scaffold-GS` 与 `Octree-GS` 都已完成真实判定后，`CityGaussian` 是下一条最值得继续做入口核查的大场景结构化路线
+- 已结合用户最新主观判断完成主线切换：`Scaffold-GS` 与 `Octree-GS` 当前都不再继续投入；下一 session 的默认 baseline 入口直接改为 `CityGaussian`
 
 ## 当前已知素材状态
 
@@ -208,7 +209,7 @@
 - 当前首轮定向清理扫描已经给出新的更细判断：导出后联合清理可以作为默认预览/清理前置步骤，但不能替代后续 `mask`、素材重组或复训主线
 - 当前主线判断已进一步收敛：`splatfacto` 保留为现有最好基线，但不再作为继续深挖的首选；更合理的下一步是转向 `Octree-GS` 这类真正引入 `LOD` 与多尺度结构的路线
 - 当前 `Octree-GS` 的最小单场景 baseline 也已经足够清晰：可先按官方 `single_train.sh` 默认参数起步，并复用现有 undistorted `images + sparse/0` staging；当前真正未解的主要是环境落地，而不是数据入口
-- 当前 `Octree-GS` 已经完成从环境落地、真实训练到主观复核的完整判断；当前更小的下一步不再是继续复核它，而是围绕 `CityGaussian` 做分支选择与最小入口核查
+- 当前 `Octree-GS` 已经完成从环境落地、真实训练到主观复核与 `LOD` 小调的完整判断；当前更小的下一步不再是继续给它预算，而是围绕 `CityGaussian` 做分支选择与最小入口核查
 - 未经整理直接全量训练不是当前推荐下一步；如果沿用当前 `COLMAP exhaustive matching` 思路，`1600-1637` 张会把图像对数量抬到约 `1279200-1339066` 对，约为当前 `180` 张实验的 `79x-83x`
 - 若要扩量，应优先走结构化扩容，而不是一次性全量灌入：先做 `300-600` 张级别的分组、连续段或加 `mask` 实验，再决定是否值得上更大规模
 
