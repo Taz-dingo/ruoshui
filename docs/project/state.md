@@ -120,6 +120,7 @@
 - 已结合官方 `main` 文档与若水广场当前 `179` 张 undistorted 资产规模，收敛出新的工程建议：若只追求最小真实入口，下一步应优先从 `CityGaussian` 的 `V1-original` 分支开始，而把 `main` 留给后续 `300-600` 张级别的结构化扩量与完整预处理链验证
 - 已新增 `scripts/prepare_citygaussian_v1_stage.sh`，并把若水广场侧最小 `V1-original` scene root 固定到 `outputs/iteration-003/citygaussian-v1-stage/ruoshui/iteration001`
 - 已新增 `scripts/run_citygaussian_v1_train.sh`，并把 `V1-original` 的官方执行顺序固定为若水广场可复用的 dry-run 入口
+- 已新增 `configs/citygaussian-v1/` 下的两份若水广场专用 `V1-original` yaml 模板，以及 `scripts/install_citygaussian_v1_configs.sh` 安装脚本；当前默认先按 `block_dim=[1,1,1]` 的单块 bootstrap 入口推进
 
 ## 当前已知素材状态
 
@@ -153,6 +154,7 @@
 - 当前这个分支选择已初步收口：若只求最小真实入口，优先 `V1-original`；若进入更大规模结构化扩量，再切 `main`
 - 当前围绕 `V1-original` 的最小未解点也已收缩：主要只剩官方 `custom_dataset` 和 `run_citygs.sh` 里的命令细节核对，而不是数据目录重整
 - 当前 `custom_dataset` 和 `run_citygs.sh` 的关键路径与执行顺序都已核实；更小的下一步已进一步收缩为：补两份若水广场专用 `yaml`，而不是继续猜目录和主命令
+- 上述两份 `yaml` 现已落地；当前更小的下一步已进一步收缩为：把模板安装进真实 `CityGaussian` 仓库并做一次完整 dry-run，必要时再调 `aabb` 和 `block_dim`
 
 这一步的目标不是前端展示，而是验证：
 

@@ -165,6 +165,12 @@ if [[ "${EXECUTE}" == "1" ]]; then
     echo "Missing finetune config: ${CITYGS_DIR}/config/${CONFIG_NAME}.yaml" >&2
     exit 1
   fi
+  for required in train_large.py data_partition.py merge.py render_large.py metrics_large.py; do
+    if [[ ! -f "${CITYGS_DIR}/${required}" ]]; then
+      echo "Missing CityGaussian V1 script: ${CITYGS_DIR}/${required}" >&2
+      exit 1
+    fi
+  done
 
   (
     cd "${CITYGS_DIR}"

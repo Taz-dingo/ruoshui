@@ -26,6 +26,7 @@
 - [x] 补一条若水广场专用 `CityGaussian` staging 入口
 - [x] 补一条若水广场专用 `CityGaussian V1-original` staging 入口
 - [x] 补一条若水广场专用 `CityGaussian V1-original` dry-run 启动入口
+- [x] 补两份若水广场专用 `CityGaussian V1-original` 配置模板
 
 ### P1
 
@@ -177,3 +178,4 @@
 - 已结合官方 `main` 文档与若水广场当前资产规模收敛出新的工程建议：若只追求最小真实入口，下一步先按 `CityGaussian V1-original` 推进；`main` 留给后续更大规模结构化扩量时再接入
 - 已新增 `scripts/prepare_citygaussian_v1_stage.sh`，并将若水广场侧最小 `V1-original` scene root 固定为 `train/test` 同时映射现有 undistorted `images + sparse/0`
 - 已新增 `scripts/run_citygaussian_v1_train.sh`，并将 `V1-original` 的官方执行顺序固定为若水广场可复用的 dry-run 入口；当前真正未落地的只剩 coarse / finetune 配置文件
+- 已新增 `configs/citygaussian-v1/ruoshui_iteration001_coarse.yaml`、`configs/citygaussian-v1/ruoshui_iteration001_c1_r1.yaml` 与 `scripts/install_citygaussian_v1_configs.sh`；当前默认先按 `block_dim=[1,1,1]` 的单块 bootstrap 验证 `V1-original` 链路

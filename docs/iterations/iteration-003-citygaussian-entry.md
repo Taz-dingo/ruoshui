@@ -189,6 +189,9 @@
 本轮又补了一条若水广场专用 dry-run 启动入口：
 
 - `scripts/run_citygaussian_v1_train.sh`
+- `scripts/install_citygaussian_v1_configs.sh`
+- `configs/citygaussian-v1/ruoshui_iteration001_coarse.yaml`
+- `configs/citygaussian-v1/ruoshui_iteration001_c1_r1.yaml`
 
 它当前负责三件事：
 
@@ -196,11 +199,17 @@
 - 固定 `V1-original` 的官方执行顺序
 - 在真正 `--execute` 之前，要求 coarse / finetune config 已经存在，避免黑箱起跑
 
+当前这两份 ruoshui 专用 yaml 的设计原则是：
+
+- 先按 `block_dim=[1,1,1]` 做单块 bootstrap，而不是现在就假装已经想清楚大场景切块
+- `aabb` 来自当前 undistorted `points3D.ply` 的 `1%-99%` 分位边界再加保守 padding
+- 目标是先验证 `V1-original` 链路是否值得继续，而不是这一步就追求最优切块策略
+
 ## 下一步建议
 
 1. 下一 session 直接从 `CityGaussian` 分支选择与最小入口核查开始。
 2. 当前默认先按 `V1-original` 准备最小真实入口，直接运行 `scripts/prepare_citygaussian_v1_stage.sh` 生成若水广场专用 `train/test` scene root。
-3. 直接复用 `scripts/run_citygaussian_v1_train.sh` 做 dry-run，下一步只补 `V1-original` 的 coarse / finetune 配置模板，不再重复整理数据目录。
+3. 先运行 `scripts/install_citygaussian_v1_configs.sh --citygs-dir /path/to/CityGaussian` 安装 ruoshui 模板，再用 `scripts/run_citygaussian_v1_train.sh` 做 dry-run。
 4. 若后续要把素材扩到 `300-600` 张，或要直接验证官方较新的大场景完整流程，再切到 `main`，补下采样、深度先验和 coarse/partition/merge 链。
 
 ## 交接补记
