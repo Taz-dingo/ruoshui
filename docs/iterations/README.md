@@ -4,6 +4,7 @@
 
 - `docs/iterations/iteration-001.md`
 - `docs/iterations/iteration-002.md`
+- `docs/iterations/iteration-004-web-mvp.md`
 
 建议每次迭代只记录：
 
