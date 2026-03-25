@@ -164,5 +164,6 @@
 - 已完成 `Octree-GS` 首轮渲染结果的主观复核；当前未观察到比 `Scaffold-GS` 更稳的结构表现，也没有出现“更适合桌面 Web 漫游”的隐藏优势
 - 已补做 `Octree-GS` 的体积与 Web 链路核查：其最终 `PLY` 单文件约 `256 MiB`，体积与现有 `splatfacto rgb ply` 接近；但当前 `PLY schema` 依赖 anchor 特征与额外 `MLP` 权重，不能直接复用现有 `GaussianSplats3D` 单文件试页链路
 - 已补做 `Octree-GS` 的 `LOD` 分层渲染验证：`LOD0` 确实显著减少可见高斯数，但当前代表视角里已明显塌结构；`LOD1` 则基本接近完整结果，因此这轮 baseline 还没有证明自己拿到了可直接用于 Web 粗预览层的实际优势
+- 已完成一轮 `Octree-GS` 最小 `LOD` 参数短跑：`base_layer=-1 / levels=5 / init_level=1 / visible_threshold=-1 / iterations=10000`；当前已将最终有效层级从 `2` 档拉到 `3` 档，且 `LOD1` 已能保住主要结构，说明 `LOD` 价值可以被参数调整拉出来
 - 当前最小下一步应改为：停止继续深挖 `Octree-GS` 官方默认参数，直接转向下一条更有信息增量的结构化路线
 - 已新增 `docs/iterations/iteration-003-citygaussian-entry.md`；当前判断已收敛为：在 `Scaffold-GS` 与 `Octree-GS` 都完成真实判定后，`CityGaussian` 是下一条最值得继续核查的大场景结构化路线

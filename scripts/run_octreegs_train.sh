@@ -22,6 +22,7 @@ LEVELS="-1"
 INIT_LEVEL="-1"
 EXTRA_RATIO="0.25"
 EXTRA_UP="0.01"
+ITERATIONS=""
 EXECUTE="0"
 ENV_BIN_PATH=""
 CUDA_BIN_PATH=""
@@ -57,6 +58,7 @@ Options:
   --init-level N            Passed to train.sh
   --extra-ratio V           Passed to train.sh
   --extra-up V              Passed to train.sh
+  --iterations N            Override Octree-GS train iterations
   --env-bin PATH            Prepend this env bin dir to PATH before training
   --cuda-bin PATH           Prepend this CUDA bin dir to PATH before training
   --execute                 Actually run train.sh. Default is dry-run.
@@ -149,6 +151,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --extra-up)
       EXTRA_UP="$2"
+      shift 2
+      ;;
+    --iterations)
+      ITERATIONS="$2"
       shift 2
       ;;
     --env-bin)
@@ -280,6 +286,10 @@ CMD=(
   --extra_ratio "${EXTRA_RATIO}"
   --extra_up "${EXTRA_UP}"
 )
+
+if [[ -n "${ITERATIONS}" ]]; then
+  CMD+=(--iterations "${ITERATIONS}")
+fi
 
 cat <<EOF
 Prepared Octree-GS train linkage:

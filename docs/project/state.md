@@ -112,6 +112,7 @@
 - 当前对 `Octree-GS` 的判断已进一步收紧：短期内不再继续围绕官方默认参数做连续深挖，应直接转向下一条更有信息增量的结构化路线
 - 已补做 `Octree-GS` 的体积与 Web 链路核查：其最终 `point_cloud.ply` 单文件约 `256 MiB`，与现有 `splatfacto rgb ply` 的 `268 MiB` 接近；但其 `PLY schema` 依赖 `f_anchor_feat_* / f_offset_*` 与额外 `MLP` 权重，不是当前 `GaussianSplats3D` 原型链可直接复用的单文件资产
 - 已补做 `Octree-GS` 的 `LOD` 价值验证：`LOD0` 与 `LOD1` 确实构成真实层级裁剪，但当前 `LOD0` 在代表视角里已明显丢失主结构稳定性，而 `LOD1` 又基本接近完整结果；因此现阶段还不能把它视为“已拿到可直接用于 Web 粗预览层”的优势
+- 已完成一轮 `Octree-GS` 最小 `LOD` 参数短跑验证：`base_layer=-1 / levels=5 / init_level=1 / visible_threshold=-1 / iterations=10000` 这组参数已把最终有效层级从此前的 `2` 档拉到 `3` 档；其中 `LOD1` 已能保住主要结构，说明 `Octree-GS` 的 `LOD` 价值并非不可调，只是当前默认 baseline 没把它拉出来
 - 已新增 `docs/iterations/iteration-003-citygaussian-entry.md`；当前路线判断已继续收敛：在 `Scaffold-GS` 与 `Octree-GS` 都已完成真实判定后，`CityGaussian` 是下一条最值得继续做入口核查的大场景结构化路线
 
 ## 当前已知素材状态
