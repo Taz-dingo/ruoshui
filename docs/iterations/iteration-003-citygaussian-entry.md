@@ -207,12 +207,52 @@
 - `aabb` 来自当前 undistorted `points3D.ply` 的 `1%-99%` 分位边界再加保守 padding
 - 目标是先验证 `V1-original` 链路是否值得继续，而不是这一步就追求最优切块策略
 
+## 当前暂停点
+
+到这一步为止，`CityGaussian V1-original` 在若水广场仓库内已经具备：
+
+- scene root staging
+- `train/test` 目录映射
+- dry-run 启动脚本
+- ruoshui 专用 coarse / finetune yaml 模板
+- 外部 `CityGaussian` 仓库的模板安装脚本
+- 统一源码抓取脚本
+
+当前仍未真正跨过去的只有一个现实阻塞：
+
+- 多轮真实 `codeload` 下载后，本机拿到的 `V1-original` 归档依旧会在 `tar -tzf` 阶段报 `Unexpected EOF in archive`
+
+因此当前更合理的判断是：
+
+- `CityGaussian V1-original` 的仓库内准备工作已经足够
+- 继续加入口脚本已经不会显著增加信息量
+- 下一轮若继续这条线，应先解决源码下载稳定性，再做真实 repo dry-run
+
+## 新的交付线索
+
+在暂停前，项目又出现了一条新的高价值线索：
+
+- 用户已在《知天下》站点拿到一份效果很好的 `.sog` 高斯资产
+- 文件体积约 `30 MiB`
+
+当前对这条线索的工程理解是：
+
+- `.sog` 更像 `PlayCanvas` 体系的压缩交付格式
+- 它回答的是“如何更轻地交付和加载高斯”，而不是“如何训练出更好的高斯”
+- 这对若水广场当前真正的交付问题很关键，因为现有 `rgb ply` 仍停留在 `200+ MiB` 量级
+
+因此如果下一轮恢复工作，优先级可以先转成：
+
+1. 核查 `.sog` 在若水广场自有 Web 原型里的最小加载路径
+2. 再决定是否继续优先推进 `CityGaussian` 训练路线
+
 ## 下一步建议
 
 1. 下一 session 直接从 `CityGaussian` 分支选择与最小入口核查开始。
 2. 当前默认先按 `V1-original` 准备最小真实入口，直接运行 `scripts/prepare_citygaussian_v1_stage.sh` 生成若水广场专用 `train/test` scene root。
-3. 如本地还没有源码目录，先运行 `scripts/fetch_citygaussian_v1_source.sh`；再运行 `scripts/install_citygaussian_v1_configs.sh --citygs-dir /path/to/CityGaussian` 安装模板，最后用 `scripts/run_citygaussian_v1_train.sh` 做 dry-run。
-4. 若后续要把素材扩到 `300-600` 张，或要直接验证官方较新的大场景完整流程，再切到 `main`，补下采样、深度先验和 coarse/partition/merge 链。
+3. 若继续 `CityGaussian V1-original`，先解决真实源码下载损坏问题，再运行 `scripts/install_citygaussian_v1_configs.sh --citygs-dir /path/to/CityGaussian` 与 `scripts/run_citygaussian_v1_train.sh`。
+4. 若优先从交付端切入，下一步直接核查 `.sog` 的最小加载路径与 `PlayCanvas` 运行时接入方式。
+5. 若后续要把素材扩到 `300-600` 张，或要直接验证官方较新的大场景完整流程，再切到 `main`，补下采样、深度先验和 coarse/partition/merge 链。
 
 ## 交接补记
 

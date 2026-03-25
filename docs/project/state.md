@@ -122,6 +122,8 @@
 - 已新增 `scripts/run_citygaussian_v1_train.sh`，并把 `V1-original` 的官方执行顺序固定为若水广场可复用的 dry-run 入口
 - 已新增 `configs/citygaussian-v1/` 下的两份若水广场专用 `V1-original` yaml 模板，以及 `scripts/install_citygaussian_v1_configs.sh` 安装脚本；当前默认先按 `block_dim=[1,1,1]` 的单块 bootstrap 入口推进
 - 已新增 `scripts/fetch_citygaussian_v1_source.sh`，用于把 `CityGaussian V1-original` 源码统一抓取到 `experiments/`，避免后续重复手敲下载命令
+- 已对 `CityGaussian V1-original` 做多轮真实源码拉取尝试；当前本机多次得到的归档仍会在 `tar -tzf` 阶段报 `Unexpected EOF in archive`，说明真实阻塞仍是远端下载不稳定，而不是若水广场侧的 staging、dry-run 脚本或 yaml 模板
+- 已记录新的交付侧线索：用户在《知天下》站点得到了一份效果很好的 `30 MiB` 级 `.sog` 高斯资产；当前判断是 `.sog` 应视为 `PlayCanvas` 体系的压缩交付格式，值得作为下一轮 Web 交付验证分支单独跟进
 
 ## 当前已知素材状态
 
@@ -136,7 +138,7 @@
 
 当前最重要的任务是：
 
-- 基于已完成的结构化路线筛选结果，按 `CityGaussian V1-original` 方向继续推进最小 scene root、目录映射与首轮 baseline 入口核查，再决定是否值得进入源码落地与真实训练
+- 保留当前 `CityGaussian V1-original` 训练入口准备成果，同时将下一轮更小的探索重点切到 `.sog` 交付链路核查：确认现有 `30 MiB` 级资产能否在若水广场自己的 Web 原型中稳定加载，再决定是否继续优先追 `CityGaussian` 训练路线
 
 当前已确认的最近阻塞：
 
@@ -156,6 +158,8 @@
 - 当前围绕 `V1-original` 的最小未解点也已收缩：主要只剩官方 `custom_dataset` 和 `run_citygs.sh` 里的命令细节核对，而不是数据目录重整
 - 当前 `custom_dataset` 和 `run_citygs.sh` 的关键路径与执行顺序都已核实；更小的下一步已进一步收缩为：补两份若水广场专用 `yaml`，而不是继续猜目录和主命令
 - 上述两份 `yaml` 现已落地；当前更小的下一步已进一步收缩为：把模板安装进真实 `CityGaussian` 仓库并做一次完整 dry-run，必要时再调 `aabb` 和 `block_dim`
+- 当前 `CityGaussian V1-original` 真正未过的关卡只剩“拿到完整可解压源码归档”；在这一步恢复前，不值得继续投入更多入口脚本时间
+- 当前关于 `.sog` 的最小已知判断是：它更像 `PlayCanvas` 的 `Spatially Ordered Gaussians` 交付格式，而不是通用训练交换格式；因此它回答的是“怎么更轻地交付和加载”，不是“怎么训练”
 
 这一步的目标不是前端展示，而是验证：
 
@@ -165,6 +169,7 @@
 - 是否需要保留当前 `3DGS` 路线，还是转向其他高斯相关表示
 - 哪类 `GS` 算法更适合当前问题形态：几何更准的 `2DGS`、更适合大场景的结构化 `GS`，还是更适合交付端的压缩型 `GS`
 - `CityGaussian` 这条更重的 divide-and-conquer 路线，是否真的值得为当前 `180` 张子集或后续 `300-600` 张结构化扩量投入环境与训练成本
+- 现有 `.sog` 级别交付资产，是否能绕开当前 `PLY` 体积瓶颈，直接回答若水广场 Web MVP 的加载与体验问题
 
 ## 当前关键文件
 

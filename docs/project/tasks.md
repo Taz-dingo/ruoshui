@@ -180,3 +180,5 @@
 - 已新增 `scripts/run_citygaussian_v1_train.sh`，并将 `V1-original` 的官方执行顺序固定为若水广场可复用的 dry-run 入口；当前真正未落地的只剩 coarse / finetune 配置文件
 - 已新增 `configs/citygaussian-v1/ruoshui_iteration001_coarse.yaml`、`configs/citygaussian-v1/ruoshui_iteration001_c1_r1.yaml` 与 `scripts/install_citygaussian_v1_configs.sh`；当前默认先按 `block_dim=[1,1,1]` 的单块 bootstrap 验证 `V1-original` 链路
 - 已新增 `scripts/fetch_citygaussian_v1_source.sh`，后续若需要重新拉源码，可直接复用该入口而不是手敲 `codeload` 下载命令
+- 已对 `CityGaussian V1-original` 做多轮真实源码下载校验；当前实际阻塞仍是归档损坏，报错为 `Unexpected EOF in archive`
+- 已新增一条新的交付侧线索：用户已在《知天下》站点得到效果很好的 `30 MiB` 级 `.sog` 资产；下一轮值得优先核查这条 `PlayCanvas/SOG` 加载链路，而不是继续只盯训练路线
