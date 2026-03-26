@@ -120,57 +120,59 @@ select {
 }
 
 .hero {
-  max-width: 420px;
-  padding: 22px 20px 18px;
-  border-radius: 24px;
+  max-width: 360px;
+  padding: 18px 18px 16px;
+  border-radius: 20px;
   transform: translateY(24px);
   opacity: 0;
   animation: rise-in 800ms ease forwards;
 }
 
 .eyebrow {
-  margin: 0 0 10px;
-  font-size: 11px;
-  letter-spacing: 0.22em;
+  margin: 0 0 8px;
+  font-size: 10px;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--accent);
 }
 
 .hero h1 {
   margin: 0;
-  font-size: clamp(42px, 7vw, 76px);
-  line-height: 0.94;
-  letter-spacing: -0.06em;
+  font-size: clamp(30px, 5vw, 52px);
+  line-height: 0.96;
+  letter-spacing: -0.05em;
 }
 
 .hero h2 {
-  margin: 10px 0 0;
+  margin: 8px 0 0;
   max-width: 12ch;
-  font-size: clamp(20px, 2.6vw, 30px);
-  line-height: 1.06;
+  font-size: clamp(16px, 2vw, 22px);
+  line-height: 1.14;
   font-weight: 500;
   color: rgba(237, 247, 251, 0.86);
 }
 
 .hero p {
-  margin: 14px 0 0;
-  max-width: 28rem;
+  margin: 12px 0 0;
+  max-width: 24rem;
   color: var(--muted);
-  font-size: 14px;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .hero-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 18px;
+  gap: 10px;
+  margin-top: 14px;
 }
 
 .button {
   appearance: none;
   border: 1px solid transparent;
   border-radius: 999px;
-  padding: 12px 18px;
+  padding: 10px 14px;
+  font-size: 13px;
   transition:
     transform 180ms ease,
     border-color 180ms ease,
@@ -195,8 +197,8 @@ select {
 }
 
 .microcopy {
-  margin: 12px 0 0;
-  font-size: 12px;
+  margin: 10px 0 0;
+  font-size: 11px;
   color: rgba(212, 233, 239, 0.6);
 }
 
