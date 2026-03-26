@@ -31,39 +31,32 @@ appElement.innerHTML = `
     <div class="hud">
       <section class="rail">
         <div class="panel hero">
-          <p class="eyebrow">Ruoshui Square · SOG Compare</p>
           <h1>${data.scene.title}</h1>
-          <h2>${data.scene.subtitle}</h2>
-          <p>${data.scene.summary}</p>
+          <p>${data.scene.subtitle}</p>
           <div class="hero-actions">
-            <button class="button primary" id="focus-scene">进入场景</button>
-            <button class="button secondary" id="focus-overview">切到全览</button>
+            <button class="button primary" id="focus-scene">进入</button>
+            <button class="button secondary" id="focus-overview">全览</button>
           </div>
-          <p class="microcopy">左键旋转 · 右键平移 · 滚轮缩放 · 先在同一镜头下切换不同版本比较体感</p>
         </div>
 
         <div class="panel status-strip" aria-live="polite">
           <span class="status-dot"></span>
           <div class="status-copy">
             <strong id="status-title">准备加载场景</strong>
-            <span id="status-detail">正在连接 PlayCanvas GSplat 运行时</span>
+            <span id="status-detail">连接运行时</span>
           </div>
         </div>
 
         <div class="panel stats">
-          <div class="stat-row"><span>当前版本</span><strong id="variant-kind">${defaultVariant.kind}</strong></div>
-          <div class="stat-row"><span>交付格式</span><strong>${data.scene.format}</strong></div>
+          <div class="stat-row"><span>版本</span><strong id="variant-kind">${defaultVariant.kind}</strong></div>
           <div class="stat-row"><span>文件体积</span><strong id="variant-size">${defaultVariant.size}</strong></div>
           <div class="stat-row"><span>高斯数量</span><strong id="variant-splats">${defaultVariant.splats}</strong></div>
           <div class="stat-row"><span>保留比例</span><strong id="variant-retention">${defaultVariant.retention}</strong></div>
-          <div class="stat-row"><span>包围尺寸</span><strong>${data.scene.bounds}</strong></div>
         </div>
 
         <div class="panel section-panel ghost">
-          <p class="section-title">当前判断</p>
           <h3 class="memory-title" id="variant-title">${defaultVariant.name}</h3>
           <p class="memory-body" id="variant-note">${defaultVariant.note}</p>
-          <div class="loading-bar" id="loading-bar" aria-hidden="true"></div>
         </div>
       </section>
 
@@ -119,7 +112,6 @@ const highlightList = document.querySelector('#highlight-list');
 const renderScaleSlider = document.querySelector('#render-scale-slider');
 const statusTitle = document.querySelector('#status-title');
 const statusDetail = document.querySelector('#status-detail');
-const loadingBar = document.querySelector('#loading-bar');
 const variantKind = document.querySelector('#variant-kind');
 const variantSize = document.querySelector('#variant-size');
 const variantSplats = document.querySelector('#variant-splats');
@@ -139,7 +131,6 @@ if (
   !renderScaleSlider ||
   !statusTitle ||
   !statusDetail ||
-  !loadingBar ||
   !variantKind ||
   !variantSize ||
   !variantSplats ||
@@ -168,11 +159,7 @@ for (const variant of data.variants) {
   const button = document.createElement('button');
   button.className = 'variant';
   button.type = 'button';
-  button.innerHTML = `
-    <strong>${variant.name}</strong>
-    <span>${variant.summary}</span>
-    <small>${variant.size} · ${variant.retention} · ${variant.kind}</small>
-  `;
+  button.innerHTML = `<strong>${variant.name}</strong><small>${variant.size} · ${variant.retention}</small>`;
   button.addEventListener('click', () => {
     void activateVariant(variant.id);
   });
@@ -265,9 +252,8 @@ async function activateVariant(variantId, initial = false) {
   updateVariantButtons();
   renderVariantMeta(variant);
   setVariantButtonsDisabled(true);
-  loadingBar.style.opacity = '1';
   statusTitle.textContent = '正在切换模型';
-  statusDetail.textContent = `加载 ${variant.name}：${variant.summary}`;
+  statusDetail.textContent = `加载 ${variant.name}`;
 
   try {
     const nextRuntime = await mountRuntime(variant);
@@ -289,7 +275,6 @@ async function activateVariant(variantId, initial = false) {
     throw error;
   } finally {
     if (loadToken === currentLoadToken) {
-      loadingBar.style.opacity = '0';
       setVariantButtonsDisabled(false);
     }
   }

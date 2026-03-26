@@ -98,6 +98,15 @@ select {
   scrollbar-color: rgba(130, 225, 212, 0.24) transparent;
 }
 
+.rail {
+  width: min(100%, 360px);
+}
+
+.detail {
+  width: min(100%, 340px);
+  justify-self: end;
+}
+
 .rail::-webkit-scrollbar,
 .detail::-webkit-scrollbar,
 .highlight-list::-webkit-scrollbar {
@@ -120,7 +129,8 @@ select {
 }
 
 .hero {
-  max-width: 360px;
+  width: 100%;
+  max-width: none;
   padding: 18px 18px 16px;
   border-radius: 20px;
   transform: translateY(24px);
@@ -128,36 +138,19 @@ select {
   animation: rise-in 800ms ease forwards;
 }
 
-.eyebrow {
-  margin: 0 0 8px;
-  font-size: 10px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--accent);
-}
-
 .hero h1 {
   margin: 0;
-  font-size: clamp(30px, 5vw, 52px);
-  line-height: 0.96;
+  font-size: clamp(28px, 4.2vw, 44px);
+  line-height: 0.98;
   letter-spacing: -0.05em;
 }
 
-.hero h2 {
-  margin: 8px 0 0;
-  max-width: 12ch;
-  font-size: clamp(16px, 2vw, 22px);
-  line-height: 1.14;
-  font-weight: 500;
-  color: rgba(237, 247, 251, 0.86);
-}
-
 .hero p {
-  margin: 12px 0 0;
-  max-width: 24rem;
+  margin: 8px 0 0;
+  max-width: 18rem;
   color: var(--muted);
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .hero-actions {
@@ -208,6 +201,7 @@ select {
   gap: 12px;
   padding: 12px 14px;
   border-radius: 18px;
+  width: 100%;
 }
 
 .status-dot {
@@ -239,6 +233,7 @@ select {
   gap: 8px;
   padding: 14px;
   border-radius: 20px;
+  width: 100%;
 }
 
 .stat-row {
@@ -261,22 +256,18 @@ select {
   font-weight: 600;
 }
 
-.ghost {
-  align-self: end;
-}
-
 .detail {
   align-items: flex-end;
 }
 
 .stack {
-  width: min(100%, 340px);
+  width: 100%;
   display: grid;
   gap: 12px;
 }
 
 .section-panel {
-  width: min(100%, 340px);
+  width: 100%;
   padding: 16px;
   border-radius: 22px;
 }
@@ -331,7 +322,14 @@ select {
   font-size: 13px;
 }
 
-.variant span,
+.variant small {
+  display: block;
+  margin-top: 4px;
+  color: rgba(212, 233, 239, 0.48);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+}
+
 .preset span,
 .highlight span {
   display: block;
@@ -339,14 +337,6 @@ select {
   color: var(--muted);
   font-size: 12px;
   line-height: 1.45;
-}
-
-.variant small {
-  display: block;
-  margin-top: 6px;
-  color: rgba(212, 233, 239, 0.48);
-  font-size: 10px;
-  letter-spacing: 0.04em;
 }
 
 .quality-control {
@@ -377,7 +367,7 @@ select {
 }
 
 .highlight-list {
-  max-height: 220px;
+  max-height: 260px;
   overflow-y: auto;
   padding-right: 4px;
 }
@@ -388,40 +378,10 @@ select {
   transform: none;
 }
 
-.loading-bar {
-  position: relative;
-  width: 100%;
-  height: 2px;
-  margin-top: 12px;
-  border-radius: 999px;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.loading-bar::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  width: 34%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, transparent, var(--accent-strong), transparent);
-  animation: scan 1.45s ease-in-out infinite;
-}
-
 @keyframes rise-in {
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-@keyframes scan {
-  from {
-    transform: translateX(-120%);
-  }
-
-  to {
-    transform: translateX(320%);
   }
 }
 
@@ -438,11 +398,13 @@ select {
     align-items: flex-start;
     overflow: visible;
     padding-right: 0;
+    width: 100%;
   }
 
   .rail {
     overflow: visible;
     padding-right: 0;
+    width: min(100%, 420px);
   }
 
   .stack,
