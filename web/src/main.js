@@ -25,6 +25,7 @@ const blurPresets = [
 const blurPresetStorageKey = 'ruoshui-ui-blur-preset';
 const renderScaleStorageKey = 'ruoshui-render-scale-percent';
 const renderScaleMinPercent = 70;
+const variantTransitionMs = 220;
 const variantsById = new Map(data.variants.map((variant) => [variant.id, variant]));
 const firstPreset = data.presets[0];
 const firstHighlight = data.highlights[0];
@@ -366,15 +367,39 @@ async function activateVariant(variantId, initial = false) {
 }
 
 async function mountRuntime(variant) {
-  if (runtime) {
-    runtime.app.destroy();
-    runtime = null;
+  const previousRuntime = runtime;
+  const previousCanvas = previousRuntime?.canvasElement ?? null;
+
+  if (!previousRuntime) {
+    sceneContainer.replaceChildren();
+  } else if (previousCanvas) {
+    previousCanvas.classList.add('is-leaving');
+    previousCanvas.style.pointerEvents = 'none';
   }
 
-  sceneContainer.replaceChildren();
   const canvas = document.createElement('canvas');
+  canvas.className = 'scene-canvas is-entering';
   sceneContainer.append(canvas);
-  return createRuntime(canvas, variant);
+
+  try {
+    const nextRuntime = await createRuntime(canvas, variant);
+    await fadeInSceneCanvas(canvas);
+
+    if (previousRuntime) {
+      await fadeOutAndDisposeRuntime(previousRuntime);
+    }
+
+    return nextRuntime;
+  } catch (error) {
+    canvas.remove();
+
+    if (previousCanvas) {
+      previousCanvas.classList.remove('is-leaving');
+      previousCanvas.style.pointerEvents = '';
+    }
+
+    throw error;
+  }
 }
 
 function activatePreset(presetId, immediate = false) {
@@ -503,6 +528,7 @@ async function createRuntime(canvasElement, variant) {
 
   const runtimeState = {
     app,
+    canvasElement,
     orbit,
     performanceMode
   };
@@ -517,6 +543,20 @@ async function createRuntime(canvasElement, variant) {
 
 function moveCamera(runtimeState, preset, immediate = false) {
   setOrbitPreset(runtimeState.orbit, vec3(preset.position), vec3(preset.target), immediate);
+}
+
+async function fadeInSceneCanvas(canvasElement) {
+  await nextFrame();
+  canvasElement.classList.remove('is-entering');
+  canvasElement.classList.add('is-active');
+  await wait(variantTransitionMs);
+}
+
+async function fadeOutAndDisposeRuntime(runtimeState) {
+  runtimeState.canvasElement?.classList.add('is-leaving');
+  await wait(variantTransitionMs);
+  runtimeState.app.destroy();
+  runtimeState.canvasElement?.remove();
 }
 
 function captureCurrentView(runtimeState) {
@@ -839,6 +879,18 @@ function persistBlurPresetId(presetId) {
 function applyBlurPreset(preset) {
   document.documentElement.style.setProperty('--panel-blur', `${preset.blur}px`);
   document.documentElement.style.setProperty('--panel-blur-interacting', `${preset.interactingBlur}px`);
+}
+
+function nextFrame() {
+  return new Promise((resolve) => {
+    window.requestAnimationFrame(() => resolve());
+  });
+}
+
+function wait(durationMs) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, durationMs);
+  });
 }
 
 function getMaxSupportedPixelRatio(runtimeWindow) {
