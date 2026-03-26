@@ -102,7 +102,7 @@ appElement.innerHTML = `
 
           <section class="panel section-panel">
             <p class="section-title">MVP 取舍</p>
-            <ol class="thesis-list" id="thesis-list"></ol>
+            <div class="thesis-inline" id="thesis-list"></div>
           </section>
         </div>
 
@@ -112,7 +112,7 @@ appElement.innerHTML = `
             <div class="highlight-list" id="highlight-list"></div>
           </section>
 
-          <section class="panel section-panel">
+          <section class="panel section-panel compact-focus">
             <p class="section-title">当前聚焦</p>
             <h3 class="memory-title" id="memory-title">${firstHighlight.title}</h3>
             <p class="memory-body" id="memory-body">${firstHighlight.body}</p>
@@ -175,7 +175,8 @@ if (
 }
 
 for (const line of data.interactionThesis) {
-  const item = document.createElement('li');
+  const item = document.createElement('div');
+  item.className = 'thesis-chip';
   item.textContent = line;
   thesisList.append(item);
 }
