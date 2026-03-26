@@ -330,6 +330,7 @@ async function activateVariant(variantId, initial = false) {
   }
 
   const loadToken = ++currentLoadToken;
+  const preservedView = initial ? null : captureCurrentView(runtime);
   activeVariantId = variant.id;
   updateVariantButtons();
   renderVariantMeta(variant);
@@ -346,7 +347,10 @@ async function activateVariant(variantId, initial = false) {
     }
 
     runtime = nextRuntime;
-    activatePreset(activePresetId || 'hover', true);
+    const restored = restoreCurrentView(runtime, preservedView);
+    if (!restored) {
+      activatePreset(activePresetId || 'hover', true);
+    }
     statusTitle.textContent = '场景已就绪';
     statusDetail.textContent = `当前版本：${variant.name} · ${variant.size} · ${variant.retention}`;
   } catch (error) {
@@ -513,6 +517,39 @@ async function createRuntime(canvasElement, variant) {
 
 function moveCamera(runtimeState, preset, immediate = false) {
   setOrbitPreset(runtimeState.orbit, vec3(preset.position), vec3(preset.target), immediate);
+}
+
+function captureCurrentView(runtimeState) {
+  if (!runtimeState?.orbit) {
+    return null;
+  }
+
+  const { orbit } = runtimeState;
+  return {
+    target: orbit.currentTarget.clone(),
+    yaw: orbit.currentYaw,
+    pitch: orbit.currentPitch,
+    distance: orbit.currentDistance
+  };
+}
+
+function restoreCurrentView(runtimeState, snapshot) {
+  if (!runtimeState?.orbit || !snapshot) {
+    return false;
+  }
+
+  const { orbit } = runtimeState;
+  orbit.transition = null;
+  orbit.currentTarget.copy(snapshot.target);
+  orbit.desiredTarget.copy(snapshot.target);
+  orbit.currentYaw = snapshot.yaw;
+  orbit.desiredYaw = snapshot.yaw;
+  orbit.currentPitch = snapshot.pitch;
+  orbit.desiredPitch = snapshot.pitch;
+  orbit.currentDistance = snapshot.distance;
+  orbit.desiredDistance = snapshot.distance;
+  applyOrbit(orbit, 1);
+  return true;
 }
 
 function vec3(tuple) {
