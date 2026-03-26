@@ -99,24 +99,12 @@ appElement.innerHTML = `
             <p class="section-title">导览镜头</p>
             <div class="preset-list" id="preset-list"></div>
           </section>
-
-          <section class="panel section-panel">
-            <p class="section-title">MVP 取舍</p>
-            <div class="thesis-inline" id="thesis-list"></div>
-          </section>
         </div>
 
         <div class="stack">
           <section class="panel section-panel">
             <p class="section-title">记忆锚点</p>
             <div class="highlight-list" id="highlight-list"></div>
-          </section>
-
-          <section class="panel section-panel compact-focus">
-            <p class="section-title">当前聚焦</p>
-            <h3 class="memory-title" id="memory-title">${firstHighlight.title}</h3>
-            <p class="memory-body" id="memory-body">${firstHighlight.body}</p>
-            <p class="footnote" id="memory-footnote">关联镜头：${firstPreset.name}</p>
           </section>
         </div>
       </aside>
@@ -128,7 +116,6 @@ const sceneContainer = document.querySelector('#scene');
 const variantList = document.querySelector('#variant-list');
 const presetList = document.querySelector('#preset-list');
 const highlightList = document.querySelector('#highlight-list');
-const thesisList = document.querySelector('#thesis-list');
 const renderScaleSlider = document.querySelector('#render-scale-slider');
 const statusTitle = document.querySelector('#status-title');
 const statusDetail = document.querySelector('#status-detail');
@@ -139,9 +126,6 @@ const variantSplats = document.querySelector('#variant-splats');
 const variantRetention = document.querySelector('#variant-retention');
 const variantTitle = document.querySelector('#variant-title');
 const variantNote = document.querySelector('#variant-note');
-const memoryTitle = document.querySelector('#memory-title');
-const memoryBody = document.querySelector('#memory-body');
-const memoryFootnote = document.querySelector('#memory-footnote');
 const renderScaleValue = document.querySelector('#render-scale-value');
 const renderScaleNote = document.querySelector('#render-scale-note');
 const focusSceneButton = document.querySelector('#focus-scene');
@@ -152,7 +136,6 @@ if (
   !variantList ||
   !presetList ||
   !highlightList ||
-  !thesisList ||
   !renderScaleSlider ||
   !statusTitle ||
   !statusDetail ||
@@ -163,22 +146,12 @@ if (
   !variantRetention ||
   !variantTitle ||
   !variantNote ||
-  !memoryTitle ||
-  !memoryBody ||
-  !memoryFootnote ||
   !renderScaleValue ||
   !renderScaleNote ||
   !focusSceneButton ||
   !focusOverviewButton
 ) {
   throw new Error('Failed to initialize UI shell');
-}
-
-for (const line of data.interactionThesis) {
-  const item = document.createElement('div');
-  item.className = 'thesis-chip';
-  item.textContent = line;
-  thesisList.append(item);
 }
 
 let runtime = null;
@@ -362,14 +335,9 @@ function activateHighlight(highlightId, syncPreset) {
   }
 
   activeHighlightId = highlight.id;
-  memoryTitle.textContent = highlight.title;
-  memoryBody.textContent = highlight.body;
-
-  const linkedPreset = data.presets.find((entry) => entry.id === highlight.presetId);
-  memoryFootnote.textContent = linkedPreset ? `关联镜头：${linkedPreset.name}` : '关联镜头：未设置';
-
   updateHighlightButtons();
 
+  const linkedPreset = data.presets.find((entry) => entry.id === highlight.presetId);
   if (syncPreset && linkedPreset) {
     activatePreset(linkedPreset.id);
   }
