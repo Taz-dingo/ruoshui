@@ -290,7 +290,6 @@ select {
 }
 
 .variant-list,
-.blur-list,
 .preset-list,
 .highlight-list,
 .thesis-list {
@@ -298,13 +297,7 @@ select {
   gap: 10px;
 }
 
-.blur-list {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin-top: 12px;
-}
-
 .variant,
-.blur-option,
 .preset,
 .highlight {
   width: 100%;
@@ -322,11 +315,9 @@ select {
 }
 
 .variant:hover,
-.blur-option:hover,
 .preset:hover,
 .highlight:hover,
 .variant.is-active,
-.blur-option.is-active,
 .preset.is-active,
 .highlight.is-active {
   border-color: rgba(130, 225, 212, 0.36);
@@ -335,7 +326,6 @@ select {
 }
 
 .variant strong,
-.blur-option strong,
 .preset strong,
 .highlight strong {
   display: block;
@@ -343,7 +333,6 @@ select {
 }
 
 .variant span,
-.blur-option span,
 .preset span,
 .highlight span,
 .thesis-list li {
@@ -365,10 +354,6 @@ select {
   color: rgba(212, 233, 239, 0.48);
   font-size: 10px;
   letter-spacing: 0.04em;
-}
-
-.blur-option {
-  text-align: left;
 }
 
 .quality-control {
@@ -523,9 +508,6 @@ select {
     align-items: stretch;
   }
 
-  .blur-list {
-    grid-template-columns: 1fr;
-  }
 }
 
 body.is-interacting .panel {
