@@ -45,6 +45,7 @@ select {
 
 .shell {
   position: relative;
+  height: 100dvh;
   min-height: 100vh;
   overflow: hidden;
 }
@@ -73,12 +74,14 @@ select {
 .hud {
   position: relative;
   z-index: 2;
+  height: 100%;
   min-height: 100vh;
   display: grid;
   grid-template-columns: minmax(320px, 460px) 1fr minmax(280px, 360px);
-  gap: 24px;
-  padding: 24px;
+  gap: 18px;
+  padding: 18px;
   pointer-events: none;
+  overflow: hidden;
 }
 
 .rail,
@@ -86,8 +89,26 @@ select {
   align-self: stretch;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 20px;
+  justify-content: flex-start;
+  gap: 14px;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(130, 225, 212, 0.24) transparent;
+}
+
+.rail::-webkit-scrollbar,
+.detail::-webkit-scrollbar,
+.highlight-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.rail::-webkit-scrollbar-thumb,
+.detail::-webkit-scrollbar-thumb,
+.highlight-list::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(130, 225, 212, 0.22);
 }
 
 .panel {
@@ -100,7 +121,7 @@ select {
 
 .hero {
   max-width: 420px;
-  padding: 26px 24px 22px;
+  padding: 22px 20px 18px;
   border-radius: 24px;
   transform: translateY(24px);
   opacity: 0;
@@ -132,17 +153,17 @@ select {
 }
 
 .hero p {
-  margin: 18px 0 0;
+  margin: 14px 0 0;
   max-width: 28rem;
   color: var(--muted);
-  font-size: 15px;
+  font-size: 14px;
 }
 
 .hero-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin-top: 24px;
+  margin-top: 18px;
 }
 
 .button {
@@ -174,7 +195,7 @@ select {
 }
 
 .microcopy {
-  margin: 16px 0 0;
+  margin: 12px 0 0;
   font-size: 12px;
   color: rgba(212, 233, 239, 0.6);
 }
@@ -183,7 +204,7 @@ select {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 16px;
+  padding: 12px 14px;
   border-radius: 18px;
 }
 
@@ -213,8 +234,8 @@ select {
 
 .stats {
   display: grid;
-  gap: 10px;
-  padding: 16px;
+  gap: 8px;
+  padding: 14px;
   border-radius: 20px;
 }
 
@@ -222,7 +243,7 @@ select {
   display: flex;
   justify-content: space-between;
   gap: 16px;
-  padding-bottom: 10px;
+  padding-bottom: 8px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   color: var(--muted);
   font-size: 13px;
@@ -249,12 +270,12 @@ select {
 .stack {
   width: min(100%, 340px);
   display: grid;
-  gap: 14px;
+  gap: 12px;
 }
 
 .section-panel {
   width: min(100%, 340px);
-  padding: 18px;
+  padding: 16px;
   border-radius: 22px;
 }
 
@@ -275,13 +296,18 @@ select {
   gap: 10px;
 }
 
+.blur-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 12px;
+}
+
 .variant,
 .blur-option,
 .preset,
 .highlight {
   width: 100%;
   text-align: left;
-  padding: 13px 14px;
+  padding: 11px 12px;
   border-radius: 18px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.03);
@@ -311,7 +337,7 @@ select {
 .preset strong,
 .highlight strong {
   display: block;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .variant span,
@@ -322,7 +348,7 @@ select {
   display: block;
   margin-top: 4px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.45;
 }
 
@@ -335,7 +361,7 @@ select {
   display: block;
   margin-top: 6px;
   color: rgba(212, 233, 239, 0.48);
-  font-size: 11px;
+  font-size: 10px;
   letter-spacing: 0.04em;
 }
 
@@ -345,7 +371,7 @@ select {
 
 .quality-control {
   display: grid;
-  gap: 12px;
+  gap: 10px;
 }
 
 .quality-slider {
@@ -366,8 +392,14 @@ select {
 
 .quality-meta span {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.45;
+}
+
+.highlight-list {
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .variant:disabled {
@@ -378,19 +410,19 @@ select {
 
 .memory-title {
   margin: 0;
-  font-size: 22px;
+  font-size: 20px;
   line-height: 1.1;
 }
 
 .memory-body {
-  margin: 10px 0 0;
+  margin: 8px 0 0;
   color: var(--muted);
-  font-size: 14px;
-  line-height: 1.6;
+  font-size: 13px;
+  line-height: 1.55;
 }
 
 .footnote {
-  margin: 12px 0 0;
+  margin: 10px 0 0;
   color: rgba(212, 233, 239, 0.56);
   font-size: 12px;
 }
@@ -435,11 +467,21 @@ select {
 @media (max-width: 1180px) {
   .hud {
     grid-template-columns: minmax(320px, 460px) 1fr;
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
   }
 
   .detail {
     grid-column: 1 / -1;
     align-items: flex-start;
+    overflow: visible;
+    padding-right: 0;
+  }
+
+  .rail {
+    overflow: visible;
+    padding-right: 0;
   }
 
   .stack,
@@ -453,11 +495,15 @@ select {
     display: flex;
     flex-direction: column;
     padding: 16px;
+    height: auto;
+    overflow: visible;
   }
 
   .rail,
   .detail {
     gap: 16px;
+    overflow: visible;
+    padding-right: 0;
   }
 
   .hero,
@@ -473,6 +519,10 @@ select {
 
   .detail {
     align-items: stretch;
+  }
+
+  .blur-list {
+    grid-template-columns: 1fr;
   }
 }
 

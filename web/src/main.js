@@ -87,23 +87,7 @@ appElement.innerHTML = `
           </section>
 
           <section class="panel section-panel">
-            <p class="section-title">导览镜头</p>
-            <div class="preset-list" id="preset-list"></div>
-          </section>
-
-          <section class="panel section-panel">
-            <p class="section-title">MVP 取舍</p>
-            <ol class="thesis-list" id="thesis-list"></ol>
-          </section>
-
-          <section class="panel section-panel">
-            <p class="section-title">界面玻璃感</p>
-            <div class="blur-list" id="blur-list"></div>
-            <p class="footnote" id="blur-footnote"></p>
-          </section>
-
-          <section class="panel section-panel">
-            <p class="section-title">渲染清晰度</p>
+            <p class="section-title">显示控制</p>
             <div class="quality-control">
               <input
                 class="quality-slider"
@@ -119,6 +103,18 @@ appElement.innerHTML = `
                 <span id="render-scale-note"></span>
               </div>
             </div>
+            <div class="blur-list" id="blur-list"></div>
+            <p class="footnote" id="blur-footnote"></p>
+          </section>
+
+          <section class="panel section-panel">
+            <p class="section-title">导览镜头</p>
+            <div class="preset-list" id="preset-list"></div>
+          </section>
+
+          <section class="panel section-panel">
+            <p class="section-title">MVP 取舍</p>
+            <ol class="thesis-list" id="thesis-list"></ol>
           </section>
         </div>
 
