@@ -23,11 +23,15 @@ const blurPresets = [
   { id: 'strong', name: '强', summary: '更明显的玻璃感，强调氛围。', blur: 20, interactingBlur: 10 }
 ];
 const blurPresetStorageKey = 'ruoshui-ui-blur-preset';
+const renderScaleStorageKey = 'ruoshui-render-scale-percent';
+const renderScaleMinPercent = 70;
 const variantsById = new Map(data.variants.map((variant) => [variant.id, variant]));
 const firstPreset = data.presets[0];
 const firstHighlight = data.highlights[0];
 const defaultVariant = variantsById.get(data.scene.defaultVariantId) ?? data.variants[0];
+const maxRenderScalePercent = Math.round(getMaxSupportedPixelRatio(window) * 100);
 let activeBlurPresetId = getInitialBlurPresetId();
+let activeRenderScalePercent = getInitialRenderScalePercent();
 
 applyBlurPreset(getBlurPreset(activeBlurPresetId));
 
@@ -97,6 +101,25 @@ appElement.innerHTML = `
             <div class="blur-list" id="blur-list"></div>
             <p class="footnote" id="blur-footnote"></p>
           </section>
+
+          <section class="panel section-panel">
+            <p class="section-title">渲染清晰度</p>
+            <div class="quality-control">
+              <input
+                class="quality-slider"
+                id="render-scale-slider"
+                type="range"
+                min="${renderScaleMinPercent}"
+                max="${maxRenderScalePercent}"
+                step="5"
+                value="${activeRenderScalePercent}"
+              />
+              <div class="quality-meta">
+                <strong id="render-scale-value"></strong>
+                <span id="render-scale-note"></span>
+              </div>
+            </div>
+          </section>
         </div>
 
         <div class="stack">
@@ -123,6 +146,7 @@ const presetList = document.querySelector('#preset-list');
 const highlightList = document.querySelector('#highlight-list');
 const thesisList = document.querySelector('#thesis-list');
 const blurList = document.querySelector('#blur-list');
+const renderScaleSlider = document.querySelector('#render-scale-slider');
 const statusTitle = document.querySelector('#status-title');
 const statusDetail = document.querySelector('#status-detail');
 const loadingBar = document.querySelector('#loading-bar');
@@ -136,6 +160,8 @@ const memoryTitle = document.querySelector('#memory-title');
 const memoryBody = document.querySelector('#memory-body');
 const memoryFootnote = document.querySelector('#memory-footnote');
 const blurFootnote = document.querySelector('#blur-footnote');
+const renderScaleValue = document.querySelector('#render-scale-value');
+const renderScaleNote = document.querySelector('#render-scale-note');
 const focusSceneButton = document.querySelector('#focus-scene');
 const focusOverviewButton = document.querySelector('#focus-overview');
 
@@ -146,6 +172,7 @@ if (
   !highlightList ||
   !thesisList ||
   !blurList ||
+  !renderScaleSlider ||
   !statusTitle ||
   !statusDetail ||
   !loadingBar ||
@@ -159,6 +186,8 @@ if (
   !memoryBody ||
   !memoryFootnote ||
   !blurFootnote ||
+  !renderScaleValue ||
+  !renderScaleNote ||
   !focusSceneButton ||
   !focusOverviewButton
 ) {
@@ -236,6 +265,10 @@ for (const highlight of data.highlights) {
 
 focusSceneButton.addEventListener('click', () => activatePreset(firstPreset.id));
 focusOverviewButton.addEventListener('click', () => activatePreset('hover'));
+renderScaleSlider.addEventListener('input', (event) => {
+  const nextPercent = Number(event.currentTarget.value);
+  activateRenderScale(nextPercent);
+});
 
 updatePresetButtons();
 updateHighlightButtons();
@@ -243,6 +276,7 @@ updateVariantButtons();
 updateBlurButtons();
 renderVariantMeta(defaultVariant);
 renderBlurMeta(getBlurPreset(activeBlurPresetId));
+renderRenderScaleMeta(activeRenderScalePercent);
 
 statusTitle.textContent = '加载中';
 statusDetail.textContent = '准备解析 SOG 资产与切换逻辑';
@@ -269,6 +303,23 @@ function activateBlurPreset(presetId) {
   persistBlurPresetId(preset.id);
   updateBlurButtons();
   renderBlurMeta(preset);
+}
+
+function activateRenderScale(nextPercent) {
+  const normalizedPercent = normalizeRenderScalePercent(nextPercent);
+  activeRenderScalePercent = normalizedPercent;
+  renderScaleSlider.value = String(normalizedPercent);
+  persistRenderScalePercent(normalizedPercent);
+  renderRenderScaleMeta(normalizedPercent);
+  applyRenderScaleToRuntime(runtime, normalizedPercent);
+}
+
+function renderRenderScaleMeta(percent) {
+  const pixelRatio = (percent / 100).toFixed(2);
+  renderScaleValue.textContent = `${percent}% · x${pixelRatio}`;
+  renderScaleNote.textContent = percent >= 100
+    ? '更清晰，关闭自动降分辨率。'
+    : '更偏性能，锁定当前渲染比例。';
 }
 
 async function activateVariant(variantId, initial = false) {
@@ -405,7 +456,7 @@ async function createRuntime(canvasElement, variant) {
 
   app.setCanvasFillMode(pc.FILLMODE_FILL_WINDOW);
   app.setCanvasResolution(pc.RESOLUTION_AUTO);
-  const performanceMode = createPerformanceMode(window);
+  const performanceMode = createPerformanceMode(window, activeRenderScalePercent);
   app.graphicsDevice.maxPixelRatio = performanceMode.currentPixelRatio;
   app.scene.gammaCorrection = pc.GAMMA_SRGB;
   app.scene.toneMapping = pc.TONEMAP_ACES;
@@ -665,28 +716,30 @@ function lerp(from, to, alpha) {
   return from + (to - from) * alpha;
 }
 
-function createPerformanceMode(runtimeWindow) {
-  const deviceRatio = Math.max(runtimeWindow.devicePixelRatio || 1, 1);
-  const memory = Number(runtimeWindow.navigator.deviceMemory || 0);
-  const concurrency = Number(runtimeWindow.navigator.hardwareConcurrency || 0);
-  const targetPixelRatio = deviceRatio >= 2 ? 1 : Math.min(deviceRatio, 1.15);
-  const initialPixelRatio = (memory > 0 && memory <= 8) || (concurrency > 0 && concurrency <= 8)
-    ? Math.min(targetPixelRatio, 0.9)
-    : targetPixelRatio;
+function createPerformanceMode(runtimeWindow, lockedPercent) {
+  const supportedMaxPixelRatio = getMaxSupportedPixelRatio(runtimeWindow);
+  const initialPixelRatio = normalizeRenderScalePercent(lockedPercent) / 100;
 
   return {
-    targetPixelRatio,
+    targetPixelRatio: initialPixelRatio,
     currentPixelRatio: initialPixelRatio,
-    minPixelRatio: 0.7,
-    maxPixelRatio: targetPixelRatio,
+    lockedPixelRatio: initialPixelRatio,
+    supportedMaxPixelRatio,
+    minPixelRatio: renderScaleMinPercent / 100,
+    maxPixelRatio: initialPixelRatio,
     sampleTime: 0,
     frameCount: 0,
     cooldown: 0,
-    isInteracting: false
+    isInteracting: false,
+    isLocked: true
   };
 }
 
 function updatePerformanceMode(performanceMode, app, dt) {
+  if (performanceMode.isLocked) {
+    return;
+  }
+
   performanceMode.sampleTime += dt;
   performanceMode.frameCount += 1;
   performanceMode.cooldown = Math.max(0, performanceMode.cooldown - dt);
@@ -753,4 +806,50 @@ function persistBlurPresetId(presetId) {
 function applyBlurPreset(preset) {
   document.documentElement.style.setProperty('--panel-blur', `${preset.blur}px`);
   document.documentElement.style.setProperty('--panel-blur-interacting', `${preset.interactingBlur}px`);
+}
+
+function getMaxSupportedPixelRatio(runtimeWindow) {
+  const deviceRatio = Math.max(runtimeWindow.devicePixelRatio || 1, 1);
+  return deviceRatio >= 2 ? 1 : Math.min(deviceRatio, 1.15);
+}
+
+function normalizeRenderScalePercent(value) {
+  const clamped = clamp(Number(value) || maxRenderScalePercent, renderScaleMinPercent, maxRenderScalePercent);
+  return Math.round(clamped / 5) * 5;
+}
+
+function getInitialRenderScalePercent() {
+  try {
+    const savedPercent = window.localStorage.getItem(renderScaleStorageKey);
+    if (savedPercent) {
+      return normalizeRenderScalePercent(Number(savedPercent));
+    }
+  } catch {
+    return maxRenderScalePercent;
+  }
+
+  return maxRenderScalePercent;
+}
+
+function persistRenderScalePercent(percent) {
+  try {
+    window.localStorage.setItem(renderScaleStorageKey, String(percent));
+  } catch {
+    return;
+  }
+}
+
+function applyRenderScaleToRuntime(runtimeState, percent) {
+  if (!runtimeState?.performanceMode || !runtimeState?.app) {
+    return;
+  }
+
+  const nextRatio = normalizeRenderScalePercent(percent) / 100;
+  runtimeState.performanceMode.isLocked = true;
+  runtimeState.performanceMode.lockedPixelRatio = nextRatio;
+  runtimeState.performanceMode.currentPixelRatio = nextRatio;
+  runtimeState.performanceMode.targetPixelRatio = nextRatio;
+  runtimeState.performanceMode.maxPixelRatio = nextRatio;
+  runtimeState.app.graphicsDevice.maxPixelRatio = nextRatio;
+  runtimeState.app.resizeCanvas();
 }

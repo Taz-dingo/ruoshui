@@ -343,6 +343,33 @@ select {
   text-align: left;
 }
 
+.quality-control {
+  display: grid;
+  gap: 12px;
+}
+
+.quality-slider {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: ew-resize;
+}
+
+.quality-meta {
+  display: grid;
+  gap: 4px;
+}
+
+.quality-meta strong {
+  font-size: 14px;
+}
+
+.quality-meta span {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .variant:disabled {
   opacity: 0.55;
   cursor: wait;
