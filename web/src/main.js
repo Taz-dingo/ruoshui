@@ -30,32 +30,41 @@ appElement.innerHTML = `
     <div class="scene" id="scene"></div>
     <div class="hud">
       <section class="rail">
-        <div class="panel hero">
+        <div class="hero">
           <h1>${data.scene.title}</h1>
-          <p>${data.scene.subtitle}</p>
+          <p class="hero-subtitle">${data.scene.subtitle}</p>
           <div class="hero-actions">
             <button class="button primary" id="focus-scene">进入</button>
             <button class="button secondary" id="focus-overview">全览</button>
           </div>
         </div>
 
-        <div class="panel status-strip" aria-live="polite">
-          <span class="status-dot"></span>
-          <div class="status-copy">
-            <strong id="status-title">准备加载场景</strong>
-            <span id="status-detail">连接运行时</span>
+        <div class="panel meta-panel">
+          <div class="status-strip" aria-live="polite">
+            <span class="status-dot"></span>
+            <div class="status-copy">
+              <strong id="status-title">准备加载场景</strong>
+              <span id="status-detail">连接运行时</span>
+            </div>
           </div>
-        </div>
-
-        <div class="panel stats">
-          <div class="stat-row"><span>版本</span><strong id="variant-kind">${defaultVariant.kind}</strong></div>
-          <div class="stat-row"><span>文件体积</span><strong id="variant-size">${defaultVariant.size}</strong></div>
-          <div class="stat-row"><span>高斯数量</span><strong id="variant-splats">${defaultVariant.splats}</strong></div>
-          <div class="stat-row"><span>保留比例</span><strong id="variant-retention">${defaultVariant.retention}</strong></div>
-        </div>
-
-        <div class="panel section-panel ghost">
-          <h3 class="memory-title" id="variant-title">${defaultVariant.name}</h3>
+          <div class="stats compact-stats">
+            <div class="stat-card">
+              <span>当前版本</span>
+              <strong id="variant-title">${defaultVariant.name}</strong>
+            </div>
+            <div class="stat-card">
+              <span>文件体积</span>
+              <strong id="variant-size">${defaultVariant.size}</strong>
+            </div>
+            <div class="stat-card">
+              <span>高斯数量</span>
+              <strong id="variant-splats">${defaultVariant.splats}</strong>
+            </div>
+            <div class="stat-card">
+              <span>保留比例</span>
+              <strong id="variant-retention">${defaultVariant.retention}</strong>
+            </div>
+          </div>
           <p class="memory-body" id="variant-note">${defaultVariant.note}</p>
         </div>
       </section>
@@ -63,13 +72,13 @@ appElement.innerHTML = `
       <div></div>
 
       <aside class="detail">
-        <div class="stack">
-          <section class="panel section-panel">
+        <div class="panel inspector">
+          <section class="inspector-section">
             <p class="section-title">模型版本</p>
             <div class="variant-list" id="variant-list"></div>
           </section>
 
-          <section class="panel section-panel">
+          <section class="inspector-section">
             <p class="section-title">渲染清晰度</p>
             <div class="quality-control">
               <input
@@ -88,14 +97,12 @@ appElement.innerHTML = `
             </div>
           </section>
 
-          <section class="panel section-panel">
+          <section class="inspector-section">
             <p class="section-title">导览镜头</p>
             <div class="preset-list" id="preset-list"></div>
           </section>
-        </div>
 
-        <div class="stack">
-          <section class="panel section-panel">
+          <section class="inspector-section">
             <p class="section-title">记忆锚点</p>
             <div class="highlight-list" id="highlight-list"></div>
           </section>
@@ -112,7 +119,6 @@ const highlightList = document.querySelector('#highlight-list');
 const renderScaleSlider = document.querySelector('#render-scale-slider');
 const statusTitle = document.querySelector('#status-title');
 const statusDetail = document.querySelector('#status-detail');
-const variantKind = document.querySelector('#variant-kind');
 const variantSize = document.querySelector('#variant-size');
 const variantSplats = document.querySelector('#variant-splats');
 const variantRetention = document.querySelector('#variant-retention');
@@ -131,7 +137,6 @@ if (
   !renderScaleSlider ||
   !statusTitle ||
   !statusDetail ||
-  !variantKind ||
   !variantSize ||
   !variantSplats ||
   !variantRetention ||
@@ -205,12 +210,11 @@ renderVariantMeta(defaultVariant);
 renderRenderScaleMeta(activeRenderScalePercent);
 
 statusTitle.textContent = '加载中';
-statusDetail.textContent = '准备解析 SOG 资产与切换逻辑';
+statusDetail.textContent = '准备场景资源';
 
 await activateVariant(defaultVariant.id, true);
 
 function renderVariantMeta(variant) {
-  variantKind.textContent = variant.kind;
   variantSize.textContent = variant.size;
   variantSplats.textContent = variant.splats;
   variantRetention.textContent = variant.retention;
@@ -231,8 +235,8 @@ function renderRenderScaleMeta(percent) {
   const pixelRatio = (percent / 100).toFixed(2);
   renderScaleValue.textContent = `${percent}% · x${pixelRatio}`;
   renderScaleNote.textContent = percent >= 100
-    ? '更清晰，关闭自动降分辨率。'
-    : '更偏性能，锁定当前渲染比例。';
+    ? '原生像素比'
+    : '降低像素比，换取更稳帧率';
 }
 
 async function activateVariant(variantId, initial = false) {
@@ -252,8 +256,8 @@ async function activateVariant(variantId, initial = false) {
   updateVariantButtons();
   renderVariantMeta(variant);
   setVariantButtonsDisabled(true);
-  statusTitle.textContent = '正在切换模型';
-  statusDetail.textContent = `加载 ${variant.name}`;
+  statusTitle.textContent = '切换中';
+  statusDetail.textContent = `${variant.name}`;
 
   try {
     const nextRuntime = await mountRuntime(variant);
@@ -268,7 +272,7 @@ async function activateVariant(variantId, initial = false) {
       activatePreset(activePresetId || 'hover', true);
     }
     statusTitle.textContent = '场景已就绪';
-    statusDetail.textContent = `当前版本：${variant.name} · ${variant.size} · ${variant.retention}`;
+    statusDetail.textContent = `${variant.size} · ${variant.retention} 保留`;
   } catch (error) {
     statusTitle.textContent = '加载失败';
     statusDetail.textContent = error instanceof Error ? error.message : '未知错误';
