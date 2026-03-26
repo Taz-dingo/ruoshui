@@ -34,20 +34,42 @@
 ## 输出
 
 - `web/`：`pnpm + Vite` 前端项目
-- `web/public/content/mvp.json`：首版文案、镜头、记忆锚点结构
-- `web/vite.config.mjs`：将根目录 `assets/hhuc.sog` 映射为 `/models/hhuc.sog`
+- `web/public/content/mvp.json`：首版文案、镜头、记忆锚点与多版本 `SOG` 元数据
+- `web/vite.config.mjs`：将原始版与派生版 `SOG` 统一映射为 `/models/*`
+- `outputs/iteration-004-sog-opt/`：首轮交付侧派生 `SOG` 候选
 
 ## 验证方式
 
 - 在 `web/` 目录运行 `pnpm install`
+- 运行 `pnpm dev`
+- 确认同页版本切换可在原始版、`h0`、`opacity01`、`dec75`、`dec50` 之间完成重载
 - 运行 `pnpm build`
-- 确认 `hhuc.sog` 能被作为构建产物发出，且页面脚本通过类型检查
+- 确认所有 `SOG` 版本都能作为构建产物发出，且页面脚本通过构建
 
 ## 当前结果
 
 - 已将正式 viewer 路线切到 `PlayCanvas Engine API + gsplat + SOG`
 - 已提供全屏场景背景、加载状态、镜头预设和记忆锚点面板
-- 已避免复制模型文件：开发与构建均复用仓库根目录 `assets/hhuc.sog`
+- 已避免复制模型文件：开发与构建均直接复用仓库根目录资产与 `outputs/iteration-004-sog-opt/` 派生资产
+- 已新增同页多版本 compare 交互：版本按钮、版本元数据面板、切换时重挂载运行时
+- 当前默认载入版本已切到 `hhuc-h0-dec75.sog`
+
+## 补充实验：`SOG` 派生轻量版本
+
+在不能重训第三方模型的前提下，已用 `@playcanvas/splat-transform` 对 `assets/hhuc.sog` 做首轮交付侧派生实验，输出位于 `outputs/iteration-004-sog-opt/`。
+
+- 原始 `hhuc.sog`：约 `27.13 MiB`，`1,868,855` splats
+- `hhuc-h0.sog`：约 `21.62 MiB`，保留 `100%` splats，仅去掉高阶 SH
+- `hhuc-h0-opacity01.sog`：约 `18.58 MiB`，保留约 `84.8%` splats
+- `hhuc-h0-dec75.sog`：约 `16.70 MiB`，保留 `75%` splats
+- `hhuc-h0-dec50.sog`：约 `11.45 MiB`，保留 `50%` splats
+
+当前最值得优先主观对比的两版是：
+
+- `hhuc-h0.sog`：低风险、轻度减重
+- `hhuc-h0-dec75.sog`：更可能带来明显性能改善
+
+其中 compare 页当前默认先落在 `hhuc-h0-dec75.sog`，理由是它更接近“可正式上 Web”的平衡点，而 `hhuc-h0.sog` 更适合作为保真回退版本。
 
 ## 风险与问题
 
@@ -57,6 +79,6 @@
 
 ## 下一步
 
-- 先验证本地构建与实际加载体验
-- 若加载稳定，继续补首页说明区与场景内热点联动
-- 再决定是否追加 `SOG` 侧进一步裁切、分层或发布优化
+- 基于 compare 页的主观体验，先从 `dec75` 与 `h0` 中选出正式默认版本
+- 若 `dec75` 质量可接受，继续围绕它做首屏加载与交互细化
+- 若切换体验稳定，再决定是否追加 `SOG` 侧进一步裁切、分层或发布优化

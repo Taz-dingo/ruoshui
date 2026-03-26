@@ -2,18 +2,73 @@
   "scene": {
     "title": "若水广场",
     "subtitle": "在浏览器里重新俯瞰常州老校区",
-    "summary": "先用《知天下AI》给出的高质量 `SOG` 成果回答一件最重要的事：若水广场能不能先以 Web MVP 的形态成立。",
-    "assetUrl": "/models/hhuc.sog",
+    "summary": "先用《知天下AI》给出的高质量 `SOG` 成果回答一件最重要的事：若水广场能不能先以 Web MVP 的形态成立。现在这一页进一步回答第二个问题：不重训的前提下，哪一版派生模型最适合正式上 Web。",
     "format": "Spatially Ordered Gaussians (SOG)",
-    "size": "27 MiB",
-    "splats": "1,868,855",
-    "bounds": "3.08 × 1.45 × 3.17"
+    "bounds": "3.08 × 1.45 × 3.17",
+    "defaultVariantId": "dec75"
   },
+  "variants": [
+    {
+      "id": "original",
+      "name": "原始版",
+      "summary": "第三方直接交付的完整模型，优先保真。",
+      "assetUrl": "/models/hhuc-original.sog",
+      "size": "27.13 MiB",
+      "splats": "1,868,855",
+      "retention": "100%",
+      "kind": "Baseline",
+      "note": "作为对照组，适合确认性能上限和画质基线。"
+    },
+    {
+      "id": "h0",
+      "name": "H0 轻度版",
+      "summary": "仅去掉高阶 SH，几乎不改空间结构。",
+      "assetUrl": "/models/hhuc-h0.sog",
+      "size": "21.62 MiB",
+      "splats": "1,868,855",
+      "retention": "100%",
+      "kind": "Low Risk",
+      "note": "低风险减重版，通常最适合先判断纯表达层降级的收益。"
+    },
+    {
+      "id": "opacity01",
+      "name": "Opacity 0.1",
+      "summary": "去掉较低 opacity splats，再保留 H0。",
+      "assetUrl": "/models/hhuc-h0-opacity01.sog",
+      "size": "18.58 MiB",
+      "splats": "1,585,157",
+      "retention": "84.8%",
+      "kind": "Filter",
+      "note": "对低贡献 splats 做首轮过滤，适合观察是否能少掉一些脏点与负担。"
+    },
+    {
+      "id": "dec75",
+      "name": "Decimate 75%",
+      "summary": "保留 75% splats，平衡画质与性能。",
+      "assetUrl": "/models/hhuc-h0-dec75.sog",
+      "size": "16.70 MiB",
+      "splats": "1,401,641",
+      "retention": "75%",
+      "kind": "Recommended",
+      "note": "这是当前最值得优先主观对比的版本，更有机会带来明显性能改善。"
+    },
+    {
+      "id": "dec50",
+      "name": "Decimate 50%",
+      "summary": "更激进地保留 50% splats，换取更轻负担。",
+      "assetUrl": "/models/hhuc-h0-dec50.sog",
+      "size": "11.45 MiB",
+      "splats": "934,428",
+      "retention": "50%",
+      "kind": "Aggressive",
+      "note": "适合探索性能下限，但需要重点观察主体结构是否被伤到。"
+    }
+  ],
   "visualThesis": "夜色、玻璃与纪念感组成一块全屏展陈幕布，场景本身就是首页。",
   "interactionThesis": [
     "加载前先给出纪念语境，而不是技术噪音。",
     "镜头预设像策展导览一样切换，让用户马上知道看哪里。",
-    "内容层只做轻量叙事，不让 UI 压过老校区本身。"
+    "在同一页面里切换不同 SOG 版本，用主观体感回答哪一版最适合上 Web。"
   ],
   "presets": [
     {

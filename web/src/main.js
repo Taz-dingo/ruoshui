@@ -16,8 +16,10 @@ const data = await fetch('/content/mvp.json').then(async (response) => {
   return response.json();
 });
 
+const variantsById = new Map(data.variants.map((variant) => [variant.id, variant]));
 const firstPreset = data.presets[0];
 const firstHighlight = data.highlights[0];
+const defaultVariant = variantsById.get(data.scene.defaultVariantId) ?? data.variants[0];
 
 appElement.innerHTML = `
   <main class="shell">
@@ -25,7 +27,7 @@ appElement.innerHTML = `
     <div class="hud">
       <section class="rail">
         <div class="panel hero">
-          <p class="eyebrow">Ruoshui Square · Web MVP</p>
+          <p class="eyebrow">Ruoshui Square · SOG Compare</p>
           <h1>${data.scene.title}</h1>
           <h2>${data.scene.subtitle}</h2>
           <p>${data.scene.summary}</p>
@@ -33,7 +35,7 @@ appElement.innerHTML = `
             <button class="button primary" id="focus-scene">进入场景</button>
             <button class="button secondary" id="focus-overview">切到全览</button>
           </div>
-          <p class="microcopy">左键旋转 · 右键平移 · 滚轮缩放 · 当前先聚焦桌面端</p>
+          <p class="microcopy">左键旋转 · 右键平移 · 滚轮缩放 · 先在同一镜头下切换不同版本比较体感</p>
         </div>
 
         <div class="panel status-strip" aria-live="polite">
@@ -45,15 +47,18 @@ appElement.innerHTML = `
         </div>
 
         <div class="panel stats">
+          <div class="stat-row"><span>当前版本</span><strong id="variant-kind">${defaultVariant.kind}</strong></div>
           <div class="stat-row"><span>交付格式</span><strong>${data.scene.format}</strong></div>
-          <div class="stat-row"><span>文件体积</span><strong>${data.scene.size}</strong></div>
-          <div class="stat-row"><span>高斯数量</span><strong>${data.scene.splats}</strong></div>
+          <div class="stat-row"><span>文件体积</span><strong id="variant-size">${defaultVariant.size}</strong></div>
+          <div class="stat-row"><span>高斯数量</span><strong id="variant-splats">${defaultVariant.splats}</strong></div>
+          <div class="stat-row"><span>保留比例</span><strong id="variant-retention">${defaultVariant.retention}</strong></div>
           <div class="stat-row"><span>包围尺寸</span><strong>${data.scene.bounds}</strong></div>
         </div>
 
         <div class="panel section-panel ghost">
-          <p class="section-title">视觉主张</p>
-          <p class="memory-body">${data.visualThesis}</p>
+          <p class="section-title">当前判断</p>
+          <h3 class="memory-title" id="variant-title">${defaultVariant.name}</h3>
+          <p class="memory-body" id="variant-note">${defaultVariant.note}</p>
           <div class="loading-bar" id="loading-bar" aria-hidden="true"></div>
         </div>
       </section>
@@ -62,6 +67,11 @@ appElement.innerHTML = `
 
       <aside class="detail">
         <div class="stack">
+          <section class="panel section-panel">
+            <p class="section-title">模型版本</p>
+            <div class="variant-list" id="variant-list"></div>
+          </section>
+
           <section class="panel section-panel">
             <p class="section-title">导览镜头</p>
             <div class="preset-list" id="preset-list"></div>
@@ -92,12 +102,19 @@ appElement.innerHTML = `
 `;
 
 const sceneContainer = document.querySelector('#scene');
+const variantList = document.querySelector('#variant-list');
 const presetList = document.querySelector('#preset-list');
 const highlightList = document.querySelector('#highlight-list');
 const thesisList = document.querySelector('#thesis-list');
 const statusTitle = document.querySelector('#status-title');
 const statusDetail = document.querySelector('#status-detail');
 const loadingBar = document.querySelector('#loading-bar');
+const variantKind = document.querySelector('#variant-kind');
+const variantSize = document.querySelector('#variant-size');
+const variantSplats = document.querySelector('#variant-splats');
+const variantRetention = document.querySelector('#variant-retention');
+const variantTitle = document.querySelector('#variant-title');
+const variantNote = document.querySelector('#variant-note');
 const memoryTitle = document.querySelector('#memory-title');
 const memoryBody = document.querySelector('#memory-body');
 const memoryFootnote = document.querySelector('#memory-footnote');
@@ -106,12 +123,19 @@ const focusOverviewButton = document.querySelector('#focus-overview');
 
 if (
   !sceneContainer ||
+  !variantList ||
   !presetList ||
   !highlightList ||
   !thesisList ||
   !statusTitle ||
   !statusDetail ||
   !loadingBar ||
+  !variantKind ||
+  !variantSize ||
+  !variantSplats ||
+  !variantRetention ||
+  !variantTitle ||
+  !variantNote ||
   !memoryTitle ||
   !memoryBody ||
   !memoryFootnote ||
@@ -130,9 +154,28 @@ for (const line of data.interactionThesis) {
 let runtime = null;
 let activePresetId = firstPreset.id;
 let activeHighlightId = firstHighlight.id;
+let activeVariantId = defaultVariant.id;
+let currentLoadToken = 0;
 
+const variantButtons = new Map();
 const presetButtons = new Map();
 const highlightButtons = new Map();
+
+for (const variant of data.variants) {
+  const button = document.createElement('button');
+  button.className = 'variant';
+  button.type = 'button';
+  button.innerHTML = `
+    <strong>${variant.name}</strong>
+    <span>${variant.summary}</span>
+    <small>${variant.size} · ${variant.retention} · ${variant.kind}</small>
+  `;
+  button.addEventListener('click', () => {
+    void activateVariant(variant.id);
+  });
+  variantButtons.set(variant.id, button);
+  variantList.append(button);
+}
 
 for (const preset of data.presets) {
   const button = document.createElement('button');
@@ -163,24 +206,76 @@ focusOverviewButton.addEventListener('click', () => activatePreset('hover'));
 
 updatePresetButtons();
 updateHighlightButtons();
-
-const canvas = document.createElement('canvas');
-sceneContainer.append(canvas);
+updateVariantButtons();
+renderVariantMeta(defaultVariant);
 
 statusTitle.textContent = '加载中';
-statusDetail.textContent = '准备解析 SOG 资产与交互逻辑';
+statusDetail.textContent = '准备解析 SOG 资产与切换逻辑';
 
-try {
-  runtime = await createRuntime(canvas, data);
-  loadingBar.style.opacity = '0';
-  statusTitle.textContent = '场景已就绪';
-  statusDetail.textContent = '可以开始导览与镜头切换';
-  activatePreset('hover', true);
-} catch (error) {
-  loadingBar.style.opacity = '0';
-  statusTitle.textContent = '加载失败';
-  statusDetail.textContent = error instanceof Error ? error.message : '未知错误';
-  throw error;
+await activateVariant(defaultVariant.id, true);
+
+function renderVariantMeta(variant) {
+  variantKind.textContent = variant.kind;
+  variantSize.textContent = variant.size;
+  variantSplats.textContent = variant.splats;
+  variantRetention.textContent = variant.retention;
+  variantTitle.textContent = variant.name;
+  variantNote.textContent = variant.note;
+}
+
+async function activateVariant(variantId, initial = false) {
+  const variant = variantsById.get(variantId);
+
+  if (!variant) {
+    return;
+  }
+
+  if (!initial && variantId === activeVariantId) {
+    return;
+  }
+
+  const loadToken = ++currentLoadToken;
+  activeVariantId = variant.id;
+  updateVariantButtons();
+  renderVariantMeta(variant);
+  setVariantButtonsDisabled(true);
+  loadingBar.style.opacity = '1';
+  statusTitle.textContent = '正在切换模型';
+  statusDetail.textContent = `加载 ${variant.name}：${variant.summary}`;
+
+  try {
+    const nextRuntime = await mountRuntime(variant);
+    if (loadToken !== currentLoadToken) {
+      nextRuntime?.app?.destroy();
+      return;
+    }
+
+    runtime = nextRuntime;
+    activatePreset(activePresetId || 'hover', true);
+    statusTitle.textContent = '场景已就绪';
+    statusDetail.textContent = `当前版本：${variant.name} · ${variant.size} · ${variant.retention}`;
+  } catch (error) {
+    statusTitle.textContent = '加载失败';
+    statusDetail.textContent = error instanceof Error ? error.message : '未知错误';
+    throw error;
+  } finally {
+    if (loadToken === currentLoadToken) {
+      loadingBar.style.opacity = '0';
+      setVariantButtonsDisabled(false);
+    }
+  }
+}
+
+async function mountRuntime(variant) {
+  if (runtime) {
+    runtime.app.destroy();
+    runtime = null;
+  }
+
+  sceneContainer.replaceChildren();
+  const canvas = document.createElement('canvas');
+  sceneContainer.append(canvas);
+  return createRuntime(canvas, variant);
 }
 
 function activatePreset(presetId, immediate = false) {
@@ -236,7 +331,19 @@ function updateHighlightButtons() {
   }
 }
 
-async function createRuntime(canvasElement, config) {
+function updateVariantButtons() {
+  for (const [variantId, button] of variantButtons) {
+    button.classList.toggle('is-active', variantId === activeVariantId);
+  }
+}
+
+function setVariantButtonsDisabled(disabled) {
+  for (const button of variantButtons.values()) {
+    button.disabled = disabled;
+  }
+}
+
+async function createRuntime(canvasElement, variant) {
   const app = new pc.Application(canvasElement, {
     mouse: new pc.Mouse(canvasElement),
     touch: new pc.TouchDevice(canvasElement)
@@ -244,7 +351,8 @@ async function createRuntime(canvasElement, config) {
 
   app.setCanvasFillMode(pc.FILLMODE_FILL_WINDOW);
   app.setCanvasResolution(pc.RESOLUTION_AUTO);
-  app.graphicsDevice.maxPixelRatio = Math.min(window.devicePixelRatio, 1.5);
+  const performanceMode = createPerformanceMode(window);
+  app.graphicsDevice.maxPixelRatio = performanceMode.currentPixelRatio;
   app.scene.gammaCorrection = pc.GAMMA_SRGB;
   app.scene.toneMapping = pc.TONEMAP_ACES;
   app.scene.skyboxIntensity = 0.65;
@@ -253,7 +361,7 @@ async function createRuntime(canvasElement, config) {
   canvasElement.addEventListener('contextmenu', (event) => event.preventDefault());
   window.addEventListener('resize', () => app.resizeCanvas());
 
-  const splatAsset = new pc.Asset('ruoshui-hhuc', 'gsplat', { url: config.scene.assetUrl });
+  const splatAsset = new pc.Asset(`ruoshui-${variant.id}`, 'gsplat', { url: variant.assetUrl });
 
   await new Promise((resolve, reject) => {
     const loader = new pc.AssetListLoader([splatAsset], app.assets);
@@ -269,9 +377,6 @@ async function createRuntime(canvasElement, config) {
     });
   });
 
-  statusTitle.textContent = '正在创建场景';
-  statusDetail.textContent = '高斯纹理已到位，开始挂载 gsplat 与本地轨道控制';
-
   const camera = new pc.Entity('MemorialCamera');
   camera.addComponent('camera', {
     clearColor: new pc.Color(0.02, 0.04, 0.06),
@@ -283,7 +388,7 @@ async function createRuntime(canvasElement, config) {
 
   const initialTarget = vec3(firstPreset.target);
   const initialPosition = vec3(firstPreset.position);
-  const orbit = createOrbitController(camera, canvasElement, initialPosition, initialTarget);
+  const orbit = createOrbitController(camera, canvasElement, initialPosition, initialTarget, performanceMode);
 
   const splat = new pc.Entity('RuoshuiCampus');
   splat.addComponent('gsplat', {
@@ -293,11 +398,13 @@ async function createRuntime(canvasElement, config) {
 
   const runtimeState = {
     app,
-    orbit
+    orbit,
+    performanceMode
   };
 
   app.on('update', (dt) => {
     updateOrbitController(runtimeState.orbit, dt);
+    updatePerformanceMode(runtimeState.performanceMode, app, dt);
   });
 
   return runtimeState;
@@ -311,7 +418,7 @@ function vec3(tuple) {
   return new pc.Vec3(tuple[0], tuple[1], tuple[2]);
 }
 
-function createOrbitController(camera, canvasElement, initialPosition, initialTarget) {
+function createOrbitController(camera, canvasElement, initialPosition, initialTarget, performanceMode) {
   const spherical = positionToOrbit(initialPosition, initialTarget);
 
   const orbit = {
@@ -339,12 +446,20 @@ function createOrbitController(camera, canvasElement, initialPosition, initialTa
 
   const beginPointer = (event) => {
     orbit.pointerMode = event.button === 2 ? 'pan' : 'rotate';
+    document.body.classList.add('is-interacting');
+    if (performanceMode) {
+      performanceMode.isInteracting = true;
+    }
     orbit.lastX = event.clientX;
     orbit.lastY = event.clientY;
   };
 
   const endPointer = () => {
     orbit.pointerMode = null;
+    document.body.classList.remove('is-interacting');
+    if (performanceMode) {
+      performanceMode.isInteracting = false;
+    }
   };
 
   const movePointer = (event) => {
@@ -494,6 +609,60 @@ function clamp(value, min, max) {
 
 function lerp(from, to, alpha) {
   return from + (to - from) * alpha;
+}
+
+function createPerformanceMode(runtimeWindow) {
+  const deviceRatio = Math.max(runtimeWindow.devicePixelRatio || 1, 1);
+  const memory = Number(runtimeWindow.navigator.deviceMemory || 0);
+  const concurrency = Number(runtimeWindow.navigator.hardwareConcurrency || 0);
+  const targetPixelRatio = deviceRatio >= 2 ? 1 : Math.min(deviceRatio, 1.15);
+  const initialPixelRatio = (memory > 0 && memory <= 8) || (concurrency > 0 && concurrency <= 8)
+    ? Math.min(targetPixelRatio, 0.9)
+    : targetPixelRatio;
+
+  return {
+    targetPixelRatio,
+    currentPixelRatio: initialPixelRatio,
+    minPixelRatio: 0.7,
+    maxPixelRatio: targetPixelRatio,
+    sampleTime: 0,
+    frameCount: 0,
+    cooldown: 0,
+    isInteracting: false
+  };
+}
+
+function updatePerformanceMode(performanceMode, app, dt) {
+  performanceMode.sampleTime += dt;
+  performanceMode.frameCount += 1;
+  performanceMode.cooldown = Math.max(0, performanceMode.cooldown - dt);
+
+  if (performanceMode.sampleTime < 1.25 || performanceMode.cooldown > 0) {
+    return;
+  }
+
+  const fps = performanceMode.frameCount / performanceMode.sampleTime;
+  let nextRatio = performanceMode.currentPixelRatio;
+
+  if (fps < 42 && performanceMode.currentPixelRatio > performanceMode.minPixelRatio) {
+    nextRatio = Math.max(performanceMode.minPixelRatio, performanceMode.currentPixelRatio - 0.1);
+  } else if (
+    fps > 56 &&
+    !performanceMode.isInteracting &&
+    performanceMode.currentPixelRatio < performanceMode.maxPixelRatio
+  ) {
+    nextRatio = Math.min(performanceMode.maxPixelRatio, performanceMode.currentPixelRatio + 0.05);
+  }
+
+  if (nextRatio !== performanceMode.currentPixelRatio) {
+    performanceMode.currentPixelRatio = Number(nextRatio.toFixed(2));
+    app.graphicsDevice.maxPixelRatio = performanceMode.currentPixelRatio;
+    app.resizeCanvas();
+    performanceMode.cooldown = 2.5;
+  }
+
+  performanceMode.sampleTime = 0;
+  performanceMode.frameCount = 0;
 }
 
 function lerpAngle(from, to, alpha) {
