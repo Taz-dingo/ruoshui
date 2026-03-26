@@ -35,6 +35,7 @@
 - [x] 定义热点内容 `JSON` 结构
 - [x] 设计首页与场景页信息结构
 - [x] 明确首页纪念文案的表达方向
+- [x] 完成 `SOG` 派生版本的同页对比入口
 
 ### P2
 
@@ -186,3 +187,6 @@
 - 当前 `Web MVP` 已切换为 `PlayCanvas Engine + SOG` 直接加载路线，不再先走 `PLY` 试页验证
 - 已通过 `web/public/content/mvp.json` 固定首版首页文案、导览镜头和记忆锚点结构
 - 已通过 `web/vite.config.mjs` 把根目录 `assets/hhuc.sog` 映射为前端可访问的 `/models/hhuc.sog`，避免复制模型文件
+- 已完成首轮 `SOG` 交付侧派生实验，并产出 `hhuc-h0 / hhuc-h0-opacity01 / hhuc-h0-dec75 / hhuc-h0-dec50`
+- 当前 `Web MVP` 已支持同页切换原始版与 `4` 个派生版本做主观对比，默认落在 `dec75`
+- 当前更小的下一步已收敛为：基于 compare 页主观体验，选定正式默认交付版本，并继续做加载与首屏体验优化

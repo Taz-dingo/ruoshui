@@ -2,14 +2,17 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { defineConfig } from 'vite';
 
-function externalAssetPlugin(routePath, sourceFile) {
+function externalAssetsPlugin(entries) {
+  const routeMap = new Map(entries.map((entry) => [entry.routePath, entry.sourceFile]));
+
   return {
-    name: 'ruoshui-external-asset',
+    name: 'ruoshui-external-assets',
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         const requestPath = req.url?.split('?')[0];
+        const sourceFile = requestPath ? routeMap.get(requestPath) : null;
 
-        if (requestPath !== routePath) {
+        if (!sourceFile) {
           next();
           return;
         }
@@ -25,26 +28,51 @@ function externalAssetPlugin(routePath, sourceFile) {
       });
     },
     buildStart() {
-      if (!fs.existsSync(sourceFile)) {
-        this.error(`Missing asset required by Web MVP: ${sourceFile}`);
+      for (const entry of entries) {
+        if (!fs.existsSync(entry.sourceFile)) {
+          this.error(`Missing asset required by Web MVP: ${entry.sourceFile}`);
+        }
+        this.addWatchFile(entry.sourceFile);
       }
-
-      this.addWatchFile(sourceFile);
     },
     generateBundle() {
-      this.emitFile({
-        type: 'asset',
-        fileName: routePath.replace(/^\//, ''),
-        source: fs.readFileSync(sourceFile)
-      });
+      for (const entry of entries) {
+        this.emitFile({
+          type: 'asset',
+          fileName: entry.routePath.replace(/^\//, ''),
+          source: fs.readFileSync(entry.sourceFile)
+        });
+      }
     }
   };
 }
 
-const hhucAsset = path.resolve(__dirname, '..', 'assets', 'hhuc.sog');
+const rootDir = path.resolve(__dirname, '..');
+const assetEntries = [
+  {
+    routePath: '/models/hhuc-original.sog',
+    sourceFile: path.join(rootDir, 'assets', 'hhuc.sog')
+  },
+  {
+    routePath: '/models/hhuc-h0.sog',
+    sourceFile: path.join(rootDir, 'outputs', 'iteration-004-sog-opt', 'hhuc-h0.sog')
+  },
+  {
+    routePath: '/models/hhuc-h0-opacity01.sog',
+    sourceFile: path.join(rootDir, 'outputs', 'iteration-004-sog-opt', 'hhuc-h0-opacity01.sog')
+  },
+  {
+    routePath: '/models/hhuc-h0-dec75.sog',
+    sourceFile: path.join(rootDir, 'outputs', 'iteration-004-sog-opt', 'hhuc-h0-dec75.sog')
+  },
+  {
+    routePath: '/models/hhuc-h0-dec50.sog',
+    sourceFile: path.join(rootDir, 'outputs', 'iteration-004-sog-opt', 'hhuc-h0-dec50.sog')
+  }
+];
 
 export default defineConfig({
-  plugins: [externalAssetPlugin('/models/hhuc.sog', hhucAsset)],
+  plugins: [externalAssetsPlugin(assetEntries)],
   server: {
     host: '0.0.0.0'
   },
