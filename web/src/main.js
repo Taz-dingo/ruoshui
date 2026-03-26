@@ -20,7 +20,6 @@ const renderScaleStorageKey = 'ruoshui-render-scale-percent';
 const renderScaleMinPercent = 70;
 const variantsById = new Map(data.variants.map((variant) => [variant.id, variant]));
 const firstPreset = data.presets[0];
-const firstHighlight = data.highlights[0];
 const defaultVariant = variantsById.get(data.scene.defaultVariantId) ?? data.variants[0];
 const maxRenderScalePercent = Math.round(getMaxSupportedPixelRatio(window) * 100);
 let activeRenderScalePercent = getInitialRenderScalePercent();
@@ -39,7 +38,7 @@ appElement.innerHTML = `
           </div>
         </div>
 
-        <div class="panel meta-panel">
+        <div class="panel panel-reveal meta-panel">
           <div class="status-strip" aria-live="polite">
             <span class="status-dot"></span>
             <div class="status-copy">
@@ -72,39 +71,76 @@ appElement.innerHTML = `
       <div></div>
 
       <aside class="detail">
-        <div class="panel inspector">
-          <section class="inspector-section">
-            <p class="section-title">模型版本</p>
-            <div class="variant-list" id="variant-list"></div>
+        <div class="panel panel-reveal inspector">
+          <section class="inspector-section variant-section" data-panel="variants">
+            <button class="inspector-toggle" type="button" data-toggle="variants" aria-expanded="false">
+              <span class="section-title">模型版本</span>
+              <span class="toggle-meta" id="variants-summary">${defaultVariant.name}</span>
+            </button>
+            <div class="inspector-body" data-body="variants">
+              <div class="variant-list" id="variant-list"></div>
+            </div>
           </section>
 
-          <section class="inspector-section">
-            <p class="section-title">渲染清晰度</p>
-            <div class="quality-control">
-              <input
-                class="quality-slider"
-                id="render-scale-slider"
-                type="range"
-                min="${renderScaleMinPercent}"
-                max="${maxRenderScalePercent}"
-                step="5"
-                value="${activeRenderScalePercent}"
-              />
-              <div class="quality-meta">
-                <strong id="render-scale-value"></strong>
-                <span id="render-scale-note"></span>
+          <section class="inspector-section" data-panel="quality">
+            <button class="inspector-toggle" type="button" data-toggle="quality" aria-expanded="false">
+              <span class="section-title">渲染清晰度</span>
+              <span class="toggle-meta" id="quality-summary"></span>
+            </button>
+            <div class="inspector-body" data-body="quality">
+              <div class="quality-control">
+                <input
+                  class="quality-slider"
+                  id="render-scale-slider"
+                  type="range"
+                  min="${renderScaleMinPercent}"
+                  max="${maxRenderScalePercent}"
+                  step="5"
+                  value="${activeRenderScalePercent}"
+                />
+                <div class="quality-meta">
+                  <strong id="render-scale-value"></strong>
+                  <span id="render-scale-note"></span>
+                </div>
               </div>
             </div>
           </section>
 
-          <section class="inspector-section">
-            <p class="section-title">导览镜头</p>
-            <div class="preset-list" id="preset-list"></div>
+          <section class="inspector-section" data-panel="presets">
+            <button class="inspector-toggle" type="button" data-toggle="presets" aria-expanded="false">
+              <span class="section-title">导览镜头</span>
+              <span class="toggle-meta" id="presets-summary">${firstPreset.name}</span>
+            </button>
+            <div class="inspector-body" data-body="presets">
+              <div class="preset-list" id="preset-list"></div>
+            </div>
           </section>
 
-          <section class="inspector-section">
-            <p class="section-title">记忆锚点</p>
-            <div class="highlight-list" id="highlight-list"></div>
+          <section class="inspector-section" data-panel="camera">
+            <button class="inspector-toggle" type="button" data-toggle="camera" aria-expanded="false">
+              <span class="section-title">相机信息</span>
+              <span class="toggle-meta" id="camera-summary">等待视角</span>
+            </button>
+            <div class="inspector-body" data-body="camera">
+              <div class="camera-grid">
+                <div class="camera-card">
+                  <span>位置</span>
+                  <strong id="camera-position">—</strong>
+                </div>
+                <div class="camera-card">
+                  <span>目标</span>
+                  <strong id="camera-target">—</strong>
+                </div>
+                <div class="camera-card">
+                  <span>距离</span>
+                  <strong id="camera-distance">—</strong>
+                </div>
+                <div class="camera-card">
+                  <span>俯仰 / 水平</span>
+                  <strong id="camera-angle">—</strong>
+                </div>
+              </div>
+            </div>
           </section>
         </div>
       </aside>
@@ -115,7 +151,6 @@ appElement.innerHTML = `
 const sceneContainer = document.querySelector('#scene');
 const variantList = document.querySelector('#variant-list');
 const presetList = document.querySelector('#preset-list');
-const highlightList = document.querySelector('#highlight-list');
 const renderScaleSlider = document.querySelector('#render-scale-slider');
 const statusTitle = document.querySelector('#status-title');
 const statusDetail = document.querySelector('#status-detail');
@@ -128,12 +163,23 @@ const renderScaleValue = document.querySelector('#render-scale-value');
 const renderScaleNote = document.querySelector('#render-scale-note');
 const focusSceneButton = document.querySelector('#focus-scene');
 const focusOverviewButton = document.querySelector('#focus-overview');
+const variantsSummary = document.querySelector('#variants-summary');
+const qualitySummary = document.querySelector('#quality-summary');
+const presetsSummary = document.querySelector('#presets-summary');
+const cameraSummary = document.querySelector('#camera-summary');
+const cameraPosition = document.querySelector('#camera-position');
+const cameraTarget = document.querySelector('#camera-target');
+const cameraDistance = document.querySelector('#camera-distance');
+const cameraAngle = document.querySelector('#camera-angle');
+const inspectorToggles = [...document.querySelectorAll('[data-toggle]')];
+const inspectorBodies = new Map(
+  [...document.querySelectorAll('[data-body]')].map((element) => [element.dataset.body, element])
+);
 
 if (
   !sceneContainer ||
   !variantList ||
   !presetList ||
-  !highlightList ||
   !renderScaleSlider ||
   !statusTitle ||
   !statusDetail ||
@@ -145,26 +191,40 @@ if (
   !renderScaleValue ||
   !renderScaleNote ||
   !focusSceneButton ||
-  !focusOverviewButton
+  !focusOverviewButton ||
+  !variantsSummary ||
+  !qualitySummary ||
+  !presetsSummary ||
+  !cameraSummary ||
+  !cameraPosition ||
+  !cameraTarget ||
+  !cameraDistance ||
+  !cameraAngle ||
+  inspectorToggles.length === 0 ||
+  inspectorBodies.size === 0
 ) {
   throw new Error('Failed to initialize UI shell');
 }
 
 let runtime = null;
 let activePresetId = firstPreset.id;
-let activeHighlightId = firstHighlight.id;
 let activeVariantId = defaultVariant.id;
 let currentLoadToken = 0;
+let openInspectorPanel = null;
 
 const variantButtons = new Map();
 const presetButtons = new Map();
-const highlightButtons = new Map();
 
 for (const variant of data.variants) {
   const button = document.createElement('button');
   button.className = 'variant';
   button.type = 'button';
-  button.innerHTML = `<strong>${variant.name}</strong><small>${variant.size} · ${variant.retention}</small>`;
+  button.innerHTML = `
+    <span class="variant-line">
+      <strong>${variant.name}</strong>
+      <small>${variant.size} · ${variant.retention}</small>
+    </span>
+  `;
   button.addEventListener('click', () => {
     void activateVariant(variant.id);
   });
@@ -184,30 +244,29 @@ for (const preset of data.presets) {
   presetList.append(button);
 }
 
-for (const highlight of data.highlights) {
-  const button = document.createElement('button');
-  button.className = 'highlight';
-  button.type = 'button';
-  button.innerHTML = `<strong>${highlight.name}</strong><span>${highlight.title}</span>`;
-  button.addEventListener('click', () => {
-    activateHighlight(highlight.id, true);
-  });
-  highlightButtons.set(highlight.id, button);
-  highlightList.append(button);
-}
-
 focusSceneButton.addEventListener('click', () => activatePreset(firstPreset.id));
 focusOverviewButton.addEventListener('click', () => activatePreset('hover'));
 renderScaleSlider.addEventListener('input', (event) => {
   const nextPercent = Number(event.currentTarget.value);
   activateRenderScale(nextPercent);
 });
+for (const toggle of inspectorToggles) {
+  toggle.addEventListener('click', () => {
+    const { toggle: panelId } = toggle.dataset;
+    if (!panelId) {
+      return;
+    }
+
+    setOpenInspectorPanel(openInspectorPanel === panelId ? null : panelId);
+  });
+}
 
 updatePresetButtons();
-updateHighlightButtons();
 updateVariantButtons();
 renderVariantMeta(defaultVariant);
 renderRenderScaleMeta(activeRenderScalePercent);
+renderCameraMeta(null);
+setOpenInspectorPanel(openInspectorPanel);
 
 statusTitle.textContent = '加载中';
 statusDetail.textContent = '准备场景资源';
@@ -220,6 +279,7 @@ function renderVariantMeta(variant) {
   variantRetention.textContent = variant.retention;
   variantTitle.textContent = variant.name;
   variantNote.textContent = variant.note;
+  variantsSummary.textContent = variant.name;
 }
 
 function activateRenderScale(nextPercent) {
@@ -234,6 +294,7 @@ function activateRenderScale(nextPercent) {
 function renderRenderScaleMeta(percent) {
   const pixelRatio = (percent / 100).toFixed(2);
   renderScaleValue.textContent = `${percent}% · x${pixelRatio}`;
+  qualitySummary.textContent = `${percent}%`;
   renderScaleNote.textContent = percent >= 100
     ? '原生像素比'
     : '降低像素比，换取更稳帧率';
@@ -304,43 +365,31 @@ function activatePreset(presetId, immediate = false) {
   }
 
   activePresetId = preset.id;
+  presetsSummary.textContent = preset.name;
   updatePresetButtons();
 
   if (runtime) {
     moveCamera(runtime, preset, immediate);
   }
-
-  const relatedHighlight = data.highlights.find((entry) => entry.presetId === preset.id);
-  if (relatedHighlight) {
-    activateHighlight(relatedHighlight.id, false);
-  }
 }
 
-function activateHighlight(highlightId, syncPreset) {
-  const highlight = data.highlights.find((entry) => entry.id === highlightId);
+function setOpenInspectorPanel(panelId) {
+  openInspectorPanel = panelId;
 
-  if (!highlight) {
-    return;
+  for (const toggle of inspectorToggles) {
+    const isOpen = toggle.dataset.toggle === panelId;
+    toggle.classList.toggle('is-active', isOpen);
+    toggle.setAttribute('aria-expanded', String(isOpen));
   }
 
-  activeHighlightId = highlight.id;
-  updateHighlightButtons();
-
-  const linkedPreset = data.presets.find((entry) => entry.id === highlight.presetId);
-  if (syncPreset && linkedPreset) {
-    activatePreset(linkedPreset.id);
+  for (const [bodyId, body] of inspectorBodies) {
+    body.classList.toggle('is-open', bodyId === panelId);
   }
 }
 
 function updatePresetButtons() {
   for (const [presetId, button] of presetButtons) {
     button.classList.toggle('is-active', presetId === activePresetId);
-  }
-}
-
-function updateHighlightButtons() {
-  for (const [highlightId, button] of highlightButtons) {
-    button.classList.toggle('is-active', highlightId === activeHighlightId);
   }
 }
 
@@ -412,12 +461,14 @@ async function createRuntime(canvasElement, variant) {
   const runtimeState = {
     app,
     orbit,
-    performanceMode
+    performanceMode,
+    lastCameraSnapshot: ''
   };
 
   app.on('update', (dt) => {
     updateOrbitController(runtimeState.orbit, dt);
     updatePerformanceMode(runtimeState.performanceMode, app, dt);
+    renderCameraMeta(runtimeState);
   });
 
   return runtimeState;
@@ -492,7 +543,6 @@ function createOrbitController(camera, canvasElement, initialPosition, initialTa
 
   const beginPointer = (event) => {
     orbit.pointerMode = event.button === 2 ? 'pan' : 'rotate';
-    document.body.classList.add('is-interacting');
     if (performanceMode) {
       performanceMode.isInteracting = true;
     }
@@ -502,7 +552,6 @@ function createOrbitController(camera, canvasElement, initialPosition, initialTa
 
   const endPointer = () => {
     orbit.pointerMode = null;
-    document.body.classList.remove('is-interacting');
     if (performanceMode) {
       performanceMode.isInteracting = false;
     }
@@ -641,12 +690,60 @@ function orbitToPosition(target, yaw, pitch, distance) {
   );
 }
 
+function renderCameraMeta(runtimeState) {
+  if (!runtimeState?.orbit) {
+    cameraPosition.textContent = '—';
+    cameraTarget.textContent = '—';
+    cameraDistance.textContent = '—';
+    cameraAngle.textContent = '—';
+    cameraSummary.textContent = '等待视角';
+    return;
+  }
+
+  const { orbit } = runtimeState;
+  const position = orbit.camera.getPosition();
+  const target = orbit.currentTarget;
+  const distance = orbit.currentDistance;
+  const pitch = Math.round(radToDeg(orbit.currentPitch));
+  const yaw = Math.round(radToDeg(orbit.currentYaw));
+  const snapshot = [
+    position.x.toFixed(2),
+    position.y.toFixed(2),
+    position.z.toFixed(2),
+    target.x.toFixed(2),
+    target.y.toFixed(2),
+    target.z.toFixed(2),
+    distance.toFixed(2),
+    pitch,
+    yaw
+  ].join('|');
+
+  if (runtimeState.lastCameraSnapshot === snapshot) {
+    return;
+  }
+
+  runtimeState.lastCameraSnapshot = snapshot;
+  cameraPosition.textContent = formatVec3(position);
+  cameraTarget.textContent = formatVec3(target);
+  cameraDistance.textContent = `${distance.toFixed(2)} m`;
+  cameraAngle.textContent = `${pitch}° / ${yaw}°`;
+  cameraSummary.textContent = `${distance.toFixed(2)} m · ${pitch}°`;
+}
+
+function formatVec3(vector) {
+  return `${vector.x.toFixed(2)}, ${vector.y.toFixed(2)}, ${vector.z.toFixed(2)}`;
+}
+
 function easeInOutCubic(value) {
   return value < 0.5 ? 4 * value * value * value : 1 - Math.pow(-2 * value + 2, 3) / 2;
 }
 
 function degToRad(value) {
   return (value * Math.PI) / 180;
+}
+
+function radToDeg(value) {
+  return (value * 180) / Math.PI;
 }
 
 function clamp(value, min, max) {
