@@ -16,9 +16,15 @@ const data = await fetch('/content/mvp.json').then(async (response) => {
   return response.json();
 });
 
+const showPerfHud = import.meta.env.DEV;
 const renderScaleStorageKey = 'ruoshui-render-scale-percent';
 const renderScaleMinPercent = 70;
+const cameraMetaIntervalSeconds = 0.12;
+const perfHudIntervalSeconds = 0.5;
+const renderWakeSeconds = 0.25;
 const variantsById = new Map(data.variants.map((variant) => [variant.id, variant]));
+const benchmarkRoutes = data.benchmarkRoutes ?? [];
+const benchmarkRoutesById = new Map(benchmarkRoutes.map((route) => [route.id, route]));
 const firstPreset = data.presets[0];
 const defaultVariant = variantsById.get(data.scene.defaultVariantId) ?? data.variants[0];
 const maxRenderScalePercent = Math.round(getMaxSupportedPixelRatio(window) * 100);
@@ -65,6 +71,20 @@ appElement.innerHTML = `
             </div>
           </div>
           <p class="memory-body" id="variant-note">${defaultVariant.note}</p>
+          <div class="metrics-grid" aria-live="polite">
+            <div class="metric-card">
+              <span>加载</span>
+              <strong id="metric-load">—</strong>
+            </div>
+            <div class="metric-card">
+              <span>首帧</span>
+              <strong id="metric-first-frame">—</strong>
+            </div>
+            <div class="metric-card">
+              <span>漫游</span>
+              <strong id="metric-motion">待采样</strong>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -112,6 +132,13 @@ appElement.innerHTML = `
               <span class="toggle-meta" id="presets-summary">${firstPreset.name}</span>
             </button>
             <div class="inspector-body" data-body="presets">
+              <div class="route-group">
+                <div class="route-head">
+                  <span>对比轨迹</span>
+                  <strong id="route-summary">未播放</strong>
+                </div>
+                <div class="route-list" id="route-list"></div>
+              </div>
               <div class="preset-list" id="preset-list"></div>
             </div>
           </section>
@@ -145,11 +172,20 @@ appElement.innerHTML = `
         </div>
       </aside>
     </div>
+    ${showPerfHud ? `
+      <aside class="perf-hud" aria-live="polite">
+        <span class="perf-chip">FPS <strong id="perf-fps">—</strong></span>
+        <span class="perf-chip">帧时 <strong id="perf-ms">—</strong></span>
+        <span class="perf-chip">渲染 <strong id="perf-render">启动中</strong></span>
+        <span class="perf-chip">比例 <strong id="perf-scale">${activeRenderScalePercent}%</strong></span>
+      </aside>
+    ` : ''}
   </main>
 `;
 
 const sceneContainer = document.querySelector('#scene');
 const variantList = document.querySelector('#variant-list');
+const routeList = document.querySelector('#route-list');
 const presetList = document.querySelector('#preset-list');
 const renderScaleSlider = document.querySelector('#render-scale-slider');
 const statusTitle = document.querySelector('#status-title');
@@ -159,6 +195,9 @@ const variantSplats = document.querySelector('#variant-splats');
 const variantRetention = document.querySelector('#variant-retention');
 const variantTitle = document.querySelector('#variant-title');
 const variantNote = document.querySelector('#variant-note');
+const metricLoad = document.querySelector('#metric-load');
+const metricFirstFrame = document.querySelector('#metric-first-frame');
+const metricMotion = document.querySelector('#metric-motion');
 const renderScaleValue = document.querySelector('#render-scale-value');
 const renderScaleNote = document.querySelector('#render-scale-note');
 const focusSceneButton = document.querySelector('#focus-scene');
@@ -166,11 +205,16 @@ const focusOverviewButton = document.querySelector('#focus-overview');
 const variantsSummary = document.querySelector('#variants-summary');
 const qualitySummary = document.querySelector('#quality-summary');
 const presetsSummary = document.querySelector('#presets-summary');
+const routeSummary = document.querySelector('#route-summary');
 const cameraSummary = document.querySelector('#camera-summary');
 const cameraPosition = document.querySelector('#camera-position');
 const cameraTarget = document.querySelector('#camera-target');
 const cameraDistance = document.querySelector('#camera-distance');
 const cameraAngle = document.querySelector('#camera-angle');
+const perfFps = showPerfHud ? document.querySelector('#perf-fps') : null;
+const perfMs = showPerfHud ? document.querySelector('#perf-ms') : null;
+const perfRender = showPerfHud ? document.querySelector('#perf-render') : null;
+const perfScale = showPerfHud ? document.querySelector('#perf-scale') : null;
 const inspectorToggles = [...document.querySelectorAll('[data-toggle]')];
 const inspectorBodies = new Map(
   [...document.querySelectorAll('[data-body]')].map((element) => [element.dataset.body, element])
@@ -179,6 +223,7 @@ const inspectorBodies = new Map(
 if (
   !sceneContainer ||
   !variantList ||
+  !routeList ||
   !presetList ||
   !renderScaleSlider ||
   !statusTitle ||
@@ -188,6 +233,9 @@ if (
   !variantRetention ||
   !variantTitle ||
   !variantNote ||
+  !metricLoad ||
+  !metricFirstFrame ||
+  !metricMotion ||
   !renderScaleValue ||
   !renderScaleNote ||
   !focusSceneButton ||
@@ -195,11 +243,13 @@ if (
   !variantsSummary ||
   !qualitySummary ||
   !presetsSummary ||
+  !routeSummary ||
   !cameraSummary ||
   !cameraPosition ||
   !cameraTarget ||
   !cameraDistance ||
   !cameraAngle ||
+  (showPerfHud && (!perfFps || !perfMs || !perfRender || !perfScale)) ||
   inspectorToggles.length === 0 ||
   inspectorBodies.size === 0
 ) {
@@ -209,11 +259,14 @@ if (
 let runtime = null;
 let activePresetId = firstPreset.id;
 let activeVariantId = defaultVariant.id;
+let activeRouteId = null;
 let currentLoadToken = 0;
 let openInspectorPanel = null;
 
 const variantButtons = new Map();
+const routeButtons = new Map();
 const presetButtons = new Map();
+const variantBenchmarks = new Map();
 
 for (const variant of data.variants) {
   const button = document.createElement('button');
@@ -244,6 +297,18 @@ for (const preset of data.presets) {
   presetList.append(button);
 }
 
+for (const route of benchmarkRoutes) {
+  const button = document.createElement('button');
+  button.className = 'route';
+  button.type = 'button';
+  button.innerHTML = `<strong>${route.name}</strong><span>${route.summary}</span>`;
+  button.addEventListener('click', () => {
+    activateBenchmarkRoute(route.id);
+  });
+  routeButtons.set(route.id, button);
+  routeList.append(button);
+}
+
 focusSceneButton.addEventListener('click', () => activatePreset(firstPreset.id));
 focusOverviewButton.addEventListener('click', () => activatePreset('hover'));
 renderScaleSlider.addEventListener('input', (event) => {
@@ -263,9 +328,11 @@ for (const toggle of inspectorToggles) {
 
 updatePresetButtons();
 updateVariantButtons();
+updateRouteButtons();
 renderVariantMeta(defaultVariant);
 renderRenderScaleMeta(activeRenderScalePercent);
 renderCameraMeta(null);
+renderPerfHud(null);
 setOpenInspectorPanel(openInspectorPanel);
 
 statusTitle.textContent = '加载中';
@@ -280,6 +347,7 @@ function renderVariantMeta(variant) {
   variantTitle.textContent = variant.name;
   variantNote.textContent = variant.note;
   variantsSummary.textContent = variant.name;
+  renderVariantBenchmark(variant.id);
 }
 
 function activateRenderScale(nextPercent) {
@@ -289,6 +357,7 @@ function activateRenderScale(nextPercent) {
   persistRenderScalePercent(normalizedPercent);
   renderRenderScaleMeta(normalizedPercent);
   applyRenderScaleToRuntime(runtime, normalizedPercent);
+  renderPerfHud(runtime);
 }
 
 function renderRenderScaleMeta(percent) {
@@ -311,8 +380,14 @@ async function activateVariant(variantId, initial = false) {
     return;
   }
 
+  if (activeRouteId) {
+    stopActiveBenchmarkRoute();
+  }
+
   const loadToken = ++currentLoadToken;
+  const switchStartedAt = performance.now();
   const preservedView = initial ? null : captureCurrentView(runtime);
+  const benchmark = beginVariantBenchmark(variant.id);
   activeVariantId = variant.id;
   updateVariantButtons();
   renderVariantMeta(variant);
@@ -321,9 +396,9 @@ async function activateVariant(variantId, initial = false) {
   statusDetail.textContent = `${variant.name}`;
 
   try {
-    const nextRuntime = await mountRuntime(variant);
+    const nextRuntime = await mountRuntime(variant, { switchStartedAt, benchmark });
     if (loadToken !== currentLoadToken) {
-      nextRuntime?.app?.destroy();
+      nextRuntime?.destroy?.();
       return;
     }
 
@@ -345,16 +420,16 @@ async function activateVariant(variantId, initial = false) {
   }
 }
 
-async function mountRuntime(variant) {
+async function mountRuntime(variant, timings) {
   if (runtime) {
-    runtime.app.destroy();
+    runtime.destroy();
     runtime = null;
   }
 
   sceneContainer.replaceChildren();
   const canvas = document.createElement('canvas');
   sceneContainer.append(canvas);
-  return createRuntime(canvas, variant);
+  return createRuntime(canvas, variant, timings);
 }
 
 function activatePreset(presetId, immediate = false) {
@@ -370,6 +445,27 @@ function activatePreset(presetId, immediate = false) {
 
   if (runtime) {
     moveCamera(runtime, preset, immediate);
+  }
+}
+
+function activateBenchmarkRoute(routeId) {
+  const route = benchmarkRoutesById.get(routeId);
+
+  if (!route) {
+    return;
+  }
+
+  if (activeRouteId === routeId) {
+    stopActiveBenchmarkRoute();
+    return;
+  }
+
+  activeRouteId = route.id;
+  routeSummary.textContent = `${route.name} · 运行中`;
+  updateRouteButtons();
+
+  if (runtime) {
+    startBenchmarkRoute(runtime, route);
   }
 }
 
@@ -399,31 +495,52 @@ function updateVariantButtons() {
   }
 }
 
+function updateRouteButtons() {
+  for (const [routeId, button] of routeButtons) {
+    button.classList.toggle('is-active', routeId === activeRouteId);
+  }
+}
+
 function setVariantButtonsDisabled(disabled) {
   for (const button of variantButtons.values()) {
     button.disabled = disabled;
   }
 }
 
-async function createRuntime(canvasElement, variant) {
+async function createRuntime(canvasElement, variant, timings = {}) {
   const app = new pc.Application(canvasElement, {
     mouse: new pc.Mouse(canvasElement),
-    touch: new pc.TouchDevice(canvasElement)
+    touch: new pc.TouchDevice(canvasElement),
+    graphicsDeviceOptions: {
+      antialias: false,
+      powerPreference: 'high-performance'
+    }
   });
 
   app.setCanvasFillMode(pc.FILLMODE_FILL_WINDOW);
   app.setCanvasResolution(pc.RESOLUTION_AUTO);
   const performanceMode = createPerformanceMode(window, activeRenderScalePercent);
+  const loopController = createLoopController(app);
   app.graphicsDevice.maxPixelRatio = performanceMode.currentPixelRatio;
   app.scene.gammaCorrection = pc.GAMMA_SRGB;
   app.scene.toneMapping = pc.TONEMAP_ACES;
   app.scene.skyboxIntensity = 0.65;
   app.start();
+  app.autoRender = true;
+  app.renderNextFrame = true;
 
-  canvasElement.addEventListener('contextmenu', (event) => event.preventDefault());
-  window.addEventListener('resize', () => app.resizeCanvas());
+  const preventContextMenu = (event) => event.preventDefault();
+  const handleResize = () => {
+    loopController.wake();
+    app.resizeCanvas();
+    app.renderNextFrame = true;
+  };
+  canvasElement.addEventListener('contextmenu', preventContextMenu);
+  window.addEventListener('resize', handleResize);
 
   const splatAsset = new pc.Asset(`ruoshui-${variant.id}`, 'gsplat', { url: variant.assetUrl });
+  const benchmark = timings.benchmark ?? beginVariantBenchmark(variant.id);
+  const assetLoadStartedAt = performance.now();
 
   await new Promise((resolve, reject) => {
     const loader = new pc.AssetListLoader([splatAsset], app.assets);
@@ -435,6 +552,8 @@ async function createRuntime(canvasElement, variant) {
     app.assets.on('error', onError);
     loader.load(() => {
       app.assets.off('error', onError);
+      benchmark.loadMs = performance.now() - assetLoadStartedAt;
+      publishVariantBenchmark(variant.id);
       resolve();
     });
   });
@@ -453,29 +572,220 @@ async function createRuntime(canvasElement, variant) {
   const orbit = createOrbitController(camera, canvasElement, initialPosition, initialTarget, performanceMode);
 
   const splat = new pc.Entity('RuoshuiCampus');
-  splat.addComponent('gsplat', {
+  const gsplatComponent = {
     asset: splatAsset
-  });
-  app.root.addChild(splat);
-
-  const runtimeState = {
-    app,
-    orbit,
-    performanceMode,
-    lastCameraSnapshot: ''
   };
 
-  app.on('update', (dt) => {
-    updateOrbitController(runtimeState.orbit, dt);
-    updatePerformanceMode(runtimeState.performanceMode, app, dt);
+  if (variant.unified) {
+    gsplatComponent.unified = true;
+  }
+
+  if (variant.lodDistances) {
+    gsplatComponent.lodDistances = variant.lodDistances;
+  }
+
+  splat.addComponent('gsplat', gsplatComponent);
+  app.root.addChild(splat);
+  configureUnifiedGsplat(app, variant);
+
+  const runtimeState = {
+    variantId: variant.id,
+    app,
+    orbit,
+    benchmark,
+    performanceMode,
+    loopController,
+    routePlayback: null,
+    lastCameraSnapshot: '',
+    cameraMetaElapsed: 0,
+    perfHudElapsed: 0,
+    perfHudFrames: 0,
+    renderWakeRemaining: renderWakeSeconds,
+    requestRender: () => {
+      loopController.wake();
+      runtimeState.renderWakeRemaining = renderWakeSeconds;
+      app.autoRender = true;
+      app.renderNextFrame = true;
+    },
+    destroy: () => {
+      loopController.wake();
+      window.removeEventListener('resize', handleResize);
+      canvasElement.removeEventListener('contextmenu', preventContextMenu);
+      orbit.destroy();
+      app.destroy();
+    }
+  };
+
+  orbit.onManualInput = () => {
+    if (activeRouteId) {
+      stopActiveBenchmarkRoute();
+    }
+    runtimeState.requestRender();
+  };
+  trackFirstFrame(app, variant.id, timings.switchStartedAt);
+
+  const suspendRuntime = () => {
+    runtimeState.renderWakeRemaining = 0;
+    runtimeState.orbit.cancelInteraction?.();
+    app.autoRender = false;
+    app.renderNextFrame = false;
+    loopController.sleep();
+  };
+
+  const resumeRuntime = () => {
+    runtimeState.requestRender();
     renderCameraMeta(runtimeState);
-  });
+    renderPerfHud(runtimeState);
+  };
+
+  const handleVisibilityChange = () => {
+    if (document.hidden) {
+      suspendRuntime();
+      return;
+    }
+
+    resumeRuntime();
+  };
+
+  const handleWindowBlur = () => {
+    runtimeState.orbit.cancelInteraction?.();
+  };
+
+  const handleWindowFocus = () => {
+    if (!document.hidden) {
+      resumeRuntime();
+    }
+  };
+
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  window.addEventListener('blur', handleWindowBlur);
+  window.addEventListener('focus', handleWindowFocus);
+
+  const handleUpdate = (dt) => {
+    const routeChanged = updateBenchmarkRoute(runtimeState, dt);
+    const orbitChanged = updateOrbitController(runtimeState.orbit, dt);
+    const performanceChanged = updatePerformanceMode(runtimeState.performanceMode, app, dt);
+    const keepRendering =
+      routeChanged || orbitChanged || performanceChanged || runtimeState.performanceMode.isInteracting;
+    if (routeChanged || orbitChanged || runtimeState.performanceMode.isInteracting) {
+      runtimeState.benchmark.motionFrames += 1;
+      runtimeState.benchmark.motionTime += dt;
+    }
+    if (keepRendering) {
+      runtimeState.requestRender();
+    } else if (runtimeState.renderWakeRemaining > 0) {
+      runtimeState.renderWakeRemaining = Math.max(0, runtimeState.renderWakeRemaining - dt);
+      if (runtimeState.renderWakeRemaining === 0) {
+        app.autoRender = false;
+        loopController.sleep();
+      }
+    }
+    runtimeState.cameraMetaElapsed += dt;
+    if (runtimeState.cameraMetaElapsed >= cameraMetaIntervalSeconds) {
+      renderCameraMeta(runtimeState);
+      runtimeState.cameraMetaElapsed = 0;
+    }
+    runtimeState.perfHudElapsed += dt;
+    runtimeState.perfHudFrames += 1;
+    if (runtimeState.perfHudElapsed >= perfHudIntervalSeconds) {
+      renderPerfHud(runtimeState);
+      runtimeState.perfHudElapsed = 0;
+      runtimeState.perfHudFrames = 0;
+    }
+  };
+  app.on('update', handleUpdate);
+  const destroyRuntime = runtimeState.destroy;
+  runtimeState.destroy = () => {
+    app.off('update', handleUpdate);
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+    window.removeEventListener('blur', handleWindowBlur);
+    window.removeEventListener('focus', handleWindowFocus);
+    destroyRuntime();
+  };
 
   return runtimeState;
 }
 
 function moveCamera(runtimeState, preset, immediate = false) {
   setOrbitPreset(runtimeState.orbit, vec3(preset.position), vec3(preset.target), immediate);
+  runtimeState.requestRender();
+}
+
+function startBenchmarkRoute(runtimeState, route) {
+  if (!runtimeState || !route?.steps?.length) {
+    return;
+  }
+
+  runtimeState.routePlayback = {
+    route,
+    stepIndex: -1,
+    stepRemaining: 0
+  };
+  advanceBenchmarkRoute(runtimeState);
+}
+
+function stopBenchmarkRoute(runtimeState) {
+  if (!runtimeState) {
+    return;
+  }
+
+  runtimeState.routePlayback = null;
+}
+
+function stopActiveBenchmarkRoute(summaryText = '未播放') {
+  if (runtime) {
+    stopBenchmarkRoute(runtime);
+  }
+
+  activeRouteId = null;
+  routeSummary.textContent = summaryText;
+  updateRouteButtons();
+}
+
+function advanceBenchmarkRoute(runtimeState) {
+  const playback = runtimeState?.routePlayback;
+
+  if (!playback) {
+    return false;
+  }
+
+  playback.stepIndex += 1;
+  if (playback.stepIndex >= playback.route.steps.length) {
+    runtimeState.routePlayback = null;
+    if (activeRouteId === playback.route.id) {
+      stopActiveBenchmarkRoute(`${playback.route.name} · 完成`);
+    }
+    return false;
+  }
+
+  const step = playback.route.steps[playback.stepIndex];
+  const duration = Number.isFinite(step.duration) ? Math.max(step.duration, 0) : 1.35;
+  const hold = Number.isFinite(step.hold) ? Math.max(step.hold, 0) : 0.35;
+  const immediate = duration === 0;
+  setOrbitPreset(runtimeState.orbit, vec3(step.position), vec3(step.target), immediate, duration);
+  playback.stepRemaining = duration + hold;
+  runtimeState.requestRender?.();
+
+  if (activeRouteId === playback.route.id) {
+    routeSummary.textContent = `${playback.route.name} · ${playback.stepIndex + 1}/${playback.route.steps.length}`;
+  }
+
+  return true;
+}
+
+function updateBenchmarkRoute(runtimeState, dt) {
+  const playback = runtimeState?.routePlayback;
+
+  if (!playback) {
+    return false;
+  }
+
+  playback.stepRemaining -= dt;
+  if (playback.stepRemaining > 0) {
+    return false;
+  }
+
+  return advanceBenchmarkRoute(runtimeState);
 }
 
 function captureCurrentView(runtimeState) {
@@ -508,7 +818,101 @@ function restoreCurrentView(runtimeState, snapshot) {
   orbit.currentDistance = snapshot.distance;
   orbit.desiredDistance = snapshot.distance;
   applyOrbit(orbit, 1);
+  runtimeState.requestRender?.();
   return true;
+}
+
+function configureUnifiedGsplat(app, variant) {
+  if (!variant?.unified || !variant.unifiedTuning || !app?.scene?.gsplat) {
+    return;
+  }
+
+  Object.assign(app.scene.gsplat, variant.unifiedTuning);
+}
+
+function createLoopController(app) {
+  const originalTick = app.tick;
+  let sleeping = false;
+
+  return {
+    get isSleeping() {
+      return sleeping;
+    },
+    sleep() {
+      if (sleeping) {
+        return;
+      }
+
+      sleeping = true;
+      app.tick = () => {};
+    },
+    wake() {
+      if (!sleeping) {
+        return;
+      }
+
+      sleeping = false;
+      app.tick = originalTick;
+      window.requestAnimationFrame(app.tick);
+    }
+  };
+}
+
+function beginVariantBenchmark(variantId) {
+  const benchmark = {
+    loadMs: null,
+    firstFrameMs: null,
+    motionTime: 0,
+    motionFrames: 0
+  };
+  variantBenchmarks.set(variantId, benchmark);
+  return benchmark;
+}
+
+function getVariantBenchmark(variantId) {
+  if (!variantId) {
+    return null;
+  }
+
+  if (!variantBenchmarks.has(variantId)) {
+    return beginVariantBenchmark(variantId);
+  }
+
+  return variantBenchmarks.get(variantId) ?? null;
+}
+
+function publishVariantBenchmark(variantId) {
+  if (variantId === activeVariantId) {
+    renderVariantBenchmark(variantId);
+  }
+}
+
+function renderVariantBenchmark(variantId) {
+  const benchmark = getVariantBenchmark(variantId);
+  metricLoad.textContent = formatMetricMs(benchmark?.loadMs);
+  metricFirstFrame.textContent = formatMetricMs(benchmark?.firstFrameMs);
+  metricMotion.textContent = formatMotionMetric(benchmark);
+}
+
+function trackFirstFrame(app, variantId, switchStartedAt) {
+  if (!Number.isFinite(switchStartedAt)) {
+    return;
+  }
+
+  const resolveFirstFrame = () => {
+    const benchmark = getVariantBenchmark(variantId);
+    if (!benchmark || Number.isFinite(benchmark.firstFrameMs)) {
+      return;
+    }
+
+    benchmark.firstFrameMs = performance.now() - switchStartedAt;
+    publishVariantBenchmark(variantId);
+  };
+
+  app.once('frameend', resolveFirstFrame);
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(resolveFirstFrame);
+  });
 }
 
 function vec3(tuple) {
@@ -538,10 +942,15 @@ function createOrbitController(camera, canvasElement, initialPosition, initialTa
     pointerMode: null,
     lastX: 0,
     lastY: 0,
-    transition: null
+    transition: null,
+    onManualInput: null,
+    tempRight: new pc.Vec3(),
+    tempUp: new pc.Vec3(),
+    tempPosition: new pc.Vec3()
   };
 
   const beginPointer = (event) => {
+    orbit.onManualInput?.();
     orbit.pointerMode = event.button === 2 ? 'pan' : 'rotate';
     if (performanceMode) {
       performanceMode.isInteracting = true;
@@ -551,10 +960,7 @@ function createOrbitController(camera, canvasElement, initialPosition, initialTa
   };
 
   const endPointer = () => {
-    orbit.pointerMode = null;
-    if (performanceMode) {
-      performanceMode.isInteracting = false;
-    }
+    orbit.cancelInteraction();
   };
 
   const movePointer = (event) => {
@@ -579,14 +985,15 @@ function createOrbitController(camera, canvasElement, initialPosition, initialTa
     }
 
     const distanceFactor = Math.max(orbit.currentDistance, 0.5);
-    const right = camera.right.clone().mulScalar(-dx * orbit.panSpeed * distanceFactor);
-    const up = camera.up.clone().mulScalar(dy * orbit.panSpeed * distanceFactor);
+    const right = orbit.tempRight.copy(camera.right).mulScalar(-dx * orbit.panSpeed * distanceFactor);
+    const up = orbit.tempUp.copy(camera.up).mulScalar(dy * orbit.panSpeed * distanceFactor);
     orbit.transition = null;
     orbit.desiredTarget.add(right).add(up);
   };
 
   const onWheel = (event) => {
     event.preventDefault();
+    orbit.onManualInput?.();
     orbit.transition = null;
     const scale = Math.exp(event.deltaY * orbit.zoomSpeed);
     orbit.desiredDistance = clamp(
@@ -601,11 +1008,25 @@ function createOrbitController(camera, canvasElement, initialPosition, initialTa
   window.addEventListener('mouseup', endPointer);
   canvasElement.addEventListener('wheel', onWheel, { passive: false });
 
+  orbit.destroy = () => {
+    canvasElement.removeEventListener('mousedown', beginPointer);
+    window.removeEventListener('mousemove', movePointer);
+    window.removeEventListener('mouseup', endPointer);
+    canvasElement.removeEventListener('wheel', onWheel);
+  };
+
+  orbit.cancelInteraction = () => {
+    orbit.pointerMode = null;
+    if (performanceMode) {
+      performanceMode.isInteracting = false;
+    }
+  };
+
   applyOrbit(orbit, 1);
   return orbit;
 }
 
-function setOrbitPreset(orbit, position, target, immediate) {
+function setOrbitPreset(orbit, position, target, immediate, duration = 1.35) {
   const spherical = positionToOrbit(position, target);
 
   if (immediate) {
@@ -624,7 +1045,7 @@ function setOrbitPreset(orbit, position, target, immediate) {
 
   orbit.transition = {
     elapsed: 0,
-    duration: 1.35,
+    duration: Math.max(duration, 0.01),
     fromTarget: orbit.desiredTarget.clone(),
     toTarget: target.clone(),
     fromYaw: orbit.desiredYaw,
@@ -656,19 +1077,40 @@ function updateOrbitController(orbit, dt) {
     }
   }
 
-  applyOrbit(orbit, orbit.damping);
+  return applyOrbit(orbit, orbit.damping);
 }
 
 function applyOrbit(orbit, damping) {
+  const previousTargetX = orbit.currentTarget.x;
+  const previousTargetY = orbit.currentTarget.y;
+  const previousTargetZ = orbit.currentTarget.z;
+  const previousYaw = orbit.currentYaw;
+  const previousPitch = orbit.currentPitch;
+  const previousDistance = orbit.currentDistance;
   const blend = damping >= 1 ? 1 : 1 - Math.pow(1 - damping, 2);
   orbit.currentTarget.lerp(orbit.currentTarget, orbit.desiredTarget, blend);
   orbit.currentYaw = lerpAngle(orbit.currentYaw, orbit.desiredYaw, blend);
   orbit.currentPitch = lerp(orbit.currentPitch, orbit.desiredPitch, blend);
   orbit.currentDistance = lerp(orbit.currentDistance, orbit.desiredDistance, blend);
 
-  const position = orbitToPosition(orbit.currentTarget, orbit.currentYaw, orbit.currentPitch, orbit.currentDistance);
+  const position = orbitToPosition(
+    orbit.currentTarget,
+    orbit.currentYaw,
+    orbit.currentPitch,
+    orbit.currentDistance,
+    orbit.tempPosition
+  );
   orbit.camera.setPosition(position);
   orbit.camera.lookAt(orbit.currentTarget);
+
+  return (
+    Math.abs(previousTargetX - orbit.currentTarget.x) > 0.00001 ||
+    Math.abs(previousTargetY - orbit.currentTarget.y) > 0.00001 ||
+    Math.abs(previousTargetZ - orbit.currentTarget.z) > 0.00001 ||
+    Math.abs(previousYaw - orbit.currentYaw) > 0.00001 ||
+    Math.abs(previousPitch - orbit.currentPitch) > 0.00001 ||
+    Math.abs(previousDistance - orbit.currentDistance) > 0.00001
+  );
 }
 
 function positionToOrbit(position, target) {
@@ -681,9 +1123,9 @@ function positionToOrbit(position, target) {
   };
 }
 
-function orbitToPosition(target, yaw, pitch, distance) {
+function orbitToPosition(target, yaw, pitch, distance, out = new pc.Vec3()) {
   const cosPitch = Math.cos(pitch);
-  return new pc.Vec3(
+  return out.set(
     target.x + Math.sin(yaw) * cosPitch * distance,
     target.y + Math.sin(pitch) * distance,
     target.z + Math.cos(yaw) * cosPitch * distance
@@ -728,6 +1170,51 @@ function renderCameraMeta(runtimeState) {
   cameraDistance.textContent = `${distance.toFixed(2)} m`;
   cameraAngle.textContent = `${pitch}° / ${yaw}°`;
   cameraSummary.textContent = `${distance.toFixed(2)} m · ${pitch}°`;
+}
+
+function renderPerfHud(runtimeState) {
+  if (!showPerfHud || !perfFps || !perfMs || !perfRender || !perfScale) {
+    return;
+  }
+
+  perfScale.textContent = `${activeRenderScalePercent}%`;
+
+  if (!runtimeState?.app || !runtimeState?.performanceMode) {
+    perfFps.textContent = '—';
+    perfMs.textContent = '—';
+    perfRender.textContent = '未加载';
+    return;
+  }
+
+  const sampleTime = runtimeState.perfHudElapsed;
+  const frameCount = runtimeState.perfHudFrames;
+  if (sampleTime > 0 && frameCount > 0) {
+    const fps = frameCount / sampleTime;
+    const ms = (sampleTime / frameCount) * 1000;
+    perfFps.textContent = `${Math.round(fps)}`;
+    perfMs.textContent = `${ms.toFixed(1)} ms`;
+  }
+
+  const isRendering = runtimeState.app.autoRender || runtimeState.performanceMode.isInteracting;
+  perfRender.textContent = isRendering ? '活动' : '静止';
+  renderVariantBenchmark(activeVariantId);
+}
+
+function formatMetricMs(value) {
+  if (!Number.isFinite(value)) {
+    return '—';
+  }
+
+  return `${Math.round(value)} ms`;
+}
+
+function formatMotionMetric(benchmark) {
+  if (!benchmark || benchmark.motionFrames < 6 || benchmark.motionTime <= 0) {
+    return '待采样';
+  }
+
+  const averageMs = (benchmark.motionTime / benchmark.motionFrames) * 1000;
+  return `${averageMs.toFixed(1)} ms`;
 }
 
 function formatVec3(vector) {
@@ -775,7 +1262,7 @@ function createPerformanceMode(runtimeWindow, lockedPercent) {
 
 function updatePerformanceMode(performanceMode, app, dt) {
   if (performanceMode.isLocked) {
-    return;
+    return false;
   }
 
   performanceMode.sampleTime += dt;
@@ -783,7 +1270,7 @@ function updatePerformanceMode(performanceMode, app, dt) {
   performanceMode.cooldown = Math.max(0, performanceMode.cooldown - dt);
 
   if (performanceMode.sampleTime < 1.25 || performanceMode.cooldown > 0) {
-    return;
+    return false;
   }
 
   const fps = performanceMode.frameCount / performanceMode.sampleTime;
@@ -804,10 +1291,14 @@ function updatePerformanceMode(performanceMode, app, dt) {
     app.graphicsDevice.maxPixelRatio = performanceMode.currentPixelRatio;
     app.resizeCanvas();
     performanceMode.cooldown = 2.5;
+    performanceMode.sampleTime = 0;
+    performanceMode.frameCount = 0;
+    return true;
   }
 
   performanceMode.sampleTime = 0;
   performanceMode.frameCount = 0;
+  return false;
 }
 
 function lerpAngle(from, to, alpha) {
@@ -860,4 +1351,5 @@ function applyRenderScaleToRuntime(runtimeState, percent) {
   runtimeState.performanceMode.maxPixelRatio = nextRatio;
   runtimeState.app.graphicsDevice.maxPixelRatio = nextRatio;
   runtimeState.app.resizeCanvas();
+  runtimeState.requestRender?.();
 }

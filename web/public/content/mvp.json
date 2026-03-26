@@ -53,6 +53,25 @@
       "note": "这是当前最值得优先主观对比的版本，更有机会带来明显性能改善。"
     },
     {
+      "id": "lodstream",
+      "name": "LOD 流式",
+      "summary": "把多档轻量 SOG 打成流式 LOD，按视角逐步细化。",
+      "assetUrl": "/models/hhuc-lod/lod-meta.json",
+      "size": "69 MiB*",
+      "splats": "LOD × 4",
+      "retention": "按需",
+      "kind": "Experimental",
+      "unified": true,
+      "unifiedTuning": {
+        "lodUnderfillLimit": 1,
+        "cooldownTicks": 240,
+        "lodUpdateDistance": 1.5,
+        "lodUpdateAngle": 5,
+        "lodBehindPenalty": 2
+      },
+      "note": "实验版：总包更大，但首屏可先加载低阶节点，再按视角与距离逐步补细节。重点观察首屏、移动流畅度和细节爬升是否更舒服。"
+    },
+    {
       "id": "dec50",
       "name": "Decimate 50%",
       "summary": "更激进地保留 50% splats，换取更轻负担。",
@@ -98,6 +117,83 @@
       "summary": "更高、更稳，用作加载后默认停留镜头。",
       "position": [0.18, 2.68, 0.54],
       "target": [0.0, -0.12, 0.02]
+    }
+  ],
+  "benchmarkRoutes": [
+    {
+      "id": "survey",
+      "name": "结构巡航",
+      "summary": "高位总览 → 中轴俯瞰 → 东南切入，适合统一比较整体结构稳定度。",
+      "steps": [
+        {
+          "position": [0.18, 2.68, 0.54],
+          "target": [0.0, -0.12, 0.02],
+          "duration": 0.0,
+          "hold": 0.45
+        },
+        {
+          "position": [0.46, 1.74, 2.12],
+          "target": [0.0, -0.08, 0.02],
+          "duration": 1.9,
+          "hold": 0.45
+        },
+        {
+          "position": [1.92, 0.42, 2.48],
+          "target": [0.05, -0.12, 0.06],
+          "duration": 1.7,
+          "hold": 0.55
+        }
+      ]
+    },
+    {
+      "id": "parallax",
+      "name": "侧向扫视",
+      "summary": "东南 → 西北横切，适合比较拖影、节点切换和结构保持。",
+      "steps": [
+        {
+          "position": [1.92, 0.42, 2.48],
+          "target": [0.05, -0.12, 0.06],
+          "duration": 0.0,
+          "hold": 0.4
+        },
+        {
+          "position": [0.46, 1.74, 2.12],
+          "target": [0.0, -0.08, 0.02],
+          "duration": 1.5,
+          "hold": 0.35
+        },
+        {
+          "position": [-2.18, 0.72, 1.52],
+          "target": [-0.16, -0.18, 0.1],
+          "duration": 2.1,
+          "hold": 0.55
+        }
+      ]
+    },
+    {
+      "id": "detail",
+      "name": "近景逼近",
+      "summary": "从稳定全览推近到主体区域，适合统一比较细节爬升速度。",
+      "steps": [
+        {
+          "position": [0.18, 2.68, 0.54],
+          "target": [0.0, -0.12, 0.02],
+          "duration": 0.0,
+          "hold": 0.35
+        },
+        {
+          "position": [1.92, 0.42, 2.48],
+          "target": [0.05, -0.12, 0.06],
+          "duration": 1.85,
+          "hold": 0.35
+        },
+        {
+          "position": [1.02, 0.08, 1.34],
+          "target": [0.12, -0.11, 0.05],
+          "duration": 1.45,
+          "hold": 0.7
+        }
+      ]
     }
   ],
   "highlights": [
