@@ -292,7 +292,7 @@ select {
 .variant-list,
 .preset-list,
 .highlight-list,
-.thesis-list {
+.thesis-inline {
   display: grid;
   gap: 10px;
 }
@@ -334,8 +334,7 @@ select {
 
 .variant span,
 .preset span,
-.highlight span,
-.thesis-list li {
+.highlight span {
   display: block;
   margin-top: 4px;
   color: var(--muted);
@@ -343,9 +342,18 @@ select {
   line-height: 1.45;
 }
 
-.thesis-list {
-  margin: 0;
-  padding-left: 18px;
+.thesis-inline {
+  gap: 8px;
+}
+
+.thesis-chip {
+  padding: 10px 11px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 .variant small {
@@ -397,21 +405,30 @@ select {
 
 .memory-title {
   margin: 0;
-  font-size: 20px;
-  line-height: 1.1;
+  font-size: 17px;
+  line-height: 1.16;
 }
 
 .memory-body {
   margin: 8px 0 0;
   color: var(--muted);
-  font-size: 13px;
-  line-height: 1.55;
+  font-size: 12px;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .footnote {
-  margin: 10px 0 0;
+  margin: 8px 0 0;
   color: rgba(212, 233, 239, 0.56);
-  font-size: 12px;
+  font-size: 11px;
+}
+
+.compact-focus {
+  padding-top: 14px;
+  padding-bottom: 14px;
 }
 
 .loading-bar {
