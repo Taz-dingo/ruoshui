@@ -16,13 +16,6 @@ const data = await fetch('/content/mvp.json').then(async (response) => {
   return response.json();
 });
 
-const blurPresets = [
-  { id: 'off', name: '关闭', summary: '完全去掉毛玻璃，最利落。', blur: 0, interactingBlur: 0 },
-  { id: 'light', name: '轻', summary: '保留一点分层感，更偏性能。', blur: 8, interactingBlur: 2 },
-  { id: 'medium', name: '中', summary: '当前默认观感，平衡氛围和清晰度。', blur: 14, interactingBlur: 6 },
-  { id: 'strong', name: '强', summary: '更明显的玻璃感，强调氛围。', blur: 20, interactingBlur: 10 }
-];
-const blurPresetStorageKey = 'ruoshui-ui-blur-preset';
 const renderScaleStorageKey = 'ruoshui-render-scale-percent';
 const renderScaleMinPercent = 70;
 const variantsById = new Map(data.variants.map((variant) => [variant.id, variant]));
@@ -30,10 +23,7 @@ const firstPreset = data.presets[0];
 const firstHighlight = data.highlights[0];
 const defaultVariant = variantsById.get(data.scene.defaultVariantId) ?? data.variants[0];
 const maxRenderScalePercent = Math.round(getMaxSupportedPixelRatio(window) * 100);
-let activeBlurPresetId = getInitialBlurPresetId();
 let activeRenderScalePercent = getInitialRenderScalePercent();
-
-applyBlurPreset(getBlurPreset(activeBlurPresetId));
 
 appElement.innerHTML = `
   <main class="shell">
@@ -87,7 +77,7 @@ appElement.innerHTML = `
           </section>
 
           <section class="panel section-panel">
-            <p class="section-title">显示控制</p>
+            <p class="section-title">渲染清晰度</p>
             <div class="quality-control">
               <input
                 class="quality-slider"
@@ -103,8 +93,6 @@ appElement.innerHTML = `
                 <span id="render-scale-note"></span>
               </div>
             </div>
-            <div class="blur-list" id="blur-list"></div>
-            <p class="footnote" id="blur-footnote"></p>
           </section>
 
           <section class="panel section-panel">
@@ -141,7 +129,6 @@ const variantList = document.querySelector('#variant-list');
 const presetList = document.querySelector('#preset-list');
 const highlightList = document.querySelector('#highlight-list');
 const thesisList = document.querySelector('#thesis-list');
-const blurList = document.querySelector('#blur-list');
 const renderScaleSlider = document.querySelector('#render-scale-slider');
 const statusTitle = document.querySelector('#status-title');
 const statusDetail = document.querySelector('#status-detail');
@@ -155,7 +142,6 @@ const variantNote = document.querySelector('#variant-note');
 const memoryTitle = document.querySelector('#memory-title');
 const memoryBody = document.querySelector('#memory-body');
 const memoryFootnote = document.querySelector('#memory-footnote');
-const blurFootnote = document.querySelector('#blur-footnote');
 const renderScaleValue = document.querySelector('#render-scale-value');
 const renderScaleNote = document.querySelector('#render-scale-note');
 const focusSceneButton = document.querySelector('#focus-scene');
@@ -167,7 +153,6 @@ if (
   !presetList ||
   !highlightList ||
   !thesisList ||
-  !blurList ||
   !renderScaleSlider ||
   !statusTitle ||
   !statusDetail ||
@@ -181,7 +166,6 @@ if (
   !memoryTitle ||
   !memoryBody ||
   !memoryFootnote ||
-  !blurFootnote ||
   !renderScaleValue ||
   !renderScaleNote ||
   !focusSceneButton ||
@@ -205,19 +189,6 @@ let currentLoadToken = 0;
 const variantButtons = new Map();
 const presetButtons = new Map();
 const highlightButtons = new Map();
-const blurButtons = new Map();
-
-for (const preset of blurPresets) {
-  const button = document.createElement('button');
-  button.className = 'blur-option';
-  button.type = 'button';
-  button.innerHTML = `<strong>${preset.name}</strong><span>${preset.summary}</span>`;
-  button.addEventListener('click', () => {
-    activateBlurPreset(preset.id);
-  });
-  blurButtons.set(preset.id, button);
-  blurList.append(button);
-}
 
 for (const variant of data.variants) {
   const button = document.createElement('button');
@@ -269,9 +240,7 @@ renderScaleSlider.addEventListener('input', (event) => {
 updatePresetButtons();
 updateHighlightButtons();
 updateVariantButtons();
-updateBlurButtons();
 renderVariantMeta(defaultVariant);
-renderBlurMeta(getBlurPreset(activeBlurPresetId));
 renderRenderScaleMeta(activeRenderScalePercent);
 
 statusTitle.textContent = '加载中';
@@ -286,19 +255,6 @@ function renderVariantMeta(variant) {
   variantRetention.textContent = variant.retention;
   variantTitle.textContent = variant.name;
   variantNote.textContent = variant.note;
-}
-
-function renderBlurMeta(preset) {
-  blurFootnote.textContent = `当前：${preset.name} · 静止 ${preset.blur}px / 交互 ${preset.interactingBlur}px`;
-}
-
-function activateBlurPreset(presetId) {
-  const preset = getBlurPreset(presetId);
-  activeBlurPresetId = preset.id;
-  applyBlurPreset(preset);
-  persistBlurPresetId(preset.id);
-  updateBlurButtons();
-  renderBlurMeta(preset);
 }
 
 function activateRenderScale(nextPercent) {
@@ -433,12 +389,6 @@ function updateHighlightButtons() {
 function updateVariantButtons() {
   for (const [variantId, button] of variantButtons) {
     button.classList.toggle('is-active', variantId === activeVariantId);
-  }
-}
-
-function updateBlurButtons() {
-  for (const [presetId, button] of blurButtons) {
-    button.classList.toggle('is-active', presetId === activeBlurPresetId);
   }
 }
 
@@ -809,36 +759,6 @@ function lerpAngle(from, to, alpha) {
   const turn = Math.PI * 2;
   const delta = ((((to - from) % turn) + turn + Math.PI) % turn) - Math.PI;
   return from + delta * alpha;
-}
-
-function getBlurPreset(presetId) {
-  return blurPresets.find((preset) => preset.id === presetId) ?? blurPresets[2];
-}
-
-function getInitialBlurPresetId() {
-  try {
-    const savedPresetId = window.localStorage.getItem(blurPresetStorageKey);
-    if (savedPresetId && blurPresets.some((preset) => preset.id === savedPresetId)) {
-      return savedPresetId;
-    }
-  } catch {
-    return 'medium';
-  }
-
-  return 'medium';
-}
-
-function persistBlurPresetId(presetId) {
-  try {
-    window.localStorage.setItem(blurPresetStorageKey, presetId);
-  } catch {
-    return;
-  }
-}
-
-function applyBlurPreset(preset) {
-  document.documentElement.style.setProperty('--panel-blur', `${preset.blur}px`);
-  document.documentElement.style.setProperty('--panel-blur-interacting', `${preset.interactingBlur}px`);
 }
 
 function getMaxSupportedPixelRatio(runtimeWindow) {
