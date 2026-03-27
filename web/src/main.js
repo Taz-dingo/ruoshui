@@ -18,10 +18,37 @@ const data = await fetch('/content/mvp.json').then(async (response) => {
 
 const showPerfHud = import.meta.env.DEV;
 const renderScaleStorageKey = 'ruoshui-render-scale-percent';
+const routeRunHistoryStorageKey = 'ruoshui-route-run-history';
+const routeAnalysisCopyFeedbackMs = 1600;
 const renderScaleMinPercent = 70;
 const cameraMetaIntervalSeconds = 0.12;
 const perfHudIntervalSeconds = 0.5;
 const renderWakeSeconds = 0.25;
+const maxRouteRunHistory = 8;
+const stallFrameThresholdMs = 22;
+const severeStallFrameThresholdMs = 50;
+const lowAnglePrewarmPitchThresholdDeg = 52;
+const lowAnglePrewarmDistanceThreshold = 3.35;
+const lowAnglePrewarmLeadSeconds = 0.9;
+const lowAnglePrewarmHoldSeconds = 1.4;
+const lowAnglePrewarmMaxSeconds = 2.2;
+const currentVariantRepeatCount = 3;
+const minOrbitPitchDeg = 6;
+const maxOrbitPitchDeg = 89;
+const frameSampleIndices = {
+  elapsedMs: 0,
+  dtMs: 1,
+  stepIndex: 2,
+  posX: 3,
+  posY: 4,
+  posZ: 5,
+  targetX: 6,
+  targetY: 7,
+  targetZ: 8,
+  distance: 9,
+  pitch: 10,
+  yaw: 11
+};
 const variantsById = new Map(data.variants.map((variant) => [variant.id, variant]));
 const benchmarkRoutes = data.benchmarkRoutes ?? [];
 const benchmarkRoutesById = new Map(benchmarkRoutes.map((route) => [route.id, route]));
@@ -29,6 +56,9 @@ const firstPreset = data.presets[0];
 const defaultVariant = variantsById.get(data.scene.defaultVariantId) ?? data.variants[0];
 const maxRenderScalePercent = Math.round(getMaxSupportedPixelRatio(window) * 100);
 let activeRenderScalePercent = getInitialRenderScalePercent();
+const longTaskBuffer = [];
+
+initLongTaskObserver();
 
 appElement.innerHTML = `
   <main class="shell">
@@ -138,6 +168,34 @@ appElement.innerHTML = `
                   <strong id="route-summary">未播放</strong>
                 </div>
                 <div class="route-list" id="route-list"></div>
+                <div class="route-batch">
+                  <div class="route-batch-actions">
+                    <button class="button tertiary route-batch-button" id="run-route-current-variant" type="button">跑当前轨迹 × 当前版本 ×3</button>
+                    <button class="button tertiary route-batch-button" id="run-route-suite" type="button">跑当前轨迹 × 全版本</button>
+                  </div>
+                  <span class="route-batch-note" id="route-batch-note">默认使用当前选中的轨迹。</span>
+                </div>
+                <div class="route-log">
+                  <div class="route-log-head">
+                    <span>自动记录</span>
+                    <strong id="route-log-summary">暂无</strong>
+                  </div>
+                  <div class="route-log-list" id="route-log-list"></div>
+                </div>
+                <div class="route-analysis">
+                  <div class="route-analysis-head">
+                    <span>标准测试分析</span>
+                    <strong id="route-analysis-summary">等待批量测试</strong>
+                  </div>
+                <div class="route-analysis-actions">
+                  <button class="button tertiary route-analysis-button" id="copy-route-analysis-summary" type="button">复制摘要</button>
+                  <button class="button tertiary route-analysis-button" id="copy-route-analysis-json" type="button">复制 JSON</button>
+                  <button class="button tertiary route-analysis-button" id="download-route-analysis-json" type="button">下载 JSON</button>
+                </div>
+                  <div class="route-analysis-copy-note" id="route-analysis-copy-note">跑完一轮标准测试后可复制。</div>
+                  <div class="route-analysis-ranking" id="route-analysis-ranking"></div>
+                  <div class="route-analysis-hotspots" id="route-analysis-hotspots"></div>
+                </div>
               </div>
               <div class="preset-list" id="preset-list"></div>
             </div>
@@ -186,7 +244,16 @@ appElement.innerHTML = `
 const sceneContainer = document.querySelector('#scene');
 const variantList = document.querySelector('#variant-list');
 const routeList = document.querySelector('#route-list');
+const routeLogList = document.querySelector('#route-log-list');
+const routeAnalysisRanking = document.querySelector('#route-analysis-ranking');
+const routeAnalysisHotspots = document.querySelector('#route-analysis-hotspots');
 const presetList = document.querySelector('#preset-list');
+const runRouteCurrentVariantButton = document.querySelector('#run-route-current-variant');
+const runRouteSuiteButton = document.querySelector('#run-route-suite');
+const routeBatchNote = document.querySelector('#route-batch-note');
+const copyRouteAnalysisSummaryButton = document.querySelector('#copy-route-analysis-summary');
+const copyRouteAnalysisJsonButton = document.querySelector('#copy-route-analysis-json');
+const downloadRouteAnalysisJsonButton = document.querySelector('#download-route-analysis-json');
 const renderScaleSlider = document.querySelector('#render-scale-slider');
 const statusTitle = document.querySelector('#status-title');
 const statusDetail = document.querySelector('#status-detail');
@@ -206,6 +273,9 @@ const variantsSummary = document.querySelector('#variants-summary');
 const qualitySummary = document.querySelector('#quality-summary');
 const presetsSummary = document.querySelector('#presets-summary');
 const routeSummary = document.querySelector('#route-summary');
+const routeLogSummary = document.querySelector('#route-log-summary');
+const routeAnalysisSummary = document.querySelector('#route-analysis-summary');
+const routeAnalysisCopyNote = document.querySelector('#route-analysis-copy-note');
 const cameraSummary = document.querySelector('#camera-summary');
 const cameraPosition = document.querySelector('#camera-position');
 const cameraTarget = document.querySelector('#camera-target');
@@ -224,7 +294,16 @@ if (
   !sceneContainer ||
   !variantList ||
   !routeList ||
+  !routeLogList ||
+  !routeAnalysisRanking ||
+  !routeAnalysisHotspots ||
   !presetList ||
+  !runRouteCurrentVariantButton ||
+  !runRouteSuiteButton ||
+  !routeBatchNote ||
+  !copyRouteAnalysisSummaryButton ||
+  !copyRouteAnalysisJsonButton ||
+  !downloadRouteAnalysisJsonButton ||
   !renderScaleSlider ||
   !statusTitle ||
   !statusDetail ||
@@ -244,6 +323,9 @@ if (
   !qualitySummary ||
   !presetsSummary ||
   !routeSummary ||
+  !routeLogSummary ||
+  !routeAnalysisSummary ||
+  !routeAnalysisCopyNote ||
   !cameraSummary ||
   !cameraPosition ||
   !cameraTarget ||
@@ -260,13 +342,19 @@ let runtime = null;
 let activePresetId = firstPreset.id;
 let activeVariantId = defaultVariant.id;
 let activeRouteId = null;
+let selectedRouteId = benchmarkRoutes[0]?.id ?? null;
 let currentLoadToken = 0;
 let openInspectorPanel = null;
+let isBatchBenchmarkRunning = false;
+let activeSuiteRunId = null;
+let routeAnalysisCopyTimeoutId = null;
+let activeBenchmarkRunPromise = null;
 
 const variantButtons = new Map();
 const routeButtons = new Map();
 const presetButtons = new Map();
 const variantBenchmarks = new Map();
+const routeRunHistory = getInitialRouteRunHistory();
 
 for (const variant of data.variants) {
   const button = document.createElement('button');
@@ -311,6 +399,21 @@ for (const route of benchmarkRoutes) {
 
 focusSceneButton.addEventListener('click', () => activatePreset(firstPreset.id));
 focusOverviewButton.addEventListener('click', () => activatePreset('hover'));
+runRouteCurrentVariantButton.addEventListener('click', () => {
+  void runCurrentVariantRouteBenchmark();
+});
+runRouteSuiteButton.addEventListener('click', () => {
+  void runRouteBenchmarkSuite();
+});
+copyRouteAnalysisSummaryButton.addEventListener('click', () => {
+  void copyLatestRouteAnalysis('summary');
+});
+copyRouteAnalysisJsonButton.addEventListener('click', () => {
+  void copyLatestRouteAnalysis('json');
+});
+downloadRouteAnalysisJsonButton.addEventListener('click', () => {
+  downloadLatestRouteAnalysisJson();
+});
 renderScaleSlider.addEventListener('input', (event) => {
   const nextPercent = Number(event.currentTarget.value);
   activateRenderScale(nextPercent);
@@ -329,10 +432,14 @@ for (const toggle of inspectorToggles) {
 updatePresetButtons();
 updateVariantButtons();
 updateRouteButtons();
+renderRouteBatchState();
 renderVariantMeta(defaultVariant);
 renderRenderScaleMeta(activeRenderScalePercent);
 renderCameraMeta(null);
 renderPerfHud(null);
+renderRouteRunHistory();
+renderRouteAnalysis();
+installRouteAnalysisBridge();
 setOpenInspectorPanel(openInspectorPanel);
 
 statusTitle.textContent = '加载中';
@@ -369,19 +476,19 @@ function renderRenderScaleMeta(percent) {
     : '降低像素比，换取更稳帧率';
 }
 
-async function activateVariant(variantId, initial = false) {
+async function activateVariant(variantId, initial = false, forceReload = false) {
   const variant = variantsById.get(variantId);
 
   if (!variant) {
     return;
   }
 
-  if (!initial && variantId === activeVariantId) {
+  if (!initial && !forceReload && variantId === activeVariantId) {
     return;
   }
 
   if (activeRouteId) {
-    stopActiveBenchmarkRoute();
+    stopActiveBenchmarkRoute('未播放', 'switch');
   }
 
   const loadToken = ++currentLoadToken;
@@ -422,8 +529,8 @@ async function activateVariant(variantId, initial = false) {
 
 async function mountRuntime(variant, timings) {
   if (runtime) {
-    runtime.destroy();
-    runtime = null;
+    await loadVariantIntoRuntime(runtime, variant, timings);
+    return runtime;
   }
 
   sceneContainer.replaceChildren();
@@ -437,6 +544,10 @@ function activatePreset(presetId, immediate = false) {
 
   if (!preset) {
     return;
+  }
+
+  if (activeRouteId) {
+    stopActiveBenchmarkRoute('镜头接管', 'manual');
   }
 
   activePresetId = preset.id;
@@ -455,6 +566,7 @@ function activateBenchmarkRoute(routeId) {
     return;
   }
 
+  selectedRouteId = route.id;
   if (activeRouteId === routeId) {
     stopActiveBenchmarkRoute();
     return;
@@ -467,6 +579,125 @@ function activateBenchmarkRoute(routeId) {
   if (runtime) {
     startBenchmarkRoute(runtime, route);
   }
+}
+
+async function runRouteBenchmarkSuite() {
+  const routeId = selectedRouteId ?? benchmarkRoutes[0]?.id;
+  const route = routeId ? benchmarkRoutesById.get(routeId) : null;
+
+  if (!route || isBatchBenchmarkRunning) {
+    return;
+  }
+
+  isBatchBenchmarkRunning = true;
+  renderRouteBatchState();
+  setVariantButtonsDisabled(true);
+  statusTitle.textContent = '标准测试中';
+
+  try {
+    activeSuiteRunId = `suite-${Date.now()}`;
+    for (let index = 0; index < data.variants.length; index += 1) {
+      const variant = data.variants[index];
+      statusDetail.textContent = `${route.name} · ${index + 1}/${data.variants.length} · ${variant.name}`;
+      await activateVariant(variant.id, false, true);
+      await playBenchmarkRouteOnce(route.id);
+    }
+
+    statusTitle.textContent = '标准测试完成';
+    statusDetail.textContent = `${route.name} · 已记录 ${data.variants.length} 个版本`;
+  } catch (error) {
+    statusTitle.textContent = '标准测试中断';
+    statusDetail.textContent = error instanceof Error ? error.message : '未知错误';
+    throw error;
+  } finally {
+    activeSuiteRunId = null;
+    isBatchBenchmarkRunning = false;
+    renderRouteBatchState();
+    setVariantButtonsDisabled(false);
+    updateRouteButtons();
+  }
+}
+
+async function runCurrentVariantRouteBenchmark() {
+  return runVariantRouteBenchmark({
+    routeId: selectedRouteId ?? benchmarkRoutes[0]?.id,
+    variantId: activeVariantId,
+    repeatCount: currentVariantRepeatCount,
+    suitePrefix: 'single'
+  });
+}
+
+async function runVariantRouteBenchmark(options = {}) {
+  const routeId = options.routeId ?? selectedRouteId ?? benchmarkRoutes[0]?.id;
+  const route = routeId ? benchmarkRoutesById.get(routeId) : null;
+  const variantId = options.variantId ?? activeVariantId;
+  const variant = variantsById.get(variantId);
+  const repeatCount = Number.isFinite(options.repeatCount)
+    ? Math.max(1, Math.floor(options.repeatCount))
+    : currentVariantRepeatCount;
+  const suitePrefix = options.suitePrefix ?? 'single';
+
+  if (!route || !variant || isBatchBenchmarkRunning) {
+    return null;
+  }
+
+  activeBenchmarkRunPromise = (async () => {
+    isBatchBenchmarkRunning = true;
+    renderRouteBatchState();
+    setVariantButtonsDisabled(true);
+    statusTitle.textContent = '单版本测试中';
+
+    try {
+      activeSuiteRunId = `${suitePrefix}-${Date.now()}`;
+      for (let index = 0; index < repeatCount; index += 1) {
+        statusDetail.textContent = `${route.name} · ${variant.name} · 第 ${index + 1}/${repeatCount} 次`;
+        await activateVariant(variant.id, false, true);
+        await playBenchmarkRouteOnce(route.id);
+      }
+      statusTitle.textContent = '单版本测试完成';
+      statusDetail.textContent = `${route.name} · ${variant.name} 已记录 ${repeatCount} 次`;
+      return getLatestRouteAnalysisExport();
+    } catch (error) {
+      statusTitle.textContent = '单版本测试中断';
+      statusDetail.textContent = error instanceof Error ? error.message : '未知错误';
+      throw error;
+    } finally {
+      activeSuiteRunId = null;
+      isBatchBenchmarkRunning = false;
+      activeBenchmarkRunPromise = null;
+      renderRouteBatchState();
+      setVariantButtonsDisabled(false);
+      updateRouteButtons();
+    }
+  })();
+
+  return activeBenchmarkRunPromise;
+}
+
+function playBenchmarkRouteOnce(routeId) {
+  const route = benchmarkRoutesById.get(routeId);
+
+  if (!runtime || !route) {
+    return Promise.reject(new Error('缺少可运行的轨迹或运行时'));
+  }
+
+  return new Promise((resolve, reject) => {
+    selectedRouteId = route.id;
+    activeRouteId = route.id;
+    routeSummary.textContent = `${route.name} · 运行中`;
+    updateRouteButtons();
+    renderRouteBatchState();
+    startBenchmarkRoute(runtime, route, {
+      onFinish: (record) => {
+        if (!record || record.status !== 'completed') {
+          reject(new Error(`${route.name} 未完整跑完`));
+          return;
+        }
+
+        resolve(record);
+      }
+    });
+  });
 }
 
 function setOpenInspectorPanel(panelId) {
@@ -497,7 +728,9 @@ function updateVariantButtons() {
 
 function updateRouteButtons() {
   for (const [routeId, button] of routeButtons) {
-    button.classList.toggle('is-active', routeId === activeRouteId);
+    button.classList.toggle('is-active', routeId === selectedRouteId);
+    button.classList.toggle('is-running', routeId === activeRouteId);
+    button.disabled = isBatchBenchmarkRunning;
   }
 }
 
@@ -505,6 +738,21 @@ function setVariantButtonsDisabled(disabled) {
   for (const button of variantButtons.values()) {
     button.disabled = disabled;
   }
+}
+
+function renderRouteBatchState() {
+  if (!runRouteCurrentVariantButton || !runRouteSuiteButton || !routeBatchNote) {
+    return;
+  }
+
+  const selectedRoute = selectedRouteId ? benchmarkRoutesById.get(selectedRouteId) : null;
+  runRouteCurrentVariantButton.disabled = isBatchBenchmarkRunning || benchmarkRoutes.length === 0;
+  runRouteSuiteButton.disabled = isBatchBenchmarkRunning || benchmarkRoutes.length === 0;
+  runRouteCurrentVariantButton.textContent = isBatchBenchmarkRunning ? '测试运行中…' : `跑当前轨迹 × 当前版本 ×${currentVariantRepeatCount}`;
+  runRouteSuiteButton.textContent = isBatchBenchmarkRunning ? '标准测试运行中…' : '跑当前轨迹 × 全版本';
+  routeBatchNote.textContent = selectedRoute
+    ? `${selectedRoute.name} · 当前版本或 ${data.variants.length} 个版本`
+    : '先选择一条轨迹，再批量跑所有版本。';
 }
 
 async function createRuntime(canvasElement, variant, timings = {}) {
@@ -538,26 +786,6 @@ async function createRuntime(canvasElement, variant, timings = {}) {
   canvasElement.addEventListener('contextmenu', preventContextMenu);
   window.addEventListener('resize', handleResize);
 
-  const splatAsset = new pc.Asset(`ruoshui-${variant.id}`, 'gsplat', { url: variant.assetUrl });
-  const benchmark = timings.benchmark ?? beginVariantBenchmark(variant.id);
-  const assetLoadStartedAt = performance.now();
-
-  await new Promise((resolve, reject) => {
-    const loader = new pc.AssetListLoader([splatAsset], app.assets);
-    const onError = (err, asset) => {
-      app.assets.off('error', onError);
-      reject(new Error(`加载 ${asset.name} 失败：${String(err)}`));
-    };
-
-    app.assets.on('error', onError);
-    loader.load(() => {
-      app.assets.off('error', onError);
-      benchmark.loadMs = performance.now() - assetLoadStartedAt;
-      publishVariantBenchmark(variant.id);
-      resolve();
-    });
-  });
-
   const camera = new pc.Entity('MemorialCamera');
   camera.addComponent('camera', {
     clearColor: new pc.Color(0.02, 0.04, 0.06),
@@ -571,31 +799,20 @@ async function createRuntime(canvasElement, variant, timings = {}) {
   const initialPosition = vec3(firstPreset.position);
   const orbit = createOrbitController(camera, canvasElement, initialPosition, initialTarget, performanceMode);
 
-  const splat = new pc.Entity('RuoshuiCampus');
-  const gsplatComponent = {
-    asset: splatAsset
-  };
-
-  if (variant.unified) {
-    gsplatComponent.unified = true;
-  }
-
-  if (variant.lodDistances) {
-    gsplatComponent.lodDistances = variant.lodDistances;
-  }
-
-  splat.addComponent('gsplat', gsplatComponent);
-  app.root.addChild(splat);
-  configureUnifiedGsplat(app, variant);
-
   const runtimeState = {
     variantId: variant.id,
     app,
+    canvasElement,
     orbit,
-    benchmark,
+    benchmark: timings.benchmark ?? beginVariantBenchmark(variant.id),
     performanceMode,
     loopController,
     routePlayback: null,
+    routeRecord: null,
+    splatAsset: null,
+    splatEntity: null,
+    variantMeta: variant,
+    unifiedLodState: null,
     lastCameraSnapshot: '',
     cameraMetaElapsed: 0,
     perfHudElapsed: 0,
@@ -609,6 +826,7 @@ async function createRuntime(canvasElement, variant, timings = {}) {
     },
     destroy: () => {
       loopController.wake();
+      detachVariantFromRuntime(runtimeState);
       window.removeEventListener('resize', handleResize);
       canvasElement.removeEventListener('contextmenu', preventContextMenu);
       orbit.destroy();
@@ -618,11 +836,10 @@ async function createRuntime(canvasElement, variant, timings = {}) {
 
   orbit.onManualInput = () => {
     if (activeRouteId) {
-      stopActiveBenchmarkRoute();
+      stopActiveBenchmarkRoute('手动接管', 'manual');
     }
     runtimeState.requestRender();
   };
-  trackFirstFrame(app, variant.id, timings.switchStartedAt);
 
   const suspendRuntime = () => {
     runtimeState.renderWakeRemaining = 0;
@@ -665,11 +882,17 @@ async function createRuntime(canvasElement, variant, timings = {}) {
     const routeChanged = updateBenchmarkRoute(runtimeState, dt);
     const orbitChanged = updateOrbitController(runtimeState.orbit, dt);
     const performanceChanged = updatePerformanceMode(runtimeState.performanceMode, app, dt);
-    const keepRendering =
-      routeChanged || orbitChanged || performanceChanged || runtimeState.performanceMode.isInteracting;
-    if (routeChanged || orbitChanged || runtimeState.performanceMode.isInteracting) {
-      runtimeState.benchmark.motionFrames += 1;
-      runtimeState.benchmark.motionTime += dt;
+    const isMoving = routeChanged || orbitChanged || runtimeState.performanceMode.isInteracting;
+    const unifiedLodChanged = updateUnifiedLodWarmup(runtimeState, dt, isMoving);
+    const hasActiveRoutePlayback = Boolean(runtimeState.routePlayback);
+    if (runtimeState.routeRecord && hasActiveRoutePlayback) {
+      recordRouteFrame(runtimeState, dt);
+    }
+    const keepRendering = hasActiveRoutePlayback || isMoving || performanceChanged || isUnifiedLodWarmupActive(runtimeState);
+    if (isMoving) {
+      sampleMotionFrame(runtimeState.benchmark, dt);
+    } else if (endMotionSession(runtimeState.benchmark)) {
+      publishVariantBenchmark(runtimeState.variantId);
     }
     if (keepRendering) {
       runtimeState.requestRender();
@@ -692,6 +915,10 @@ async function createRuntime(canvasElement, variant, timings = {}) {
       runtimeState.perfHudElapsed = 0;
       runtimeState.perfHudFrames = 0;
     }
+
+    if (unifiedLodChanged) {
+      runtimeState.requestRender();
+    }
   };
   app.on('update', handleUpdate);
   const destroyRuntime = runtimeState.destroy;
@@ -703,7 +930,82 @@ async function createRuntime(canvasElement, variant, timings = {}) {
     destroyRuntime();
   };
 
+  await loadVariantIntoRuntime(runtimeState, variant, timings);
   return runtimeState;
+}
+
+async function loadVariantIntoRuntime(runtimeState, variant, timings = {}) {
+  if (!runtimeState?.app) {
+    throw new Error('运行时尚未初始化');
+  }
+
+  runtimeState.loopController?.wake?.();
+  detachVariantFromRuntime(runtimeState);
+
+  const benchmark = timings.benchmark ?? beginVariantBenchmark(variant.id);
+  runtimeState.variantId = variant.id;
+  runtimeState.variantMeta = variant;
+  runtimeState.benchmark = benchmark;
+  runtimeState.routePlayback = null;
+  runtimeState.routeRecord = null;
+  runtimeState.unifiedLodState = null;
+
+  const splatAsset = new pc.Asset(`ruoshui-${variant.id}`, 'gsplat', { url: variant.assetUrl });
+  const assetLoadStartedAt = performance.now();
+
+  await new Promise((resolve, reject) => {
+    const loader = new pc.AssetListLoader([splatAsset], runtimeState.app.assets);
+    const onError = (err, asset) => {
+      runtimeState.app.assets.off('error', onError);
+      reject(new Error(`加载 ${asset.name} 失败：${String(err)}`));
+    };
+
+    runtimeState.app.assets.on('error', onError);
+    loader.load(() => {
+      runtimeState.app.assets.off('error', onError);
+      benchmark.loadMs = performance.now() - assetLoadStartedAt;
+      publishVariantBenchmark(variant.id);
+      resolve();
+    });
+  });
+
+  const splat = new pc.Entity('RuoshuiCampus');
+  const gsplatComponent = {
+    asset: splatAsset
+  };
+
+  if (variant.unified) {
+    gsplatComponent.unified = true;
+  }
+
+  if (variant.lodDistances) {
+    gsplatComponent.lodDistances = variant.lodDistances;
+  }
+
+  splat.addComponent('gsplat', gsplatComponent);
+  runtimeState.app.root.addChild(splat);
+  runtimeState.splatAsset = splatAsset;
+  runtimeState.splatEntity = splat;
+  runtimeState.unifiedLodState = configureUnifiedGsplat(runtimeState.app, variant);
+  trackFirstFrame(runtimeState.app, variant.id, timings.switchStartedAt);
+  runtimeState.requestRender?.();
+}
+
+function detachVariantFromRuntime(runtimeState) {
+  if (!runtimeState?.app) {
+    return;
+  }
+
+  if (runtimeState.splatEntity) {
+    runtimeState.splatEntity.destroy();
+    runtimeState.splatEntity = null;
+  }
+
+  if (runtimeState.splatAsset) {
+    runtimeState.splatAsset.unload?.();
+    runtimeState.app.assets.remove(runtimeState.splatAsset);
+    runtimeState.splatAsset = null;
+  }
 }
 
 function moveCamera(runtimeState, preset, immediate = false) {
@@ -711,30 +1013,37 @@ function moveCamera(runtimeState, preset, immediate = false) {
   runtimeState.requestRender();
 }
 
-function startBenchmarkRoute(runtimeState, route) {
+function startBenchmarkRoute(runtimeState, route, options = {}) {
   if (!runtimeState || !route?.steps?.length) {
     return;
   }
 
+  beginMotionSession(runtimeState.benchmark);
+  publishVariantBenchmark(runtimeState.variantId);
+  runtimeState.routeRecord = createRouteRunRecord(route, runtimeState.variantId);
   runtimeState.routePlayback = {
     route,
+    onFinish: options.onFinish ?? null,
     stepIndex: -1,
     stepRemaining: 0
   };
   advanceBenchmarkRoute(runtimeState);
 }
 
-function stopBenchmarkRoute(runtimeState) {
+function stopBenchmarkRoute(runtimeState, status = 'aborted') {
   if (!runtimeState) {
     return;
   }
 
+  const playback = runtimeState.routePlayback;
+  const finalizedRecord = finalizeRouteRunRecord(runtimeState, status);
   runtimeState.routePlayback = null;
+  playback?.onFinish?.(finalizedRecord);
 }
 
-function stopActiveBenchmarkRoute(summaryText = '未播放') {
+function stopActiveBenchmarkRoute(summaryText = '未播放', status = 'aborted') {
   if (runtime) {
-    stopBenchmarkRoute(runtime);
+    stopBenchmarkRoute(runtime, status);
   }
 
   activeRouteId = null;
@@ -751,9 +1060,10 @@ function advanceBenchmarkRoute(runtimeState) {
 
   playback.stepIndex += 1;
   if (playback.stepIndex >= playback.route.steps.length) {
-    runtimeState.routePlayback = null;
     if (activeRouteId === playback.route.id) {
-      stopActiveBenchmarkRoute(`${playback.route.name} · 完成`);
+      stopActiveBenchmarkRoute(`${playback.route.name} · 完成`, 'completed');
+    } else {
+      stopBenchmarkRoute(runtimeState, 'completed');
     }
     return false;
   }
@@ -808,13 +1118,14 @@ function restoreCurrentView(runtimeState, snapshot) {
   }
 
   const { orbit } = runtimeState;
+  const clampedPitch = clampOrbitPitch(snapshot.pitch);
   orbit.transition = null;
   orbit.currentTarget.copy(snapshot.target);
   orbit.desiredTarget.copy(snapshot.target);
   orbit.currentYaw = snapshot.yaw;
   orbit.desiredYaw = snapshot.yaw;
-  orbit.currentPitch = snapshot.pitch;
-  orbit.desiredPitch = snapshot.pitch;
+  orbit.currentPitch = clampedPitch;
+  orbit.desiredPitch = clampedPitch;
   orbit.currentDistance = snapshot.distance;
   orbit.desiredDistance = snapshot.distance;
   applyOrbit(orbit, 1);
@@ -824,14 +1135,110 @@ function restoreCurrentView(runtimeState, snapshot) {
 
 function configureUnifiedGsplat(app, variant) {
   if (!variant?.unified || !variant.unifiedTuning || !app?.scene?.gsplat) {
-    return;
+    return null;
   }
 
-  Object.assign(app.scene.gsplat, variant.unifiedTuning);
+  const baseProfile = normalizeUnifiedGsplatProfile(variant.unifiedTuning);
+  applyUnifiedGsplatProfile(app.scene.gsplat, baseProfile);
+
+  return {
+    mode: 'base',
+    baseProfile,
+    warmSecondsRemaining: 0,
+    riskSnapshot: null
+  };
+}
+
+function normalizeUnifiedGsplatProfile(profile) {
+  return {
+    lodUnderfillLimit: Number.isFinite(profile?.lodUnderfillLimit) ? profile.lodUnderfillLimit : undefined,
+    cooldownTicks: Number.isFinite(profile?.cooldownTicks) ? profile.cooldownTicks : undefined,
+    lodUpdateDistance: Number.isFinite(profile?.lodUpdateDistance) ? profile.lodUpdateDistance : undefined,
+    lodUpdateAngle: Number.isFinite(profile?.lodUpdateAngle) ? profile.lodUpdateAngle : undefined,
+    lodBehindPenalty: Number.isFinite(profile?.lodBehindPenalty) ? profile.lodBehindPenalty : undefined
+  };
+}
+
+function applyUnifiedGsplatProfile(sceneGsplat, profile) {
+  if (!sceneGsplat || !profile) {
+    return false;
+  }
+
+  let changed = false;
+  for (const [key, value] of Object.entries(profile)) {
+    if (!Number.isFinite(value) || sceneGsplat[key] === value) {
+      continue;
+    }
+
+    sceneGsplat[key] = value;
+    changed = true;
+  }
+
+  return changed;
+}
+
+function updateUnifiedLodWarmup(runtimeState, dt, isMoving) {
+  const state = runtimeState?.unifiedLodState;
+  const orbit = runtimeState?.orbit;
+
+  if (!state || !orbit) {
+    return false;
+  }
+
+  const riskSnapshot = getUnifiedLodRiskSnapshot(orbit);
+  state.riskSnapshot = riskSnapshot;
+
+  if (riskSnapshot.shouldPrewarm) {
+    const refillSeconds = isMoving ? lowAnglePrewarmLeadSeconds : lowAnglePrewarmHoldSeconds;
+    state.warmSecondsRemaining = Math.min(
+      lowAnglePrewarmMaxSeconds,
+      Math.max(state.warmSecondsRemaining, refillSeconds)
+    );
+  }
+  const nextMode = state.warmSecondsRemaining > 0 ? 'warmup' : 'base';
+  const modeChanged = state.mode !== nextMode;
+
+  if (modeChanged) {
+    state.mode = nextMode;
+    if (runtimeState.routeRecord) {
+      runtimeState.routeRecord.lodWarmups.push({
+        elapsedMs: roundNumber(performance.now() - runtimeState.routeRecord.startedPerfTime),
+        mode: nextMode,
+        pitch: riskSnapshot.pitchDeg,
+        distance: riskSnapshot.distance,
+        score: riskSnapshot.score
+      });
+    }
+  }
+
+  if (state.warmSecondsRemaining > 0) {
+    state.warmSecondsRemaining = Math.max(0, state.warmSecondsRemaining - dt);
+  }
+
+  return modeChanged;
+}
+
+function isUnifiedLodWarmupActive(runtimeState) {
+  return (runtimeState?.unifiedLodState?.warmSecondsRemaining ?? 0) > 0;
+}
+
+function getUnifiedLodRiskSnapshot(orbit) {
+  const pitchDeg = Math.abs(Math.round(radToDeg(orbit.currentPitch)));
+  const distance = roundNumber(orbit.currentDistance, 3);
+  const pitchScore = clamp((lowAnglePrewarmPitchThresholdDeg - pitchDeg) / lowAnglePrewarmPitchThresholdDeg, 0, 1);
+  const distanceScore = clamp((lowAnglePrewarmDistanceThreshold - distance) / lowAnglePrewarmDistanceThreshold, 0, 1);
+  const score = roundNumber(pitchScore * 0.7 + distanceScore * 0.3, 2);
+
+  return {
+    pitchDeg,
+    distance,
+    score,
+    shouldPrewarm: pitchDeg <= lowAnglePrewarmPitchThresholdDeg && distance <= lowAnglePrewarmDistanceThreshold
+  };
 }
 
 function createLoopController(app) {
-  const originalTick = app.tick;
+  const originalTick = app.tick.bind(app);
   let sleeping = false;
 
   return {
@@ -853,9 +1260,673 @@ function createLoopController(app) {
 
       sleeping = false;
       app.tick = originalTick;
-      window.requestAnimationFrame(app.tick);
+      window.requestAnimationFrame((timestamp) => {
+        originalTick(timestamp);
+      });
     }
   };
+}
+
+function initLongTaskObserver() {
+  if (typeof PerformanceObserver === 'undefined') {
+    return;
+  }
+
+  try {
+    const observer = new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) {
+        longTaskBuffer.push({
+          startTime: entry.startTime,
+          duration: entry.duration
+        });
+      }
+    });
+
+    observer.observe({ type: 'longtask', buffered: true });
+  } catch {
+    return;
+  }
+}
+
+function createRouteRunRecord(route, variantId) {
+  const variant = variantsById.get(variantId);
+  return {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    suiteId: activeSuiteRunId,
+    routeId: route.id,
+    routeName: route.name,
+    variantId,
+    variantName: variant?.name ?? variantId,
+    renderScalePercent: activeRenderScalePercent,
+    startedAt: Date.now(),
+    startedPerfTime: performance.now(),
+    longTaskStartIndex: longTaskBuffer.length,
+    resourceStartIndex: performance.getEntriesByType('resource').length,
+    frames: [],
+    lodWarmups: []
+  };
+}
+
+function recordRouteFrame(runtimeState, dt) {
+  const { orbit, routeRecord, routePlayback } = runtimeState ?? {};
+  if (!orbit || !routeRecord || !routePlayback) {
+    return;
+  }
+
+  const position = orbit.camera.getPosition();
+  const target = orbit.currentTarget;
+  routeRecord.frames.push([
+    Number((performance.now() - routeRecord.startedPerfTime).toFixed(2)),
+    Number((dt * 1000).toFixed(2)),
+    routePlayback.stepIndex,
+    Number(position.x.toFixed(3)),
+    Number(position.y.toFixed(3)),
+    Number(position.z.toFixed(3)),
+    Number(target.x.toFixed(3)),
+    Number(target.y.toFixed(3)),
+    Number(target.z.toFixed(3)),
+    Number(orbit.currentDistance.toFixed(3)),
+    Math.round(radToDeg(orbit.currentPitch)),
+    Math.round(radToDeg(orbit.currentYaw))
+  ]);
+}
+
+function finalizeRouteRunRecord(runtimeState, status) {
+  const record = runtimeState?.routeRecord;
+  if (!record) {
+    return null;
+  }
+
+  const finishedPerfTime = performance.now();
+  const metrics = snapshotBenchmarkMetrics(runtimeState.benchmark);
+  const longTasks = getRouteRunLongTasks(record, finishedPerfTime);
+  const modelResources = getRouteRunModelResources(record, finishedPerfTime);
+  const analysis = analyzeRouteRun(record, longTasks, modelResources);
+  const finalizedRecord = {
+    ...record,
+    status,
+    finishedAt: Date.now(),
+    loadMs: runtimeState.benchmark.loadMs,
+    firstFrameMs: runtimeState.benchmark.firstFrameMs,
+    motionAvgMs: metrics.averageMs,
+    motionMaxMs: metrics.maxMs,
+    analysis,
+    trace: {
+      frames: record.frames,
+      longTasks,
+      modelResources,
+      lodWarmups: record.lodWarmups
+    }
+  };
+
+  routeRunHistory.unshift(finalizedRecord);
+  routeRunHistory.length = Math.min(routeRunHistory.length, maxRouteRunHistory);
+  persistRouteRunHistory(routeRunHistory);
+  renderRouteRunHistory();
+  renderRouteAnalysis();
+  runtimeState.routeRecord = null;
+  return finalizedRecord;
+}
+
+function snapshotBenchmarkMetrics(benchmark) {
+  if (!benchmark) {
+    return {
+      averageMs: null,
+      maxMs: null
+    };
+  }
+
+  const averageMs = benchmark.wasMoving && benchmark.motionFrames > 0 && benchmark.motionTime > 0
+    ? (benchmark.motionTime / benchmark.motionFrames) * 1000
+    : benchmark.lastMotionMs;
+  const maxMs = benchmark.wasMoving && Number.isFinite(benchmark.motionMaxMs)
+    ? benchmark.motionMaxMs
+    : benchmark.lastMotionMaxMs;
+
+  return {
+    averageMs: Number.isFinite(averageMs) ? averageMs : null,
+    maxMs: Number.isFinite(maxMs) ? maxMs : null
+  };
+}
+
+function getRouteRunLongTasks(record, finishedPerfTime) {
+  return longTaskBuffer
+    .slice(record.longTaskStartIndex)
+    .filter((entry) => entry.startTime <= finishedPerfTime && entry.startTime + entry.duration >= record.startedPerfTime)
+    .map((entry) => ({
+      startMs: Number((entry.startTime - record.startedPerfTime).toFixed(2)),
+      durationMs: Number(entry.duration.toFixed(2))
+    }));
+}
+
+function getRouteRunModelResources(record, finishedPerfTime) {
+  return performance.getEntriesByType('resource')
+    .slice(record.resourceStartIndex)
+    .filter((entry) => entry.startTime <= finishedPerfTime)
+    .filter((entry) => isTrackedModelResource(entry.name))
+    .map((entry) => ({
+      name: simplifyResourceName(entry.name),
+      startMs: Number((entry.startTime - record.startedPerfTime).toFixed(2)),
+      durationMs: Number(entry.duration.toFixed(2)),
+      transferSize: entry.transferSize ?? 0,
+      encodedBodySize: entry.encodedBodySize ?? 0
+    }));
+}
+
+function analyzeRouteRun(record, longTasks, modelResources) {
+  const frames = record.frames ?? [];
+  const frameTimes = frames.map((frame) => frame[frameSampleIndices.dtMs]);
+  const frameStats = summarizeFrameTimes(frameTimes);
+  const stepStats = summarizeFrameSteps(frames, record.routeId);
+  const stallWindows = detectStallWindows(frames, longTasks, modelResources, record.routeId);
+
+  return {
+    frameStats,
+    stepStats,
+    stallCount: stallWindows.length,
+    severeStallCount: stallWindows.filter((stall) => stall.peakMs >= severeStallFrameThresholdMs).length,
+    totalStallMs: Number(stallWindows.reduce((sum, stall) => sum + stall.durationMs, 0).toFixed(2)),
+    hotspots: stallWindows.slice(0, 5)
+  };
+}
+
+function summarizeFrameTimes(frameTimes) {
+  if (frameTimes.length === 0) {
+    return {
+      sampleCount: 0,
+      avgMs: null,
+      p95Ms: null,
+      p99Ms: null,
+      peakMs: null
+    };
+  }
+
+  return {
+    sampleCount: frameTimes.length,
+    avgMs: roundNumber(frameTimes.reduce((sum, value) => sum + value, 0) / frameTimes.length),
+    p95Ms: roundNumber(computeQuantile(frameTimes, 0.95)),
+    p99Ms: roundNumber(computeQuantile(frameTimes, 0.99)),
+    peakMs: roundNumber(Math.max(...frameTimes))
+  };
+}
+
+function summarizeFrameSteps(frames, routeId) {
+  const grouped = new Map();
+
+  for (const frame of frames) {
+    const stepIndex = frame[frameSampleIndices.stepIndex];
+    if (!grouped.has(stepIndex)) {
+      grouped.set(stepIndex, []);
+    }
+
+    grouped.get(stepIndex)?.push(frame[frameSampleIndices.dtMs]);
+  }
+
+  return [...grouped.entries()].map(([stepIndex, values]) => ({
+    stepIndex,
+    label: getRouteStepLabel(routeId, stepIndex),
+    avgMs: roundNumber(values.reduce((sum, value) => sum + value, 0) / values.length),
+    p95Ms: roundNumber(computeQuantile(values, 0.95)),
+    peakMs: roundNumber(Math.max(...values)),
+    sampleCount: values.length
+  }));
+}
+
+function detectStallWindows(frames, longTasks, modelResources, routeId) {
+  const windows = [];
+  let activeWindow = null;
+
+  for (const frame of frames) {
+    const dtMs = frame[frameSampleIndices.dtMs];
+    if (dtMs <= stallFrameThresholdMs) {
+      if (activeWindow) {
+        windows.push(finalizeStallWindow(activeWindow, longTasks, modelResources, routeId));
+        activeWindow = null;
+      }
+      continue;
+    }
+
+    if (!activeWindow) {
+      activeWindow = {
+        startMs: frame[frameSampleIndices.elapsedMs],
+        endMs: frame[frameSampleIndices.elapsedMs] + dtMs,
+        frames: [frame],
+        peakFrame: frame
+      };
+      continue;
+    }
+
+    activeWindow.endMs = frame[frameSampleIndices.elapsedMs] + dtMs;
+    activeWindow.frames.push(frame);
+    if (dtMs > activeWindow.peakFrame[frameSampleIndices.dtMs]) {
+      activeWindow.peakFrame = frame;
+    }
+  }
+
+  if (activeWindow) {
+    windows.push(finalizeStallWindow(activeWindow, longTasks, modelResources, routeId));
+  }
+
+  return windows.sort((a, b) => b.peakMs - a.peakMs);
+}
+
+function finalizeStallWindow(window, longTasks, modelResources, routeId) {
+  const frameTimes = window.frames.map((frame) => frame[frameSampleIndices.dtMs]);
+  const peakFrame = window.peakFrame;
+  const overlappingLongTasks = longTasks.filter((task) => rangesOverlap(task.startMs, task.startMs + task.durationMs, window.startMs, window.endMs));
+  const nearbyResources = modelResources.filter((resource) => rangesOverlap(resource.startMs, resource.startMs + resource.durationMs, window.startMs - 150, window.endMs + 150));
+
+  return {
+    startMs: roundNumber(window.startMs),
+    endMs: roundNumber(window.endMs),
+    durationMs: roundNumber(window.endMs - window.startMs),
+    frameCount: window.frames.length,
+    avgMs: roundNumber(frameTimes.reduce((sum, value) => sum + value, 0) / frameTimes.length),
+    peakMs: roundNumber(Math.max(...frameTimes)),
+    stepIndex: peakFrame[frameSampleIndices.stepIndex],
+    stepLabel: getRouteStepLabel(routeId, peakFrame[frameSampleIndices.stepIndex]),
+    camera: {
+      position: [
+        peakFrame[frameSampleIndices.posX],
+        peakFrame[frameSampleIndices.posY],
+        peakFrame[frameSampleIndices.posZ]
+      ],
+      target: [
+        peakFrame[frameSampleIndices.targetX],
+        peakFrame[frameSampleIndices.targetY],
+        peakFrame[frameSampleIndices.targetZ]
+      ],
+      distance: peakFrame[frameSampleIndices.distance],
+      pitch: peakFrame[frameSampleIndices.pitch],
+      yaw: peakFrame[frameSampleIndices.yaw]
+    },
+    longTaskCount: overlappingLongTasks.length,
+    longTaskMs: roundNumber(overlappingLongTasks.reduce((sum, task) => sum + task.durationMs, 0)),
+    modelResourceCount: nearbyResources.length,
+    likelyCause: inferStallCause(overlappingLongTasks, nearbyResources, peakFrame[frameSampleIndices.dtMs]),
+    resources: nearbyResources.slice(0, 4)
+  };
+}
+
+function inferStallCause(longTasks, modelResources, peakMs) {
+  if (longTasks.length > 0) {
+    return '主线程长任务';
+  }
+
+  if (modelResources.length > 0) {
+    return '模型资源加载 / LOD 补载';
+  }
+
+  if (peakMs >= severeStallFrameThresholdMs) {
+    return '视角相关排序 / GPU 峰值';
+  }
+
+  return '相机变化期的渲染波动';
+}
+
+function computeQuantile(values, quantile) {
+  if (values.length === 0) {
+    return null;
+  }
+
+  const sorted = [...values].sort((a, b) => a - b);
+  const position = (sorted.length - 1) * quantile;
+  const lower = Math.floor(position);
+  const upper = Math.ceil(position);
+
+  if (lower === upper) {
+    return sorted[lower];
+  }
+
+  const weight = position - lower;
+  return sorted[lower] * (1 - weight) + sorted[upper] * weight;
+}
+
+function rangesOverlap(startA, endA, startB, endB) {
+  return startA <= endB && endA >= startB;
+}
+
+function roundNumber(value, digits = 2) {
+  if (!Number.isFinite(value)) {
+    return null;
+  }
+
+  return Number(value.toFixed(digits));
+}
+
+function isTrackedModelResource(name) {
+  return name.includes('/models/');
+}
+
+function simplifyResourceName(name) {
+  try {
+    const url = new URL(name, window.location.href);
+    return url.pathname;
+  } catch {
+    return name;
+  }
+}
+
+function getRouteStepLabel(routeId, stepIndex) {
+  const route = routeId ? benchmarkRoutesById.get(routeId) : null;
+  const totalSteps = route?.steps?.length ?? null;
+  const ordinal = Number.isFinite(stepIndex) ? stepIndex + 1 : 0;
+  return totalSteps
+    ? `Step ${ordinal}/${totalSteps}`
+    : `Step ${ordinal}`;
+}
+
+function renderRouteRunHistory() {
+  routeLogSummary.textContent = routeRunHistory.length > 0 ? `${routeRunHistory.length} 条` : '暂无';
+  routeLogList.replaceChildren();
+
+  if (routeRunHistory.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'route-log-empty';
+    empty.textContent = '跑一次轨迹后，这里会自动留下对比记录。';
+    routeLogList.append(empty);
+    return;
+  }
+
+  for (const entry of routeRunHistory) {
+    const item = document.createElement('article');
+    item.className = 'route-log-item';
+    item.innerHTML = `
+      <div class="route-log-line">
+        <strong>${entry.routeName}</strong>
+        <span class="route-log-status is-${entry.status}">${formatRouteRunStatus(entry.status)}</span>
+      </div>
+      <div class="route-log-meta">${entry.variantName} · ${entry.renderScalePercent}% · ${formatRouteRunTime(entry.finishedAt ?? entry.startedAt)}</div>
+      <div class="route-log-metrics">
+        <span>漫游 ${formatMetricMs(entry.motionAvgMs)} / ${formatMetricPeakMs(entry.motionMaxMs)}</span>
+        <span>首帧 ${formatMetricMs(entry.firstFrameMs)}</span>
+      </div>
+    `;
+    routeLogList.append(item);
+  }
+}
+
+function renderRouteAnalysis() {
+  const records = getLatestSuiteRecords();
+  routeAnalysisRanking.replaceChildren();
+  routeAnalysisHotspots.replaceChildren();
+
+  if (records.length === 0) {
+    routeAnalysisSummary.textContent = '等待批量测试';
+    routeAnalysisCopyNote.textContent = '跑完一轮标准测试后可复制。';
+    routeAnalysisRanking.innerHTML = '<div class="route-analysis-empty">运行“当前轨迹 × 全版本”后，这里会出现排行榜和卡顿热点。</div>';
+    routeAnalysisHotspots.innerHTML = '';
+    return;
+  }
+
+  const summary = buildRouteAnalysisSummary(records);
+  routeAnalysisSummary.textContent = `${summary.routeName} · ${records.length} 版`;
+  routeAnalysisCopyNote.textContent = `最新批次：${summary.suiteId} · 可复制或下载`;
+
+  for (const item of summary.ranking) {
+    const card = document.createElement('article');
+    card.className = 'route-analysis-item';
+    card.innerHTML = `
+      <div class="route-analysis-line">
+        <strong>${item.variantName}</strong>
+        <span>${item.avgMs} / ${item.peakMs} ms</span>
+      </div>
+      <div class="route-analysis-meta">P95 ${item.p95Ms} · P99 ${item.p99Ms} · 卡顿 ${item.stallCount} 次</div>
+      <div class="route-analysis-meta">最差段 ${item.worstStepLabel} · P95 ${item.worstStepP95Ms} · 峰值 ${item.worstStepPeakMs}</div>
+    `;
+    routeAnalysisRanking.append(card);
+  }
+
+  if (summary.hotspots.length === 0) {
+    routeAnalysisHotspots.innerHTML = '<div class="route-analysis-empty">这一批次还没采到明显卡顿热点。</div>';
+    return;
+  }
+
+  for (const hotspot of summary.hotspots) {
+    const card = document.createElement('article');
+    card.className = 'route-hotspot-item';
+    card.innerHTML = `
+      <div class="route-analysis-line">
+        <strong>${hotspot.variantName}</strong>
+        <span>${hotspot.peakMs} ms</span>
+      </div>
+      <div class="route-analysis-meta">${hotspot.stepLabel} · ${hotspot.likelyCause}</div>
+      <div class="route-analysis-meta">窗口 ${hotspot.startMs}-${hotspot.endMs} ms · 长任务 ${hotspot.longTaskCount} 次 / 资源 ${hotspot.modelResourceCount} 次</div>
+      <div class="route-analysis-meta">视角 ${hotspot.camera.distance}m · ${hotspot.camera.pitch}° / ${hotspot.camera.yaw}°</div>
+      ${hotspot.resourceSummary ? `<div class="route-analysis-meta">${hotspot.resourceSummary}</div>` : ''}
+    `;
+    routeAnalysisHotspots.append(card);
+  }
+}
+
+function getLatestSuiteRecords() {
+  const latestSuiteId = routeRunHistory.find((entry) => entry.suiteId)?.suiteId;
+  if (!latestSuiteId) {
+    return [];
+  }
+
+  return routeRunHistory.filter((entry) => entry.suiteId === latestSuiteId);
+}
+
+function buildRouteAnalysisSummary(records) {
+  const sorted = [...records].sort((left, right) => (left.analysis?.frameStats?.avgMs ?? Infinity) - (right.analysis?.frameStats?.avgMs ?? Infinity));
+  const hotspots = records
+    .flatMap((record) => (record.analysis?.hotspots ?? []).map((hotspot) => ({
+      ...hotspot,
+      variantId: record.variantId,
+      variantName: record.variantName,
+      resourceSummary: formatHotspotResourceSummary(hotspot.resources)
+    })))
+    .sort((left, right) => right.peakMs - left.peakMs)
+    .slice(0, 5);
+
+  return {
+    suiteId: records[0]?.suiteId ?? 'manual',
+    routeName: records[0]?.routeName ?? '未知轨迹',
+    ranking: sorted.map((record) => ({
+      variantId: record.variantId,
+      variantName: record.variantName,
+      avgMs: formatMetricText(record.analysis?.frameStats?.avgMs),
+      p95Ms: formatMetricText(record.analysis?.frameStats?.p95Ms),
+      p99Ms: formatMetricText(record.analysis?.frameStats?.p99Ms),
+      peakMs: formatMetricText(record.analysis?.frameStats?.peakMs),
+      stallCount: record.analysis?.stallCount ?? 0,
+      worstStepLabel: formatWorstStepLabel(record.analysis?.stepStats),
+      worstStepP95Ms: formatMetricText(getWorstStep(record.analysis?.stepStats)?.p95Ms),
+      worstStepPeakMs: formatMetricText(getWorstStep(record.analysis?.stepStats)?.peakMs)
+    })),
+    hotspots
+  };
+}
+
+async function copyLatestRouteAnalysis(mode) {
+  const exportPayload = getLatestRouteAnalysisExport();
+  if (!exportPayload) {
+    setRouteAnalysisCopyNote('还没有可导出的标准测试结果。');
+    return;
+  }
+
+  const textPayload = mode === 'json'
+    ? JSON.stringify(exportPayload, null, 2)
+    : formatRouteAnalysisSummaryText(exportPayload.summary, exportPayload.records);
+
+  try {
+    await navigator.clipboard.writeText(textPayload);
+    setRouteAnalysisCopyNote(mode === 'json' ? '已复制 JSON。' : '已复制摘要。');
+  } catch {
+    setRouteAnalysisCopyNote('复制失败，可能是浏览器权限限制。');
+  }
+}
+
+function downloadLatestRouteAnalysisJson() {
+  const exportPayload = getLatestRouteAnalysisExport();
+  if (!exportPayload) {
+    setRouteAnalysisCopyNote('还没有可导出的标准测试结果。');
+    return;
+  }
+
+  const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const routeSlug = exportPayload.summary.routeName.replace(/[^\p{Letter}\p{Number}-]+/gu, '-').replace(/-+/g, '-');
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `ruoshui-route-analysis-${routeSlug}-${exportPayload.summary.suiteId}.json`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+  setRouteAnalysisCopyNote('已下载 JSON。');
+}
+
+function setRouteAnalysisCopyNote(text) {
+  routeAnalysisCopyNote.textContent = text;
+  if (routeAnalysisCopyTimeoutId) {
+    window.clearTimeout(routeAnalysisCopyTimeoutId);
+  }
+
+  routeAnalysisCopyTimeoutId = window.setTimeout(() => {
+    const records = getLatestSuiteRecords();
+    routeAnalysisCopyNote.textContent = records.length > 0
+      ? `最新批次：${records[0].suiteId} · 可复制或下载`
+      : '跑完一轮标准测试后可复制。';
+    routeAnalysisCopyTimeoutId = null;
+  }, routeAnalysisCopyFeedbackMs);
+}
+
+function formatRouteAnalysisSummaryText(summary, records) {
+  const rankingLines = summary.ranking
+    .map((item, index) => `${index + 1}. ${item.variantName}: avg ${item.avgMs}, p95 ${item.p95Ms}, peak ${item.peakMs}, stalls ${item.stallCount}, worst ${item.worstStepLabel} (${item.worstStepP95Ms})`)
+    .join('\n');
+  const hotspotLines = summary.hotspots.length > 0
+    ? summary.hotspots
+      .map((hotspot, index) => `${index + 1}. ${hotspot.variantName} / ${hotspot.stepLabel}: ${hotspot.peakMs} ms, ${hotspot.likelyCause}, 视角 ${hotspot.camera.distance}m ${hotspot.camera.pitch}°/${hotspot.camera.yaw}°, 资源 ${hotspot.modelResourceCount}, 长任务 ${hotspot.longTaskCount}`)
+      .join('\n')
+    : '无明显热点';
+
+  return [
+    `Suite: ${summary.suiteId}`,
+    `Route: ${summary.routeName}`,
+    '',
+    'Ranking:',
+    rankingLines,
+    '',
+    'Hotspots:',
+    hotspotLines,
+    '',
+    `Records: ${records.length}`
+  ].join('\n');
+}
+
+function getLatestRouteAnalysisExport() {
+  const records = getLatestSuiteRecords();
+  if (records.length === 0) {
+    return null;
+  }
+
+  return {
+    exportedAt: new Date().toISOString(),
+    frameSchema: Object.keys(frameSampleIndices),
+    summary: buildRouteAnalysisSummary(records),
+    records
+  };
+}
+
+function getWorstStep(stepStats) {
+  if (!Array.isArray(stepStats) || stepStats.length === 0) {
+    return null;
+  }
+
+  return [...stepStats].sort((left, right) => {
+    const p95Diff = (right.p95Ms ?? -Infinity) - (left.p95Ms ?? -Infinity);
+    if (p95Diff !== 0) {
+      return p95Diff;
+    }
+
+    return (right.peakMs ?? -Infinity) - (left.peakMs ?? -Infinity);
+  })[0];
+}
+
+function formatWorstStepLabel(stepStats) {
+  const worstStep = getWorstStep(stepStats);
+  return worstStep?.label ?? '—';
+}
+
+function formatHotspotResourceSummary(resources) {
+  if (!Array.isArray(resources) || resources.length === 0) {
+    return '';
+  }
+
+  return `资源 ${resources.map((resource) => resource.name).join(' · ')}`;
+}
+
+function installRouteAnalysisBridge() {
+  window.__ruoshuiPerf = {
+    latest() {
+      return getLatestRouteAnalysisExport();
+    },
+    history() {
+      return routeRunHistory;
+    },
+    copySummary() {
+      return copyLatestRouteAnalysis('summary');
+    },
+    copyJson() {
+      return copyLatestRouteAnalysis('json');
+    },
+    clearHistory() {
+      routeRunHistory.length = 0;
+      persistRouteRunHistory(routeRunHistory);
+      renderRouteRunHistory();
+      renderRouteAnalysis();
+    },
+    variants() {
+      return data.variants.map((variant) => ({ id: variant.id, name: variant.name }));
+    },
+    routes() {
+      return benchmarkRoutes.map((route) => ({ id: route.id, name: route.name }));
+    },
+    async runVariantRoute(options = {}) {
+      if (options.clearHistory) {
+        this.clearHistory();
+      }
+
+      return runVariantRouteBenchmark({
+        routeId: options.routeId,
+        variantId: options.variantId,
+        repeatCount: options.repeatCount,
+        suitePrefix: options.suitePrefix ?? 'single'
+      });
+    },
+    async waitForIdle() {
+      if (!activeBenchmarkRunPromise) {
+        return null;
+      }
+
+      return activeBenchmarkRunPromise;
+    }
+  };
+}
+
+function getInitialRouteRunHistory() {
+  try {
+    const saved = window.localStorage.getItem(routeRunHistoryStorageKey);
+    if (!saved) {
+      return [];
+    }
+
+    const parsed = JSON.parse(saved);
+    return Array.isArray(parsed) ? parsed.slice(0, maxRouteRunHistory) : [];
+  } catch {
+    return [];
+  }
+}
+
+function persistRouteRunHistory(history) {
+  try {
+    window.localStorage.setItem(routeRunHistoryStorageKey, JSON.stringify(history));
+  } catch {
+    return;
+  }
 }
 
 function beginVariantBenchmark(variantId) {
@@ -863,7 +1934,11 @@ function beginVariantBenchmark(variantId) {
     loadMs: null,
     firstFrameMs: null,
     motionTime: 0,
-    motionFrames: 0
+    motionFrames: 0,
+    motionMaxMs: null,
+    lastMotionMs: null,
+    lastMotionMaxMs: null,
+    wasMoving: false
   };
   variantBenchmarks.set(variantId, benchmark);
   return benchmark;
@@ -892,6 +1967,49 @@ function renderVariantBenchmark(variantId) {
   metricLoad.textContent = formatMetricMs(benchmark?.loadMs);
   metricFirstFrame.textContent = formatMetricMs(benchmark?.firstFrameMs);
   metricMotion.textContent = formatMotionMetric(benchmark);
+}
+
+function beginMotionSession(benchmark) {
+  if (!benchmark) {
+    return;
+  }
+
+  benchmark.motionTime = 0;
+  benchmark.motionFrames = 0;
+  benchmark.motionMaxMs = null;
+  benchmark.wasMoving = true;
+}
+
+function sampleMotionFrame(benchmark, dt) {
+  if (!benchmark) {
+    return;
+  }
+
+  if (!benchmark.wasMoving) {
+    beginMotionSession(benchmark);
+  }
+
+  benchmark.motionFrames += 1;
+  benchmark.motionTime += dt;
+  const frameMs = dt * 1000;
+  benchmark.motionMaxMs = benchmark.motionMaxMs === null
+    ? frameMs
+    : Math.max(benchmark.motionMaxMs, frameMs);
+}
+
+function endMotionSession(benchmark) {
+  if (!benchmark?.wasMoving) {
+    return false;
+  }
+
+  benchmark.wasMoving = false;
+  if (benchmark.motionFrames > 0 && benchmark.motionTime > 0) {
+    benchmark.lastMotionMs = (benchmark.motionTime / benchmark.motionFrames) * 1000;
+    benchmark.lastMotionMaxMs = benchmark.motionMaxMs;
+    return true;
+  }
+
+  return false;
 }
 
 function trackFirstFrame(app, variantId, switchStartedAt) {
@@ -976,11 +2094,7 @@ function createOrbitController(camera, canvasElement, initialPosition, initialTa
     if (orbit.pointerMode === 'rotate') {
       orbit.transition = null;
       orbit.desiredYaw -= dx * orbit.rotateSpeed;
-      orbit.desiredPitch = clamp(
-        orbit.desiredPitch - dy * orbit.rotateSpeed,
-        degToRad(-89),
-        degToRad(89)
-      );
+      orbit.desiredPitch = clampOrbitPitch(orbit.desiredPitch - dy * orbit.rotateSpeed);
       return;
     }
 
@@ -1028,6 +2142,7 @@ function createOrbitController(camera, canvasElement, initialPosition, initialTa
 
 function setOrbitPreset(orbit, position, target, immediate, duration = 1.35) {
   const spherical = positionToOrbit(position, target);
+  const clampedPitch = clampOrbitPitch(spherical.pitch);
 
   if (immediate) {
     orbit.transition = null;
@@ -1035,8 +2150,8 @@ function setOrbitPreset(orbit, position, target, immediate, duration = 1.35) {
     orbit.desiredTarget.copy(target);
     orbit.currentYaw = spherical.yaw;
     orbit.desiredYaw = spherical.yaw;
-    orbit.currentPitch = spherical.pitch;
-    orbit.desiredPitch = spherical.pitch;
+    orbit.currentPitch = clampedPitch;
+    orbit.desiredPitch = clampedPitch;
     orbit.currentDistance = spherical.distance;
     orbit.desiredDistance = spherical.distance;
     applyOrbit(orbit, 1);
@@ -1051,7 +2166,7 @@ function setOrbitPreset(orbit, position, target, immediate, duration = 1.35) {
     fromYaw: orbit.desiredYaw,
     toYaw: spherical.yaw,
     fromPitch: orbit.desiredPitch,
-    toPitch: spherical.pitch,
+    toPitch: clampedPitch,
     fromDistance: orbit.desiredDistance,
     toDistance: spherical.distance
   };
@@ -1119,8 +2234,12 @@ function positionToOrbit(position, target) {
   return {
     distance,
     yaw: Math.atan2(offset.x, offset.z),
-    pitch: Math.asin(clamp(offset.y / distance, -1, 1))
+    pitch: clampOrbitPitch(Math.asin(clamp(offset.y / distance, -1, 1)))
   };
+}
+
+function clampOrbitPitch(value) {
+  return clamp(value, degToRad(minOrbitPitchDeg), degToRad(maxOrbitPitchDeg));
 }
 
 function orbitToPosition(target, yaw, pitch, distance, out = new pc.Vec3()) {
@@ -1208,13 +2327,70 @@ function formatMetricMs(value) {
   return `${Math.round(value)} ms`;
 }
 
+function formatMetricText(value) {
+  if (!Number.isFinite(value)) {
+    return '—';
+  }
+
+  return `${Number(value).toFixed(1)} ms`;
+}
+
+function formatMetricPeakMs(value) {
+  if (!Number.isFinite(value)) {
+    return '—';
+  }
+
+  return `${Math.round(value)} ms`;
+}
+
 function formatMotionMetric(benchmark) {
-  if (!benchmark || benchmark.motionFrames < 6 || benchmark.motionTime <= 0) {
+  if (!benchmark) {
     return '待采样';
   }
 
-  const averageMs = (benchmark.motionTime / benchmark.motionFrames) * 1000;
-  return `${averageMs.toFixed(1)} ms`;
+  const activeAverageMs = benchmark.wasMoving && benchmark.motionFrames >= 6 && benchmark.motionTime > 0
+    ? (benchmark.motionTime / benchmark.motionFrames) * 1000
+    : null;
+  const averageMs = activeAverageMs ?? benchmark.lastMotionMs;
+
+  if (!Number.isFinite(averageMs)) {
+    return '待采样';
+  }
+
+  const maxMs = benchmark.wasMoving && Number.isFinite(benchmark.motionMaxMs)
+    ? benchmark.motionMaxMs
+    : benchmark.lastMotionMaxMs;
+
+  if (!Number.isFinite(maxMs)) {
+    return `${averageMs.toFixed(1)} ms`;
+  }
+
+  return `${averageMs.toFixed(1)} / ${maxMs.toFixed(0)} ms`;
+}
+
+function formatRouteRunStatus(status) {
+  switch (status) {
+    case 'completed':
+      return '完成';
+    case 'manual':
+      return '手动';
+    case 'switch':
+      return '切换';
+    default:
+      return '中断';
+  }
+}
+
+function formatRouteRunTime(timestamp) {
+  if (!Number.isFinite(timestamp)) {
+    return '—';
+  }
+
+  return new Date(timestamp).toLocaleTimeString('zh-CN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
 }
 
 function formatVec3(vector) {

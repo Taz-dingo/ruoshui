@@ -237,8 +237,20 @@ select {
   color: var(--text);
 }
 
+.button.tertiary {
+  border-color: rgba(168, 201, 125, 0.22);
+  background: rgba(168, 201, 125, 0.08);
+  color: var(--accent-strong);
+}
+
 .button:hover {
   transform: translateY(-1px);
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+  transform: none;
 }
 
 .meta-panel {
@@ -459,6 +471,202 @@ select {
   gap: 8px;
 }
 
+.route-batch {
+  display: grid;
+  gap: 6px;
+}
+
+.route-batch-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.route-batch-button {
+  width: 100%;
+  justify-content: center;
+}
+
+.route-batch-note {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.route-log {
+  display: grid;
+  gap: 8px;
+}
+
+.route-log-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.route-log-head span {
+  color: rgba(231, 218, 198, 0.52);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.route-log-head strong {
+  color: rgba(231, 218, 198, 0.74);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.route-log-list {
+  display: grid;
+  gap: 8px;
+}
+
+.route-log-empty,
+.route-log-item {
+  padding: 9px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(231, 218, 198, 0.08);
+  background: rgba(244, 236, 222, 0.025);
+}
+
+.route-log-empty {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.route-log-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.route-log-line strong {
+  font-size: 11px;
+}
+
+.route-log-status {
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(231, 218, 198, 0.74);
+  background: rgba(244, 236, 222, 0.06);
+}
+
+.route-log-status.is-completed {
+  color: #243019;
+  background: rgba(168, 201, 125, 0.88);
+}
+
+.route-log-status.is-manual,
+.route-log-status.is-switch,
+.route-log-status.is-aborted {
+  color: rgba(231, 218, 198, 0.82);
+  background: rgba(122, 88, 61, 0.42);
+}
+
+.route-log-meta,
+.route-log-metrics {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.route-analysis {
+  display: grid;
+  gap: 8px;
+}
+
+.route-analysis-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.route-analysis-head span {
+  color: rgba(231, 218, 198, 0.52);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.route-analysis-head strong {
+  color: rgba(231, 218, 198, 0.84);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.route-analysis-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.route-analysis-button {
+  width: 100%;
+  padding-inline: 10px;
+  justify-content: center;
+}
+
+.route-analysis-copy-note {
+  color: rgba(231, 218, 198, 0.58);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.route-analysis-ranking,
+.route-analysis-hotspots {
+  display: grid;
+  gap: 8px;
+}
+
+.route-analysis-empty,
+.route-analysis-item,
+.route-hotspot-item {
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(231, 218, 198, 0.08);
+  background: rgba(244, 236, 222, 0.025);
+}
+
+.route-analysis-empty {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.route-analysis-line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.route-analysis-line strong {
+  font-size: 11px;
+}
+
+.route-analysis-line span {
+  color: var(--accent-strong);
+  font-size: 10px;
+  line-height: 1.4;
+  text-align: right;
+}
+
+.route-analysis-meta {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
 .variant,
 .route,
 .preset {
@@ -485,6 +693,11 @@ select {
   border-color: rgba(168, 201, 125, 0.36);
   background: rgba(168, 201, 125, 0.12);
   transform: translateY(-1px);
+}
+
+.route.is-running {
+  border-color: rgba(199, 227, 158, 0.42);
+  box-shadow: inset 0 0 0 1px rgba(199, 227, 158, 0.18);
 }
 
 .variant strong,
@@ -686,6 +899,14 @@ select {
   .variant-list,
   .camera-grid,
   .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .route-analysis-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .route-batch-actions {
     grid-template-columns: 1fr;
   }
 
