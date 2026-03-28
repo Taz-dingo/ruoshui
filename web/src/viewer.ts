@@ -1,360 +1,118 @@
-import './style.css';
+import {
+  cameraMetaIntervalSeconds,
+  currentVariantRepeatCount,
+  frameSampleIndices,
+  lowAnglePrewarmDistanceThreshold,
+  lowAnglePrewarmHoldSeconds,
+  lowAnglePrewarmLeadSeconds,
+  lowAnglePrewarmMaxSeconds,
+  lowAnglePrewarmPitchThresholdDeg,
+  maxOrbitPitchDeg,
+  maxRouteRunHistory,
+  minOrbitPitchDeg,
+  perfHudIntervalSeconds,
+  renderWakeSeconds,
+  routeAnalysisCopyFeedbackMs,
+  routeRunHistoryStorageKey
+} from './config';
+import { analyzeRouteRun, formatHotspotResourceSummary, formatWorstStepLabel, getWorstStep, isTrackedModelResource, simplifyResourceName } from './benchmark/analysis';
+import { applyRenderScaleToRuntime, createPerformanceMode, getInitialRenderScalePercent, getMaxSupportedPixelRatio, normalizeRenderScalePercent, persistRenderScalePercent, updatePerformanceMode } from './performance/render-scale';
+import type { BenchmarkRoute, RouteRunRecord, VariantBenchmark, ViewerContent } from './types';
+import { requireElement } from './utils/dom';
+import { formatMetricMs, formatMetricPeakMs, formatMetricText, formatMotionMetric, formatRouteRunStatus, formatRouteRunTime, formatVec3 } from './utils/format';
+import { clamp, degToRad, easeInOutCubic, lerp, lerpAngle, radToDeg, roundNumber } from './utils/math';
 
-const pc = await import(/* @vite-ignore */ 'https://esm.sh/playcanvas@2.17.2?bundle');
+const pc: any = await import(/* @vite-ignore */ 'https://esm.sh/playcanvas@2.17.2?bundle');
 
-const appElement = document.querySelector('#app');
+const data = window.__ruoshuiInitialData;
 
-if (!appElement) {
-  throw new Error('Missing #app root');
+if (!data) {
+  throw new Error('Missing initial viewer content');
 }
 
-const data = await fetch('/content/mvp.json').then(async (response) => {
-  if (!response.ok) {
-    throw new Error(`Failed to load content: ${response.status}`);
-  }
-
-  return response.json();
-});
-
 const showPerfHud = import.meta.env.DEV;
-const renderScaleStorageKey = 'ruoshui-render-scale-percent';
-const routeRunHistoryStorageKey = 'ruoshui-route-run-history';
-const routeAnalysisCopyFeedbackMs = 1600;
-const renderScaleMinPercent = 70;
-const cameraMetaIntervalSeconds = 0.12;
-const perfHudIntervalSeconds = 0.5;
-const renderWakeSeconds = 0.25;
-const maxRouteRunHistory = 8;
-const stallFrameThresholdMs = 22;
-const severeStallFrameThresholdMs = 50;
-const lowAnglePrewarmPitchThresholdDeg = 52;
-const lowAnglePrewarmDistanceThreshold = 3.35;
-const lowAnglePrewarmLeadSeconds = 0.9;
-const lowAnglePrewarmHoldSeconds = 1.4;
-const lowAnglePrewarmMaxSeconds = 2.2;
-const currentVariantRepeatCount = 3;
-const minOrbitPitchDeg = 6;
-const maxOrbitPitchDeg = 89;
-const frameSampleIndices = {
-  elapsedMs: 0,
-  dtMs: 1,
-  stepIndex: 2,
-  posX: 3,
-  posY: 4,
-  posZ: 5,
-  targetX: 6,
-  targetY: 7,
-  targetZ: 8,
-  distance: 9,
-  pitch: 10,
-  yaw: 11
-};
 const variantsById = new Map(data.variants.map((variant) => [variant.id, variant]));
 const benchmarkRoutes = data.benchmarkRoutes ?? [];
 const benchmarkRoutesById = new Map(benchmarkRoutes.map((route) => [route.id, route]));
 const firstPreset = data.presets[0];
 const defaultVariant = variantsById.get(data.scene.defaultVariantId) ?? data.variants[0];
 const maxRenderScalePercent = Math.round(getMaxSupportedPixelRatio(window) * 100);
-let activeRenderScalePercent = getInitialRenderScalePercent();
-const longTaskBuffer = [];
+let activeRenderScalePercent = getInitialRenderScalePercent(window, maxRenderScalePercent);
+const longTaskBuffer: Array<{ startTime: number; duration: number }> = [];
 
 initLongTaskObserver();
 
-appElement.innerHTML = `
-  <main class="shell">
-    <div class="scene" id="scene"></div>
-    <div class="hud">
-      <section class="rail">
-        <div class="hero">
-          <h1>${data.scene.title}</h1>
-          <p class="hero-subtitle">${data.scene.subtitle}</p>
-          <div class="hero-actions">
-            <button class="button primary" id="focus-scene">进入</button>
-            <button class="button secondary" id="focus-overview">全览</button>
-          </div>
-        </div>
-
-        <div class="panel panel-reveal meta-panel">
-          <div class="status-strip" aria-live="polite">
-            <span class="status-dot"></span>
-            <div class="status-copy">
-              <strong id="status-title">准备加载场景</strong>
-              <span id="status-detail">连接运行时</span>
-            </div>
-          </div>
-          <div class="stats compact-stats">
-            <div class="stat-card">
-              <span>当前版本</span>
-              <strong id="variant-title">${defaultVariant.name}</strong>
-            </div>
-            <div class="stat-card">
-              <span>文件体积</span>
-              <strong id="variant-size">${defaultVariant.size}</strong>
-            </div>
-            <div class="stat-card">
-              <span>高斯数量</span>
-              <strong id="variant-splats">${defaultVariant.splats}</strong>
-            </div>
-            <div class="stat-card">
-              <span>保留比例</span>
-              <strong id="variant-retention">${defaultVariant.retention}</strong>
-            </div>
-          </div>
-          <p class="memory-body" id="variant-note">${defaultVariant.note}</p>
-          <div class="metrics-grid" aria-live="polite">
-            <div class="metric-card">
-              <span>加载</span>
-              <strong id="metric-load">—</strong>
-            </div>
-            <div class="metric-card">
-              <span>首帧</span>
-              <strong id="metric-first-frame">—</strong>
-            </div>
-            <div class="metric-card">
-              <span>漫游</span>
-              <strong id="metric-motion">待采样</strong>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <div></div>
-
-      <aside class="detail">
-        <div class="panel panel-reveal inspector">
-          <section class="inspector-section variant-section" data-panel="variants">
-            <button class="inspector-toggle" type="button" data-toggle="variants" aria-expanded="false">
-              <span class="section-title">模型版本</span>
-              <span class="toggle-meta" id="variants-summary">${defaultVariant.name}</span>
-            </button>
-            <div class="inspector-body" data-body="variants">
-              <div class="variant-list" id="variant-list"></div>
-            </div>
-          </section>
-
-          <section class="inspector-section" data-panel="quality">
-            <button class="inspector-toggle" type="button" data-toggle="quality" aria-expanded="false">
-              <span class="section-title">渲染清晰度</span>
-              <span class="toggle-meta" id="quality-summary"></span>
-            </button>
-            <div class="inspector-body" data-body="quality">
-              <div class="quality-control">
-                <input
-                  class="quality-slider"
-                  id="render-scale-slider"
-                  type="range"
-                  min="${renderScaleMinPercent}"
-                  max="${maxRenderScalePercent}"
-                  step="5"
-                  value="${activeRenderScalePercent}"
-                />
-                <div class="quality-meta">
-                  <strong id="render-scale-value"></strong>
-                  <span id="render-scale-note"></span>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section class="inspector-section" data-panel="presets">
-            <button class="inspector-toggle" type="button" data-toggle="presets" aria-expanded="false">
-              <span class="section-title">导览镜头</span>
-              <span class="toggle-meta" id="presets-summary">${firstPreset.name}</span>
-            </button>
-            <div class="inspector-body" data-body="presets">
-              <div class="route-group">
-                <div class="route-head">
-                  <span>对比轨迹</span>
-                  <strong id="route-summary">未播放</strong>
-                </div>
-                <div class="route-list" id="route-list"></div>
-                <div class="route-batch">
-                  <div class="route-batch-actions">
-                    <button class="button tertiary route-batch-button" id="run-route-current-variant" type="button">跑当前轨迹 × 当前版本 ×3</button>
-                    <button class="button tertiary route-batch-button" id="run-route-suite" type="button">跑当前轨迹 × 全版本</button>
-                  </div>
-                  <span class="route-batch-note" id="route-batch-note">默认使用当前选中的轨迹。</span>
-                </div>
-                <div class="route-log">
-                  <div class="route-log-head">
-                    <span>自动记录</span>
-                    <strong id="route-log-summary">暂无</strong>
-                  </div>
-                  <div class="route-log-list" id="route-log-list"></div>
-                </div>
-                <div class="route-analysis">
-                  <div class="route-analysis-head">
-                    <span>标准测试分析</span>
-                    <strong id="route-analysis-summary">等待批量测试</strong>
-                  </div>
-                <div class="route-analysis-actions">
-                  <button class="button tertiary route-analysis-button" id="copy-route-analysis-summary" type="button">复制摘要</button>
-                  <button class="button tertiary route-analysis-button" id="copy-route-analysis-json" type="button">复制 JSON</button>
-                  <button class="button tertiary route-analysis-button" id="download-route-analysis-json" type="button">下载 JSON</button>
-                </div>
-                  <div class="route-analysis-copy-note" id="route-analysis-copy-note">跑完一轮标准测试后可复制。</div>
-                  <div class="route-analysis-ranking" id="route-analysis-ranking"></div>
-                  <div class="route-analysis-hotspots" id="route-analysis-hotspots"></div>
-                </div>
-              </div>
-              <div class="preset-list" id="preset-list"></div>
-            </div>
-          </section>
-
-          <section class="inspector-section" data-panel="camera">
-            <button class="inspector-toggle" type="button" data-toggle="camera" aria-expanded="false">
-              <span class="section-title">相机信息</span>
-              <span class="toggle-meta" id="camera-summary">等待视角</span>
-            </button>
-            <div class="inspector-body" data-body="camera">
-              <div class="camera-grid">
-                <div class="camera-card">
-                  <span>位置</span>
-                  <strong id="camera-position">—</strong>
-                </div>
-                <div class="camera-card">
-                  <span>目标</span>
-                  <strong id="camera-target">—</strong>
-                </div>
-                <div class="camera-card">
-                  <span>距离</span>
-                  <strong id="camera-distance">—</strong>
-                </div>
-                <div class="camera-card">
-                  <span>俯仰 / 水平</span>
-                  <strong id="camera-angle">—</strong>
-                </div>
-              </div>
-            </div>
-          </section>
-        </div>
-      </aside>
-    </div>
-    ${showPerfHud ? `
-      <aside class="perf-hud" aria-live="polite">
-        <span class="perf-chip">FPS <strong id="perf-fps">—</strong></span>
-        <span class="perf-chip">帧时 <strong id="perf-ms">—</strong></span>
-        <span class="perf-chip">渲染 <strong id="perf-render">启动中</strong></span>
-        <span class="perf-chip">比例 <strong id="perf-scale">${activeRenderScalePercent}%</strong></span>
-      </aside>
-    ` : ''}
-  </main>
-`;
-
-const sceneContainer = document.querySelector('#scene');
-const variantList = document.querySelector('#variant-list');
-const routeList = document.querySelector('#route-list');
-const routeLogList = document.querySelector('#route-log-list');
-const routeAnalysisRanking = document.querySelector('#route-analysis-ranking');
-const routeAnalysisHotspots = document.querySelector('#route-analysis-hotspots');
-const presetList = document.querySelector('#preset-list');
-const runRouteCurrentVariantButton = document.querySelector('#run-route-current-variant');
-const runRouteSuiteButton = document.querySelector('#run-route-suite');
-const routeBatchNote = document.querySelector('#route-batch-note');
-const copyRouteAnalysisSummaryButton = document.querySelector('#copy-route-analysis-summary');
-const copyRouteAnalysisJsonButton = document.querySelector('#copy-route-analysis-json');
-const downloadRouteAnalysisJsonButton = document.querySelector('#download-route-analysis-json');
-const renderScaleSlider = document.querySelector('#render-scale-slider');
-const statusTitle = document.querySelector('#status-title');
-const statusDetail = document.querySelector('#status-detail');
-const variantSize = document.querySelector('#variant-size');
-const variantSplats = document.querySelector('#variant-splats');
-const variantRetention = document.querySelector('#variant-retention');
-const variantTitle = document.querySelector('#variant-title');
-const variantNote = document.querySelector('#variant-note');
-const metricLoad = document.querySelector('#metric-load');
-const metricFirstFrame = document.querySelector('#metric-first-frame');
-const metricMotion = document.querySelector('#metric-motion');
-const renderScaleValue = document.querySelector('#render-scale-value');
-const renderScaleNote = document.querySelector('#render-scale-note');
-const focusSceneButton = document.querySelector('#focus-scene');
-const focusOverviewButton = document.querySelector('#focus-overview');
-const variantsSummary = document.querySelector('#variants-summary');
-const qualitySummary = document.querySelector('#quality-summary');
-const presetsSummary = document.querySelector('#presets-summary');
-const routeSummary = document.querySelector('#route-summary');
-const routeLogSummary = document.querySelector('#route-log-summary');
-const routeAnalysisSummary = document.querySelector('#route-analysis-summary');
-const routeAnalysisCopyNote = document.querySelector('#route-analysis-copy-note');
-const cameraSummary = document.querySelector('#camera-summary');
-const cameraPosition = document.querySelector('#camera-position');
-const cameraTarget = document.querySelector('#camera-target');
-const cameraDistance = document.querySelector('#camera-distance');
-const cameraAngle = document.querySelector('#camera-angle');
-const perfFps = showPerfHud ? document.querySelector('#perf-fps') : null;
-const perfMs = showPerfHud ? document.querySelector('#perf-ms') : null;
-const perfRender = showPerfHud ? document.querySelector('#perf-render') : null;
-const perfScale = showPerfHud ? document.querySelector('#perf-scale') : null;
-const inspectorToggles = [...document.querySelectorAll('[data-toggle]')];
+const sceneContainer = requireElement<HTMLDivElement>('#scene');
+const variantList = requireElement<HTMLDivElement>('#variant-list');
+const routeList = requireElement<HTMLDivElement>('#route-list');
+const routeLogList = requireElement<HTMLDivElement>('#route-log-list');
+const routeAnalysisRanking = requireElement<HTMLDivElement>('#route-analysis-ranking');
+const routeAnalysisHotspots = requireElement<HTMLDivElement>('#route-analysis-hotspots');
+const presetList = requireElement<HTMLDivElement>('#preset-list');
+const runRouteCurrentVariantButton = requireElement<HTMLButtonElement>('#run-route-current-variant');
+const runRouteSuiteButton = requireElement<HTMLButtonElement>('#run-route-suite');
+const routeBatchNote = requireElement<HTMLElement>('#route-batch-note');
+const copyRouteAnalysisSummaryButton = requireElement<HTMLButtonElement>('#copy-route-analysis-summary');
+const copyRouteAnalysisJsonButton = requireElement<HTMLButtonElement>('#copy-route-analysis-json');
+const downloadRouteAnalysisJsonButton = requireElement<HTMLButtonElement>('#download-route-analysis-json');
+const renderScaleSlider = requireElement<HTMLInputElement>('#render-scale-slider');
+const statusTitle = requireElement<HTMLElement>('#status-title');
+const statusDetail = requireElement<HTMLElement>('#status-detail');
+const variantSize = requireElement<HTMLElement>('#variant-size');
+const variantSplats = requireElement<HTMLElement>('#variant-splats');
+const variantRetention = requireElement<HTMLElement>('#variant-retention');
+const variantTitle = requireElement<HTMLElement>('#variant-title');
+const variantNote = requireElement<HTMLElement>('#variant-note');
+const metricLoad = requireElement<HTMLElement>('#metric-load');
+const metricFirstFrame = requireElement<HTMLElement>('#metric-first-frame');
+const metricMotion = requireElement<HTMLElement>('#metric-motion');
+const renderScaleValue = requireElement<HTMLElement>('#render-scale-value');
+const renderScaleNote = requireElement<HTMLElement>('#render-scale-note');
+const focusSceneButton = requireElement<HTMLButtonElement>('#focus-scene');
+const focusOverviewButton = requireElement<HTMLButtonElement>('#focus-overview');
+const variantsSummary = requireElement<HTMLElement>('#variants-summary');
+const qualitySummary = requireElement<HTMLElement>('#quality-summary');
+const presetsSummary = requireElement<HTMLElement>('#presets-summary');
+const routeSummary = requireElement<HTMLElement>('#route-summary');
+const routeLogSummary = requireElement<HTMLElement>('#route-log-summary');
+const routeAnalysisSummary = requireElement<HTMLElement>('#route-analysis-summary');
+const routeAnalysisCopyNote = requireElement<HTMLElement>('#route-analysis-copy-note');
+const cameraSummary = requireElement<HTMLElement>('#camera-summary');
+const cameraPosition = requireElement<HTMLElement>('#camera-position');
+const cameraTarget = requireElement<HTMLElement>('#camera-target');
+const cameraDistance = requireElement<HTMLElement>('#camera-distance');
+const cameraAngle = requireElement<HTMLElement>('#camera-angle');
+const perfFps = showPerfHud ? requireElement<HTMLElement>('#perf-fps') : null;
+const perfMs = showPerfHud ? requireElement<HTMLElement>('#perf-ms') : null;
+const perfRender = showPerfHud ? requireElement<HTMLElement>('#perf-render') : null;
+const perfScale = showPerfHud ? requireElement<HTMLElement>('#perf-scale') : null;
+const inspectorToggles = [...document.querySelectorAll<HTMLButtonElement>('[data-toggle]')];
 const inspectorBodies = new Map(
-  [...document.querySelectorAll('[data-body]')].map((element) => [element.dataset.body, element])
+  [...document.querySelectorAll<HTMLElement>('[data-body]')]
+    .map((element) => [element.dataset.body ?? '', element] as const)
+    .filter(([panelId]) => panelId)
 );
-
-if (
-  !sceneContainer ||
-  !variantList ||
-  !routeList ||
-  !routeLogList ||
-  !routeAnalysisRanking ||
-  !routeAnalysisHotspots ||
-  !presetList ||
-  !runRouteCurrentVariantButton ||
-  !runRouteSuiteButton ||
-  !routeBatchNote ||
-  !copyRouteAnalysisSummaryButton ||
-  !copyRouteAnalysisJsonButton ||
-  !downloadRouteAnalysisJsonButton ||
-  !renderScaleSlider ||
-  !statusTitle ||
-  !statusDetail ||
-  !variantSize ||
-  !variantSplats ||
-  !variantRetention ||
-  !variantTitle ||
-  !variantNote ||
-  !metricLoad ||
-  !metricFirstFrame ||
-  !metricMotion ||
-  !renderScaleValue ||
-  !renderScaleNote ||
-  !focusSceneButton ||
-  !focusOverviewButton ||
-  !variantsSummary ||
-  !qualitySummary ||
-  !presetsSummary ||
-  !routeSummary ||
-  !routeLogSummary ||
-  !routeAnalysisSummary ||
-  !routeAnalysisCopyNote ||
-  !cameraSummary ||
-  !cameraPosition ||
-  !cameraTarget ||
-  !cameraDistance ||
-  !cameraAngle ||
-  (showPerfHud && (!perfFps || !perfMs || !perfRender || !perfScale)) ||
-  inspectorToggles.length === 0 ||
-  inspectorBodies.size === 0
-) {
+if (inspectorToggles.length === 0 || inspectorBodies.size === 0) {
   throw new Error('Failed to initialize UI shell');
 }
 
-let runtime = null;
+let runtime: any = null;
 let activePresetId = firstPreset.id;
 let activeVariantId = defaultVariant.id;
-let activeRouteId = null;
-let selectedRouteId = benchmarkRoutes[0]?.id ?? null;
+let activeRouteId: string | null = null;
+let selectedRouteId: string | null = benchmarkRoutes[0]?.id ?? null;
 let currentLoadToken = 0;
-let openInspectorPanel = null;
+let openInspectorPanel: string | null = null;
 let isBatchBenchmarkRunning = false;
-let activeSuiteRunId = null;
-let routeAnalysisCopyTimeoutId = null;
-let activeBenchmarkRunPromise = null;
+let activeSuiteRunId: string | null = null;
+let routeAnalysisCopyTimeoutId: number | null = null;
+let activeBenchmarkRunPromise: Promise<any> | null = null;
 
 const variantButtons = new Map();
 const routeButtons = new Map();
 const presetButtons = new Map();
-const variantBenchmarks = new Map();
-const routeRunHistory = getInitialRouteRunHistory();
+const variantBenchmarks = new Map<string, VariantBenchmark>();
+const routeRunHistory: RouteRunRecord[] = getInitialRouteRunHistory();
 
 for (const variant of data.variants) {
   const button = document.createElement('button');
@@ -415,7 +173,7 @@ downloadRouteAnalysisJsonButton.addEventListener('click', () => {
   downloadLatestRouteAnalysisJson();
 });
 renderScaleSlider.addEventListener('input', (event) => {
-  const nextPercent = Number(event.currentTarget.value);
+  const nextPercent = Number((event.currentTarget as HTMLInputElement).value);
   activateRenderScale(nextPercent);
 });
 for (const toggle of inspectorToggles) {
@@ -458,12 +216,12 @@ function renderVariantMeta(variant) {
 }
 
 function activateRenderScale(nextPercent) {
-  const normalizedPercent = normalizeRenderScalePercent(nextPercent);
+  const normalizedPercent = normalizeRenderScalePercent(nextPercent, maxRenderScalePercent);
   activeRenderScalePercent = normalizedPercent;
   renderScaleSlider.value = String(normalizedPercent);
-  persistRenderScalePercent(normalizedPercent);
+  persistRenderScalePercent(window, normalizedPercent);
   renderRenderScaleMeta(normalizedPercent);
-  applyRenderScaleToRuntime(runtime, normalizedPercent);
+  applyRenderScaleToRuntime(runtime, normalizedPercent, maxRenderScalePercent);
   renderPerfHud(runtime);
 }
 
@@ -527,7 +285,7 @@ async function activateVariant(variantId, initial = false, forceReload = false) 
   }
 }
 
-async function mountRuntime(variant, timings) {
+async function mountRuntime(variant, timings: any) {
   if (runtime) {
     await loadVariantIntoRuntime(runtime, variant, timings);
     return runtime;
@@ -535,6 +293,11 @@ async function mountRuntime(variant, timings) {
 
   sceneContainer.replaceChildren();
   const canvas = document.createElement('canvas');
+  const rect = sceneContainer.getBoundingClientRect();
+  canvas.width = Math.max(1, Math.round(rect.width));
+  canvas.height = Math.max(1, Math.round(rect.height));
+  canvas.style.width = '100%';
+  canvas.style.height = '100%';
   sceneContainer.append(canvas);
   return createRuntime(canvas, variant, timings);
 }
@@ -627,7 +390,7 @@ async function runCurrentVariantRouteBenchmark() {
   });
 }
 
-async function runVariantRouteBenchmark(options = {}) {
+async function runVariantRouteBenchmark(options: any = {}) {
   const routeId = options.routeId ?? selectedRouteId ?? benchmarkRoutes[0]?.id;
   const route = routeId ? benchmarkRoutesById.get(routeId) : null;
   const variantId = options.variantId ?? activeVariantId;
@@ -681,14 +444,14 @@ function playBenchmarkRouteOnce(routeId) {
     return Promise.reject(new Error('缺少可运行的轨迹或运行时'));
   }
 
-  return new Promise((resolve, reject) => {
+  return new Promise<void>((resolve, reject) => {
     selectedRouteId = route.id;
     activeRouteId = route.id;
     routeSummary.textContent = `${route.name} · 运行中`;
     updateRouteButtons();
     renderRouteBatchState();
     startBenchmarkRoute(runtime, route, {
-      onFinish: (record) => {
+      onFinish: (record: any) => {
         if (!record || record.status !== 'completed') {
           reject(new Error(`${route.name} 未完整跑完`));
           return;
@@ -755,7 +518,7 @@ function renderRouteBatchState() {
     : '先选择一条轨迹，再批量跑所有版本。';
 }
 
-async function createRuntime(canvasElement, variant, timings = {}) {
+async function createRuntime(canvasElement, variant, timings: any = {}) {
   const app = new pc.Application(canvasElement, {
     mouse: new pc.Mouse(canvasElement),
     touch: new pc.TouchDevice(canvasElement),
@@ -765,8 +528,6 @@ async function createRuntime(canvasElement, variant, timings = {}) {
     }
   });
 
-  app.setCanvasFillMode(pc.FILLMODE_FILL_WINDOW);
-  app.setCanvasResolution(pc.RESOLUTION_AUTO);
   const performanceMode = createPerformanceMode(window, activeRenderScalePercent);
   const loopController = createLoopController(app);
   app.graphicsDevice.maxPixelRatio = performanceMode.currentPixelRatio;
@@ -779,12 +540,24 @@ async function createRuntime(canvasElement, variant, timings = {}) {
 
   const preventContextMenu = (event) => event.preventDefault();
   const handleResize = () => {
+    const width = Math.max(1, Math.round(canvasElement.clientWidth || window.innerWidth || 1));
+    const height = Math.max(1, Math.round(canvasElement.clientHeight || window.innerHeight || 1));
+    const deviceRatio = Math.min(app.graphicsDevice.maxPixelRatio || 1, window.devicePixelRatio || 1);
     loopController.wake();
-    app.resizeCanvas();
+    canvasElement.style.width = `${width}px`;
+    canvasElement.style.height = `${height}px`;
+    app.graphicsDevice.setResolution(
+      Math.max(1, Math.floor(width * deviceRatio)),
+      Math.max(1, Math.floor(height * deviceRatio))
+    );
     app.renderNextFrame = true;
   };
   canvasElement.addEventListener('contextmenu', preventContextMenu);
   window.addEventListener('resize', handleResize);
+  handleResize();
+  window.requestAnimationFrame(() => {
+    handleResize();
+  });
 
   const camera = new pc.Entity('MemorialCamera');
   camera.addComponent('camera', {
@@ -934,7 +707,7 @@ async function createRuntime(canvasElement, variant, timings = {}) {
   return runtimeState;
 }
 
-async function loadVariantIntoRuntime(runtimeState, variant, timings = {}) {
+async function loadVariantIntoRuntime(runtimeState, variant, timings: any = {}) {
   if (!runtimeState?.app) {
     throw new Error('运行时尚未初始化');
   }
@@ -953,7 +726,7 @@ async function loadVariantIntoRuntime(runtimeState, variant, timings = {}) {
   const splatAsset = new pc.Asset(`ruoshui-${variant.id}`, 'gsplat', { url: variant.assetUrl });
   const assetLoadStartedAt = performance.now();
 
-  await new Promise((resolve, reject) => {
+  await new Promise<void>((resolve, reject) => {
     const loader = new pc.AssetListLoader([splatAsset], runtimeState.app.assets);
     const onError = (err, asset) => {
       runtimeState.app.assets.off('error', onError);
@@ -970,7 +743,7 @@ async function loadVariantIntoRuntime(runtimeState, variant, timings = {}) {
   });
 
   const splat = new pc.Entity('RuoshuiCampus');
-  const gsplatComponent = {
+  const gsplatComponent: any = {
     asset: splatAsset
   };
 
@@ -1013,7 +786,7 @@ function moveCamera(runtimeState, preset, immediate = false) {
   runtimeState.requestRender();
 }
 
-function startBenchmarkRoute(runtimeState, route, options = {}) {
+function startBenchmarkRoute(runtimeState, route, options: any = {}) {
   if (!runtimeState || !route?.steps?.length) {
     return;
   }
@@ -1288,7 +1061,7 @@ function initLongTaskObserver() {
   }
 }
 
-function createRouteRunRecord(route, variantId) {
+function createRouteRunRecord(route: BenchmarkRoute, variantId: string): RouteRunRecord {
   const variant = variantsById.get(variantId);
   return {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -1341,7 +1114,7 @@ function finalizeRouteRunRecord(runtimeState, status) {
   const metrics = snapshotBenchmarkMetrics(runtimeState.benchmark);
   const longTasks = getRouteRunLongTasks(record, finishedPerfTime);
   const modelResources = getRouteRunModelResources(record, finishedPerfTime);
-  const analysis = analyzeRouteRun(record, longTasks, modelResources);
+  const analysis = analyzeRouteRun(record, longTasks, modelResources, getRouteStepLabel);
   const finalizedRecord = {
     ...record,
     status,
@@ -1400,7 +1173,7 @@ function getRouteRunLongTasks(record, finishedPerfTime) {
 }
 
 function getRouteRunModelResources(record, finishedPerfTime) {
-  return performance.getEntriesByType('resource')
+  return (performance.getEntriesByType('resource') as PerformanceResourceTiming[])
     .slice(record.resourceStartIndex)
     .filter((entry) => entry.startTime <= finishedPerfTime)
     .filter((entry) => isTrackedModelResource(entry.name))
@@ -1411,200 +1184,6 @@ function getRouteRunModelResources(record, finishedPerfTime) {
       transferSize: entry.transferSize ?? 0,
       encodedBodySize: entry.encodedBodySize ?? 0
     }));
-}
-
-function analyzeRouteRun(record, longTasks, modelResources) {
-  const frames = record.frames ?? [];
-  const frameTimes = frames.map((frame) => frame[frameSampleIndices.dtMs]);
-  const frameStats = summarizeFrameTimes(frameTimes);
-  const stepStats = summarizeFrameSteps(frames, record.routeId);
-  const stallWindows = detectStallWindows(frames, longTasks, modelResources, record.routeId);
-
-  return {
-    frameStats,
-    stepStats,
-    stallCount: stallWindows.length,
-    severeStallCount: stallWindows.filter((stall) => stall.peakMs >= severeStallFrameThresholdMs).length,
-    totalStallMs: Number(stallWindows.reduce((sum, stall) => sum + stall.durationMs, 0).toFixed(2)),
-    hotspots: stallWindows.slice(0, 5)
-  };
-}
-
-function summarizeFrameTimes(frameTimes) {
-  if (frameTimes.length === 0) {
-    return {
-      sampleCount: 0,
-      avgMs: null,
-      p95Ms: null,
-      p99Ms: null,
-      peakMs: null
-    };
-  }
-
-  return {
-    sampleCount: frameTimes.length,
-    avgMs: roundNumber(frameTimes.reduce((sum, value) => sum + value, 0) / frameTimes.length),
-    p95Ms: roundNumber(computeQuantile(frameTimes, 0.95)),
-    p99Ms: roundNumber(computeQuantile(frameTimes, 0.99)),
-    peakMs: roundNumber(Math.max(...frameTimes))
-  };
-}
-
-function summarizeFrameSteps(frames, routeId) {
-  const grouped = new Map();
-
-  for (const frame of frames) {
-    const stepIndex = frame[frameSampleIndices.stepIndex];
-    if (!grouped.has(stepIndex)) {
-      grouped.set(stepIndex, []);
-    }
-
-    grouped.get(stepIndex)?.push(frame[frameSampleIndices.dtMs]);
-  }
-
-  return [...grouped.entries()].map(([stepIndex, values]) => ({
-    stepIndex,
-    label: getRouteStepLabel(routeId, stepIndex),
-    avgMs: roundNumber(values.reduce((sum, value) => sum + value, 0) / values.length),
-    p95Ms: roundNumber(computeQuantile(values, 0.95)),
-    peakMs: roundNumber(Math.max(...values)),
-    sampleCount: values.length
-  }));
-}
-
-function detectStallWindows(frames, longTasks, modelResources, routeId) {
-  const windows = [];
-  let activeWindow = null;
-
-  for (const frame of frames) {
-    const dtMs = frame[frameSampleIndices.dtMs];
-    if (dtMs <= stallFrameThresholdMs) {
-      if (activeWindow) {
-        windows.push(finalizeStallWindow(activeWindow, longTasks, modelResources, routeId));
-        activeWindow = null;
-      }
-      continue;
-    }
-
-    if (!activeWindow) {
-      activeWindow = {
-        startMs: frame[frameSampleIndices.elapsedMs],
-        endMs: frame[frameSampleIndices.elapsedMs] + dtMs,
-        frames: [frame],
-        peakFrame: frame
-      };
-      continue;
-    }
-
-    activeWindow.endMs = frame[frameSampleIndices.elapsedMs] + dtMs;
-    activeWindow.frames.push(frame);
-    if (dtMs > activeWindow.peakFrame[frameSampleIndices.dtMs]) {
-      activeWindow.peakFrame = frame;
-    }
-  }
-
-  if (activeWindow) {
-    windows.push(finalizeStallWindow(activeWindow, longTasks, modelResources, routeId));
-  }
-
-  return windows.sort((a, b) => b.peakMs - a.peakMs);
-}
-
-function finalizeStallWindow(window, longTasks, modelResources, routeId) {
-  const frameTimes = window.frames.map((frame) => frame[frameSampleIndices.dtMs]);
-  const peakFrame = window.peakFrame;
-  const overlappingLongTasks = longTasks.filter((task) => rangesOverlap(task.startMs, task.startMs + task.durationMs, window.startMs, window.endMs));
-  const nearbyResources = modelResources.filter((resource) => rangesOverlap(resource.startMs, resource.startMs + resource.durationMs, window.startMs - 150, window.endMs + 150));
-
-  return {
-    startMs: roundNumber(window.startMs),
-    endMs: roundNumber(window.endMs),
-    durationMs: roundNumber(window.endMs - window.startMs),
-    frameCount: window.frames.length,
-    avgMs: roundNumber(frameTimes.reduce((sum, value) => sum + value, 0) / frameTimes.length),
-    peakMs: roundNumber(Math.max(...frameTimes)),
-    stepIndex: peakFrame[frameSampleIndices.stepIndex],
-    stepLabel: getRouteStepLabel(routeId, peakFrame[frameSampleIndices.stepIndex]),
-    camera: {
-      position: [
-        peakFrame[frameSampleIndices.posX],
-        peakFrame[frameSampleIndices.posY],
-        peakFrame[frameSampleIndices.posZ]
-      ],
-      target: [
-        peakFrame[frameSampleIndices.targetX],
-        peakFrame[frameSampleIndices.targetY],
-        peakFrame[frameSampleIndices.targetZ]
-      ],
-      distance: peakFrame[frameSampleIndices.distance],
-      pitch: peakFrame[frameSampleIndices.pitch],
-      yaw: peakFrame[frameSampleIndices.yaw]
-    },
-    longTaskCount: overlappingLongTasks.length,
-    longTaskMs: roundNumber(overlappingLongTasks.reduce((sum, task) => sum + task.durationMs, 0)),
-    modelResourceCount: nearbyResources.length,
-    likelyCause: inferStallCause(overlappingLongTasks, nearbyResources, peakFrame[frameSampleIndices.dtMs]),
-    resources: nearbyResources.slice(0, 4)
-  };
-}
-
-function inferStallCause(longTasks, modelResources, peakMs) {
-  if (longTasks.length > 0) {
-    return '主线程长任务';
-  }
-
-  if (modelResources.length > 0) {
-    return '模型资源加载 / LOD 补载';
-  }
-
-  if (peakMs >= severeStallFrameThresholdMs) {
-    return '视角相关排序 / GPU 峰值';
-  }
-
-  return '相机变化期的渲染波动';
-}
-
-function computeQuantile(values, quantile) {
-  if (values.length === 0) {
-    return null;
-  }
-
-  const sorted = [...values].sort((a, b) => a - b);
-  const position = (sorted.length - 1) * quantile;
-  const lower = Math.floor(position);
-  const upper = Math.ceil(position);
-
-  if (lower === upper) {
-    return sorted[lower];
-  }
-
-  const weight = position - lower;
-  return sorted[lower] * (1 - weight) + sorted[upper] * weight;
-}
-
-function rangesOverlap(startA, endA, startB, endB) {
-  return startA <= endB && endA >= startB;
-}
-
-function roundNumber(value, digits = 2) {
-  if (!Number.isFinite(value)) {
-    return null;
-  }
-
-  return Number(value.toFixed(digits));
-}
-
-function isTrackedModelResource(name) {
-  return name.includes('/models/');
-}
-
-function simplifyResourceName(name) {
-  try {
-    const url = new URL(name, window.location.href);
-    return url.pathname;
-  } catch {
-    return name;
-  }
 }
 
 function getRouteStepLabel(routeId, stepIndex) {
@@ -1831,34 +1410,6 @@ function getLatestRouteAnalysisExport() {
   };
 }
 
-function getWorstStep(stepStats) {
-  if (!Array.isArray(stepStats) || stepStats.length === 0) {
-    return null;
-  }
-
-  return [...stepStats].sort((left, right) => {
-    const p95Diff = (right.p95Ms ?? -Infinity) - (left.p95Ms ?? -Infinity);
-    if (p95Diff !== 0) {
-      return p95Diff;
-    }
-
-    return (right.peakMs ?? -Infinity) - (left.peakMs ?? -Infinity);
-  })[0];
-}
-
-function formatWorstStepLabel(stepStats) {
-  const worstStep = getWorstStep(stepStats);
-  return worstStep?.label ?? '—';
-}
-
-function formatHotspotResourceSummary(resources) {
-  if (!Array.isArray(resources) || resources.length === 0) {
-    return '';
-  }
-
-  return `资源 ${resources.map((resource) => resource.name).join(' · ')}`;
-}
-
 function installRouteAnalysisBridge() {
   window.__ruoshuiPerf = {
     latest() {
@@ -1885,7 +1436,7 @@ function installRouteAnalysisBridge() {
     routes() {
       return benchmarkRoutes.map((route) => ({ id: route.id, name: route.name }));
     },
-    async runVariantRoute(options = {}) {
+    async runVariantRoute(options: any = {}) {
       if (options.clearHistory) {
         this.clearHistory();
       }
@@ -1907,7 +1458,7 @@ function installRouteAnalysisBridge() {
   };
 }
 
-function getInitialRouteRunHistory() {
+function getInitialRouteRunHistory(): RouteRunRecord[] {
   try {
     const saved = window.localStorage.getItem(routeRunHistoryStorageKey);
     if (!saved) {
@@ -1929,7 +1480,7 @@ function persistRouteRunHistory(history) {
   }
 }
 
-function beginVariantBenchmark(variantId) {
+function beginVariantBenchmark(variantId: string): VariantBenchmark {
   const benchmark = {
     loadMs: null,
     firstFrameMs: null,
@@ -1944,7 +1495,7 @@ function beginVariantBenchmark(variantId) {
   return benchmark;
 }
 
-function getVariantBenchmark(variantId) {
+function getVariantBenchmark(variantId: string | null | undefined): VariantBenchmark | null {
   if (!variantId) {
     return null;
   }
@@ -2037,10 +1588,10 @@ function vec3(tuple) {
   return new pc.Vec3(tuple[0], tuple[1], tuple[2]);
 }
 
-function createOrbitController(camera, canvasElement, initialPosition, initialTarget, performanceMode) {
+function createOrbitController(camera, canvasElement, initialPosition, initialTarget, performanceMode): any {
   const spherical = positionToOrbit(initialPosition, initialTarget);
 
-  const orbit = {
+  const orbit: any = {
     camera,
     canvasElement,
     currentTarget: initialTarget.clone(),
@@ -2067,7 +1618,7 @@ function createOrbitController(camera, canvasElement, initialPosition, initialTa
     tempPosition: new pc.Vec3()
   };
 
-  const beginPointer = (event) => {
+  const beginPointer = (event: any) => {
     orbit.onManualInput?.();
     orbit.pointerMode = event.button === 2 ? 'pan' : 'rotate';
     if (performanceMode) {
@@ -2081,7 +1632,7 @@ function createOrbitController(camera, canvasElement, initialPosition, initialTa
     orbit.cancelInteraction();
   };
 
-  const movePointer = (event) => {
+  const movePointer = (event: any) => {
     if (!orbit.pointerMode) {
       return;
     }
@@ -2105,7 +1656,7 @@ function createOrbitController(camera, canvasElement, initialPosition, initialTa
     orbit.desiredTarget.add(right).add(up);
   };
 
-  const onWheel = (event) => {
+  const onWheel = (event: any) => {
     event.preventDefault();
     orbit.onManualInput?.();
     orbit.transition = null;
@@ -2317,215 +1868,4 @@ function renderPerfHud(runtimeState) {
   const isRendering = runtimeState.app.autoRender || runtimeState.performanceMode.isInteracting;
   perfRender.textContent = isRendering ? '活动' : '静止';
   renderVariantBenchmark(activeVariantId);
-}
-
-function formatMetricMs(value) {
-  if (!Number.isFinite(value)) {
-    return '—';
-  }
-
-  return `${Math.round(value)} ms`;
-}
-
-function formatMetricText(value) {
-  if (!Number.isFinite(value)) {
-    return '—';
-  }
-
-  return `${Number(value).toFixed(1)} ms`;
-}
-
-function formatMetricPeakMs(value) {
-  if (!Number.isFinite(value)) {
-    return '—';
-  }
-
-  return `${Math.round(value)} ms`;
-}
-
-function formatMotionMetric(benchmark) {
-  if (!benchmark) {
-    return '待采样';
-  }
-
-  const activeAverageMs = benchmark.wasMoving && benchmark.motionFrames >= 6 && benchmark.motionTime > 0
-    ? (benchmark.motionTime / benchmark.motionFrames) * 1000
-    : null;
-  const averageMs = activeAverageMs ?? benchmark.lastMotionMs;
-
-  if (!Number.isFinite(averageMs)) {
-    return '待采样';
-  }
-
-  const maxMs = benchmark.wasMoving && Number.isFinite(benchmark.motionMaxMs)
-    ? benchmark.motionMaxMs
-    : benchmark.lastMotionMaxMs;
-
-  if (!Number.isFinite(maxMs)) {
-    return `${averageMs.toFixed(1)} ms`;
-  }
-
-  return `${averageMs.toFixed(1)} / ${maxMs.toFixed(0)} ms`;
-}
-
-function formatRouteRunStatus(status) {
-  switch (status) {
-    case 'completed':
-      return '完成';
-    case 'manual':
-      return '手动';
-    case 'switch':
-      return '切换';
-    default:
-      return '中断';
-  }
-}
-
-function formatRouteRunTime(timestamp) {
-  if (!Number.isFinite(timestamp)) {
-    return '—';
-  }
-
-  return new Date(timestamp).toLocaleTimeString('zh-CN', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  });
-}
-
-function formatVec3(vector) {
-  return `${vector.x.toFixed(2)}, ${vector.y.toFixed(2)}, ${vector.z.toFixed(2)}`;
-}
-
-function easeInOutCubic(value) {
-  return value < 0.5 ? 4 * value * value * value : 1 - Math.pow(-2 * value + 2, 3) / 2;
-}
-
-function degToRad(value) {
-  return (value * Math.PI) / 180;
-}
-
-function radToDeg(value) {
-  return (value * 180) / Math.PI;
-}
-
-function clamp(value, min, max) {
-  return Math.min(Math.max(value, min), max);
-}
-
-function lerp(from, to, alpha) {
-  return from + (to - from) * alpha;
-}
-
-function createPerformanceMode(runtimeWindow, lockedPercent) {
-  const supportedMaxPixelRatio = getMaxSupportedPixelRatio(runtimeWindow);
-  const initialPixelRatio = normalizeRenderScalePercent(lockedPercent) / 100;
-
-  return {
-    targetPixelRatio: initialPixelRatio,
-    currentPixelRatio: initialPixelRatio,
-    lockedPixelRatio: initialPixelRatio,
-    supportedMaxPixelRatio,
-    minPixelRatio: renderScaleMinPercent / 100,
-    maxPixelRatio: initialPixelRatio,
-    sampleTime: 0,
-    frameCount: 0,
-    cooldown: 0,
-    isInteracting: false,
-    isLocked: true
-  };
-}
-
-function updatePerformanceMode(performanceMode, app, dt) {
-  if (performanceMode.isLocked) {
-    return false;
-  }
-
-  performanceMode.sampleTime += dt;
-  performanceMode.frameCount += 1;
-  performanceMode.cooldown = Math.max(0, performanceMode.cooldown - dt);
-
-  if (performanceMode.sampleTime < 1.25 || performanceMode.cooldown > 0) {
-    return false;
-  }
-
-  const fps = performanceMode.frameCount / performanceMode.sampleTime;
-  let nextRatio = performanceMode.currentPixelRatio;
-
-  if (fps < 42 && performanceMode.currentPixelRatio > performanceMode.minPixelRatio) {
-    nextRatio = Math.max(performanceMode.minPixelRatio, performanceMode.currentPixelRatio - 0.1);
-  } else if (
-    fps > 56 &&
-    !performanceMode.isInteracting &&
-    performanceMode.currentPixelRatio < performanceMode.maxPixelRatio
-  ) {
-    nextRatio = Math.min(performanceMode.maxPixelRatio, performanceMode.currentPixelRatio + 0.05);
-  }
-
-  if (nextRatio !== performanceMode.currentPixelRatio) {
-    performanceMode.currentPixelRatio = Number(nextRatio.toFixed(2));
-    app.graphicsDevice.maxPixelRatio = performanceMode.currentPixelRatio;
-    app.resizeCanvas();
-    performanceMode.cooldown = 2.5;
-    performanceMode.sampleTime = 0;
-    performanceMode.frameCount = 0;
-    return true;
-  }
-
-  performanceMode.sampleTime = 0;
-  performanceMode.frameCount = 0;
-  return false;
-}
-
-function lerpAngle(from, to, alpha) {
-  const turn = Math.PI * 2;
-  const delta = ((((to - from) % turn) + turn + Math.PI) % turn) - Math.PI;
-  return from + delta * alpha;
-}
-
-function getMaxSupportedPixelRatio(runtimeWindow) {
-  const deviceRatio = Math.max(runtimeWindow.devicePixelRatio || 1, 1);
-  return deviceRatio >= 2 ? 1 : Math.min(deviceRatio, 1.15);
-}
-
-function normalizeRenderScalePercent(value) {
-  const clamped = clamp(Number(value) || maxRenderScalePercent, renderScaleMinPercent, maxRenderScalePercent);
-  return Math.round(clamped / 5) * 5;
-}
-
-function getInitialRenderScalePercent() {
-  try {
-    const savedPercent = window.localStorage.getItem(renderScaleStorageKey);
-    if (savedPercent) {
-      return normalizeRenderScalePercent(Number(savedPercent));
-    }
-  } catch {
-    return maxRenderScalePercent;
-  }
-
-  return maxRenderScalePercent;
-}
-
-function persistRenderScalePercent(percent) {
-  try {
-    window.localStorage.setItem(renderScaleStorageKey, String(percent));
-  } catch {
-    return;
-  }
-}
-
-function applyRenderScaleToRuntime(runtimeState, percent) {
-  if (!runtimeState?.performanceMode || !runtimeState?.app) {
-    return;
-  }
-
-  const nextRatio = normalizeRenderScalePercent(percent) / 100;
-  runtimeState.performanceMode.isLocked = true;
-  runtimeState.performanceMode.lockedPixelRatio = nextRatio;
-  runtimeState.performanceMode.currentPixelRatio = nextRatio;
-  runtimeState.performanceMode.targetPixelRatio = nextRatio;
-  runtimeState.performanceMode.maxPixelRatio = nextRatio;
-  runtimeState.app.graphicsDevice.maxPixelRatio = nextRatio;
-  runtimeState.app.resizeCanvas();
-  runtimeState.requestRender?.();
 }

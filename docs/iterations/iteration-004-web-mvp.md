@@ -93,6 +93,10 @@
 - 已给 orbit 相机补俯仰下限，禁止视角翻到模型底部；手动旋转、预设镜头和切模型后的视角恢复都会统一钳在可接受仰角之上
 - 已开始验证“低视角高密度 splat 突增”假设：当前先对 `LOD 流式` 版加入低机位 / 近景风险窗口记录与短时保活渲染，用于观察热点是否稳定集中在低俯仰、近距离视角；此前直接动态改 `LOD` 参数的尝试已回滚，因为会触发底层 `gsplat` 运行时错误
 - 已把这轮风险窗口记录写进标准测试 trace：导出的 `JSON` 现在会额外记录 `trace.lodWarmups`，后续可继续对照“风险窗口是否命中热点视角”与“卡顿是否更偏向资源补载还是视角相关排序 / GPU 峰值”
+- 已开始做前端代码整理：`web/src/main.js` 已迁到 `TypeScript` 入口，并先拆出 `config / types / benchmark analysis / render-scale / utils` 几个纯逻辑模块，避免继续把 UI、运行时、数学工具和性能分析都堆在一个文件里
+- 已补 `web/tsconfig.json` 与 `pnpm typecheck`，当前这批基础拆分在本地已通过 `typecheck + build`，后续可以继续按“先抽纯函数、再拆运行时和 UI 编排”的节奏收口
+- 已把 UI 壳子迁到 `React + TSX`：当前由 `web/src/main.tsx` 挂 `React root`，`web/src/App.tsx` 负责渲染页面骨架，旧的 PlayCanvas / benchmark 运行时则先保留在 `web/src/viewer.ts` 中，通过既有 DOM id 挂接到 React 渲染出的节点
+- 这轮迁移的目的不是立即重写整套 viewer 逻辑，而是先拿掉 `innerHTML` 模板拼装和大段原生 DOM 壳子代码，为后续继续拆 `runtime / orbit / benchmark UI / inspector state` 建立更干净的边界
 
 ## 补充实验：`SOG` 派生轻量版本
 
