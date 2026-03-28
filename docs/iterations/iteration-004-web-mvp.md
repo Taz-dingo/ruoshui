@@ -97,6 +97,9 @@
 - 已补 `web/tsconfig.json` 与 `pnpm typecheck`，当前这批基础拆分在本地已通过 `typecheck + build`，后续可以继续按“先抽纯函数、再拆运行时和 UI 编排”的节奏收口
 - 已把 UI 壳子迁到 `React + TSX`：当前由 `web/src/main.tsx` 挂 `React root`，`web/src/App.tsx` 负责渲染页面骨架，旧的 PlayCanvas / benchmark 运行时则先保留在 `web/src/viewer.ts` 中，通过既有 DOM id 挂接到 React 渲染出的节点
 - 这轮迁移的目的不是立即重写整套 viewer 逻辑，而是先拿掉 `innerHTML` 模板拼装和大段原生 DOM 壳子代码，为后续继续拆 `runtime / orbit / benchmark UI / inspector state` 建立更干净的边界
+- 已修复 React 壳子迁移后的黑屏回归：首屏会先同步挂出场景容器，再显式同步 `canvas` CSS 尺寸与 `graphicsDevice` backing resolution，避免出现 DOM 已在但底层绘制分辨率仍是 `0x0` 的情况
+- 已修复窗口变化后“UI 会缩放、场景不跟随”的问题：viewer 现在改为监听场景容器尺寸并通过 `ResizeObserver` 同步 `canvas` 与渲染分辨率，而不是继续读取被旧像素尺寸锁住的 `canvas.clientWidth / clientHeight`
+- 已补 orbit 相机的 `z` 轴下界：手动拖拽、镜头预设、切模型后的视角恢复与初始化首帧都会统一钳到 `z >= 0`，避免镜头转入模型底部或落到场景下方
 
 ## 补充实验：`SOG` 派生轻量版本
 

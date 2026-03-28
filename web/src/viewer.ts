@@ -7,9 +7,11 @@ import {
   lowAnglePrewarmLeadSeconds,
   lowAnglePrewarmMaxSeconds,
   lowAnglePrewarmPitchThresholdDeg,
+  minOrbitCameraZ,
   maxOrbitPitchDeg,
   maxRouteRunHistory,
   minOrbitPitchDeg,
+  minOrbitTargetZ,
   perfHudIntervalSeconds,
   renderWakeSeconds,
   routeAnalysisCopyFeedbackMs,
@@ -539,9 +541,17 @@ async function createRuntime(canvasElement, variant, timings: any = {}) {
   app.renderNextFrame = true;
 
   const preventContextMenu = (event) => event.preventDefault();
+  const resolveCanvasBounds = () => {
+    const host = canvasElement.parentElement;
+    const rect = host?.getBoundingClientRect();
+
+    return {
+      width: Math.max(1, Math.round(rect?.width || window.innerWidth || 1)),
+      height: Math.max(1, Math.round(rect?.height || window.innerHeight || 1))
+    };
+  };
   const handleResize = () => {
-    const width = Math.max(1, Math.round(canvasElement.clientWidth || window.innerWidth || 1));
-    const height = Math.max(1, Math.round(canvasElement.clientHeight || window.innerHeight || 1));
+    const { width, height } = resolveCanvasBounds();
     const deviceRatio = Math.min(app.graphicsDevice.maxPixelRatio || 1, window.devicePixelRatio || 1);
     loopController.wake();
     canvasElement.style.width = `${width}px`;
@@ -554,6 +564,12 @@ async function createRuntime(canvasElement, variant, timings: any = {}) {
   };
   canvasElement.addEventListener('contextmenu', preventContextMenu);
   window.addEventListener('resize', handleResize);
+  const resizeObserver = typeof ResizeObserver !== 'undefined' && canvasElement.parentElement
+    ? new ResizeObserver(() => {
+      handleResize();
+    })
+    : null;
+  resizeObserver?.observe(canvasElement.parentElement);
   handleResize();
   window.requestAnimationFrame(() => {
     handleResize();
@@ -601,6 +617,7 @@ async function createRuntime(canvasElement, variant, timings: any = {}) {
       loopController.wake();
       detachVariantFromRuntime(runtimeState);
       window.removeEventListener('resize', handleResize);
+      resizeObserver?.disconnect();
       canvasElement.removeEventListener('contextmenu', preventContextMenu);
       orbit.destroy();
       app.destroy();
@@ -892,9 +909,10 @@ function restoreCurrentView(runtimeState, snapshot) {
 
   const { orbit } = runtimeState;
   const clampedPitch = clampOrbitPitch(snapshot.pitch);
+  const clampedTarget = clampOrbitTarget(snapshot.target.clone());
   orbit.transition = null;
-  orbit.currentTarget.copy(snapshot.target);
-  orbit.desiredTarget.copy(snapshot.target);
+  orbit.currentTarget.copy(clampedTarget);
+  orbit.desiredTarget.copy(clampedTarget);
   orbit.currentYaw = snapshot.yaw;
   orbit.desiredYaw = snapshot.yaw;
   orbit.currentPitch = clampedPitch;
@@ -1589,13 +1607,15 @@ function vec3(tuple) {
 }
 
 function createOrbitController(camera, canvasElement, initialPosition, initialTarget, performanceMode): any {
-  const spherical = positionToOrbit(initialPosition, initialTarget);
+  const clampedTarget = clampOrbitTarget(initialTarget.clone());
+  const clampedPosition = clampOrbitCameraPosition(initialPosition.clone(), clampedTarget);
+  const spherical = positionToOrbit(clampedPosition, clampedTarget);
 
   const orbit: any = {
     camera,
     canvasElement,
-    currentTarget: initialTarget.clone(),
-    desiredTarget: initialTarget.clone(),
+    currentTarget: clampedTarget.clone(),
+    desiredTarget: clampedTarget.clone(),
     currentYaw: spherical.yaw,
     desiredYaw: spherical.yaw,
     currentPitch: spherical.pitch,
@@ -1654,6 +1674,7 @@ function createOrbitController(camera, canvasElement, initialPosition, initialTa
     const up = orbit.tempUp.copy(camera.up).mulScalar(dy * orbit.panSpeed * distanceFactor);
     orbit.transition = null;
     orbit.desiredTarget.add(right).add(up);
+    clampOrbitTarget(orbit.desiredTarget);
   };
 
   const onWheel = (event: any) => {
@@ -1692,13 +1713,15 @@ function createOrbitController(camera, canvasElement, initialPosition, initialTa
 }
 
 function setOrbitPreset(orbit, position, target, immediate, duration = 1.35) {
-  const spherical = positionToOrbit(position, target);
+  const clampedTarget = clampOrbitTarget(target.clone());
+  const clampedPosition = clampOrbitCameraPosition(position.clone(), clampedTarget);
+  const spherical = positionToOrbit(clampedPosition, clampedTarget);
   const clampedPitch = clampOrbitPitch(spherical.pitch);
 
   if (immediate) {
     orbit.transition = null;
-    orbit.currentTarget.copy(target);
-    orbit.desiredTarget.copy(target);
+    orbit.currentTarget.copy(clampedTarget);
+    orbit.desiredTarget.copy(clampedTarget);
     orbit.currentYaw = spherical.yaw;
     orbit.desiredYaw = spherical.yaw;
     orbit.currentPitch = clampedPitch;
@@ -1713,7 +1736,7 @@ function setOrbitPreset(orbit, position, target, immediate, duration = 1.35) {
     elapsed: 0,
     duration: Math.max(duration, 0.01),
     fromTarget: orbit.desiredTarget.clone(),
-    toTarget: target.clone(),
+    toTarget: clampedTarget,
     fromYaw: orbit.desiredYaw,
     toYaw: spherical.yaw,
     fromPitch: orbit.desiredPitch,
@@ -1754,7 +1777,9 @@ function applyOrbit(orbit, damping) {
   const previousPitch = orbit.currentPitch;
   const previousDistance = orbit.currentDistance;
   const blend = damping >= 1 ? 1 : 1 - Math.pow(1 - damping, 2);
+  clampOrbitTarget(orbit.desiredTarget);
   orbit.currentTarget.lerp(orbit.currentTarget, orbit.desiredTarget, blend);
+  clampOrbitTarget(orbit.currentTarget);
   orbit.currentYaw = lerpAngle(orbit.currentYaw, orbit.desiredYaw, blend);
   orbit.currentPitch = lerp(orbit.currentPitch, orbit.desiredPitch, blend);
   orbit.currentDistance = lerp(orbit.currentDistance, orbit.desiredDistance, blend);
@@ -1766,6 +1791,7 @@ function applyOrbit(orbit, damping) {
     orbit.currentDistance,
     orbit.tempPosition
   );
+  clampOrbitCameraPosition(position, orbit.currentTarget);
   orbit.camera.setPosition(position);
   orbit.camera.lookAt(orbit.currentTarget);
 
@@ -1791,6 +1817,26 @@ function positionToOrbit(position, target) {
 
 function clampOrbitPitch(value) {
   return clamp(value, degToRad(minOrbitPitchDeg), degToRad(maxOrbitPitchDeg));
+}
+
+function clampOrbitTarget(target) {
+  target.z = Math.max(target.z, minOrbitTargetZ);
+  return target;
+}
+
+function clampOrbitCameraPosition(position, target) {
+  position.z = Math.max(position.z, minOrbitCameraZ);
+
+  if (
+    target &&
+    Math.abs(position.x - target.x) < 0.0001 &&
+    Math.abs(position.y - target.y) < 0.0001 &&
+    Math.abs(position.z - target.z) < 0.0001
+  ) {
+    position.z = Math.max(target.z + 0.0001, minOrbitCameraZ);
+  }
+
+  return position;
 }
 
 function orbitToPosition(target, yaw, pitch, distance, out = new pc.Vec3()) {
