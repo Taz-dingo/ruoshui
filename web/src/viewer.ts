@@ -40,6 +40,10 @@ import {
 import { createVariantOrchestrationController } from "./runtime/variant-orchestration";
 import type { RouteRunRecord, VariantBenchmark, ViewerContent } from "./types";
 import { useViewerUiStore } from "./ui/viewer-ui-store";
+import {
+  initializeViewerStartup,
+  installViewerStartupBindings,
+} from "./ui/viewer-startup-controller";
 import { createViewerShellController } from "./ui/viewer-shell-controller";
 import {
   syncPresetPanelState,
@@ -161,15 +165,6 @@ let isBatchBenchmarkRunning = false;
 let activeSuiteRunId: string | null = null;
 let activeBenchmarkRunPromise: Promise<any> | null = null;
 let isVariantPanelDisabled = false;
-let lastVariantSelectionSequence =
-  useViewerUiStore.getState().variantSelectionRequest.sequence;
-let lastPresetSelectionSequence =
-  useViewerUiStore.getState().presetSelectionRequest.sequence;
-let lastRouteSelectionSequence =
-  useViewerUiStore.getState().routeSelectionRequest.sequence;
-let lastRunCurrentRouteBenchmarkRequest =
-  useViewerUiStore.getState().runCurrentRouteBenchmarkRequest;
-let lastRunRouteSuiteRequest = useViewerUiStore.getState().runRouteSuiteRequest;
 let routeSummaryText = "未播放";
 const variantBenchmarks = new Map<string, VariantBenchmark>();
 const routeRunHistory: RouteRunRecord[] = getInitialRouteRunHistory(
@@ -307,95 +302,57 @@ const variantOrchestrationController = createVariantOrchestrationController({
   getVariantBenchmark,
 });
 
-focusSceneButton.addEventListener("click", () =>
-  activatePreset(firstPreset.id),
-);
-focusOverviewButton.addEventListener("click", () => activatePreset("hover"));
-useViewerUiStore.subscribe((state) => {
-  const {
-    presetSelectionRequest,
-    variantSelectionRequest,
-    routeSelectionRequest,
-    runCurrentRouteBenchmarkRequest,
-    runRouteSuiteRequest,
-  } = state;
-
-  if (presetSelectionRequest.sequence !== lastPresetSelectionSequence) {
-    lastPresetSelectionSequence = presetSelectionRequest.sequence;
-    const presetId = presetSelectionRequest.id;
-    if (presetId) {
-      activatePreset(presetId);
-    }
-  }
-
-  if (variantSelectionRequest.sequence !== lastVariantSelectionSequence) {
-    lastVariantSelectionSequence = variantSelectionRequest.sequence;
-    const variantId = variantSelectionRequest.id;
-    if (variantId) {
-      void activateVariant(variantId);
-    }
-  }
-
-  if (routeSelectionRequest.sequence !== lastRouteSelectionSequence) {
-    lastRouteSelectionSequence = routeSelectionRequest.sequence;
-    const routeId = routeSelectionRequest.id;
-    if (routeId) {
-      activateBenchmarkRoute(routeId);
-    }
-  }
-
-  if (runCurrentRouteBenchmarkRequest !== lastRunCurrentRouteBenchmarkRequest) {
-    lastRunCurrentRouteBenchmarkRequest = runCurrentRouteBenchmarkRequest;
-    void runCurrentVariantRouteBenchmark();
-  }
-
-  if (runRouteSuiteRequest !== lastRunRouteSuiteRequest) {
-    lastRunRouteSuiteRequest = runRouteSuiteRequest;
-    void runRouteBenchmarkSuite();
-  }
+installViewerStartupBindings({
+  focusSceneButton,
+  focusOverviewButton,
+  firstPresetId: firstPreset.id,
+  activatePreset: (presetId) => activatePreset(presetId),
+  activateVariant: (variantId) => activateVariant(variantId),
+  activateBenchmarkRoute,
+  runCurrentVariantRouteBenchmark,
+  runRouteBenchmarkSuite,
+  copyRouteAnalysisSummaryButton,
+  copyRouteAnalysisJsonButton,
+  downloadRouteAnalysisJsonButton,
+  copyLatestRouteAnalysisSummary: () =>
+    routeDiagnosticsController.copyLatestRouteAnalysis("summary"),
+  copyLatestRouteAnalysisJson: () =>
+    routeDiagnosticsController.copyLatestRouteAnalysis("json"),
+  downloadLatestRouteAnalysisJson: () =>
+    routeDiagnosticsController.downloadLatestRouteAnalysisJson(),
+  renderScaleSlider,
+  activateRenderScale,
+  sceneLookInputs: [
+    sceneLookBrightness,
+    sceneLookContrast,
+    sceneLookSaturation,
+  ],
+  applySceneLookFromControls,
+  inspectorToggles,
+  getOpenInspectorPanel: () => openInspectorPanel,
+  setOpenInspectorPanel,
 });
-copyRouteAnalysisSummaryButton.addEventListener("click", () => {
-  void routeDiagnosticsController.copyLatestRouteAnalysis("summary");
-});
-copyRouteAnalysisJsonButton.addEventListener("click", () => {
-  void routeDiagnosticsController.copyLatestRouteAnalysis("json");
-});
-downloadRouteAnalysisJsonButton.addEventListener("click", () => {
-  routeDiagnosticsController.downloadLatestRouteAnalysisJson();
-});
-renderScaleSlider.addEventListener("input", (event) => {
-  const nextPercent = Number((event.currentTarget as HTMLInputElement).value);
-  activateRenderScale(nextPercent);
-});
-sceneLookBrightness.addEventListener("input", applySceneLookFromControls);
-sceneLookContrast.addEventListener("input", applySceneLookFromControls);
-sceneLookSaturation.addEventListener("input", applySceneLookFromControls);
-for (const toggle of inspectorToggles) {
-  toggle.addEventListener("click", () => {
-    const { toggle: panelId } = toggle.dataset;
-    if (!panelId) {
-      return;
-    }
 
-    setOpenInspectorPanel(openInspectorPanel === panelId ? null : panelId);
-  });
-}
-
-updatePresetButtons();
-updateVariantButtons();
-updateRouteButtons();
-publishRouteControls();
-renderVariantMeta(defaultVariant);
-renderRenderScaleMeta(activeRenderScalePercent);
-renderSceneLookMeta(activeSceneLook);
-renderCameraMeta(null);
-renderPerfHud(null);
-routeDiagnosticsController.publishRouteDiagnostics();
-routeDiagnosticsController.installRouteAnalysisBridge();
-viewerShellController.setOpenInspectorPanel(openInspectorPanel);
-
-statusTitle.textContent = "加载中";
-statusDetail.textContent = "准备场景资源";
+initializeViewerStartup({
+  updatePresetButtons,
+  updateVariantButtons,
+  updateRouteButtons,
+  publishRouteControls,
+  renderVariantMeta,
+  defaultVariant,
+  renderRenderScaleMeta,
+  activeRenderScalePercent,
+  renderSceneLookMeta,
+  activeSceneLook,
+  renderCameraMeta,
+  renderPerfHud,
+  publishRouteDiagnostics: () => routeDiagnosticsController.publishRouteDiagnostics(),
+  installRouteAnalysisBridge: () => routeDiagnosticsController.installRouteAnalysisBridge(),
+  openInspectorPanel,
+  setOpenInspectorPanel,
+  statusTitle,
+  statusDetail,
+});
 
 await activateVariant(defaultVariant.id, true);
 
