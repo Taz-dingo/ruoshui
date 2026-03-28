@@ -1,3 +1,4 @@
+import { RouteDiagnosticsPanel } from './components/RouteDiagnosticsPanel';
 import type { ViewerContent } from './types';
 
 interface AppProps {
@@ -137,33 +138,7 @@ export function App({
                     </div>
                     <span className="route-batch-note" id="route-batch-note">默认使用当前选中的轨迹。</span>
                   </div>
-                  <div className="route-log">
-                    <div className="route-log-head">
-                      <span>自动记录</span>
-                      <strong id="route-log-summary">暂无</strong>
-                    </div>
-                    <div className="route-log-list" id="route-log-list" />
-                  </div>
-                  <div className="route-analysis">
-                    <div className="route-analysis-head">
-                      <span>标准测试分析</span>
-                      <strong id="route-analysis-summary">等待批量测试</strong>
-                    </div>
-                    <div className="route-analysis-actions">
-                      <button className="button tertiary route-analysis-button" id="copy-route-analysis-summary" type="button">
-                        复制摘要
-                      </button>
-                      <button className="button tertiary route-analysis-button" id="copy-route-analysis-json" type="button">
-                        复制 JSON
-                      </button>
-                      <button className="button tertiary route-analysis-button" id="download-route-analysis-json" type="button">
-                        下载 JSON
-                      </button>
-                    </div>
-                    <div className="route-analysis-copy-note" id="route-analysis-copy-note">跑完一轮标准测试后可复制。</div>
-                    <div className="route-analysis-ranking" id="route-analysis-ranking" />
-                    <div className="route-analysis-hotspots" id="route-analysis-hotspots" />
-                  </div>
+                  <RouteDiagnosticsPanel />
                 </div>
                 <div className="preset-list" id="preset-list" />
               </div>

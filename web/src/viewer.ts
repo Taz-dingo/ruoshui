@@ -30,7 +30,8 @@ import { applyRenderScaleToRuntime, createPerformanceMode, getInitialRenderScale
 import { createLoopController } from './runtime/lifecycle';
 import { captureOrbitView, createOrbitController, restoreOrbitView, setOrbitPreset, updateOrbitController } from './runtime/orbit';
 import { detachVariantFromRuntime, loadVariantIntoRuntime } from './runtime/variant-loader';
-import type { RouteRunRecord, VariantBenchmark, ViewerContent } from './types';
+import type { RouteDiagnosticsViewState, RouteRunRecord, VariantBenchmark, ViewerContent } from './types';
+import { publishRouteDiagnosticsState } from './ui/route-diagnostics-store';
 import { requireElement } from './utils/dom';
 import { formatMetricMs, formatMetricPeakMs, formatMotionMetric, formatRouteRunStatus, formatRouteRunTime, formatVec3 } from './utils/format';
 import { clamp, radToDeg, roundNumber } from './utils/math';
@@ -58,9 +59,6 @@ initLongTaskObserver(longTaskBuffer);
 const sceneContainer = requireElement<HTMLDivElement>('#scene');
 const variantList = requireElement<HTMLDivElement>('#variant-list');
 const routeList = requireElement<HTMLDivElement>('#route-list');
-const routeLogList = requireElement<HTMLDivElement>('#route-log-list');
-const routeAnalysisRanking = requireElement<HTMLDivElement>('#route-analysis-ranking');
-const routeAnalysisHotspots = requireElement<HTMLDivElement>('#route-analysis-hotspots');
 const presetList = requireElement<HTMLDivElement>('#preset-list');
 const runRouteCurrentVariantButton = requireElement<HTMLButtonElement>('#run-route-current-variant');
 const runRouteSuiteButton = requireElement<HTMLButtonElement>('#run-route-suite');
@@ -87,9 +85,6 @@ const variantsSummary = requireElement<HTMLElement>('#variants-summary');
 const qualitySummary = requireElement<HTMLElement>('#quality-summary');
 const presetsSummary = requireElement<HTMLElement>('#presets-summary');
 const routeSummary = requireElement<HTMLElement>('#route-summary');
-const routeLogSummary = requireElement<HTMLElement>('#route-log-summary');
-const routeAnalysisSummary = requireElement<HTMLElement>('#route-analysis-summary');
-const routeAnalysisCopyNote = requireElement<HTMLElement>('#route-analysis-copy-note');
 const cameraSummary = requireElement<HTMLElement>('#camera-summary');
 const cameraPosition = requireElement<HTMLElement>('#camera-position');
 const cameraTarget = requireElement<HTMLElement>('#camera-target');
@@ -119,6 +114,7 @@ let openInspectorPanel: string | null = null;
 let isBatchBenchmarkRunning = false;
 let activeSuiteRunId: string | null = null;
 let routeAnalysisCopyTimeoutId: number | null = null;
+let routeAnalysisCopyNoteOverride: string | null = null;
 let activeBenchmarkRunPromise: Promise<any> | null = null;
 
 const variantButtons = new Map();
@@ -211,8 +207,7 @@ renderVariantMeta(defaultVariant);
 renderRenderScaleMeta(activeRenderScalePercent);
 renderCameraMeta(null);
 renderPerfHud(null);
-renderRouteRunHistory();
-renderRouteAnalysis();
+publishRouteDiagnostics();
 installRouteAnalysisBridge();
 setOpenInspectorPanel(openInspectorPanel);
 
@@ -1006,8 +1001,7 @@ function finalizeRouteRunRecord(runtimeState, status) {
   routeRunHistory.unshift(finalizedRecord);
   routeRunHistory.length = Math.min(routeRunHistory.length, maxRouteRunHistory);
   persistRouteRunHistory(routeRunHistoryStorageKey, routeRunHistory);
-  renderRouteRunHistory();
-  renderRouteAnalysis();
+  publishRouteDiagnostics();
   runtimeState.routeRecord = null;
   return finalizedRecord;
 }
@@ -1021,87 +1015,73 @@ function getRouteStepLabel(routeId, stepIndex) {
     : `Step ${ordinal}`;
 }
 
-function renderRouteRunHistory() {
-  routeLogSummary.textContent = routeRunHistory.length > 0 ? `${routeRunHistory.length} 条` : '暂无';
-  routeLogList.replaceChildren();
-
-  if (routeRunHistory.length === 0) {
-    const empty = document.createElement('div');
-    empty.className = 'route-log-empty';
-    empty.textContent = '跑一次轨迹后，这里会自动留下对比记录。';
-    routeLogList.append(empty);
-    return;
-  }
-
-  for (const entry of routeRunHistory) {
-    const item = document.createElement('article');
-    item.className = 'route-log-item';
-    item.innerHTML = `
-      <div class="route-log-line">
-        <strong>${entry.routeName}</strong>
-        <span class="route-log-status is-${entry.status}">${formatRouteRunStatus(entry.status)}</span>
-      </div>
-      <div class="route-log-meta">${entry.variantName} · ${entry.renderScalePercent}% · ${formatRouteRunTime(entry.finishedAt ?? entry.startedAt)}</div>
-      <div class="route-log-metrics">
-        <span>漫游 ${formatMetricMs(entry.motionAvgMs)} / ${formatMetricPeakMs(entry.motionMaxMs)}</span>
-        <span>首帧 ${formatMetricMs(entry.firstFrameMs)}</span>
-      </div>
-    `;
-    routeLogList.append(item);
-  }
-}
-
-function renderRouteAnalysis() {
+function buildRouteDiagnosticsState(): RouteDiagnosticsViewState {
+  const logItems = routeRunHistory.map((entry) => ({
+    id: entry.id,
+    routeName: entry.routeName,
+    status: entry.status ?? 'pending',
+    statusLabel: formatRouteRunStatus(entry.status),
+    meta: `${entry.variantName} · ${entry.renderScalePercent}% · ${formatRouteRunTime(entry.finishedAt ?? entry.startedAt)}`,
+    motionText: `漫游 ${formatMetricMs(entry.motionAvgMs)} / ${formatMetricPeakMs(entry.motionMaxMs)}`,
+    firstFrameText: `首帧 ${formatMetricMs(entry.firstFrameMs)}`
+  }));
   const records = getLatestSuiteRecords(routeRunHistory);
-  routeAnalysisRanking.replaceChildren();
-  routeAnalysisHotspots.replaceChildren();
 
   if (records.length === 0) {
-    routeAnalysisSummary.textContent = '等待批量测试';
-    routeAnalysisCopyNote.textContent = '跑完一轮标准测试后可复制。';
-    routeAnalysisRanking.innerHTML = '<div class="route-analysis-empty">运行“当前轨迹 × 全版本”后，这里会出现排行榜和卡顿热点。</div>';
-    routeAnalysisHotspots.innerHTML = '';
-    return;
+    return {
+      logSummary: routeRunHistory.length > 0 ? `${routeRunHistory.length} 条` : '暂无',
+      logItems,
+      logEmptyText: routeRunHistory.length === 0 ? '跑一次轨迹后，这里会自动留下对比记录。' : null,
+      analysisSummary: '等待批量测试',
+      copyNote: routeAnalysisCopyNoteOverride ?? '跑完一轮标准测试后可复制。',
+      rankingItems: [],
+      rankingEmptyText: '运行“当前轨迹 × 全版本”后，这里会出现排行榜和卡顿热点。',
+      hotspotItems: [],
+      hotspotEmptyText: null
+    };
   }
 
   const summary = buildRouteAnalysisSummary(records);
-  routeAnalysisSummary.textContent = `${summary.routeName} · ${records.length} 版`;
-  routeAnalysisCopyNote.textContent = `最新批次：${summary.suiteId} · 可复制或下载`;
+  return {
+    logSummary: `${routeRunHistory.length} 条`,
+    logItems,
+    logEmptyText: null,
+    analysisSummary: `${summary.routeName} · ${records.length} 版`,
+    copyNote: routeAnalysisCopyNoteOverride ?? `最新批次：${summary.suiteId} · 可复制或下载`,
+    rankingItems: summary.ranking.map((item) => ({
+      id: `${summary.suiteId}:${item.variantId}`,
+      variantName: item.variantName,
+      avgMs: item.avgMs,
+      peakMs: item.peakMs,
+      p95Ms: item.p95Ms,
+      p99Ms: item.p99Ms,
+      stallCount: item.stallCount,
+      worstStepLabel: item.worstStepLabel,
+      worstStepP95Ms: item.worstStepP95Ms,
+      worstStepPeakMs: item.worstStepPeakMs
+    })),
+    rankingEmptyText: null,
+    hotspotItems: summary.hotspots.map((hotspot) => ({
+      id: `${summary.suiteId}:${hotspot.variantId}:${hotspot.stepLabel}:${hotspot.startMs ?? 'na'}`,
+      variantName: hotspot.variantName,
+      peakMs: hotspot.peakMs,
+      stepLabel: hotspot.stepLabel,
+      likelyCause: hotspot.likelyCause,
+      startMs: hotspot.startMs,
+      endMs: hotspot.endMs,
+      longTaskCount: hotspot.longTaskCount,
+      modelResourceCount: hotspot.modelResourceCount,
+      cameraDistance: hotspot.camera.distance,
+      cameraPitch: hotspot.camera.pitch,
+      cameraYaw: hotspot.camera.yaw,
+      resourceSummary: hotspot.resourceSummary
+    })),
+    hotspotEmptyText: summary.hotspots.length === 0 ? '这一批次还没采到明显卡顿热点。' : null
+  };
+}
 
-  for (const item of summary.ranking) {
-    const card = document.createElement('article');
-    card.className = 'route-analysis-item';
-    card.innerHTML = `
-      <div class="route-analysis-line">
-        <strong>${item.variantName}</strong>
-        <span>${item.avgMs} / ${item.peakMs} ms</span>
-      </div>
-      <div class="route-analysis-meta">P95 ${item.p95Ms} · P99 ${item.p99Ms} · 卡顿 ${item.stallCount} 次</div>
-      <div class="route-analysis-meta">最差段 ${item.worstStepLabel} · P95 ${item.worstStepP95Ms} · 峰值 ${item.worstStepPeakMs}</div>
-    `;
-    routeAnalysisRanking.append(card);
-  }
-
-  if (summary.hotspots.length === 0) {
-    routeAnalysisHotspots.innerHTML = '<div class="route-analysis-empty">这一批次还没采到明显卡顿热点。</div>';
-    return;
-  }
-
-  for (const hotspot of summary.hotspots) {
-    const card = document.createElement('article');
-    card.className = 'route-hotspot-item';
-    card.innerHTML = `
-      <div class="route-analysis-line">
-        <strong>${hotspot.variantName}</strong>
-        <span>${hotspot.peakMs} ms</span>
-      </div>
-      <div class="route-analysis-meta">${hotspot.stepLabel} · ${hotspot.likelyCause}</div>
-      <div class="route-analysis-meta">窗口 ${hotspot.startMs}-${hotspot.endMs} ms · 长任务 ${hotspot.longTaskCount} 次 / 资源 ${hotspot.modelResourceCount} 次</div>
-      <div class="route-analysis-meta">视角 ${hotspot.camera.distance}m · ${hotspot.camera.pitch}° / ${hotspot.camera.yaw}°</div>
-      ${hotspot.resourceSummary ? `<div class="route-analysis-meta">${hotspot.resourceSummary}</div>` : ''}
-    `;
-    routeAnalysisHotspots.append(card);
-  }
+function publishRouteDiagnostics() {
+  publishRouteDiagnosticsState(buildRouteDiagnosticsState());
 }
 
 async function copyLatestRouteAnalysis(mode) {
@@ -1144,16 +1124,15 @@ function downloadLatestRouteAnalysisJson() {
 }
 
 function setRouteAnalysisCopyNote(text) {
-  routeAnalysisCopyNote.textContent = text;
+  routeAnalysisCopyNoteOverride = text;
+  publishRouteDiagnostics();
   if (routeAnalysisCopyTimeoutId) {
     window.clearTimeout(routeAnalysisCopyTimeoutId);
   }
 
   routeAnalysisCopyTimeoutId = window.setTimeout(() => {
-    const records = getLatestSuiteRecords(routeRunHistory);
-    routeAnalysisCopyNote.textContent = records.length > 0
-      ? `最新批次：${records[0].suiteId} · 可复制或下载`
-      : '跑完一轮标准测试后可复制。';
+    routeAnalysisCopyNoteOverride = null;
+    publishRouteDiagnostics();
     routeAnalysisCopyTimeoutId = null;
   }, routeAnalysisCopyFeedbackMs);
 }
@@ -1175,8 +1154,7 @@ function installRouteAnalysisBridge() {
     clearHistory() {
       routeRunHistory.length = 0;
       persistRouteRunHistory(routeRunHistoryStorageKey, routeRunHistory);
-      renderRouteRunHistory();
-      renderRouteAnalysis();
+      publishRouteDiagnostics();
     },
     variants() {
       return data.variants.map((variant) => ({ id: variant.id, name: variant.name }));
