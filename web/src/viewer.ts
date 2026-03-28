@@ -33,6 +33,7 @@ import { detachVariantFromRuntime, loadVariantIntoRuntime } from './runtime/vari
 import type { CameraViewState, RouteDiagnosticsViewState, RouteRunRecord, VariantBenchmark, ViewerContent } from './types';
 import { publishCameraState } from './ui/camera-store';
 import { publishRouteDiagnosticsState } from './ui/route-diagnostics-store';
+import { publishVariantPanelState, variantSelectEventName } from './ui/variant-panel-store';
 import { requireElement } from './utils/dom';
 import { formatMetricMs, formatMetricPeakMs, formatMotionMetric, formatRouteRunStatus, formatRouteRunTime, formatVec3 } from './utils/format';
 import { clamp, radToDeg, roundNumber } from './utils/math';
@@ -58,7 +59,6 @@ const longTaskBuffer: Array<{ startTime: number; duration: number }> = [];
 initLongTaskObserver(longTaskBuffer);
 
 const sceneContainer = requireElement<HTMLDivElement>('#scene');
-const variantList = requireElement<HTMLDivElement>('#variant-list');
 const routeList = requireElement<HTMLDivElement>('#route-list');
 const presetList = requireElement<HTMLDivElement>('#preset-list');
 const runRouteCurrentVariantButton = requireElement<HTMLButtonElement>('#run-route-current-variant');
@@ -82,7 +82,6 @@ const renderScaleValue = requireElement<HTMLElement>('#render-scale-value');
 const renderScaleNote = requireElement<HTMLElement>('#render-scale-note');
 const focusSceneButton = requireElement<HTMLButtonElement>('#focus-scene');
 const focusOverviewButton = requireElement<HTMLButtonElement>('#focus-overview');
-const variantsSummary = requireElement<HTMLElement>('#variants-summary');
 const qualitySummary = requireElement<HTMLElement>('#quality-summary');
 const presetsSummary = requireElement<HTMLElement>('#presets-summary');
 const routeSummary = requireElement<HTMLElement>('#route-summary');
@@ -112,8 +111,8 @@ let activeSuiteRunId: string | null = null;
 let routeAnalysisCopyTimeoutId: number | null = null;
 let routeAnalysisCopyNoteOverride: string | null = null;
 let activeBenchmarkRunPromise: Promise<any> | null = null;
+let isVariantPanelDisabled = false;
 
-const variantButtons = new Map();
 const routeButtons = new Map();
 const presetButtons = new Map();
 const variantBenchmarks = new Map<string, VariantBenchmark>();
@@ -121,23 +120,6 @@ const routeRunHistory: RouteRunRecord[] = getInitialRouteRunHistory(
   routeRunHistoryStorageKey,
   maxRouteRunHistory
 );
-
-for (const variant of data.variants) {
-  const button = document.createElement('button');
-  button.className = 'variant';
-  button.type = 'button';
-  button.innerHTML = `
-    <span class="variant-line">
-      <strong>${variant.name}</strong>
-      <small>${variant.size} · ${variant.retention}</small>
-    </span>
-  `;
-  button.addEventListener('click', () => {
-    void activateVariant(variant.id);
-  });
-  variantButtons.set(variant.id, button);
-  variantList.append(button);
-}
 
 for (const preset of data.presets) {
   const button = document.createElement('button');
@@ -165,6 +147,14 @@ for (const route of benchmarkRoutes) {
 
 focusSceneButton.addEventListener('click', () => activatePreset(firstPreset.id));
 focusOverviewButton.addEventListener('click', () => activatePreset('hover'));
+window.addEventListener(variantSelectEventName, (event) => {
+  const variantId = (event as CustomEvent<{ variantId?: string }>).detail?.variantId;
+  if (!variantId) {
+    return;
+  }
+
+  void activateVariant(variantId);
+});
 runRouteCurrentVariantButton.addEventListener('click', () => {
   void runCurrentVariantRouteBenchmark();
 });
@@ -218,7 +208,7 @@ function renderVariantMeta(variant) {
   variantRetention.textContent = variant.retention;
   variantTitle.textContent = variant.name;
   variantNote.textContent = variant.note;
-  variantsSummary.textContent = variant.name;
+  publishVariantPanel();
   renderVariantBenchmark(variant.id);
 }
 
@@ -507,9 +497,7 @@ function updatePresetButtons() {
 }
 
 function updateVariantButtons() {
-  for (const [variantId, button] of variantButtons) {
-    button.classList.toggle('is-active', variantId === activeVariantId);
-  }
+  publishVariantPanel();
 }
 
 function updateRouteButtons() {
@@ -521,9 +509,22 @@ function updateRouteButtons() {
 }
 
 function setVariantButtonsDisabled(disabled) {
-  for (const button of variantButtons.values()) {
-    button.disabled = disabled;
-  }
+  isVariantPanelDisabled = disabled;
+  publishVariantPanel();
+}
+
+function publishVariantPanel() {
+  const activeVariant = variantsById.get(activeVariantId) ?? defaultVariant;
+  publishVariantPanelState({
+    summary: activeVariant.name,
+    items: data.variants.map((variant) => ({
+      id: variant.id,
+      name: variant.name,
+      meta: `${variant.size} · ${variant.retention}`,
+      isActive: variant.id === activeVariantId,
+      disabled: isVariantPanelDisabled
+    }))
+  });
 }
 
 function renderRouteBatchState() {

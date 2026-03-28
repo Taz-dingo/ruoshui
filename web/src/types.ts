@@ -289,3 +289,16 @@ export interface CameraViewState {
   distance: string;
   angle: string;
 }
+
+export interface VariantPanelItemView {
+  id: string;
+  name: string;
+  meta: string;
+  isActive: boolean;
+  disabled: boolean;
+}
+
+export interface VariantPanelViewState {
+  summary: string;
+  items: VariantPanelItemView[];
+}
