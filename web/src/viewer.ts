@@ -2,7 +2,6 @@ import {
   currentVariantRepeatCount,
   frameSampleIndices,
   maxRouteRunHistory,
-  renderWakeSeconds,
   routeAnalysisCopyFeedbackMs,
   routeRunHistoryStorageKey
 } from './config';
@@ -13,7 +12,6 @@ import {
   beginStoredVariantBenchmark,
   getStoredVariantBenchmark,
   initLongTaskObserver,
-  trackBenchmarkFirstFrame
 } from './benchmark/runtime';
 import {
   advanceRuntimeBenchmarkRoute as advanceBenchmarkPlaybackRoute,
@@ -25,10 +23,7 @@ import {
   updateRuntimeBenchmarkRoute as updateBenchmarkPlaybackRoute
 } from './benchmark/playback';
 import { applyRenderScaleToRuntime, getInitialRenderScalePercent, getMaxSupportedPixelRatio, normalizeRenderScalePercent, persistRenderScalePercent } from './performance/render-scale';
-import { bindRuntimeViewport, bindRuntimeVisibility, createRuntimeApp } from './runtime/bootstrap';
-import { createOrbitController } from './runtime/orbit';
-import { createRuntimeUpdateHandler } from './runtime/update-loop';
-import { detachVariantFromRuntime, loadVariantIntoRuntime } from './runtime/variant-loader';
+import { createViewerRuntime } from './runtime/runtime-factory';
 import { createVariantOrchestrationController } from './runtime/variant-orchestration';
 import type { RouteRunRecord, VariantBenchmark, ViewerContent } from './types';
 import { useViewerUiStore } from './ui/viewer-ui-store';
@@ -220,8 +215,7 @@ const variantOrchestrationController = createVariantOrchestrationController({
   createRuntime,
   moveCamera,
   publishVariantBenchmark,
-  getVariantBenchmark,
-  configureUnifiedGsplat
+  getVariantBenchmark
 });
 
 focusSceneButton.addEventListener('click', () => activatePreset(firstPreset.id));
@@ -428,119 +422,25 @@ function publishRouteControls() {
 }
 
 async function createRuntime(canvasElement, variant, timings: any = {}) {
-  const { app, performanceMode, loopController } = createRuntimeApp({
+  return createViewerRuntime({
     pc,
     canvasElement,
+    variant,
+    timings,
     runtimeWindow: window,
-    renderScalePercent: activeRenderScalePercent
-  });
-  const viewportBinding = bindRuntimeViewport({
-    app,
-    canvasElement,
-    loopController,
-    runtimeWindow: window
-  });
-
-  const camera = new pc.Entity('MemorialCamera');
-  camera.addComponent('camera', {
-    clearColor: new pc.Color(0.02, 0.04, 0.06),
-    fov: 52,
-    nearClip: 0.01,
-    farClip: 64
-  });
-  app.root.addChild(camera);
-
-  const initialTarget = vec3(firstPreset.target);
-  const initialPosition = vec3(firstPreset.position);
-  const orbit = createOrbitController(pc, camera, canvasElement, initialPosition, initialTarget, performanceMode);
-
-  const runtimeState = {
-    variantId: variant.id,
-    app,
-    canvasElement,
-    orbit,
-    benchmark: timings.benchmark ?? beginStoredVariantBenchmark(variantBenchmarks, variant.id),
-    performanceMode,
-    loopController,
-    routePlayback: null,
-    routeRecord: null,
-    splatAsset: null,
-    splatEntity: null,
-    variantMeta: variant,
-    unifiedLodState: null,
-    lastCameraSnapshot: '',
-    cameraMetaElapsed: 0,
-    perfHudElapsed: 0,
-    perfHudFrames: 0,
-    renderWakeRemaining: renderWakeSeconds,
-    requestRender: () => {
-      loopController.wake();
-      runtimeState.renderWakeRemaining = renderWakeSeconds;
-      app.autoRender = true;
-      app.renderNextFrame = true;
-    },
-    destroy: () => {
-      loopController.wake();
-      detachVariantFromRuntime(runtimeState);
-      viewportBinding.destroy();
-      orbit.destroy();
-      app.destroy();
-    }
-  };
-
-  orbit.onManualInput = () => {
-    if (activeRouteId) {
-      stopActiveBenchmarkRoute('手动接管', 'manual');
-    }
-    runtimeState.requestRender();
-  };
-
-  const visibilityBinding = bindRuntimeVisibility({
-    app,
-    loopController,
     runtimeDocument: document,
-    runtimeWindow: window,
-    runtimeState,
-    onResume: () => {
-      renderCameraMeta(runtimeState);
-      renderPerfHud(runtimeState);
-    }
-  });
-
-  const handleUpdate = createRuntimeUpdateHandler({
-    pc,
-    runtimeState,
-    updateBenchmarkRoute,
+    renderScalePercent: activeRenderScalePercent,
+    firstPreset,
+    createBenchmark: (variantId) =>
+      beginStoredVariantBenchmark(variantBenchmarks, variantId),
+    getVariantBenchmark,
     publishVariantBenchmark,
+    updateBenchmarkRoute,
+    getActiveRouteId: () => activeRouteId,
+    stopActiveBenchmarkRoute,
     renderCameraMeta,
     renderPerfHud
   });
-  app.on('update', handleUpdate);
-  const destroyRuntime = runtimeState.destroy;
-  runtimeState.destroy = () => {
-    app.off('update', handleUpdate);
-    visibilityBinding.destroy();
-    destroyRuntime();
-  };
-
-  await loadVariantIntoRuntime({
-    pc,
-    runtimeState,
-    variant,
-    timings,
-    createBenchmark: () => beginStoredVariantBenchmark(variantBenchmarks, variant.id),
-    publishVariantBenchmark,
-    configureUnifiedGsplat,
-    trackFirstFrame: (app, variantId, switchStartedAt) =>
-      trackBenchmarkFirstFrame(
-        app,
-        variantId,
-        switchStartedAt,
-        getVariantBenchmark,
-        publishVariantBenchmark
-      )
-  });
-  return runtimeState;
 }
 
 function moveCamera(runtimeState, preset, immediate = false) {
@@ -617,50 +517,6 @@ function restoreCurrentView(runtimeState, snapshot) {
     snapshot,
     pc
   });
-}
-
-function configureUnifiedGsplat(app, variant) {
-  if (!variant?.unified || !variant.unifiedTuning || !app?.scene?.gsplat) {
-    return null;
-  }
-
-  const baseProfile = normalizeUnifiedGsplatProfile(variant.unifiedTuning);
-  applyUnifiedGsplatProfile(app.scene.gsplat, baseProfile);
-
-  return {
-    mode: 'base',
-    baseProfile,
-    warmSecondsRemaining: 0,
-    riskSnapshot: null
-  };
-}
-
-function normalizeUnifiedGsplatProfile(profile) {
-  return {
-    lodUnderfillLimit: Number.isFinite(profile?.lodUnderfillLimit) ? profile.lodUnderfillLimit : undefined,
-    cooldownTicks: Number.isFinite(profile?.cooldownTicks) ? profile.cooldownTicks : undefined,
-    lodUpdateDistance: Number.isFinite(profile?.lodUpdateDistance) ? profile.lodUpdateDistance : undefined,
-    lodUpdateAngle: Number.isFinite(profile?.lodUpdateAngle) ? profile.lodUpdateAngle : undefined,
-    lodBehindPenalty: Number.isFinite(profile?.lodBehindPenalty) ? profile.lodBehindPenalty : undefined
-  };
-}
-
-function applyUnifiedGsplatProfile(sceneGsplat, profile) {
-  if (!sceneGsplat || !profile) {
-    return false;
-  }
-
-  let changed = false;
-  for (const [key, value] of Object.entries(profile)) {
-    if (!Number.isFinite(value) || sceneGsplat[key] === value) {
-      continue;
-    }
-
-    sceneGsplat[key] = value;
-    changed = true;
-  }
-
-  return changed;
 }
 
 function finalizeRouteRunRecord(runtimeState, status) {
