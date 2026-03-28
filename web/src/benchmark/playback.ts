@@ -107,7 +107,7 @@ interface RestoreRuntimeViewArgs {
   pc: any;
 }
 
-export function moveRuntimeCamera({
+function moveRuntimeCamera({
   runtimeState,
   preset,
   pc,
@@ -130,7 +130,7 @@ export function moveRuntimeCamera({
   runtimeState.requestRender?.();
 }
 
-export function startRuntimeBenchmarkRoute({
+function startRuntimeBenchmarkRoute({
   runtimeState,
   route,
   suiteId,
@@ -160,7 +160,7 @@ export function startRuntimeBenchmarkRoute({
   };
 }
 
-export function finalizeRuntimeRouteRunRecord({
+function finalizeRuntimeRouteRunRecord({
   runtimeState,
   status,
   longTaskBuffer,
@@ -192,7 +192,7 @@ export function finalizeRuntimeRouteRunRecord({
   return finalizedRecord;
 }
 
-export function stopRuntimeBenchmarkRoute({
+function stopRuntimeBenchmarkRoute({
   runtimeState,
   status = 'aborted',
   finalizeRouteRunRecord
@@ -207,7 +207,7 @@ export function stopRuntimeBenchmarkRoute({
   playback?.onFinish?.(finalizedRecord);
 }
 
-export function advanceRuntimeBenchmarkRoute({
+function advanceRuntimeBenchmarkRoute({
   runtimeState,
   pc,
   vec3,
@@ -254,7 +254,7 @@ export function advanceRuntimeBenchmarkRoute({
   return true;
 }
 
-export function updateRuntimeBenchmarkRoute({
+function updateRuntimeBenchmarkRoute({
   runtimeState,
   dt,
   advanceRuntimeBenchmarkRoute
@@ -273,11 +273,11 @@ export function updateRuntimeBenchmarkRoute({
   return advanceRuntimeBenchmarkRoute();
 }
 
-export function captureRuntimeView(runtimeState: BenchmarkRuntimeState | null | undefined) {
+function captureRuntimeView(runtimeState: BenchmarkRuntimeState | null | undefined) {
   return captureOrbitView(runtimeState?.orbit);
 }
 
-export function restoreRuntimeView({
+function restoreRuntimeView({
   runtimeState,
   snapshot,
   pc
@@ -289,3 +289,14 @@ export function restoreRuntimeView({
   runtimeState?.requestRender?.();
   return true;
 }
+
+export {
+  advanceRuntimeBenchmarkRoute,
+  captureRuntimeView,
+  finalizeRuntimeRouteRunRecord,
+  moveRuntimeCamera,
+  restoreRuntimeView,
+  startRuntimeBenchmarkRoute,
+  stopRuntimeBenchmarkRoute,
+  updateRuntimeBenchmarkRoute
+};

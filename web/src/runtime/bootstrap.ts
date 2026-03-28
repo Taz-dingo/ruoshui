@@ -32,7 +32,7 @@ interface BindRuntimeVisibilityArgs {
   onResume?: (() => void) | null;
 }
 
-export function createRuntimeApp({
+function createRuntimeApp({
   pc,
   canvasElement,
   runtimeWindow,
@@ -64,7 +64,7 @@ export function createRuntimeApp({
   };
 }
 
-export function bindRuntimeViewport({
+function bindRuntimeViewport({
   app,
   canvasElement,
   loopController,
@@ -120,7 +120,7 @@ export function bindRuntimeViewport({
   };
 }
 
-export function bindRuntimeVisibility({
+function bindRuntimeVisibility({
   app,
   loopController,
   runtimeDocument,
@@ -172,3 +172,9 @@ export function bindRuntimeVisibility({
     }
   };
 }
+
+export {
+  bindRuntimeViewport,
+  bindRuntimeVisibility,
+  createRuntimeApp
+};

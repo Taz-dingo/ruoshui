@@ -135,6 +135,7 @@
 - 已将轨迹播放与基准测试辅助逻辑从 `web/src/viewer.ts` 拆到 `web/src/benchmark/playback.ts`，当前代码重构方向继续收敛为“保留 PlayCanvas 运行时、逐步把 orchestration / UI / benchmark 分层”
 - 当前前端技术栈判断已进一步收口：保留 `React + Vite + Zustand + Tailwind + PlayCanvas/SOG` 作为主线；短期只考虑补 `Radix/shadcn` 这类开源原语层和 `Biome` 这类格式检查工具，不切换 `Three.js` 或更重框架
 - 当前“极致性能”方向也已补充判断：若后续只考虑最终效果与浏览器内渲染上限，真正值得投入的不是单纯换 `Rust` 或换 `Three.js`，而是优先验证 `WebGPU`、`Worker + OffscreenCanvas`、以及 `Rust/WASM` 在解码/流送/调度热路径上的组合；但这应作为后续性能分支，而不是现在立刻推翻现有运行时
+- 已补充一条前端代码风格约定：`web/` 下的 `TS/JS` 模块优先使用文件末尾统一 `export { ... }`，避免在每个函数或常量声明前分散写 `export`
 - 已完成首轮 `SOG` 交付侧派生实验，输出 `h0 / opacity01 / dec75 / dec50` 四个轻量版本到 `outputs/iteration-004-sog-opt/`
 - 当前 `Web MVP` 已升级为同页多版本对比页，可在原始版与 `4` 个派生版本之间切换主观比较画质与性能
 - 当前默认对比版本已切到 `hhuc-h0-dec75.sog`，作为首个更平衡的 `Web` 候选

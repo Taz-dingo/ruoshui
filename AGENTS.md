@@ -11,3 +11,4 @@
 - Also use `ruoshui-asset-poc` when the task involves image assets, PoC sampling, or first-pass 3DGS validation.
 - Keep iterations small and commit after each coherent step.
 - Update the relevant docs when a project decision or experiment assumption changes.
+- 在 `web/` 的 `TS/JS` 模块里，优先使用“文件末尾统一导出”的风格；不要在每个声明前单独写 `export`，改为在文件底部集中写 `export { ... }`。
