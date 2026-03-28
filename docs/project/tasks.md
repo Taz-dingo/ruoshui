@@ -46,6 +46,7 @@
 - [ ] 收集第一批故事点位内容
 - [ ] 选择首批热点地点
 - [ ] 评估是否需要基础移动端兼容
+- [ ] 评估 `WebGPU + Worker/WASM` 作为后续极致性能分支的可行性
 
 ## 最近结论
 
@@ -194,4 +195,5 @@
 - 当前 `Web MVP` 已支持同页切换原始版与 `4` 个派生版本做主观对比，默认落在 `dec75`
 - 已将前端主要交互面板逐步迁移到 `React + Zustand`，并开始把运行时辅助逻辑从 `viewer.ts` 拆出
 - 当前前端技术栈判断已收口：保留 `React + Vite + Zustand + Tailwind + PlayCanvas/SOG` 主线，短期只考虑补 `Radix/shadcn` 与 `Biome`，不切换 `Three.js`
+- 当前性能技术栈判断也已收口：若要继续追求浏览器内上限，优先验证 `WebGPU`、`Worker + OffscreenCanvas` 与 `Rust/WASM` 热路径，而不是先换整套 UI/3D 框架
 - 当前更小的下一步已收敛为：继续把 `viewer.ts` 中剩余运行时与 benchmark orchestration 模块化，同时围绕真实浏览器体验继续做加载与首屏体验优化
