@@ -16,8 +16,8 @@ export const lowAnglePrewarmMaxSeconds = 2.2;
 export const currentVariantRepeatCount = 3;
 export const minOrbitPitchDeg = 6;
 export const maxOrbitPitchDeg = 89;
-export const minOrbitTargetZ = 0;
-export const minOrbitCameraZ = 0;
+export const minOrbitTargetY = 0;
+export const minOrbitCameraY = 0;
 
 export const frameSampleIndices = {
   elapsedMs: 0,
