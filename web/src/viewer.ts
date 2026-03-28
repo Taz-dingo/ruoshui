@@ -7,11 +7,7 @@ import {
   lowAnglePrewarmLeadSeconds,
   lowAnglePrewarmMaxSeconds,
   lowAnglePrewarmPitchThresholdDeg,
-  maxOrbitPitchDeg,
   maxRouteRunHistory,
-  minOrbitCameraY,
-  minOrbitPitchDeg,
-  minOrbitTargetY,
   perfHudIntervalSeconds,
   renderWakeSeconds,
   routeAnalysisCopyFeedbackMs,
@@ -19,10 +15,11 @@ import {
 } from './config';
 import { analyzeRouteRun, formatHotspotResourceSummary, formatWorstStepLabel, getWorstStep, isTrackedModelResource, simplifyResourceName } from './benchmark/analysis';
 import { applyRenderScaleToRuntime, createPerformanceMode, getInitialRenderScalePercent, getMaxSupportedPixelRatio, normalizeRenderScalePercent, persistRenderScalePercent, updatePerformanceMode } from './performance/render-scale';
+import { captureOrbitView, createOrbitController, restoreOrbitView, setOrbitPreset, updateOrbitController } from './runtime/orbit';
 import type { BenchmarkRoute, RouteRunRecord, VariantBenchmark, ViewerContent } from './types';
 import { requireElement } from './utils/dom';
 import { formatMetricMs, formatMetricPeakMs, formatMetricText, formatMotionMetric, formatRouteRunStatus, formatRouteRunTime, formatVec3 } from './utils/format';
-import { clamp, degToRad, easeInOutCubic, lerp, lerpAngle, radToDeg, roundNumber } from './utils/math';
+import { clamp, radToDeg, roundNumber } from './utils/math';
 
 const pc: any = await import(/* @vite-ignore */ 'https://esm.sh/playcanvas@2.17.2?bundle');
 
@@ -586,7 +583,7 @@ async function createRuntime(canvasElement, variant, timings: any = {}) {
 
   const initialTarget = vec3(firstPreset.target);
   const initialPosition = vec3(firstPreset.position);
-  const orbit = createOrbitController(camera, canvasElement, initialPosition, initialTarget, performanceMode);
+  const orbit = createOrbitController(pc, camera, canvasElement, initialPosition, initialTarget, performanceMode);
 
   const runtimeState = {
     variantId: variant.id,
@@ -670,7 +667,7 @@ async function createRuntime(canvasElement, variant, timings: any = {}) {
 
   const handleUpdate = (dt) => {
     const routeChanged = updateBenchmarkRoute(runtimeState, dt);
-    const orbitChanged = updateOrbitController(runtimeState.orbit, dt);
+    const orbitChanged = updateOrbitController(runtimeState.orbit, dt, pc);
     const performanceChanged = updatePerformanceMode(runtimeState.performanceMode, app, dt);
     const isMoving = routeChanged || orbitChanged || runtimeState.performanceMode.isInteracting;
     const unifiedLodChanged = updateUnifiedLodWarmup(runtimeState, dt, isMoving);
@@ -799,7 +796,7 @@ function detachVariantFromRuntime(runtimeState) {
 }
 
 function moveCamera(runtimeState, preset, immediate = false) {
-  setOrbitPreset(runtimeState.orbit, vec3(preset.position), vec3(preset.target), immediate);
+  setOrbitPreset(runtimeState.orbit, vec3(preset.position), vec3(preset.target), immediate, pc);
   runtimeState.requestRender();
 }
 
@@ -862,7 +859,7 @@ function advanceBenchmarkRoute(runtimeState) {
   const duration = Number.isFinite(step.duration) ? Math.max(step.duration, 0) : 1.35;
   const hold = Number.isFinite(step.hold) ? Math.max(step.hold, 0) : 0.35;
   const immediate = duration === 0;
-  setOrbitPreset(runtimeState.orbit, vec3(step.position), vec3(step.target), immediate, duration);
+  setOrbitPreset(runtimeState.orbit, vec3(step.position), vec3(step.target), immediate, pc, duration);
   playback.stepRemaining = duration + hold;
   runtimeState.requestRender?.();
 
@@ -889,37 +886,13 @@ function updateBenchmarkRoute(runtimeState, dt) {
 }
 
 function captureCurrentView(runtimeState) {
-  if (!runtimeState?.orbit) {
-    return null;
-  }
-
-  const { orbit } = runtimeState;
-  return {
-    target: orbit.currentTarget.clone(),
-    yaw: orbit.currentYaw,
-    pitch: orbit.currentPitch,
-    distance: orbit.currentDistance
-  };
+  return captureOrbitView(runtimeState?.orbit);
 }
 
 function restoreCurrentView(runtimeState, snapshot) {
-  if (!runtimeState?.orbit || !snapshot) {
+  if (!restoreOrbitView(runtimeState?.orbit, snapshot, pc)) {
     return false;
   }
-
-  const { orbit } = runtimeState;
-  const clampedPitch = clampOrbitPitch(snapshot.pitch);
-  const clampedTarget = clampOrbitTarget(snapshot.target.clone());
-  orbit.transition = null;
-  orbit.currentTarget.copy(clampedTarget);
-  orbit.desiredTarget.copy(clampedTarget);
-  orbit.currentYaw = snapshot.yaw;
-  orbit.desiredYaw = snapshot.yaw;
-  orbit.currentPitch = clampedPitch;
-  orbit.desiredPitch = clampedPitch;
-  orbit.currentDistance = snapshot.distance;
-  orbit.desiredDistance = snapshot.distance;
-  applyOrbit(orbit, 1);
   runtimeState.requestRender?.();
   return true;
 }
@@ -1604,248 +1577,6 @@ function trackFirstFrame(app, variantId, switchStartedAt) {
 
 function vec3(tuple) {
   return new pc.Vec3(tuple[0], tuple[1], tuple[2]);
-}
-
-function createOrbitController(camera, canvasElement, initialPosition, initialTarget, performanceMode): any {
-  const clampedTarget = clampOrbitTarget(initialTarget.clone());
-  const clampedPosition = clampOrbitCameraPosition(initialPosition.clone(), clampedTarget);
-  const spherical = positionToOrbit(clampedPosition, clampedTarget);
-
-  const orbit: any = {
-    camera,
-    canvasElement,
-    currentTarget: clampedTarget.clone(),
-    desiredTarget: clampedTarget.clone(),
-    currentYaw: spherical.yaw,
-    desiredYaw: spherical.yaw,
-    currentPitch: spherical.pitch,
-    desiredPitch: spherical.pitch,
-    currentDistance: spherical.distance,
-    desiredDistance: spherical.distance,
-    minDistance: 0.35,
-    maxDistance: 12,
-    rotateSpeed: 0.0055,
-    panSpeed: 0.0018,
-    zoomSpeed: 0.0012,
-    damping: 0.14,
-    pointerMode: null,
-    lastX: 0,
-    lastY: 0,
-    transition: null,
-    onManualInput: null,
-    tempRight: new pc.Vec3(),
-    tempUp: new pc.Vec3(),
-    tempPosition: new pc.Vec3()
-  };
-
-  const beginPointer = (event: any) => {
-    orbit.onManualInput?.();
-    orbit.pointerMode = event.button === 2 ? 'pan' : 'rotate';
-    if (performanceMode) {
-      performanceMode.isInteracting = true;
-    }
-    orbit.lastX = event.clientX;
-    orbit.lastY = event.clientY;
-  };
-
-  const endPointer = () => {
-    orbit.cancelInteraction();
-  };
-
-  const movePointer = (event: any) => {
-    if (!orbit.pointerMode) {
-      return;
-    }
-
-    const dx = event.clientX - orbit.lastX;
-    const dy = event.clientY - orbit.lastY;
-    orbit.lastX = event.clientX;
-    orbit.lastY = event.clientY;
-
-    if (orbit.pointerMode === 'rotate') {
-      orbit.transition = null;
-      orbit.desiredYaw -= dx * orbit.rotateSpeed;
-      orbit.desiredPitch = clampOrbitPitch(orbit.desiredPitch - dy * orbit.rotateSpeed);
-      return;
-    }
-
-    const distanceFactor = Math.max(orbit.currentDistance, 0.5);
-    const right = orbit.tempRight.copy(camera.right).mulScalar(-dx * orbit.panSpeed * distanceFactor);
-    const up = orbit.tempUp.copy(camera.up).mulScalar(dy * orbit.panSpeed * distanceFactor);
-    orbit.transition = null;
-    orbit.desiredTarget.add(right).add(up);
-    clampOrbitTarget(orbit.desiredTarget);
-  };
-
-  const onWheel = (event: any) => {
-    event.preventDefault();
-    orbit.onManualInput?.();
-    orbit.transition = null;
-    const scale = Math.exp(event.deltaY * orbit.zoomSpeed);
-    orbit.desiredDistance = clamp(
-      orbit.desiredDistance * scale,
-      orbit.minDistance,
-      orbit.maxDistance
-    );
-  };
-
-  canvasElement.addEventListener('mousedown', beginPointer);
-  window.addEventListener('mousemove', movePointer);
-  window.addEventListener('mouseup', endPointer);
-  canvasElement.addEventListener('wheel', onWheel, { passive: false });
-
-  orbit.destroy = () => {
-    canvasElement.removeEventListener('mousedown', beginPointer);
-    window.removeEventListener('mousemove', movePointer);
-    window.removeEventListener('mouseup', endPointer);
-    canvasElement.removeEventListener('wheel', onWheel);
-  };
-
-  orbit.cancelInteraction = () => {
-    orbit.pointerMode = null;
-    if (performanceMode) {
-      performanceMode.isInteracting = false;
-    }
-  };
-
-  applyOrbit(orbit, 1);
-  return orbit;
-}
-
-function setOrbitPreset(orbit, position, target, immediate, duration = 1.35) {
-  const clampedTarget = clampOrbitTarget(target.clone());
-  const clampedPosition = clampOrbitCameraPosition(position.clone(), clampedTarget);
-  const spherical = positionToOrbit(clampedPosition, clampedTarget);
-  const clampedPitch = clampOrbitPitch(spherical.pitch);
-
-  if (immediate) {
-    orbit.transition = null;
-    orbit.currentTarget.copy(clampedTarget);
-    orbit.desiredTarget.copy(clampedTarget);
-    orbit.currentYaw = spherical.yaw;
-    orbit.desiredYaw = spherical.yaw;
-    orbit.currentPitch = clampedPitch;
-    orbit.desiredPitch = clampedPitch;
-    orbit.currentDistance = spherical.distance;
-    orbit.desiredDistance = spherical.distance;
-    applyOrbit(orbit, 1);
-    return;
-  }
-
-  orbit.transition = {
-    elapsed: 0,
-    duration: Math.max(duration, 0.01),
-    fromTarget: orbit.desiredTarget.clone(),
-    toTarget: clampedTarget,
-    fromYaw: orbit.desiredYaw,
-    toYaw: spherical.yaw,
-    fromPitch: orbit.desiredPitch,
-    toPitch: clampedPitch,
-    fromDistance: orbit.desiredDistance,
-    toDistance: spherical.distance
-  };
-}
-
-function updateOrbitController(orbit, dt) {
-  if (orbit.transition) {
-    orbit.transition.elapsed = Math.min(orbit.transition.elapsed + dt, orbit.transition.duration);
-    const alpha = orbit.transition.elapsed / orbit.transition.duration;
-    const eased = easeInOutCubic(alpha);
-
-    orbit.desiredTarget.lerp(orbit.transition.fromTarget, orbit.transition.toTarget, eased);
-    orbit.desiredYaw = lerpAngle(orbit.transition.fromYaw, orbit.transition.toYaw, eased);
-    orbit.desiredPitch = lerp(orbit.transition.fromPitch, orbit.transition.toPitch, eased);
-    orbit.desiredDistance = lerp(
-      orbit.transition.fromDistance,
-      orbit.transition.toDistance,
-      eased
-    );
-
-    if (alpha >= 1) {
-      orbit.transition = null;
-    }
-  }
-
-  return applyOrbit(orbit, orbit.damping);
-}
-
-function applyOrbit(orbit, damping) {
-  const previousTargetX = orbit.currentTarget.x;
-  const previousTargetY = orbit.currentTarget.y;
-  const previousTargetZ = orbit.currentTarget.z;
-  const previousYaw = orbit.currentYaw;
-  const previousPitch = orbit.currentPitch;
-  const previousDistance = orbit.currentDistance;
-  const blend = damping >= 1 ? 1 : 1 - Math.pow(1 - damping, 2);
-  clampOrbitTarget(orbit.desiredTarget);
-  orbit.currentTarget.lerp(orbit.currentTarget, orbit.desiredTarget, blend);
-  clampOrbitTarget(orbit.currentTarget);
-  orbit.currentYaw = lerpAngle(orbit.currentYaw, orbit.desiredYaw, blend);
-  orbit.currentPitch = lerp(orbit.currentPitch, orbit.desiredPitch, blend);
-  orbit.currentDistance = lerp(orbit.currentDistance, orbit.desiredDistance, blend);
-
-  const position = orbitToPosition(
-    orbit.currentTarget,
-    orbit.currentYaw,
-    orbit.currentPitch,
-    orbit.currentDistance,
-    orbit.tempPosition
-  );
-  clampOrbitCameraPosition(position, orbit.currentTarget);
-  orbit.camera.setPosition(position);
-  orbit.camera.lookAt(orbit.currentTarget);
-
-  return (
-    Math.abs(previousTargetX - orbit.currentTarget.x) > 0.00001 ||
-    Math.abs(previousTargetY - orbit.currentTarget.y) > 0.00001 ||
-    Math.abs(previousTargetZ - orbit.currentTarget.z) > 0.00001 ||
-    Math.abs(previousYaw - orbit.currentYaw) > 0.00001 ||
-    Math.abs(previousPitch - orbit.currentPitch) > 0.00001 ||
-    Math.abs(previousDistance - orbit.currentDistance) > 0.00001
-  );
-}
-
-function positionToOrbit(position, target) {
-  const offset = position.clone().sub(target);
-  const distance = Math.max(offset.length(), 0.0001);
-  return {
-    distance,
-    yaw: Math.atan2(offset.x, offset.z),
-    pitch: clampOrbitPitch(Math.asin(clamp(offset.y / distance, -1, 1)))
-  };
-}
-
-function clampOrbitPitch(value) {
-  return clamp(value, degToRad(minOrbitPitchDeg), degToRad(maxOrbitPitchDeg));
-}
-
-function clampOrbitTarget(target) {
-  target.y = Math.max(target.y, minOrbitTargetY);
-  return target;
-}
-
-function clampOrbitCameraPosition(position, target) {
-  position.y = Math.max(position.y, minOrbitCameraY);
-
-  if (
-    target &&
-    Math.abs(position.x - target.x) < 0.0001 &&
-    Math.abs(position.y - target.y) < 0.0001 &&
-    Math.abs(position.z - target.z) < 0.0001
-  ) {
-    position.y = Math.max(target.y + 0.0001, minOrbitCameraY);
-  }
-
-  return position;
-}
-
-function orbitToPosition(target, yaw, pitch, distance, out = new pc.Vec3()) {
-  const cosPitch = Math.cos(pitch);
-  return out.set(
-    target.x + Math.sin(yaw) * cosPitch * distance,
-    target.y + Math.sin(pitch) * distance,
-    target.z + Math.cos(yaw) * cosPitch * distance
-  );
 }
 
 function renderCameraMeta(runtimeState) {
