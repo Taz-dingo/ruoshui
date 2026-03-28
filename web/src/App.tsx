@@ -1,5 +1,6 @@
 import { CameraPanel } from './components/CameraPanel';
 import { RouteDiagnosticsPanel } from './components/RouteDiagnosticsPanel';
+import { VariantPanel } from './components/VariantPanel';
 import type { ViewerContent } from './types';
 
 interface AppProps {
@@ -82,15 +83,18 @@ export function App({
 
         <aside className="detail">
           <div className="panel panel-reveal inspector">
-            <section className="inspector-section variant-section" data-panel="variants">
-              <button className="inspector-toggle" type="button" data-toggle="variants" aria-expanded="false">
-                <span className="section-title">模型版本</span>
-                <span className="toggle-meta" id="variants-summary">{defaultVariant.name}</span>
-              </button>
-              <div className="inspector-body" data-body="variants">
-                <div className="variant-list" id="variant-list" />
-              </div>
-            </section>
+            <VariantPanel
+              initialState={{
+                summary: defaultVariant.name,
+                items: data.variants.map((variant) => ({
+                  id: variant.id,
+                  name: variant.name,
+                  meta: `${variant.size} · ${variant.retention}`,
+                  isActive: variant.id === defaultVariant.id,
+                  disabled: false
+                }))
+              }}
+            />
 
             <section className="inspector-section" data-panel="quality">
               <button className="inspector-toggle" type="button" data-toggle="quality" aria-expanded="false">
