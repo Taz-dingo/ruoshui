@@ -39,6 +39,7 @@
 - [x] 将前端样式体系开始迁移到 `Tailwind CSS`
 - [x] 将前端主要面板迁移到 `React + Zustand`
 - [x] 将轨迹播放与基准测试 helper 从 `viewer.ts` 拆到独立模块
+- [x] 固定 `web/` 模块的统一尾部导出风格
 
 ### P2
 

@@ -25,7 +25,7 @@ interface CreateRuntimeUpdateHandlerArgs {
   renderPerfHud: (runtimeState: any) => void;
 }
 
-export function createRuntimeUpdateHandler({
+function createRuntimeUpdateHandler({
   pc,
   runtimeState,
   updateBenchmarkRoute,
@@ -165,3 +165,7 @@ function getUnifiedLodRiskSnapshot(orbit: any) {
       distance <= lowAnglePrewarmDistanceThreshold
   };
 }
+
+export {
+  createRuntimeUpdateHandler
+};
