@@ -1,14 +1,7 @@
-import { useEffect, useState } from 'react';
-
-import { getCameraState, subscribeCameraState } from '../ui/camera-store';
+import { useViewerUiStore } from '../ui/viewer-ui-store';
 
 export function CameraPanel() {
-  const [state, setState] = useState(() => getCameraState());
-
-  useEffect(() => {
-    setState(getCameraState());
-    return subscribeCameraState(setState);
-  }, []);
+  const state = useViewerUiStore((store) => store.camera);
 
   return (
     <section className="inspector-section" data-panel="camera">

@@ -1,8 +1,11 @@
+import { useEffect, useMemo } from 'react';
+
 import { CameraPanel } from './components/CameraPanel';
 import { PresetPanel } from './components/PresetPanel';
 import { RouteDiagnosticsPanel } from './components/RouteDiagnosticsPanel';
 import { VariantPanel } from './components/VariantPanel';
 import type { ViewerContent } from './types';
+import { useViewerUiStore } from './ui/viewer-ui-store';
 
 interface AppProps {
   data: ViewerContent;
@@ -21,6 +24,34 @@ export function App({
 }: AppProps) {
   const defaultVariant = data.variants.find((variant) => variant.id === data.scene.defaultVariantId) ?? data.variants[0];
   const firstPreset = data.presets[0];
+  const setVariantPanel = useViewerUiStore((store) => store.setVariantPanel);
+  const setPresetPanel = useViewerUiStore((store) => store.setPresetPanel);
+
+  const initialVariantPanel = useMemo(() => ({
+    summary: defaultVariant.name,
+    items: data.variants.map((variant) => ({
+      id: variant.id,
+      name: variant.name,
+      meta: `${variant.size} · ${variant.retention}`,
+      isActive: variant.id === defaultVariant.id,
+      disabled: false
+    }))
+  }), [data.variants, defaultVariant.id, defaultVariant.name]);
+
+  const initialPresetPanel = useMemo(() => ({
+    summary: firstPreset.name,
+    items: data.presets.map((preset) => ({
+      id: preset.id,
+      name: preset.name,
+      summary: preset.summary,
+      isActive: preset.id === firstPreset.id
+    }))
+  }), [data.presets, firstPreset.id, firstPreset.name]);
+
+  useEffect(() => {
+    setVariantPanel(initialVariantPanel);
+    setPresetPanel(initialPresetPanel);
+  }, [initialPresetPanel, initialVariantPanel, setPresetPanel, setVariantPanel]);
 
   return (
     <main className="shell">
@@ -85,16 +116,7 @@ export function App({
         <aside className="detail">
           <div className="panel panel-reveal inspector">
             <VariantPanel
-              initialState={{
-                summary: defaultVariant.name,
-                items: data.variants.map((variant) => ({
-                  id: variant.id,
-                  name: variant.name,
-                  meta: `${variant.size} · ${variant.retention}`,
-                  isActive: variant.id === defaultVariant.id,
-                  disabled: false
-                }))
-              }}
+              initialState={initialVariantPanel}
             />
 
             <section className="inspector-section" data-panel="quality">
@@ -147,15 +169,7 @@ export function App({
                   <RouteDiagnosticsPanel />
                 </div>
                 <PresetPanel
-                  initialState={{
-                    summary: firstPreset.name,
-                    items: data.presets.map((preset) => ({
-                      id: preset.id,
-                      name: preset.name,
-                      summary: preset.summary,
-                      isActive: preset.id === firstPreset.id
-                    }))
-                  }}
+                  initialState={initialPresetPanel}
                 />
               </div>
             </section>

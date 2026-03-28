@@ -1,30 +1,13 @@
-import { useEffect, useState } from 'react';
-
 import type { VariantPanelViewState } from '../types';
-import {
-  getVariantPanelState,
-  publishVariantPanelState,
-  subscribeVariantPanelState,
-  variantSelectEventName
-} from '../ui/variant-panel-store';
+import { useViewerUiStore } from '../ui/viewer-ui-store';
 
 interface VariantPanelProps {
   initialState: VariantPanelViewState;
 }
 
 export function VariantPanel({ initialState }: VariantPanelProps) {
-  const [state, setState] = useState<VariantPanelViewState>(() => {
-    return getVariantPanelState() ?? initialState;
-  });
-
-  useEffect(() => {
-    if (!getVariantPanelState()) {
-      publishVariantPanelState(initialState);
-    }
-
-    setState(getVariantPanelState() ?? initialState);
-    return subscribeVariantPanelState(setState);
-  }, [initialState]);
+  const state = useViewerUiStore((store) => store.variantPanel ?? initialState);
+  const requestVariantSelection = useViewerUiStore((store) => store.requestVariantSelection);
 
   return (
     <section className="inspector-section variant-section" data-panel="variants">
@@ -40,13 +23,7 @@ export function VariantPanel({ initialState }: VariantPanelProps) {
               className={`variant${item.isActive ? ' is-active' : ''}`}
               type="button"
               disabled={item.disabled}
-              onClick={() => {
-                window.dispatchEvent(
-                  new CustomEvent(variantSelectEventName, {
-                    detail: { variantId: item.id }
-                  })
-                );
-              }}
+              onClick={() => requestVariantSelection(item.id)}
             >
               <span className="variant-line">
                 <strong>{item.name}</strong>

@@ -1,21 +1,7 @@
-import { useEffect, useState } from 'react';
-
-import type { RouteDiagnosticsViewState } from '../types';
-import {
-  getEmptyRouteDiagnosticsState,
-  getRouteDiagnosticsState,
-  subscribeRouteDiagnosticsState
-} from '../ui/route-diagnostics-store';
+import { emptyRouteDiagnosticsState, useViewerUiStore } from '../ui/viewer-ui-store';
 
 export function RouteDiagnosticsPanel() {
-  const [state, setState] = useState<RouteDiagnosticsViewState>(() => {
-    return getRouteDiagnosticsState() ?? getEmptyRouteDiagnosticsState();
-  });
-
-  useEffect(() => {
-    setState(getRouteDiagnosticsState());
-    return subscribeRouteDiagnosticsState(setState);
-  }, []);
+  const state = useViewerUiStore((store) => store.routeDiagnostics ?? emptyRouteDiagnosticsState);
 
   return (
     <>

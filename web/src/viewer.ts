@@ -31,10 +31,7 @@ import { createLoopController } from './runtime/lifecycle';
 import { captureOrbitView, createOrbitController, restoreOrbitView, setOrbitPreset, updateOrbitController } from './runtime/orbit';
 import { detachVariantFromRuntime, loadVariantIntoRuntime } from './runtime/variant-loader';
 import type { CameraViewState, RouteDiagnosticsViewState, RouteRunRecord, VariantBenchmark, ViewerContent } from './types';
-import { publishCameraState } from './ui/camera-store';
-import { presetSelectEventName, publishPresetPanelState } from './ui/preset-panel-store';
-import { publishRouteDiagnosticsState } from './ui/route-diagnostics-store';
-import { publishVariantPanelState, variantSelectEventName } from './ui/variant-panel-store';
+import { useViewerUiStore } from './ui/viewer-ui-store';
 import { requireElement } from './utils/dom';
 import { formatMetricMs, formatMetricPeakMs, formatMotionMetric, formatRouteRunStatus, formatRouteRunTime, formatVec3 } from './utils/format';
 import { clamp, radToDeg, roundNumber } from './utils/math';
@@ -112,6 +109,8 @@ let routeAnalysisCopyTimeoutId: number | null = null;
 let routeAnalysisCopyNoteOverride: string | null = null;
 let activeBenchmarkRunPromise: Promise<any> | null = null;
 let isVariantPanelDisabled = false;
+let lastVariantSelectionSequence = useViewerUiStore.getState().variantSelectionRequest.sequence;
+let lastPresetSelectionSequence = useViewerUiStore.getState().presetSelectionRequest.sequence;
 
 const routeButtons = new Map();
 const variantBenchmarks = new Map<string, VariantBenchmark>();
@@ -134,21 +133,24 @@ for (const route of benchmarkRoutes) {
 
 focusSceneButton.addEventListener('click', () => activatePreset(firstPreset.id));
 focusOverviewButton.addEventListener('click', () => activatePreset('hover'));
-window.addEventListener(presetSelectEventName, (event) => {
-  const presetId = (event as CustomEvent<{ presetId?: string }>).detail?.presetId;
-  if (!presetId) {
-    return;
+useViewerUiStore.subscribe((state) => {
+  const { presetSelectionRequest, variantSelectionRequest } = state;
+
+  if (presetSelectionRequest.sequence !== lastPresetSelectionSequence) {
+    lastPresetSelectionSequence = presetSelectionRequest.sequence;
+    const presetId = presetSelectionRequest.id;
+    if (presetId) {
+      activatePreset(presetId);
+    }
   }
 
-  activatePreset(presetId);
-});
-window.addEventListener(variantSelectEventName, (event) => {
-  const variantId = (event as CustomEvent<{ variantId?: string }>).detail?.variantId;
-  if (!variantId) {
-    return;
+  if (variantSelectionRequest.sequence !== lastVariantSelectionSequence) {
+    lastVariantSelectionSequence = variantSelectionRequest.sequence;
+    const variantId = variantSelectionRequest.id;
+    if (variantId) {
+      void activateVariant(variantId);
+    }
   }
-
-  void activateVariant(variantId);
 });
 runRouteCurrentVariantButton.addEventListener('click', () => {
   void runCurrentVariantRouteBenchmark();
@@ -312,7 +314,6 @@ async function mountRuntime(variant, timings: any) {
 
 function activatePreset(presetId, immediate = false) {
   const preset = data.presets.find((entry) => entry.id === presetId);
-
   if (!preset) {
     return;
   }
@@ -508,7 +509,7 @@ function setVariantButtonsDisabled(disabled) {
 
 function publishVariantPanel() {
   const activeVariant = variantsById.get(activeVariantId) ?? defaultVariant;
-  publishVariantPanelState({
+  useViewerUiStore.getState().setVariantPanel({
     summary: activeVariant.name,
     items: data.variants.map((variant) => ({
       id: variant.id,
@@ -522,7 +523,7 @@ function publishVariantPanel() {
 
 function publishPresetPanel() {
   const activePreset = data.presets.find((preset) => preset.id === activePresetId) ?? firstPreset;
-  publishPresetPanelState({
+  useViewerUiStore.getState().setPresetPanel({
     summary: activePreset.name,
     items: data.presets.map((preset) => ({
       id: preset.id,
@@ -1084,7 +1085,7 @@ function buildRouteDiagnosticsState(): RouteDiagnosticsViewState {
 }
 
 function publishRouteDiagnostics() {
-  publishRouteDiagnosticsState(buildRouteDiagnosticsState());
+  useViewerUiStore.getState().setRouteDiagnostics(buildRouteDiagnosticsState());
 }
 
 async function copyLatestRouteAnalysis(mode) {
@@ -1258,7 +1259,7 @@ function renderCameraMeta(runtimeState) {
     return;
   }
 
-  publishCameraState(state);
+  useViewerUiStore.getState().setCamera(state);
 }
 
 function renderPerfHud(runtimeState) {
