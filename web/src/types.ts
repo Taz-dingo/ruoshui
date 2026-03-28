@@ -230,3 +230,54 @@ export interface RenderScaleRuntimeLike {
   app?: RenderScaleAppLike | null;
   requestRender?: (() => void) | null;
 }
+
+export interface RouteLogEntryView {
+  id: string;
+  routeName: string;
+  status: string;
+  statusLabel: string;
+  meta: string;
+  motionText: string;
+  firstFrameText: string;
+}
+
+export interface RouteAnalysisRankingItemView {
+  id: string;
+  variantName: string;
+  avgMs: string;
+  peakMs: string;
+  p95Ms: string;
+  p99Ms: string;
+  stallCount: number;
+  worstStepLabel: string;
+  worstStepP95Ms: string;
+  worstStepPeakMs: string;
+}
+
+export interface RouteAnalysisHotspotItemView {
+  id: string;
+  variantName: string;
+  peakMs: number | null;
+  stepLabel: string;
+  likelyCause: string;
+  startMs: number | null;
+  endMs: number | null;
+  longTaskCount: number;
+  modelResourceCount: number;
+  cameraDistance: number;
+  cameraPitch: number;
+  cameraYaw: number;
+  resourceSummary: string;
+}
+
+export interface RouteDiagnosticsViewState {
+  logSummary: string;
+  logItems: RouteLogEntryView[];
+  logEmptyText: string | null;
+  analysisSummary: string;
+  copyNote: string;
+  rankingItems: RouteAnalysisRankingItemView[];
+  rankingEmptyText: string | null;
+  hotspotItems: RouteAnalysisHotspotItemView[];
+  hotspotEmptyText: string | null;
+}
