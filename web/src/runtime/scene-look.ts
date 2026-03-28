@@ -18,8 +18,8 @@ interface RuntimeSceneLookLike {
 const baseSceneSkyboxIntensity = 0.65;
 const sceneLookStorageKey = 'ruoshui-scene-look-v2';
 const defaultSceneLookSettings: SceneLookSettings = {
-  brightnessPercent: 115,
-  contrastPercent: 115,
+  brightnessPercent: 105,
+  contrastPercent: 120,
   saturationPercent: 115
 };
 
