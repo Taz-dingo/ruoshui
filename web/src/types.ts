@@ -290,6 +290,48 @@ export interface CameraViewState {
   angle: string;
 }
 
+export interface StatusViewState {
+  title: string;
+  detail: string;
+}
+
+export interface SceneMetaViewState {
+  title: string;
+  size: string;
+  splats: string;
+  retention: string;
+  note: string;
+}
+
+export interface SceneMetricsViewState {
+  load: string;
+  firstFrame: string;
+  motion: string;
+}
+
+export interface RenderScaleViewState {
+  summary: string;
+  value: string;
+  note: string;
+}
+
+export interface SceneLookViewState {
+  summary: string;
+  brightnessPercent: number;
+  contrastPercent: number;
+  saturationPercent: number;
+  brightnessValue: string;
+  contrastValue: string;
+  saturationValue: string;
+}
+
+export interface PerfHudViewState {
+  fps: string;
+  ms: string;
+  render: string;
+  scale: string;
+}
+
 export interface VariantPanelItemView {
   id: string;
   name: string;

@@ -2,6 +2,9 @@ import { emptyRouteDiagnosticsState, useViewerUiStore } from '../ui/viewer-ui-st
 
 export function RouteDiagnosticsPanel() {
   const state = useViewerUiStore((store) => store.routeDiagnostics ?? emptyRouteDiagnosticsState);
+  const requestCopyRouteAnalysisSummary = useViewerUiStore((store) => store.requestCopyRouteAnalysisSummary);
+  const requestCopyRouteAnalysisJson = useViewerUiStore((store) => store.requestCopyRouteAnalysisJson);
+  const requestDownloadRouteAnalysisJson = useViewerUiStore((store) => store.requestDownloadRouteAnalysisJson);
 
   return (
     <>
@@ -39,13 +42,25 @@ export function RouteDiagnosticsPanel() {
           <strong>{state.analysisSummary}</strong>
         </div>
         <div className="route-analysis-actions">
-          <button className="button tertiary route-analysis-button" id="copy-route-analysis-summary" type="button">
+          <button
+            className="button tertiary route-analysis-button"
+            type="button"
+            onClick={() => requestCopyRouteAnalysisSummary()}
+          >
             复制摘要
           </button>
-          <button className="button tertiary route-analysis-button" id="copy-route-analysis-json" type="button">
+          <button
+            className="button tertiary route-analysis-button"
+            type="button"
+            onClick={() => requestCopyRouteAnalysisJson()}
+          >
             复制 JSON
           </button>
-          <button className="button tertiary route-analysis-button" id="download-route-analysis-json" type="button">
+          <button
+            className="button tertiary route-analysis-button"
+            type="button"
+            onClick={() => requestDownloadRouteAnalysisJson()}
+          >
             下载 JSON
           </button>
         </div>

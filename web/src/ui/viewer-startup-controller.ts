@@ -3,27 +3,16 @@ import type { ViewerVariant } from "../types";
 import { useViewerUiStore } from "./viewer-ui-store";
 
 interface InstallViewerStartupBindingsArgs {
-  focusSceneButton: HTMLButtonElement;
-  focusOverviewButton: HTMLButtonElement;
-  firstPresetId: string;
   activatePreset: (presetId: string) => void;
   activateVariant: (variantId: string) => void | Promise<unknown>;
   activateBenchmarkRoute: (routeId: string) => void;
   runCurrentVariantRouteBenchmark: () => void | Promise<unknown>;
   runRouteBenchmarkSuite: () => void | Promise<unknown>;
-  copyRouteAnalysisSummaryButton: HTMLButtonElement;
-  copyRouteAnalysisJsonButton: HTMLButtonElement;
-  downloadRouteAnalysisJsonButton: HTMLButtonElement;
   copyLatestRouteAnalysisSummary: () => void | Promise<unknown>;
   copyLatestRouteAnalysisJson: () => void | Promise<unknown>;
   downloadLatestRouteAnalysisJson: () => void;
-  renderScaleSlider: HTMLInputElement;
   activateRenderScale: (nextPercent: number) => void;
-  sceneLookInputs: HTMLInputElement[];
-  applySceneLookFromControls: () => void;
-  inspectorToggles: HTMLButtonElement[];
-  getOpenInspectorPanel: () => string | null;
-  setOpenInspectorPanel: (panelId: string | null) => void;
+  applySceneLook: (sceneLook: SceneLookSettings) => void;
 }
 
 interface InitializeViewerStartupArgs {
@@ -41,34 +30,20 @@ interface InitializeViewerStartupArgs {
   renderPerfHud: (runtimeState: any) => void;
   publishRouteDiagnostics: () => void;
   installRouteAnalysisBridge: () => void;
-  openInspectorPanel: string | null;
-  setOpenInspectorPanel: (panelId: string | null) => void;
-  statusTitle: HTMLElement;
-  statusDetail: HTMLElement;
+  setStatus: (title: string, detail: string) => void;
 }
 
 function installViewerStartupBindings({
-  focusSceneButton,
-  focusOverviewButton,
-  firstPresetId,
   activatePreset,
   activateVariant,
   activateBenchmarkRoute,
   runCurrentVariantRouteBenchmark,
   runRouteBenchmarkSuite,
-  copyRouteAnalysisSummaryButton,
-  copyRouteAnalysisJsonButton,
-  downloadRouteAnalysisJsonButton,
   copyLatestRouteAnalysisSummary,
   copyLatestRouteAnalysisJson,
   downloadLatestRouteAnalysisJson,
-  renderScaleSlider,
   activateRenderScale,
-  sceneLookInputs,
-  applySceneLookFromControls,
-  inspectorToggles,
-  getOpenInspectorPanel,
-  setOpenInspectorPanel,
+  applySceneLook,
 }: InstallViewerStartupBindingsArgs) {
   let lastVariantSelectionSequence =
     useViewerUiStore.getState().variantSelectionRequest.sequence;
@@ -76,64 +51,26 @@ function installViewerStartupBindings({
     useViewerUiStore.getState().presetSelectionRequest.sequence;
   let lastRouteSelectionSequence =
     useViewerUiStore.getState().routeSelectionRequest.sequence;
+  let lastCopyRouteAnalysisJsonRequest =
+    useViewerUiStore.getState().copyRouteAnalysisJsonRequest;
+  let lastCopyRouteAnalysisSummaryRequest =
+    useViewerUiStore.getState().copyRouteAnalysisSummaryRequest;
+  let lastDownloadRouteAnalysisJsonRequest =
+    useViewerUiStore.getState().downloadRouteAnalysisJsonRequest;
+  let lastRenderScaleRequest = useViewerUiStore.getState().renderScaleRequest.sequence;
+  let lastSceneLookRequest = useViewerUiStore.getState().sceneLookRequest.sequence;
   let lastRunCurrentRouteBenchmarkRequest =
     useViewerUiStore.getState().runCurrentRouteBenchmarkRequest;
   let lastRunRouteSuiteRequest = useViewerUiStore.getState().runRouteSuiteRequest;
 
-  const handleFocusScene = () => {
-    activatePreset(firstPresetId);
-  };
-  const handleFocusOverview = () => {
-    activatePreset("hover");
-  };
-  const handleCopyRouteAnalysisSummary = () => {
-    void copyLatestRouteAnalysisSummary();
-  };
-  const handleCopyRouteAnalysisJson = () => {
-    void copyLatestRouteAnalysisJson();
-  };
-  const handleDownloadRouteAnalysisJson = () => {
-    downloadLatestRouteAnalysisJson();
-  };
-  const handleRenderScaleInput = (event: Event) => {
-    const nextPercent = Number((event.currentTarget as HTMLInputElement).value);
-    activateRenderScale(nextPercent);
-  };
-  const handleInspectorToggle = (toggle: HTMLButtonElement) => () => {
-    const { toggle: panelId } = toggle.dataset;
-    if (!panelId) {
-      return;
-    }
-
-    setOpenInspectorPanel(getOpenInspectorPanel() === panelId ? null : panelId);
-  };
-
-  focusSceneButton.addEventListener("click", handleFocusScene);
-  focusOverviewButton.addEventListener("click", handleFocusOverview);
-  copyRouteAnalysisSummaryButton.addEventListener(
-    "click",
-    handleCopyRouteAnalysisSummary,
-  );
-  copyRouteAnalysisJsonButton.addEventListener("click", handleCopyRouteAnalysisJson);
-  downloadRouteAnalysisJsonButton.addEventListener(
-    "click",
-    handleDownloadRouteAnalysisJson,
-  );
-  renderScaleSlider.addEventListener("input", handleRenderScaleInput);
-  for (const input of sceneLookInputs) {
-    input.addEventListener("input", applySceneLookFromControls);
-  }
-
-  const inspectorToggleHandlers = new Map<HTMLButtonElement, () => void>();
-  for (const toggle of inspectorToggles) {
-    const handler = handleInspectorToggle(toggle);
-    inspectorToggleHandlers.set(toggle, handler);
-    toggle.addEventListener("click", handler);
-  }
-
   const unsubscribe = useViewerUiStore.subscribe((state) => {
     const {
+      copyRouteAnalysisJsonRequest,
+      copyRouteAnalysisSummaryRequest,
+      downloadRouteAnalysisJsonRequest,
       presetSelectionRequest,
+      renderScaleRequest,
+      sceneLookRequest,
       variantSelectionRequest,
       routeSelectionRequest,
       runCurrentRouteBenchmarkRequest,
@@ -161,6 +98,35 @@ function installViewerStartupBindings({
       }
     }
 
+    if (copyRouteAnalysisSummaryRequest !== lastCopyRouteAnalysisSummaryRequest) {
+      lastCopyRouteAnalysisSummaryRequest = copyRouteAnalysisSummaryRequest;
+      void copyLatestRouteAnalysisSummary();
+    }
+
+    if (copyRouteAnalysisJsonRequest !== lastCopyRouteAnalysisJsonRequest) {
+      lastCopyRouteAnalysisJsonRequest = copyRouteAnalysisJsonRequest;
+      void copyLatestRouteAnalysisJson();
+    }
+
+    if (downloadRouteAnalysisJsonRequest !== lastDownloadRouteAnalysisJsonRequest) {
+      lastDownloadRouteAnalysisJsonRequest = downloadRouteAnalysisJsonRequest;
+      downloadLatestRouteAnalysisJson();
+    }
+
+    if (renderScaleRequest.sequence !== lastRenderScaleRequest) {
+      lastRenderScaleRequest = renderScaleRequest.sequence;
+      activateRenderScale(renderScaleRequest.value);
+    }
+
+    if (sceneLookRequest.sequence !== lastSceneLookRequest) {
+      lastSceneLookRequest = sceneLookRequest.sequence;
+      applySceneLook({
+        brightnessPercent: sceneLookRequest.brightnessPercent,
+        contrastPercent: sceneLookRequest.contrastPercent,
+        saturationPercent: sceneLookRequest.saturationPercent,
+      });
+    }
+
     if (runCurrentRouteBenchmarkRequest !== lastRunCurrentRouteBenchmarkRequest) {
       lastRunCurrentRouteBenchmarkRequest = runCurrentRouteBenchmarkRequest;
       void runCurrentVariantRouteBenchmark();
@@ -175,27 +141,6 @@ function installViewerStartupBindings({
   return {
     destroy() {
       unsubscribe();
-      focusSceneButton.removeEventListener("click", handleFocusScene);
-      focusOverviewButton.removeEventListener("click", handleFocusOverview);
-      copyRouteAnalysisSummaryButton.removeEventListener(
-        "click",
-        handleCopyRouteAnalysisSummary,
-      );
-      copyRouteAnalysisJsonButton.removeEventListener(
-        "click",
-        handleCopyRouteAnalysisJson,
-      );
-      downloadRouteAnalysisJsonButton.removeEventListener(
-        "click",
-        handleDownloadRouteAnalysisJson,
-      );
-      renderScaleSlider.removeEventListener("input", handleRenderScaleInput);
-      for (const input of sceneLookInputs) {
-        input.removeEventListener("input", applySceneLookFromControls);
-      }
-      for (const [toggle, handler] of inspectorToggleHandlers) {
-        toggle.removeEventListener("click", handler);
-      }
     },
   };
 }
@@ -215,10 +160,7 @@ function initializeViewerStartup({
   renderPerfHud,
   publishRouteDiagnostics,
   installRouteAnalysisBridge,
-  openInspectorPanel,
-  setOpenInspectorPanel,
-  statusTitle,
-  statusDetail,
+  setStatus,
 }: InitializeViewerStartupArgs) {
   updatePresetButtons();
   updateVariantButtons();
@@ -231,9 +173,8 @@ function initializeViewerStartup({
   renderPerfHud(null);
   publishRouteDiagnostics();
   installRouteAnalysisBridge();
-  setOpenInspectorPanel(openInspectorPanel);
-  statusTitle.textContent = "加载中";
-  statusDetail.textContent = "准备场景资源";
+  useViewerUiStore.getState().setActiveInspectorPanel(null);
+  setStatus("加载中", "准备场景资源");
 }
 
 export {
