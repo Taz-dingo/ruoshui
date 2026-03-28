@@ -37,6 +37,8 @@
 - [x] 明确首页纪念文案的表达方向
 - [x] 完成 `SOG` 派生版本的同页对比入口
 - [x] 将前端样式体系开始迁移到 `Tailwind CSS`
+- [x] 将前端主要面板迁移到 `React + Zustand`
+- [x] 将轨迹播放与基准测试 helper 从 `viewer.ts` 拆到独立模块
 
 ### P2
 
@@ -190,4 +192,6 @@
 - 已通过 `web/vite.config.mjs` 把根目录 `assets/hhuc.sog` 映射为前端可访问的 `/models/hhuc.sog`，避免复制模型文件
 - 已完成首轮 `SOG` 交付侧派生实验，并产出 `hhuc-h0 / hhuc-h0-opacity01 / hhuc-h0-dec75 / hhuc-h0-dec50`
 - 当前 `Web MVP` 已支持同页切换原始版与 `4` 个派生版本做主观对比，默认落在 `dec75`
-- 当前更小的下一步已收敛为：基于 compare 页主观体验，选定正式默认交付版本，并继续做加载与首屏体验优化
+- 已将前端主要交互面板逐步迁移到 `React + Zustand`，并开始把运行时辅助逻辑从 `viewer.ts` 拆出
+- 当前前端技术栈判断已收口：保留 `React + Vite + Zustand + Tailwind + PlayCanvas/SOG` 主线，短期只考虑补 `Radix/shadcn` 与 `Biome`，不切换 `Three.js`
+- 当前更小的下一步已收敛为：继续把 `viewer.ts` 中剩余运行时与 benchmark orchestration 模块化，同时围绕真实浏览器体验继续做加载与首屏体验优化
