@@ -1,0 +1,186 @@
+import { trackBenchmarkFirstFrame } from '../benchmark/runtime';
+import { loadVariantIntoRuntime } from './variant-loader';
+import type { CameraPreset, VariantBenchmark, ViewerVariant } from '../types';
+
+interface CreateVariantOrchestrationControllerArgs {
+  pc: any;
+  presets: CameraPreset[];
+  variantsById: Map<string, ViewerVariant>;
+  sceneContainer: HTMLDivElement;
+  getRuntime: () => any;
+  setRuntime: (runtimeState: any) => void;
+  getActiveVariantId: () => string;
+  setActiveVariantId: (variantId: string) => void;
+  getActivePresetId: () => string;
+  setActivePresetId: (presetId: string) => void;
+  getActiveRouteId: () => string | null;
+  issueLoadToken: () => number;
+  isCurrentLoadToken: (loadToken: number) => boolean;
+  createBenchmark: (variantId: string) => VariantBenchmark;
+  renderVariantMeta: (variant: ViewerVariant) => void;
+  updateVariantButtons: () => void;
+  updatePresetButtons: () => void;
+  setVariantButtonsDisabled: (disabled: boolean) => void;
+  setPresetSummary: (summary: string) => void;
+  setStatus: (title: string, detail: string) => void;
+  stopActiveBenchmarkRoute: (summaryText?: string, status?: string) => void;
+  captureCurrentView: (runtimeState: any) => any;
+  restoreCurrentView: (runtimeState: any, snapshot: any) => boolean;
+  createRuntime: (canvasElement: HTMLCanvasElement, variant: ViewerVariant, timings?: any) => Promise<any>;
+  moveCamera: (runtimeState: any, preset: CameraPreset, immediate?: boolean) => void;
+  publishVariantBenchmark: (variantId: string) => void;
+  getVariantBenchmark: (variantId: string) => VariantBenchmark | null;
+  configureUnifiedGsplat: (app: any, variant: ViewerVariant) => any;
+}
+
+function createVariantOrchestrationController({
+  pc,
+  presets,
+  variantsById,
+  sceneContainer,
+  getRuntime,
+  setRuntime,
+  getActiveVariantId,
+  setActiveVariantId,
+  getActivePresetId,
+  setActivePresetId,
+  getActiveRouteId,
+  issueLoadToken,
+  isCurrentLoadToken,
+  createBenchmark,
+  renderVariantMeta,
+  updateVariantButtons,
+  updatePresetButtons,
+  setVariantButtonsDisabled,
+  setPresetSummary,
+  setStatus,
+  stopActiveBenchmarkRoute,
+  captureCurrentView,
+  restoreCurrentView,
+  createRuntime,
+  moveCamera,
+  publishVariantBenchmark,
+  getVariantBenchmark,
+  configureUnifiedGsplat
+}: CreateVariantOrchestrationControllerArgs) {
+  async function mountRuntime(variant: ViewerVariant, timings: any) {
+    const runtime = getRuntime();
+    if (runtime) {
+      await loadVariantIntoRuntime({
+        pc,
+        runtimeState: runtime,
+        variant,
+        timings,
+        createBenchmark: () => createBenchmark(variant.id),
+        publishVariantBenchmark,
+        configureUnifiedGsplat,
+        trackFirstFrame: (app, variantId, switchStartedAt) =>
+          trackBenchmarkFirstFrame(
+            app,
+            variantId,
+            switchStartedAt,
+            getVariantBenchmark,
+            publishVariantBenchmark
+          )
+      });
+      return runtime;
+    }
+
+    sceneContainer.replaceChildren();
+    const canvas = document.createElement('canvas');
+    const rect = sceneContainer.getBoundingClientRect();
+    canvas.width = Math.max(1, Math.round(rect.width));
+    canvas.height = Math.max(1, Math.round(rect.height));
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    sceneContainer.append(canvas);
+    return createRuntime(canvas, variant, timings);
+  }
+
+  function activatePreset(presetId: string, immediate = false) {
+    const preset = presets.find((entry) => entry.id === presetId);
+    if (!preset) {
+      return;
+    }
+
+    if (getActiveRouteId()) {
+      stopActiveBenchmarkRoute('镜头接管', 'manual');
+    }
+
+    setActivePresetId(preset.id);
+    setPresetSummary(preset.name);
+    updatePresetButtons();
+
+    const runtime = getRuntime();
+    if (runtime) {
+      moveCamera(runtime, preset, immediate);
+    }
+  }
+
+  async function activateVariant(
+    variantId: string,
+    initial = false,
+    forceReload = false
+  ) {
+    const variant = variantsById.get(variantId);
+
+    if (!variant) {
+      return;
+    }
+
+    if (!initial && !forceReload && variantId === getActiveVariantId()) {
+      return;
+    }
+
+    if (getActiveRouteId()) {
+      stopActiveBenchmarkRoute('未播放', 'switch');
+    }
+
+    const loadToken = issueLoadToken();
+    const switchStartedAt = performance.now();
+    const preservedView = initial ? null : captureCurrentView(getRuntime());
+    const benchmark = createBenchmark(variant.id);
+    setActiveVariantId(variant.id);
+    updateVariantButtons();
+    renderVariantMeta(variant);
+    setVariantButtonsDisabled(true);
+    setStatus('切换中', variant.name);
+
+    try {
+      const nextRuntime = await mountRuntime(variant, {
+        switchStartedAt,
+        benchmark
+      });
+      if (!isCurrentLoadToken(loadToken)) {
+        nextRuntime?.destroy?.();
+        return;
+      }
+
+      setRuntime(nextRuntime);
+      const restored = restoreCurrentView(nextRuntime, preservedView);
+      if (!restored) {
+        activatePreset(getActivePresetId() || 'hover', true);
+      }
+      setStatus('场景已就绪', `${variant.size} · ${variant.retention} 保留`);
+    } catch (error) {
+      setStatus(
+        '加载失败',
+        error instanceof Error ? error.message : '未知错误'
+      );
+      throw error;
+    } finally {
+      if (isCurrentLoadToken(loadToken)) {
+        setVariantButtonsDisabled(false);
+      }
+    }
+  }
+
+  return {
+    activatePreset,
+    activateVariant
+  };
+}
+
+export {
+  createVariantOrchestrationController
+};
