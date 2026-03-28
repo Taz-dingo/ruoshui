@@ -27,7 +27,9 @@ import {
   trackBenchmarkFirstFrame
 } from './benchmark/runtime';
 import { applyRenderScaleToRuntime, createPerformanceMode, getInitialRenderScalePercent, getMaxSupportedPixelRatio, normalizeRenderScalePercent, persistRenderScalePercent, updatePerformanceMode } from './performance/render-scale';
+import { createLoopController } from './runtime/lifecycle';
 import { captureOrbitView, createOrbitController, restoreOrbitView, setOrbitPreset, updateOrbitController } from './runtime/orbit';
+import { detachVariantFromRuntime, loadVariantIntoRuntime } from './runtime/variant-loader';
 import type { RouteRunRecord, VariantBenchmark, ViewerContent } from './types';
 import { requireElement } from './utils/dom';
 import { formatMetricMs, formatMetricPeakMs, formatMotionMetric, formatRouteRunStatus, formatRouteRunTime, formatVec3 } from './utils/format';
@@ -301,7 +303,23 @@ async function activateVariant(variantId, initial = false, forceReload = false) 
 
 async function mountRuntime(variant, timings: any) {
   if (runtime) {
-    await loadVariantIntoRuntime(runtime, variant, timings);
+    await loadVariantIntoRuntime({
+      pc,
+      runtimeState: runtime,
+      variant,
+      timings,
+      createBenchmark: () => beginStoredVariantBenchmark(variantBenchmarks, variant.id),
+      publishVariantBenchmark,
+      configureUnifiedGsplat,
+      trackFirstFrame: (app, variantId, switchStartedAt) =>
+        trackBenchmarkFirstFrame(
+          app,
+          variantId,
+          switchStartedAt,
+          getVariantBenchmark,
+          publishVariantBenchmark
+        )
+    });
     return runtime;
   }
 
@@ -737,88 +755,24 @@ async function createRuntime(canvasElement, variant, timings: any = {}) {
     destroyRuntime();
   };
 
-  await loadVariantIntoRuntime(runtimeState, variant, timings);
-  return runtimeState;
-}
-
-async function loadVariantIntoRuntime(runtimeState, variant, timings: any = {}) {
-  if (!runtimeState?.app) {
-    throw new Error('运行时尚未初始化');
-  }
-
-  runtimeState.loopController?.wake?.();
-  detachVariantFromRuntime(runtimeState);
-
-  const benchmark = timings.benchmark ?? beginStoredVariantBenchmark(variantBenchmarks, variant.id);
-  runtimeState.variantId = variant.id;
-  runtimeState.variantMeta = variant;
-  runtimeState.benchmark = benchmark;
-  runtimeState.routePlayback = null;
-  runtimeState.routeRecord = null;
-  runtimeState.unifiedLodState = null;
-
-  const splatAsset = new pc.Asset(`ruoshui-${variant.id}`, 'gsplat', { url: variant.assetUrl });
-  const assetLoadStartedAt = performance.now();
-
-  await new Promise<void>((resolve, reject) => {
-    const loader = new pc.AssetListLoader([splatAsset], runtimeState.app.assets);
-    const onError = (err, asset) => {
-      runtimeState.app.assets.off('error', onError);
-      reject(new Error(`加载 ${asset.name} 失败：${String(err)}`));
-    };
-
-    runtimeState.app.assets.on('error', onError);
-    loader.load(() => {
-      runtimeState.app.assets.off('error', onError);
-      benchmark.loadMs = performance.now() - assetLoadStartedAt;
-      publishVariantBenchmark(variant.id);
-      resolve();
-    });
+  await loadVariantIntoRuntime({
+    pc,
+    runtimeState,
+    variant,
+    timings,
+    createBenchmark: () => beginStoredVariantBenchmark(variantBenchmarks, variant.id),
+    publishVariantBenchmark,
+    configureUnifiedGsplat,
+    trackFirstFrame: (app, variantId, switchStartedAt) =>
+      trackBenchmarkFirstFrame(
+        app,
+        variantId,
+        switchStartedAt,
+        getVariantBenchmark,
+        publishVariantBenchmark
+      )
   });
-
-  const splat = new pc.Entity('RuoshuiCampus');
-  const gsplatComponent: any = {
-    asset: splatAsset
-  };
-
-  if (variant.unified) {
-    gsplatComponent.unified = true;
-  }
-
-  if (variant.lodDistances) {
-    gsplatComponent.lodDistances = variant.lodDistances;
-  }
-
-  splat.addComponent('gsplat', gsplatComponent);
-  runtimeState.app.root.addChild(splat);
-  runtimeState.splatAsset = splatAsset;
-  runtimeState.splatEntity = splat;
-  runtimeState.unifiedLodState = configureUnifiedGsplat(runtimeState.app, variant);
-  trackBenchmarkFirstFrame(
-    runtimeState.app,
-    variant.id,
-    timings.switchStartedAt,
-    getVariantBenchmark,
-    publishVariantBenchmark
-  );
-  runtimeState.requestRender?.();
-}
-
-function detachVariantFromRuntime(runtimeState) {
-  if (!runtimeState?.app) {
-    return;
-  }
-
-  if (runtimeState.splatEntity) {
-    runtimeState.splatEntity.destroy();
-    runtimeState.splatEntity = null;
-  }
-
-  if (runtimeState.splatAsset) {
-    runtimeState.splatAsset.unload?.();
-    runtimeState.app.assets.remove(runtimeState.splatAsset);
-    runtimeState.splatAsset = null;
-  }
+  return runtimeState;
 }
 
 function moveCamera(runtimeState, preset, immediate = false) {
@@ -1032,36 +986,6 @@ function getUnifiedLodRiskSnapshot(orbit) {
     distance,
     score,
     shouldPrewarm: pitchDeg <= lowAnglePrewarmPitchThresholdDeg && distance <= lowAnglePrewarmDistanceThreshold
-  };
-}
-
-function createLoopController(app) {
-  const originalTick = app.tick.bind(app);
-  let sleeping = false;
-
-  return {
-    get isSleeping() {
-      return sleeping;
-    },
-    sleep() {
-      if (sleeping) {
-        return;
-      }
-
-      sleeping = true;
-      app.tick = () => {};
-    },
-    wake() {
-      if (!sleeping) {
-        return;
-      }
-
-      sleeping = false;
-      app.tick = originalTick;
-      window.requestAnimationFrame((timestamp) => {
-        originalTick(timestamp);
-      });
-    }
   };
 }
 
