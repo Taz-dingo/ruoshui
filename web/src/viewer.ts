@@ -7,11 +7,11 @@ import {
   lowAnglePrewarmLeadSeconds,
   lowAnglePrewarmMaxSeconds,
   lowAnglePrewarmPitchThresholdDeg,
-  minOrbitCameraZ,
   maxOrbitPitchDeg,
   maxRouteRunHistory,
+  minOrbitCameraY,
   minOrbitPitchDeg,
-  minOrbitTargetZ,
+  minOrbitTargetY,
   perfHudIntervalSeconds,
   renderWakeSeconds,
   routeAnalysisCopyFeedbackMs,
@@ -1820,12 +1820,12 @@ function clampOrbitPitch(value) {
 }
 
 function clampOrbitTarget(target) {
-  target.z = Math.max(target.z, minOrbitTargetZ);
+  target.y = Math.max(target.y, minOrbitTargetY);
   return target;
 }
 
 function clampOrbitCameraPosition(position, target) {
-  position.z = Math.max(position.z, minOrbitCameraZ);
+  position.y = Math.max(position.y, minOrbitCameraY);
 
   if (
     target &&
@@ -1833,7 +1833,7 @@ function clampOrbitCameraPosition(position, target) {
     Math.abs(position.y - target.y) < 0.0001 &&
     Math.abs(position.z - target.z) < 0.0001
   ) {
-    position.z = Math.max(target.z + 0.0001, minOrbitCameraZ);
+    position.y = Math.max(target.y + 0.0001, minOrbitCameraY);
   }
 
   return position;
