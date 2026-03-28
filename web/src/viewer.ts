@@ -30,7 +30,8 @@ import { applyRenderScaleToRuntime, createPerformanceMode, getInitialRenderScale
 import { createLoopController } from './runtime/lifecycle';
 import { captureOrbitView, createOrbitController, restoreOrbitView, setOrbitPreset, updateOrbitController } from './runtime/orbit';
 import { detachVariantFromRuntime, loadVariantIntoRuntime } from './runtime/variant-loader';
-import type { RouteDiagnosticsViewState, RouteRunRecord, VariantBenchmark, ViewerContent } from './types';
+import type { CameraViewState, RouteDiagnosticsViewState, RouteRunRecord, VariantBenchmark, ViewerContent } from './types';
+import { publishCameraState } from './ui/camera-store';
 import { publishRouteDiagnosticsState } from './ui/route-diagnostics-store';
 import { requireElement } from './utils/dom';
 import { formatMetricMs, formatMetricPeakMs, formatMotionMetric, formatRouteRunStatus, formatRouteRunTime, formatVec3 } from './utils/format';
@@ -85,11 +86,6 @@ const variantsSummary = requireElement<HTMLElement>('#variants-summary');
 const qualitySummary = requireElement<HTMLElement>('#quality-summary');
 const presetsSummary = requireElement<HTMLElement>('#presets-summary');
 const routeSummary = requireElement<HTMLElement>('#route-summary');
-const cameraSummary = requireElement<HTMLElement>('#camera-summary');
-const cameraPosition = requireElement<HTMLElement>('#camera-position');
-const cameraTarget = requireElement<HTMLElement>('#camera-target');
-const cameraDistance = requireElement<HTMLElement>('#camera-distance');
-const cameraAngle = requireElement<HTMLElement>('#camera-angle');
 const perfFps = showPerfHud ? requireElement<HTMLElement>('#perf-fps') : null;
 const perfMs = showPerfHud ? requireElement<HTMLElement>('#perf-ms') : null;
 const perfRender = showPerfHud ? requireElement<HTMLElement>('#perf-render') : null;
@@ -1206,14 +1202,15 @@ function vec3(tuple) {
   return new pc.Vec3(tuple[0], tuple[1], tuple[2]);
 }
 
-function renderCameraMeta(runtimeState) {
+function buildCameraState(runtimeState): CameraViewState | null {
   if (!runtimeState?.orbit) {
-    cameraPosition.textContent = '—';
-    cameraTarget.textContent = '—';
-    cameraDistance.textContent = '—';
-    cameraAngle.textContent = '—';
-    cameraSummary.textContent = '等待视角';
-    return;
+    return {
+      summary: '等待视角',
+      position: '—',
+      target: '—',
+      distance: '—',
+      angle: '—'
+    };
   }
 
   const { orbit } = runtimeState;
@@ -1235,15 +1232,26 @@ function renderCameraMeta(runtimeState) {
   ].join('|');
 
   if (runtimeState.lastCameraSnapshot === snapshot) {
-    return;
+    return null;
   }
 
   runtimeState.lastCameraSnapshot = snapshot;
-  cameraPosition.textContent = formatVec3(position);
-  cameraTarget.textContent = formatVec3(target);
-  cameraDistance.textContent = `${distance.toFixed(2)} m`;
-  cameraAngle.textContent = `${pitch}° / ${yaw}°`;
-  cameraSummary.textContent = `${distance.toFixed(2)} m · ${pitch}°`;
+  return {
+    summary: `${distance.toFixed(2)} m · ${pitch}°`,
+    position: formatVec3(position),
+    target: formatVec3(target),
+    distance: `${distance.toFixed(2)} m`,
+    angle: `${pitch}° / ${yaw}°`
+  };
+}
+
+function renderCameraMeta(runtimeState) {
+  const state = buildCameraState(runtimeState);
+  if (!state) {
+    return;
+  }
+
+  publishCameraState(state);
 }
 
 function renderPerfHud(runtimeState) {

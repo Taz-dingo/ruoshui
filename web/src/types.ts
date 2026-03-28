@@ -281,3 +281,11 @@ export interface RouteDiagnosticsViewState {
   hotspotItems: RouteAnalysisHotspotItemView[];
   hotspotEmptyText: string | null;
 }
+
+export interface CameraViewState {
+  summary: string;
+  position: string;
+  target: string;
+  distance: string;
+  angle: string;
+}

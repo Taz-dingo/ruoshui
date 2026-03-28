@@ -1,3 +1,4 @@
+import { CameraPanel } from './components/CameraPanel';
 import { RouteDiagnosticsPanel } from './components/RouteDiagnosticsPanel';
 import type { ViewerContent } from './types';
 
@@ -144,32 +145,7 @@ export function App({
               </div>
             </section>
 
-            <section className="inspector-section" data-panel="camera">
-              <button className="inspector-toggle" type="button" data-toggle="camera" aria-expanded="false">
-                <span className="section-title">相机信息</span>
-                <span className="toggle-meta" id="camera-summary">等待视角</span>
-              </button>
-              <div className="inspector-body" data-body="camera">
-                <div className="camera-grid">
-                  <div className="camera-card">
-                    <span>位置</span>
-                    <strong id="camera-position">—</strong>
-                  </div>
-                  <div className="camera-card">
-                    <span>目标</span>
-                    <strong id="camera-target">—</strong>
-                  </div>
-                  <div className="camera-card">
-                    <span>距离</span>
-                    <strong id="camera-distance">—</strong>
-                  </div>
-                  <div className="camera-card">
-                    <span>俯仰 / 水平</span>
-                    <strong id="camera-angle">—</strong>
-                  </div>
-                </div>
-              </div>
-            </section>
+            <CameraPanel />
           </div>
         </aside>
       </div>
