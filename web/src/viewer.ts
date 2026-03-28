@@ -33,8 +33,8 @@ import {
   stopRuntimeBenchmarkRoute as stopBenchmarkPlaybackRoute,
   updateRuntimeBenchmarkRoute as updateBenchmarkPlaybackRoute
 } from './benchmark/playback';
-import { applyRenderScaleToRuntime, createPerformanceMode, getInitialRenderScalePercent, getMaxSupportedPixelRatio, normalizeRenderScalePercent, persistRenderScalePercent, updatePerformanceMode } from './performance/render-scale';
-import { createLoopController } from './runtime/lifecycle';
+import { applyRenderScaleToRuntime, getInitialRenderScalePercent, getMaxSupportedPixelRatio, normalizeRenderScalePercent, persistRenderScalePercent, updatePerformanceMode } from './performance/render-scale';
+import { bindRuntimeViewport, bindRuntimeVisibility, createRuntimeApp } from './runtime/bootstrap';
 import { createOrbitController, updateOrbitController } from './runtime/orbit';
 import { detachVariantFromRuntime, loadVariantIntoRuntime } from './runtime/variant-loader';
 import type { RouteRunRecord, VariantBenchmark, ViewerContent } from './types';
@@ -550,58 +550,17 @@ function publishRouteControls() {
 }
 
 async function createRuntime(canvasElement, variant, timings: any = {}) {
-  const app = new pc.Application(canvasElement, {
-    mouse: new pc.Mouse(canvasElement),
-    touch: new pc.TouchDevice(canvasElement),
-    graphicsDeviceOptions: {
-      antialias: false,
-      powerPreference: 'high-performance'
-    }
+  const { app, performanceMode, loopController } = createRuntimeApp({
+    pc,
+    canvasElement,
+    runtimeWindow: window,
+    renderScalePercent: activeRenderScalePercent
   });
-
-  const performanceMode = createPerformanceMode(window, activeRenderScalePercent);
-  const loopController = createLoopController(app);
-  app.graphicsDevice.maxPixelRatio = performanceMode.currentPixelRatio;
-  app.scene.gammaCorrection = pc.GAMMA_SRGB;
-  app.scene.toneMapping = pc.TONEMAP_ACES;
-  app.scene.skyboxIntensity = 0.65;
-  app.start();
-  app.autoRender = true;
-  app.renderNextFrame = true;
-
-  const preventContextMenu = (event) => event.preventDefault();
-  const resolveCanvasBounds = () => {
-    const host = canvasElement.parentElement;
-    const rect = host?.getBoundingClientRect();
-
-    return {
-      width: Math.max(1, Math.round(rect?.width || window.innerWidth || 1)),
-      height: Math.max(1, Math.round(rect?.height || window.innerHeight || 1))
-    };
-  };
-  const handleResize = () => {
-    const { width, height } = resolveCanvasBounds();
-    const deviceRatio = Math.min(app.graphicsDevice.maxPixelRatio || 1, window.devicePixelRatio || 1);
-    loopController.wake();
-    canvasElement.style.width = `${width}px`;
-    canvasElement.style.height = `${height}px`;
-    app.graphicsDevice.setResolution(
-      Math.max(1, Math.floor(width * deviceRatio)),
-      Math.max(1, Math.floor(height * deviceRatio))
-    );
-    app.renderNextFrame = true;
-  };
-  canvasElement.addEventListener('contextmenu', preventContextMenu);
-  window.addEventListener('resize', handleResize);
-  const resizeObserver = typeof ResizeObserver !== 'undefined' && canvasElement.parentElement
-    ? new ResizeObserver(() => {
-      handleResize();
-    })
-    : null;
-  resizeObserver?.observe(canvasElement.parentElement);
-  handleResize();
-  window.requestAnimationFrame(() => {
-    handleResize();
+  const viewportBinding = bindRuntimeViewport({
+    app,
+    canvasElement,
+    loopController,
+    runtimeWindow: window
   });
 
   const camera = new pc.Entity('MemorialCamera');
@@ -645,9 +604,7 @@ async function createRuntime(canvasElement, variant, timings: any = {}) {
     destroy: () => {
       loopController.wake();
       detachVariantFromRuntime(runtimeState);
-      window.removeEventListener('resize', handleResize);
-      resizeObserver?.disconnect();
-      canvasElement.removeEventListener('contextmenu', preventContextMenu);
+      viewportBinding.destroy();
       orbit.destroy();
       app.destroy();
     }
@@ -660,42 +617,17 @@ async function createRuntime(canvasElement, variant, timings: any = {}) {
     runtimeState.requestRender();
   };
 
-  const suspendRuntime = () => {
-    runtimeState.renderWakeRemaining = 0;
-    runtimeState.orbit.cancelInteraction?.();
-    app.autoRender = false;
-    app.renderNextFrame = false;
-    loopController.sleep();
-  };
-
-  const resumeRuntime = () => {
-    runtimeState.requestRender();
-    renderCameraMeta(runtimeState);
-    renderPerfHud(runtimeState);
-  };
-
-  const handleVisibilityChange = () => {
-    if (document.hidden) {
-      suspendRuntime();
-      return;
+  const visibilityBinding = bindRuntimeVisibility({
+    app,
+    loopController,
+    runtimeDocument: document,
+    runtimeWindow: window,
+    runtimeState,
+    onResume: () => {
+      renderCameraMeta(runtimeState);
+      renderPerfHud(runtimeState);
     }
-
-    resumeRuntime();
-  };
-
-  const handleWindowBlur = () => {
-    runtimeState.orbit.cancelInteraction?.();
-  };
-
-  const handleWindowFocus = () => {
-    if (!document.hidden) {
-      resumeRuntime();
-    }
-  };
-
-  document.addEventListener('visibilitychange', handleVisibilityChange);
-  window.addEventListener('blur', handleWindowBlur);
-  window.addEventListener('focus', handleWindowFocus);
+  });
 
   const handleUpdate = (dt) => {
     const routeChanged = updateBenchmarkRoute(runtimeState, dt);
@@ -748,9 +680,7 @@ async function createRuntime(canvasElement, variant, timings: any = {}) {
   const destroyRuntime = runtimeState.destroy;
   runtimeState.destroy = () => {
     app.off('update', handleUpdate);
-    document.removeEventListener('visibilitychange', handleVisibilityChange);
-    window.removeEventListener('blur', handleWindowBlur);
-    window.removeEventListener('focus', handleWindowFocus);
+    visibilityBinding.destroy();
     destroyRuntime();
   };
 

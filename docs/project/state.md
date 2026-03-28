@@ -134,6 +134,7 @@
 - 当前 `Web MVP` 的主要交互面板已逐步迁移到 `React + Zustand`，包括版本切换、镜头预设、相机信息、轨迹控制与诊断面板
 - 已将轨迹播放与基准测试辅助逻辑从 `web/src/viewer.ts` 拆到 `web/src/benchmark/playback.ts`，当前代码重构方向继续收敛为“保留 PlayCanvas 运行时、逐步把 orchestration / UI / benchmark 分层”
 - 当前前端技术栈判断已进一步收口：保留 `React + Vite + Zustand + Tailwind + PlayCanvas/SOG` 作为主线；短期只考虑补 `Radix/shadcn` 这类开源原语层和 `Biome` 这类格式检查工具，不切换 `Three.js` 或更重框架
+- 当前“极致性能”方向也已补充判断：若后续只考虑最终效果与浏览器内渲染上限，真正值得投入的不是单纯换 `Rust` 或换 `Three.js`，而是优先验证 `WebGPU`、`Worker + OffscreenCanvas`、以及 `Rust/WASM` 在解码/流送/调度热路径上的组合；但这应作为后续性能分支，而不是现在立刻推翻现有运行时
 - 已完成首轮 `SOG` 交付侧派生实验，输出 `h0 / opacity01 / dec75 / dec50` 四个轻量版本到 `outputs/iteration-004-sog-opt/`
 - 当前 `Web MVP` 已升级为同页多版本对比页，可在原始版与 `4` 个派生版本之间切换主观比较画质与性能
 - 当前默认对比版本已切到 `hhuc-h0-dec75.sog`，作为首个更平衡的 `Web` 候选
@@ -176,6 +177,7 @@
 - 当前关于 `.sog` 的最小已知判断是：它更像 `PlayCanvas` 的 `Spatially Ordered Gaussians` 交付格式，而不是通用训练交换格式；因此它回答的是“怎么更轻地交付和加载”，不是“怎么训练”
 - 当前关于第三方 `SOG` 的最新判断是：在无法重训时，交付侧派生与同页主观对比已经成为最有效的前端决策工具，下一步应基于 compare 页结果收敛正式默认版本
 - 当前关于前端技术栈的最新判断是：现有 `React + Zustand + Tailwind + Vite` 已经足够 AI 友好，真正不够友好的部分主要是我们自己的业务代码仍偏集中；因此下一步优先做模块化与类型化，而不是重新换框架
+- 当前关于性能技术栈的最新判断是：若要继续追求浏览器内 `3DGS/SOG` 上限，应优先按“`PlayCanvas/SOG` 现栈优化 → `WebGPU` 可行性验证 → `Worker/WASM` 热路径迁移 → 必要时再看自研 `WebGPU renderer`”这个顺序推进，而不是先做纯语言层替换
 
 这一步的目标不是前端展示，而是验证：
 
