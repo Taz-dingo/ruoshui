@@ -14,22 +14,12 @@ import {
   initLongTaskObserver,
 } from "./benchmark/runtime";
 import {
-  advanceRuntimeBenchmarkRoute as advanceBenchmarkPlaybackRoute,
-  captureRuntimeView,
-  moveRuntimeCamera,
-  restoreRuntimeView,
-  startRuntimeBenchmarkRoute,
-  stopRuntimeBenchmarkRoute as stopBenchmarkPlaybackRoute,
-  updateRuntimeBenchmarkRoute as updateBenchmarkPlaybackRoute,
-} from "./benchmark/playback";
-import {
   applyRenderScaleToRuntime,
   getInitialRenderScalePercent,
   getMaxSupportedPixelRatio,
   normalizeRenderScalePercent,
   persistRenderScalePercent,
 } from "./performance/render-scale";
-import { createViewerRuntime } from "./runtime/runtime-factory";
 import {
   applyRuntimeSceneLook,
   formatSceneLookSummary,
@@ -37,6 +27,7 @@ import {
   normalizeSceneLookSettings,
   persistSceneLookSettings,
 } from "./runtime/scene-look";
+import { createViewerRuntimeController } from "./runtime/viewer-runtime-controller";
 import { createVariantOrchestrationController } from "./runtime/variant-orchestration";
 import type { RouteRunRecord, VariantBenchmark, ViewerContent } from "./types";
 import { createViewerPanelController } from "./ui/viewer-panel-controller";
@@ -184,6 +175,33 @@ const viewerPanelController = createViewerPanelController({
   setIsVariantPanelDisabled: (disabled) => {
     isVariantPanelDisabled = disabled;
   },
+});
+const viewerRuntimeController = createViewerRuntimeController({
+  pc,
+  firstPreset,
+  runtimeWindow: window,
+  runtimeDocument: document,
+  longTaskBuffer,
+  getActiveRouteId: () => activeRouteId,
+  getActiveSuiteRunId: () => activeSuiteRunId,
+  getActiveRenderScalePercent: () => activeRenderScalePercent,
+  getActiveSceneLook: () => activeSceneLook,
+  getVariantBenchmark,
+  publishVariantBenchmark,
+  createBenchmark: (variantId) =>
+    beginStoredVariantBenchmark(variantBenchmarks, variantId),
+  getRouteSummaryText: () => routeSummaryText,
+  setRouteSummaryText: (summaryText) => {
+    routeSummaryText = summaryText;
+  },
+  clearActiveRoute: () => {
+    activeRouteId = null;
+  },
+  updateRouteButtons,
+  publishRouteControls,
+  finalizeRouteRunRecord,
+  renderCameraMeta,
+  renderPerfHud,
 });
 const routeDiagnosticsController = createRouteDiagnosticsController({
   frameSchema: Object.keys(frameSampleIndices),
@@ -484,102 +502,40 @@ async function createRuntime(
   timings: any = {},
   sceneLook = activeSceneLook,
 ) {
-  return createViewerRuntime({
-    pc,
+  return viewerRuntimeController.createRuntime(
     canvasElement,
     variant,
     timings,
-    runtimeWindow: window,
-    runtimeDocument: document,
-    renderScalePercent: activeRenderScalePercent,
     sceneLook,
-    firstPreset,
-    createBenchmark: (variantId) =>
-      beginStoredVariantBenchmark(variantBenchmarks, variantId),
-    getVariantBenchmark,
-    publishVariantBenchmark,
-    updateBenchmarkRoute,
-    getActiveRouteId: () => activeRouteId,
-    stopActiveBenchmarkRoute,
-    renderCameraMeta,
-    renderPerfHud,
-  });
+  );
 }
 
 function moveCamera(runtimeState, preset, immediate = false) {
-  moveRuntimeCamera({
-    runtimeState,
-    preset,
-    immediate,
-    pc,
-    vec3,
-  });
+  viewerRuntimeController.moveCamera(runtimeState, preset, immediate);
 }
 
 function startBenchmarkRoute(runtimeState, route, options: any = {}) {
-  startRuntimeBenchmarkRoute({
-    runtimeState,
-    route,
-    suiteId: activeSuiteRunId,
-    renderScalePercent: activeRenderScalePercent,
-    longTaskBuffer,
-    onFinish: options.onFinish ?? null,
-  });
-  publishVariantBenchmark(runtimeState?.variantId);
-  advanceBenchmarkRoute(runtimeState);
-}
-
-function stopBenchmarkRoute(runtimeState, status = "aborted") {
-  stopBenchmarkPlaybackRoute({
-    runtimeState,
-    status,
-    finalizeRouteRunRecord,
-  });
+  viewerRuntimeController.startBenchmarkRoute(runtimeState, route, options);
 }
 
 function stopActiveBenchmarkRoute(summaryText = "未播放", status = "aborted") {
-  if (runtime) {
-    stopBenchmarkRoute(runtime, status);
-  }
-
-  activeRouteId = null;
-  routeSummaryText = summaryText;
-  updateRouteButtons();
+  viewerRuntimeController.stopActiveBenchmarkRoute(runtime, summaryText, status);
 }
 
 function advanceBenchmarkRoute(runtimeState) {
-  return advanceBenchmarkPlaybackRoute({
-    runtimeState,
-    pc,
-    vec3,
-    activeRouteId,
-    onActiveRouteCompleted: stopActiveBenchmarkRoute,
-    stopRuntimeBenchmarkRoute: stopBenchmarkRoute,
-    updateRouteSummary: (summaryText) => {
-      routeSummaryText = summaryText;
-      publishRouteControls();
-    },
-  });
+  return viewerRuntimeController.advanceBenchmarkRoute(runtimeState);
 }
 
 function updateBenchmarkRoute(runtimeState, dt) {
-  return updateBenchmarkPlaybackRoute({
-    runtimeState,
-    dt,
-    advanceRuntimeBenchmarkRoute: () => advanceBenchmarkRoute(runtimeState),
-  });
+  return viewerRuntimeController.updateBenchmarkRoute(runtimeState, dt);
 }
 
 function captureCurrentView(runtimeState) {
-  return captureRuntimeView(runtimeState);
+  return viewerRuntimeController.captureCurrentView(runtimeState);
 }
 
 function restoreCurrentView(runtimeState, snapshot) {
-  return restoreRuntimeView({
-    runtimeState,
-    snapshot,
-    pc,
-  });
+  return viewerRuntimeController.restoreCurrentView(runtimeState, snapshot);
 }
 
 function finalizeRouteRunRecord(runtimeState, status) {
@@ -603,10 +559,6 @@ function publishVariantBenchmark(variantId) {
 
 function renderVariantBenchmark(variantId) {
   viewerShellController.renderVariantBenchmark(variantId);
-}
-
-function vec3(tuple) {
-  return new pc.Vec3(tuple[0], tuple[1], tuple[2]);
 }
 
 function renderCameraMeta(runtimeState) {
