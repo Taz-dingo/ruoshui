@@ -57,10 +57,6 @@ const longTaskBuffer: Array<{ startTime: number; duration: number }> = [];
 initLongTaskObserver(longTaskBuffer);
 
 const sceneContainer = requireElement<HTMLDivElement>('#scene');
-const routeList = requireElement<HTMLDivElement>('#route-list');
-const runRouteCurrentVariantButton = requireElement<HTMLButtonElement>('#run-route-current-variant');
-const runRouteSuiteButton = requireElement<HTMLButtonElement>('#run-route-suite');
-const routeBatchNote = requireElement<HTMLElement>('#route-batch-note');
 const copyRouteAnalysisSummaryButton = requireElement<HTMLButtonElement>('#copy-route-analysis-summary');
 const copyRouteAnalysisJsonButton = requireElement<HTMLButtonElement>('#copy-route-analysis-json');
 const downloadRouteAnalysisJsonButton = requireElement<HTMLButtonElement>('#download-route-analysis-json');
@@ -81,7 +77,6 @@ const focusSceneButton = requireElement<HTMLButtonElement>('#focus-scene');
 const focusOverviewButton = requireElement<HTMLButtonElement>('#focus-overview');
 const qualitySummary = requireElement<HTMLElement>('#quality-summary');
 const presetsSummary = requireElement<HTMLElement>('#presets-summary');
-const routeSummary = requireElement<HTMLElement>('#route-summary');
 const perfFps = showPerfHud ? requireElement<HTMLElement>('#perf-fps') : null;
 const perfMs = showPerfHud ? requireElement<HTMLElement>('#perf-ms') : null;
 const perfRender = showPerfHud ? requireElement<HTMLElement>('#perf-render') : null;
@@ -111,30 +106,26 @@ let activeBenchmarkRunPromise: Promise<any> | null = null;
 let isVariantPanelDisabled = false;
 let lastVariantSelectionSequence = useViewerUiStore.getState().variantSelectionRequest.sequence;
 let lastPresetSelectionSequence = useViewerUiStore.getState().presetSelectionRequest.sequence;
-
-const routeButtons = new Map();
+let lastRouteSelectionSequence = useViewerUiStore.getState().routeSelectionRequest.sequence;
+let lastRunCurrentRouteBenchmarkRequest = useViewerUiStore.getState().runCurrentRouteBenchmarkRequest;
+let lastRunRouteSuiteRequest = useViewerUiStore.getState().runRouteSuiteRequest;
+let routeSummaryText = '未播放';
 const variantBenchmarks = new Map<string, VariantBenchmark>();
 const routeRunHistory: RouteRunRecord[] = getInitialRouteRunHistory(
   routeRunHistoryStorageKey,
   maxRouteRunHistory
 );
 
-for (const route of benchmarkRoutes) {
-  const button = document.createElement('button');
-  button.className = 'route';
-  button.type = 'button';
-  button.innerHTML = `<strong>${route.name}</strong><span>${route.summary}</span>`;
-  button.addEventListener('click', () => {
-    activateBenchmarkRoute(route.id);
-  });
-  routeButtons.set(route.id, button);
-  routeList.append(button);
-}
-
 focusSceneButton.addEventListener('click', () => activatePreset(firstPreset.id));
 focusOverviewButton.addEventListener('click', () => activatePreset('hover'));
 useViewerUiStore.subscribe((state) => {
-  const { presetSelectionRequest, variantSelectionRequest } = state;
+  const {
+    presetSelectionRequest,
+    variantSelectionRequest,
+    routeSelectionRequest,
+    runCurrentRouteBenchmarkRequest,
+    runRouteSuiteRequest
+  } = state;
 
   if (presetSelectionRequest.sequence !== lastPresetSelectionSequence) {
     lastPresetSelectionSequence = presetSelectionRequest.sequence;
@@ -151,12 +142,24 @@ useViewerUiStore.subscribe((state) => {
       void activateVariant(variantId);
     }
   }
-});
-runRouteCurrentVariantButton.addEventListener('click', () => {
-  void runCurrentVariantRouteBenchmark();
-});
-runRouteSuiteButton.addEventListener('click', () => {
-  void runRouteBenchmarkSuite();
+
+  if (routeSelectionRequest.sequence !== lastRouteSelectionSequence) {
+    lastRouteSelectionSequence = routeSelectionRequest.sequence;
+    const routeId = routeSelectionRequest.id;
+    if (routeId) {
+      activateBenchmarkRoute(routeId);
+    }
+  }
+
+  if (runCurrentRouteBenchmarkRequest !== lastRunCurrentRouteBenchmarkRequest) {
+    lastRunCurrentRouteBenchmarkRequest = runCurrentRouteBenchmarkRequest;
+    void runCurrentVariantRouteBenchmark();
+  }
+
+  if (runRouteSuiteRequest !== lastRunRouteSuiteRequest) {
+    lastRunRouteSuiteRequest = runRouteSuiteRequest;
+    void runRouteBenchmarkSuite();
+  }
 });
 copyRouteAnalysisSummaryButton.addEventListener('click', () => {
   void copyLatestRouteAnalysis('summary');
@@ -185,7 +188,7 @@ for (const toggle of inspectorToggles) {
 updatePresetButtons();
 updateVariantButtons();
 updateRouteButtons();
-renderRouteBatchState();
+publishRouteControls();
 renderVariantMeta(defaultVariant);
 renderRenderScaleMeta(activeRenderScalePercent);
 renderCameraMeta(null);
@@ -345,7 +348,7 @@ function activateBenchmarkRoute(routeId) {
   }
 
   activeRouteId = route.id;
-  routeSummary.textContent = `${route.name} · 运行中`;
+  routeSummaryText = `${route.name} · 运行中`;
   updateRouteButtons();
 
   if (runtime) {
@@ -362,7 +365,7 @@ async function runRouteBenchmarkSuite() {
   }
 
   isBatchBenchmarkRunning = true;
-  renderRouteBatchState();
+  publishRouteControls();
   setVariantButtonsDisabled(true);
   statusTitle.textContent = '标准测试中';
 
@@ -384,7 +387,7 @@ async function runRouteBenchmarkSuite() {
   } finally {
     activeSuiteRunId = null;
     isBatchBenchmarkRunning = false;
-    renderRouteBatchState();
+    publishRouteControls();
     setVariantButtonsDisabled(false);
     updateRouteButtons();
   }
@@ -415,7 +418,7 @@ async function runVariantRouteBenchmark(options: any = {}) {
 
   activeBenchmarkRunPromise = (async () => {
     isBatchBenchmarkRunning = true;
-    renderRouteBatchState();
+    publishRouteControls();
     setVariantButtonsDisabled(true);
     statusTitle.textContent = '单版本测试中';
 
@@ -437,7 +440,7 @@ async function runVariantRouteBenchmark(options: any = {}) {
       activeSuiteRunId = null;
       isBatchBenchmarkRunning = false;
       activeBenchmarkRunPromise = null;
-      renderRouteBatchState();
+      publishRouteControls();
       setVariantButtonsDisabled(false);
       updateRouteButtons();
     }
@@ -456,9 +459,9 @@ function playBenchmarkRouteOnce(routeId) {
   return new Promise<void>((resolve, reject) => {
     selectedRouteId = route.id;
     activeRouteId = route.id;
-    routeSummary.textContent = `${route.name} · 运行中`;
+    routeSummaryText = `${route.name} · 运行中`;
     updateRouteButtons();
-    renderRouteBatchState();
+    publishRouteControls();
     startBenchmarkRoute(runtime, route, {
       onFinish: (record: any) => {
         if (!record || record.status !== 'completed') {
@@ -495,11 +498,7 @@ function updateVariantButtons() {
 }
 
 function updateRouteButtons() {
-  for (const [routeId, button] of routeButtons) {
-    button.classList.toggle('is-active', routeId === selectedRouteId);
-    button.classList.toggle('is-running', routeId === activeRouteId);
-    button.disabled = isBatchBenchmarkRunning;
-  }
+  publishRouteControls();
 }
 
 function setVariantButtonsDisabled(disabled) {
@@ -534,19 +533,26 @@ function publishPresetPanel() {
   });
 }
 
-function renderRouteBatchState() {
-  if (!runRouteCurrentVariantButton || !runRouteSuiteButton || !routeBatchNote) {
-    return;
-  }
-
+function publishRouteControls() {
   const selectedRoute = selectedRouteId ? benchmarkRoutesById.get(selectedRouteId) : null;
-  runRouteCurrentVariantButton.disabled = isBatchBenchmarkRunning || benchmarkRoutes.length === 0;
-  runRouteSuiteButton.disabled = isBatchBenchmarkRunning || benchmarkRoutes.length === 0;
-  runRouteCurrentVariantButton.textContent = isBatchBenchmarkRunning ? '测试运行中…' : `跑当前轨迹 × 当前版本 ×${currentVariantRepeatCount}`;
-  runRouteSuiteButton.textContent = isBatchBenchmarkRunning ? '标准测试运行中…' : '跑当前轨迹 × 全版本';
-  routeBatchNote.textContent = selectedRoute
-    ? `${selectedRoute.name} · 当前版本或 ${data.variants.length} 个版本`
-    : '先选择一条轨迹，再批量跑所有版本。';
+  useViewerUiStore.getState().setRouteControls({
+    summary: routeSummaryText,
+    batchNote: selectedRoute
+      ? `${selectedRoute.name} · 当前版本或 ${data.variants.length} 个版本`
+      : '先选择一条轨迹，再批量跑所有版本。',
+    runCurrentLabel: isBatchBenchmarkRunning ? '测试运行中…' : `跑当前轨迹 × 当前版本 ×${currentVariantRepeatCount}`,
+    runSuiteLabel: isBatchBenchmarkRunning ? '标准测试运行中…' : '跑当前轨迹 × 全版本',
+    runCurrentDisabled: isBatchBenchmarkRunning || benchmarkRoutes.length === 0,
+    runSuiteDisabled: isBatchBenchmarkRunning || benchmarkRoutes.length === 0,
+    items: benchmarkRoutes.map((route) => ({
+      id: route.id,
+      name: route.name,
+      summary: route.summary,
+      isActive: route.id === selectedRouteId,
+      isRunning: route.id === activeRouteId,
+      disabled: isBatchBenchmarkRunning
+    }))
+  });
 }
 
 async function createRuntime(canvasElement, variant, timings: any = {}) {
@@ -821,7 +827,7 @@ function stopActiveBenchmarkRoute(summaryText = '未播放', status = 'aborted')
   }
 
   activeRouteId = null;
-  routeSummary.textContent = summaryText;
+  routeSummaryText = summaryText;
   updateRouteButtons();
 }
 
@@ -851,7 +857,8 @@ function advanceBenchmarkRoute(runtimeState) {
   runtimeState.requestRender?.();
 
   if (activeRouteId === playback.route.id) {
-    routeSummary.textContent = `${playback.route.name} · ${playback.stepIndex + 1}/${playback.route.steps.length}`;
+    routeSummaryText = `${playback.route.name} · ${playback.stepIndex + 1}/${playback.route.steps.length}`;
+    publishRouteControls();
   }
 
   return true;

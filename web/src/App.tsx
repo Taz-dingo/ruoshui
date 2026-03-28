@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react';
 
 import { CameraPanel } from './components/CameraPanel';
 import { PresetPanel } from './components/PresetPanel';
+import { RouteControlsPanel } from './components/RouteControlsPanel';
 import { RouteDiagnosticsPanel } from './components/RouteDiagnosticsPanel';
 import { VariantPanel } from './components/VariantPanel';
 import type { ViewerContent } from './types';
@@ -26,6 +27,7 @@ export function App({
   const firstPreset = data.presets[0];
   const setVariantPanel = useViewerUiStore((store) => store.setVariantPanel);
   const setPresetPanel = useViewerUiStore((store) => store.setPresetPanel);
+  const setRouteControls = useViewerUiStore((store) => store.setRouteControls);
 
   const initialVariantPanel = useMemo(() => ({
     summary: defaultVariant.name,
@@ -48,10 +50,30 @@ export function App({
     }))
   }), [data.presets, firstPreset.id, firstPreset.name]);
 
+  const initialRouteControls = useMemo(() => ({
+    summary: '未播放',
+    batchNote: data.benchmarkRoutes?.[0]
+      ? `${data.benchmarkRoutes[0].name} · 当前版本或 ${data.variants.length} 个版本`
+      : '先选择一条轨迹，再批量跑所有版本。',
+    runCurrentLabel: '跑当前轨迹 × 当前版本 ×3',
+    runSuiteLabel: '跑当前轨迹 × 全版本',
+    runCurrentDisabled: (data.benchmarkRoutes?.length ?? 0) === 0,
+    runSuiteDisabled: (data.benchmarkRoutes?.length ?? 0) === 0,
+    items: (data.benchmarkRoutes ?? []).map((route, index) => ({
+      id: route.id,
+      name: route.name,
+      summary: route.summary,
+      isActive: index === 0,
+      isRunning: false,
+      disabled: false
+    }))
+  }), [data.benchmarkRoutes, data.variants.length]);
+
   useEffect(() => {
     setVariantPanel(initialVariantPanel);
     setPresetPanel(initialPresetPanel);
-  }, [initialPresetPanel, initialVariantPanel, setPresetPanel, setVariantPanel]);
+    setRouteControls(initialRouteControls);
+  }, [initialPresetPanel, initialRouteControls, initialVariantPanel, setPresetPanel, setRouteControls, setVariantPanel]);
 
   return (
     <main className="shell">
@@ -149,25 +171,8 @@ export function App({
                 <span className="toggle-meta" id="presets-summary">{firstPreset.name}</span>
               </button>
               <div className="inspector-body" data-body="presets">
-                <div className="route-group">
-                  <div className="route-head">
-                    <span>对比轨迹</span>
-                    <strong id="route-summary">未播放</strong>
-                  </div>
-                  <div className="route-list" id="route-list" />
-                  <div className="route-batch">
-                    <div className="route-batch-actions">
-                      <button className="button tertiary route-batch-button" id="run-route-current-variant" type="button">
-                        跑当前轨迹 × 当前版本 ×3
-                      </button>
-                      <button className="button tertiary route-batch-button" id="run-route-suite" type="button">
-                        跑当前轨迹 × 全版本
-                      </button>
-                    </div>
-                    <span className="route-batch-note" id="route-batch-note">默认使用当前选中的轨迹。</span>
-                  </div>
-                  <RouteDiagnosticsPanel />
-                </div>
+                <RouteControlsPanel initialState={initialRouteControls} />
+                <RouteDiagnosticsPanel />
                 <PresetPanel
                   initialState={initialPresetPanel}
                 />
