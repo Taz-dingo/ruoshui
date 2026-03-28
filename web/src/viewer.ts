@@ -36,6 +36,7 @@ import {
   installViewerStartupBindings,
 } from "./ui/viewer-startup-controller";
 import { createViewerShellController } from "./ui/viewer-shell-controller";
+import { useViewerUiStore } from "./ui/viewer-ui-store";
 import { requireElement } from "./utils/dom";
 
 const pc: any = await import(
@@ -72,73 +73,6 @@ const longTaskBuffer: Array<{ startTime: number; duration: number }> = [];
 initLongTaskObserver(longTaskBuffer);
 
 const sceneContainer = requireElement<HTMLDivElement>("#scene");
-const copyRouteAnalysisSummaryButton = requireElement<HTMLButtonElement>(
-  "#copy-route-analysis-summary",
-);
-const copyRouteAnalysisJsonButton = requireElement<HTMLButtonElement>(
-  "#copy-route-analysis-json",
-);
-const downloadRouteAnalysisJsonButton = requireElement<HTMLButtonElement>(
-  "#download-route-analysis-json",
-);
-const renderScaleSlider = requireElement<HTMLInputElement>(
-  "#render-scale-slider",
-);
-const statusTitle = requireElement<HTMLElement>("#status-title");
-const statusDetail = requireElement<HTMLElement>("#status-detail");
-const variantSize = requireElement<HTMLElement>("#variant-size");
-const variantSplats = requireElement<HTMLElement>("#variant-splats");
-const variantRetention = requireElement<HTMLElement>("#variant-retention");
-const variantTitle = requireElement<HTMLElement>("#variant-title");
-const variantNote = requireElement<HTMLElement>("#variant-note");
-const metricLoad = requireElement<HTMLElement>("#metric-load");
-const metricFirstFrame = requireElement<HTMLElement>("#metric-first-frame");
-const metricMotion = requireElement<HTMLElement>("#metric-motion");
-const renderScaleValue = requireElement<HTMLElement>("#render-scale-value");
-const renderScaleNote = requireElement<HTMLElement>("#render-scale-note");
-const sceneLookSummary = requireElement<HTMLElement>("#scene-look-summary");
-const sceneLookBrightness = requireElement<HTMLInputElement>(
-  "#scene-look-brightness",
-);
-const sceneLookBrightnessValue = requireElement<HTMLElement>(
-  "#scene-look-brightness-value",
-);
-const sceneLookContrast = requireElement<HTMLInputElement>(
-  "#scene-look-contrast",
-);
-const sceneLookContrastValue = requireElement<HTMLElement>(
-  "#scene-look-contrast-value",
-);
-const sceneLookSaturation = requireElement<HTMLInputElement>(
-  "#scene-look-saturation",
-);
-const sceneLookSaturationValue = requireElement<HTMLElement>(
-  "#scene-look-saturation-value",
-);
-const focusSceneButton = requireElement<HTMLButtonElement>("#focus-scene");
-const focusOverviewButton =
-  requireElement<HTMLButtonElement>("#focus-overview");
-const qualitySummary = requireElement<HTMLElement>("#quality-summary");
-const presetsSummary = requireElement<HTMLElement>("#presets-summary");
-const perfFps = showPerfHud ? requireElement<HTMLElement>("#perf-fps") : null;
-const perfMs = showPerfHud ? requireElement<HTMLElement>("#perf-ms") : null;
-const perfRender = showPerfHud
-  ? requireElement<HTMLElement>("#perf-render")
-  : null;
-const perfScale = showPerfHud
-  ? requireElement<HTMLElement>("#perf-scale")
-  : null;
-const inspectorToggles = [
-  ...document.querySelectorAll<HTMLButtonElement>("[data-toggle]"),
-];
-const inspectorBodies = new Map(
-  [...document.querySelectorAll<HTMLElement>("[data-body]")]
-    .map((element) => [element.dataset.body ?? "", element] as const)
-    .filter(([panelId]) => panelId),
-);
-if (inspectorToggles.length === 0 || inspectorBodies.size === 0) {
-  throw new Error("Failed to initialize UI shell");
-}
 
 let runtime: any = null;
 let activePresetId = firstPreset.id;
@@ -146,7 +80,6 @@ let activeVariantId = defaultVariant.id;
 let activeRouteId: string | null = null;
 let selectedRouteId: string | null = benchmarkRoutes[0]?.id ?? null;
 let currentLoadToken = 0;
-let openInspectorPanel: string | null = null;
 let isBatchBenchmarkRunning = false;
 let activeSuiteRunId: string | null = null;
 let activeBenchmarkRunPromise: Promise<any> | null = null;
@@ -253,8 +186,10 @@ const routeBenchmarkController = createRouteBenchmarkController({
     routeSummaryText = summaryText;
   },
   setStatus: (title, detail) => {
-    statusTitle.textContent = title;
-    statusDetail.textContent = detail;
+    useViewerUiStore.getState().setStatus({
+      title,
+      detail,
+    });
   },
   publishRouteControls,
   updateRouteButtons,
@@ -264,24 +199,7 @@ const routeBenchmarkController = createRouteBenchmarkController({
   stopActiveBenchmarkRoute,
 });
 const viewerShellController = createViewerShellController({
-  inspectorToggles,
-  inspectorBodies,
-  variantSize,
-  variantSplats,
-  variantRetention,
-  variantTitle,
-  variantNote,
-  metricLoad,
-  metricFirstFrame,
-  metricMotion,
-  renderScaleValue,
-  qualitySummary,
-  renderScaleNote,
   showPerfHud,
-  perfFps,
-  perfMs,
-  perfRender,
-  perfScale,
   publishVariantPanel,
   getVariantBenchmark,
   getActiveVariantId: () => activeVariantId,
@@ -319,11 +237,21 @@ const variantOrchestrationController = createVariantOrchestrationController({
   updatePresetButtons,
   setVariantButtonsDisabled,
   setPresetSummary: (summary) => {
-    presetsSummary.textContent = summary;
+    const presetPanel = useViewerUiStore.getState().presetPanel;
+    if (!presetPanel) {
+      return;
+    }
+
+    useViewerUiStore.getState().setPresetPanel({
+      ...presetPanel,
+      summary,
+    });
   },
   setStatus: (title, detail) => {
-    statusTitle.textContent = title;
-    statusDetail.textContent = detail;
+    useViewerUiStore.getState().setStatus({
+      title,
+      detail,
+    });
   },
   stopActiveBenchmarkRoute,
   captureCurrentView,
@@ -335,34 +263,19 @@ const variantOrchestrationController = createVariantOrchestrationController({
 });
 
 installViewerStartupBindings({
-  focusSceneButton,
-  focusOverviewButton,
-  firstPresetId: firstPreset.id,
   activatePreset: (presetId) => activatePreset(presetId),
   activateVariant: (variantId) => activateVariant(variantId),
   activateBenchmarkRoute,
   runCurrentVariantRouteBenchmark,
   runRouteBenchmarkSuite,
-  copyRouteAnalysisSummaryButton,
-  copyRouteAnalysisJsonButton,
-  downloadRouteAnalysisJsonButton,
   copyLatestRouteAnalysisSummary: () =>
     routeDiagnosticsController.copyLatestRouteAnalysis("summary"),
   copyLatestRouteAnalysisJson: () =>
     routeDiagnosticsController.copyLatestRouteAnalysis("json"),
   downloadLatestRouteAnalysisJson: () =>
     routeDiagnosticsController.downloadLatestRouteAnalysisJson(),
-  renderScaleSlider,
   activateRenderScale,
-  sceneLookInputs: [
-    sceneLookBrightness,
-    sceneLookContrast,
-    sceneLookSaturation,
-  ],
-  applySceneLookFromControls,
-  inspectorToggles,
-  getOpenInspectorPanel: () => openInspectorPanel,
-  setOpenInspectorPanel,
+  applySceneLook: (sceneLook) => applySceneLook(sceneLook),
 });
 
 initializeViewerStartup({
@@ -380,10 +293,12 @@ initializeViewerStartup({
   renderPerfHud,
   publishRouteDiagnostics: () => routeDiagnosticsController.publishRouteDiagnostics(),
   installRouteAnalysisBridge: () => routeDiagnosticsController.installRouteAnalysisBridge(),
-  openInspectorPanel,
-  setOpenInspectorPanel,
-  statusTitle,
-  statusDetail,
+  setStatus: (title, detail) => {
+    useViewerUiStore.getState().setStatus({
+      title,
+      detail,
+    });
+  },
 });
 
 await activateVariant(defaultVariant.id, true);
@@ -398,7 +313,6 @@ function activateRenderScale(nextPercent) {
     maxRenderScalePercent,
   );
   activeRenderScalePercent = normalizedPercent;
-  renderScaleSlider.value = String(normalizedPercent);
   persistRenderScalePercent(window, normalizedPercent);
   renderRenderScaleMeta(normalizedPercent);
   applyRenderScaleToRuntime(runtime, normalizedPercent, maxRenderScalePercent);
@@ -409,12 +323,8 @@ function renderRenderScaleMeta(percent) {
   viewerShellController.renderRenderScaleMeta(percent);
 }
 
-function applySceneLookFromControls() {
-  const nextSceneLook = normalizeSceneLookSettings({
-    brightnessPercent: Number(sceneLookBrightness.value),
-    contrastPercent: Number(sceneLookContrast.value),
-    saturationPercent: Number(sceneLookSaturation.value),
-  });
+function applySceneLook(sceneLook) {
+  const nextSceneLook = normalizeSceneLookSettings(sceneLook);
   activeSceneLook = nextSceneLook;
   persistSceneLookSettings(window, nextSceneLook);
   renderSceneLookMeta(nextSceneLook);
@@ -422,13 +332,15 @@ function applySceneLookFromControls() {
 }
 
 function renderSceneLookMeta(sceneLook) {
-  sceneLookBrightness.value = String(sceneLook.brightnessPercent);
-  sceneLookContrast.value = String(sceneLook.contrastPercent);
-  sceneLookSaturation.value = String(sceneLook.saturationPercent);
-  sceneLookBrightnessValue.textContent = `${sceneLook.brightnessPercent}%`;
-  sceneLookContrastValue.textContent = `${sceneLook.contrastPercent}%`;
-  sceneLookSaturationValue.textContent = `${sceneLook.saturationPercent}%`;
-  sceneLookSummary.textContent = formatSceneLookSummary(sceneLook);
+  useViewerUiStore.getState().setSceneLook({
+    summary: formatSceneLookSummary(sceneLook),
+    brightnessPercent: sceneLook.brightnessPercent,
+    contrastPercent: sceneLook.contrastPercent,
+    saturationPercent: sceneLook.saturationPercent,
+    brightnessValue: `${sceneLook.brightnessPercent}%`,
+    contrastValue: `${sceneLook.contrastPercent}%`,
+    saturationValue: `${sceneLook.saturationPercent}%`,
+  });
 }
 
 async function activateVariant(
@@ -461,11 +373,6 @@ async function runCurrentVariantRouteBenchmark() {
 
 async function runVariantRouteBenchmark(options: any = {}) {
   return routeBenchmarkController.runVariantRouteBenchmark(options);
-}
-
-function setOpenInspectorPanel(panelId) {
-  openInspectorPanel = panelId;
-  viewerShellController.setOpenInspectorPanel(panelId);
 }
 
 function updatePresetButtons() {
