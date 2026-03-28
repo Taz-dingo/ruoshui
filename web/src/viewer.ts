@@ -6,7 +6,8 @@ import {
   routeAnalysisCopyFeedbackMs,
   routeRunHistoryStorageKey
 } from './config';
-import { formatRouteAnalysisSummaryText, getInitialRouteRunHistory, getLatestRouteAnalysisExport, persistRouteRunHistory } from './benchmark/history';
+import { getInitialRouteRunHistory, getLatestRouteAnalysisExport } from './benchmark/history';
+import { createRouteDiagnosticsController } from './benchmark/diagnostics-controller';
 import {
   beginStoredVariantBenchmark,
   getStoredVariantBenchmark,
@@ -16,7 +17,6 @@ import {
 import {
   advanceRuntimeBenchmarkRoute as advanceBenchmarkPlaybackRoute,
   captureRuntimeView,
-  finalizeRuntimeRouteRunRecord,
   moveRuntimeCamera,
   restoreRuntimeView,
   startRuntimeBenchmarkRoute,
@@ -34,7 +34,6 @@ import {
   syncCameraState,
   syncPresetPanelState,
   syncRouteControlsState,
-  syncRouteDiagnosticsState,
   syncVariantPanelState
 } from './ui/viewer-ui-sync';
 import { requireElement } from './utils/dom';
@@ -104,8 +103,6 @@ let currentLoadToken = 0;
 let openInspectorPanel: string | null = null;
 let isBatchBenchmarkRunning = false;
 let activeSuiteRunId: string | null = null;
-let routeAnalysisCopyTimeoutId: number | null = null;
-let routeAnalysisCopyNoteOverride: string | null = null;
 let activeBenchmarkRunPromise: Promise<any> | null = null;
 let isVariantPanelDisabled = false;
 let lastVariantSelectionSequence = useViewerUiStore.getState().variantSelectionRequest.sequence;
@@ -119,6 +116,24 @@ const routeRunHistory: RouteRunRecord[] = getInitialRouteRunHistory(
   routeRunHistoryStorageKey,
   maxRouteRunHistory
 );
+const routeDiagnosticsController = createRouteDiagnosticsController({
+  frameSchema: Object.keys(frameSampleIndices),
+  copyFeedbackMs: routeAnalysisCopyFeedbackMs,
+  maxRouteRunHistory,
+  routeRunHistoryStorageKey,
+  routeRunHistory,
+  longTaskBuffer,
+  benchmarkRoutes,
+  variants: data.variants,
+  getRouteStepLabel: (routeId, stepIndex) => {
+    const route = routeId ? benchmarkRoutesById.get(routeId) : null;
+    const totalSteps = route?.steps?.length ?? null;
+    const ordinal = Number.isFinite(stepIndex) ? stepIndex + 1 : 0;
+    return totalSteps ? `Step ${ordinal}/${totalSteps}` : `Step ${ordinal}`;
+  },
+  getActiveBenchmarkRunPromise: () => activeBenchmarkRunPromise,
+  runVariantRouteBenchmark: (options) => runVariantRouteBenchmark(options)
+});
 
 focusSceneButton.addEventListener('click', () => activatePreset(firstPreset.id));
 focusOverviewButton.addEventListener('click', () => activatePreset('hover'));
@@ -166,13 +181,13 @@ useViewerUiStore.subscribe((state) => {
   }
 });
 copyRouteAnalysisSummaryButton.addEventListener('click', () => {
-  void copyLatestRouteAnalysis('summary');
+  void routeDiagnosticsController.copyLatestRouteAnalysis('summary');
 });
 copyRouteAnalysisJsonButton.addEventListener('click', () => {
-  void copyLatestRouteAnalysis('json');
+  void routeDiagnosticsController.copyLatestRouteAnalysis('json');
 });
 downloadRouteAnalysisJsonButton.addEventListener('click', () => {
-  downloadLatestRouteAnalysisJson();
+  routeDiagnosticsController.downloadLatestRouteAnalysisJson();
 });
 renderScaleSlider.addEventListener('input', (event) => {
   const nextPercent = Number((event.currentTarget as HTMLInputElement).value);
@@ -197,8 +212,8 @@ renderVariantMeta(defaultVariant);
 renderRenderScaleMeta(activeRenderScalePercent);
 renderCameraMeta(null);
 renderPerfHud(null);
-publishRouteDiagnostics();
-installRouteAnalysisBridge();
+routeDiagnosticsController.publishRouteDiagnostics();
+routeDiagnosticsController.installRouteAnalysisBridge();
 setOpenInspectorPanel(openInspectorPanel);
 
 statusTitle.textContent = '加载中';
@@ -776,133 +791,7 @@ function applyUnifiedGsplatProfile(sceneGsplat, profile) {
 }
 
 function finalizeRouteRunRecord(runtimeState, status) {
-  return finalizeRuntimeRouteRunRecord({
-    runtimeState,
-    status,
-    longTaskBuffer,
-    routeRunHistory,
-    maxRouteRunHistory,
-    routeRunHistoryStorageKey,
-    persistRouteRunHistory,
-    publishRouteDiagnostics,
-    getRouteStepLabel
-  });
-}
-
-function getRouteStepLabel(routeId, stepIndex) {
-  const route = routeId ? benchmarkRoutesById.get(routeId) : null;
-  const totalSteps = route?.steps?.length ?? null;
-  const ordinal = Number.isFinite(stepIndex) ? stepIndex + 1 : 0;
-  return totalSteps
-    ? `Step ${ordinal}/${totalSteps}`
-    : `Step ${ordinal}`;
-}
-
-function publishRouteDiagnostics() {
-  syncRouteDiagnosticsState({
-    routeRunHistory,
-    routeAnalysisCopyNoteOverride
-  });
-}
-
-async function copyLatestRouteAnalysis(mode) {
-  const exportPayload = getLatestRouteAnalysisExport(routeRunHistory, Object.keys(frameSampleIndices));
-  if (!exportPayload) {
-    setRouteAnalysisCopyNote('还没有可导出的标准测试结果。');
-    return;
-  }
-
-  const textPayload = mode === 'json'
-    ? JSON.stringify(exportPayload, null, 2)
-    : formatRouteAnalysisSummaryText(exportPayload.summary, exportPayload.records);
-
-  try {
-    await navigator.clipboard.writeText(textPayload);
-    setRouteAnalysisCopyNote(mode === 'json' ? '已复制 JSON。' : '已复制摘要。');
-  } catch {
-    setRouteAnalysisCopyNote('复制失败，可能是浏览器权限限制。');
-  }
-}
-
-function downloadLatestRouteAnalysisJson() {
-  const exportPayload = getLatestRouteAnalysisExport(routeRunHistory, Object.keys(frameSampleIndices));
-  if (!exportPayload) {
-    setRouteAnalysisCopyNote('还没有可导出的标准测试结果。');
-    return;
-  }
-
-  const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const routeSlug = exportPayload.summary.routeName.replace(/[^\p{Letter}\p{Number}-]+/gu, '-').replace(/-+/g, '-');
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `ruoshui-route-analysis-${routeSlug}-${exportPayload.summary.suiteId}.json`;
-  document.body.append(link);
-  link.click();
-  link.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 0);
-  setRouteAnalysisCopyNote('已下载 JSON。');
-}
-
-function setRouteAnalysisCopyNote(text) {
-  routeAnalysisCopyNoteOverride = text;
-  publishRouteDiagnostics();
-  if (routeAnalysisCopyTimeoutId) {
-    window.clearTimeout(routeAnalysisCopyTimeoutId);
-  }
-
-  routeAnalysisCopyTimeoutId = window.setTimeout(() => {
-    routeAnalysisCopyNoteOverride = null;
-    publishRouteDiagnostics();
-    routeAnalysisCopyTimeoutId = null;
-  }, routeAnalysisCopyFeedbackMs);
-}
-
-function installRouteAnalysisBridge() {
-  window.__ruoshuiPerf = {
-    latest() {
-      return getLatestRouteAnalysisExport(routeRunHistory, Object.keys(frameSampleIndices));
-    },
-    history() {
-      return routeRunHistory;
-    },
-    copySummary() {
-      return copyLatestRouteAnalysis('summary');
-    },
-    copyJson() {
-      return copyLatestRouteAnalysis('json');
-    },
-    clearHistory() {
-      routeRunHistory.length = 0;
-      persistRouteRunHistory(routeRunHistoryStorageKey, routeRunHistory);
-      publishRouteDiagnostics();
-    },
-    variants() {
-      return data.variants.map((variant) => ({ id: variant.id, name: variant.name }));
-    },
-    routes() {
-      return benchmarkRoutes.map((route) => ({ id: route.id, name: route.name }));
-    },
-    async runVariantRoute(options: any = {}) {
-      if (options.clearHistory) {
-        this.clearHistory();
-      }
-
-      return runVariantRouteBenchmark({
-        routeId: options.routeId,
-        variantId: options.variantId,
-        repeatCount: options.repeatCount,
-        suitePrefix: options.suitePrefix ?? 'single'
-      });
-    },
-    async waitForIdle() {
-      if (!activeBenchmarkRunPromise) {
-        return null;
-      }
-
-      return activeBenchmarkRunPromise;
-    }
-  };
+  return routeDiagnosticsController.finalizeRouteRunRecord(runtimeState, status);
 }
 
 function getVariantBenchmark(variantId: string | null | undefined): VariantBenchmark | null {
