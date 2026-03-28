@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
 function externalAssetsPlugin(entries) {
@@ -135,7 +136,7 @@ const assetEntries = [
 ];
 
 export default defineConfig({
-  plugins: [externalAssetsPlugin(assetEntries)],
+  plugins: [react(), externalAssetsPlugin(assetEntries)],
   server: {
     host: '0.0.0.0'
   },
