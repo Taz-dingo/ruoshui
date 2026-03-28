@@ -13,11 +13,22 @@ import {
   routeAnalysisCopyFeedbackMs,
   routeRunHistoryStorageKey
 } from './config';
-import { analyzeRouteRun, isTrackedModelResource, simplifyResourceName } from './benchmark/analysis';
 import { buildRouteAnalysisSummary, formatRouteAnalysisSummaryText, getInitialRouteRunHistory, getLatestRouteAnalysisExport, getLatestSuiteRecords, persistRouteRunHistory } from './benchmark/history';
+import {
+  beginMotionSession,
+  beginStoredVariantBenchmark,
+  createBenchmarkRouteRunRecord,
+  endMotionSession,
+  finalizeBenchmarkRouteRunRecord,
+  getStoredVariantBenchmark,
+  initLongTaskObserver,
+  recordBenchmarkRouteFrame,
+  sampleMotionFrame,
+  trackBenchmarkFirstFrame
+} from './benchmark/runtime';
 import { applyRenderScaleToRuntime, createPerformanceMode, getInitialRenderScalePercent, getMaxSupportedPixelRatio, normalizeRenderScalePercent, persistRenderScalePercent, updatePerformanceMode } from './performance/render-scale';
 import { captureOrbitView, createOrbitController, restoreOrbitView, setOrbitPreset, updateOrbitController } from './runtime/orbit';
-import type { BenchmarkRoute, RouteRunRecord, VariantBenchmark, ViewerContent } from './types';
+import type { RouteRunRecord, VariantBenchmark, ViewerContent } from './types';
 import { requireElement } from './utils/dom';
 import { formatMetricMs, formatMetricPeakMs, formatMotionMetric, formatRouteRunStatus, formatRouteRunTime, formatVec3 } from './utils/format';
 import { clamp, radToDeg, roundNumber } from './utils/math';
@@ -40,7 +51,7 @@ const maxRenderScalePercent = Math.round(getMaxSupportedPixelRatio(window) * 100
 let activeRenderScalePercent = getInitialRenderScalePercent(window, maxRenderScalePercent);
 const longTaskBuffer: Array<{ startTime: number; duration: number }> = [];
 
-initLongTaskObserver();
+initLongTaskObserver(longTaskBuffer);
 
 const sceneContainer = requireElement<HTMLDivElement>('#scene');
 const variantList = requireElement<HTMLDivElement>('#variant-list');
@@ -255,7 +266,7 @@ async function activateVariant(variantId, initial = false, forceReload = false) 
   const loadToken = ++currentLoadToken;
   const switchStartedAt = performance.now();
   const preservedView = initial ? null : captureCurrentView(runtime);
-  const benchmark = beginVariantBenchmark(variant.id);
+  const benchmark = beginStoredVariantBenchmark(variantBenchmarks, variant.id);
   activeVariantId = variant.id;
   updateVariantButtons();
   renderVariantMeta(variant);
@@ -594,7 +605,7 @@ async function createRuntime(canvasElement, variant, timings: any = {}) {
     app,
     canvasElement,
     orbit,
-    benchmark: timings.benchmark ?? beginVariantBenchmark(variant.id),
+    benchmark: timings.benchmark ?? beginStoredVariantBenchmark(variantBenchmarks, variant.id),
     performanceMode,
     loopController,
     routePlayback: null,
@@ -677,7 +688,12 @@ async function createRuntime(canvasElement, variant, timings: any = {}) {
     const unifiedLodChanged = updateUnifiedLodWarmup(runtimeState, dt, isMoving);
     const hasActiveRoutePlayback = Boolean(runtimeState.routePlayback);
     if (runtimeState.routeRecord && hasActiveRoutePlayback) {
-      recordRouteFrame(runtimeState, dt);
+      recordBenchmarkRouteFrame({
+        orbit: runtimeState.orbit,
+        routeRecord: runtimeState.routeRecord,
+        stepIndex: runtimeState.routePlayback.stepIndex,
+        dt
+      });
     }
     const keepRendering = hasActiveRoutePlayback || isMoving || performanceChanged || isUnifiedLodWarmupActive(runtimeState);
     if (isMoving) {
@@ -733,7 +749,7 @@ async function loadVariantIntoRuntime(runtimeState, variant, timings: any = {}) 
   runtimeState.loopController?.wake?.();
   detachVariantFromRuntime(runtimeState);
 
-  const benchmark = timings.benchmark ?? beginVariantBenchmark(variant.id);
+  const benchmark = timings.benchmark ?? beginStoredVariantBenchmark(variantBenchmarks, variant.id);
   runtimeState.variantId = variant.id;
   runtimeState.variantMeta = variant;
   runtimeState.benchmark = benchmark;
@@ -778,7 +794,13 @@ async function loadVariantIntoRuntime(runtimeState, variant, timings: any = {}) 
   runtimeState.splatAsset = splatAsset;
   runtimeState.splatEntity = splat;
   runtimeState.unifiedLodState = configureUnifiedGsplat(runtimeState.app, variant);
-  trackFirstFrame(runtimeState.app, variant.id, timings.switchStartedAt);
+  trackBenchmarkFirstFrame(
+    runtimeState.app,
+    variant.id,
+    timings.switchStartedAt,
+    getVariantBenchmark,
+    publishVariantBenchmark
+  );
   runtimeState.requestRender?.();
 }
 
@@ -811,7 +833,15 @@ function startBenchmarkRoute(runtimeState, route, options: any = {}) {
 
   beginMotionSession(runtimeState.benchmark);
   publishVariantBenchmark(runtimeState.variantId);
-  runtimeState.routeRecord = createRouteRunRecord(route, runtimeState.variantId);
+  runtimeState.routeRecord = createBenchmarkRouteRunRecord({
+    route,
+    variantId: runtimeState.variantId,
+    variantName: runtimeState.variantMeta?.name ?? runtimeState.variantId,
+    suiteId: activeSuiteRunId,
+    renderScalePercent: activeRenderScalePercent,
+    longTaskStartIndex: longTaskBuffer.length,
+    resourceStartIndex: performance.getEntriesByType('resource').length
+  });
   runtimeState.routePlayback = {
     route,
     onFinish: options.onFinish ?? null,
@@ -1035,97 +1065,19 @@ function createLoopController(app) {
   };
 }
 
-function initLongTaskObserver() {
-  if (typeof PerformanceObserver === 'undefined') {
-    return;
-  }
-
-  try {
-    const observer = new PerformanceObserver((list) => {
-      for (const entry of list.getEntries()) {
-        longTaskBuffer.push({
-          startTime: entry.startTime,
-          duration: entry.duration
-        });
-      }
-    });
-
-    observer.observe({ type: 'longtask', buffered: true });
-  } catch {
-    return;
-  }
-}
-
-function createRouteRunRecord(route: BenchmarkRoute, variantId: string): RouteRunRecord {
-  const variant = variantsById.get(variantId);
-  return {
-    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    suiteId: activeSuiteRunId,
-    routeId: route.id,
-    routeName: route.name,
-    variantId,
-    variantName: variant?.name ?? variantId,
-    renderScalePercent: activeRenderScalePercent,
-    startedAt: Date.now(),
-    startedPerfTime: performance.now(),
-    longTaskStartIndex: longTaskBuffer.length,
-    resourceStartIndex: performance.getEntriesByType('resource').length,
-    frames: [],
-    lodWarmups: []
-  };
-}
-
-function recordRouteFrame(runtimeState, dt) {
-  const { orbit, routeRecord, routePlayback } = runtimeState ?? {};
-  if (!orbit || !routeRecord || !routePlayback) {
-    return;
-  }
-
-  const position = orbit.camera.getPosition();
-  const target = orbit.currentTarget;
-  routeRecord.frames.push([
-    Number((performance.now() - routeRecord.startedPerfTime).toFixed(2)),
-    Number((dt * 1000).toFixed(2)),
-    routePlayback.stepIndex,
-    Number(position.x.toFixed(3)),
-    Number(position.y.toFixed(3)),
-    Number(position.z.toFixed(3)),
-    Number(target.x.toFixed(3)),
-    Number(target.y.toFixed(3)),
-    Number(target.z.toFixed(3)),
-    Number(orbit.currentDistance.toFixed(3)),
-    Math.round(radToDeg(orbit.currentPitch)),
-    Math.round(radToDeg(orbit.currentYaw))
-  ]);
-}
-
 function finalizeRouteRunRecord(runtimeState, status) {
   const record = runtimeState?.routeRecord;
   if (!record) {
     return null;
   }
 
-  const finishedPerfTime = performance.now();
-  const metrics = snapshotBenchmarkMetrics(runtimeState.benchmark);
-  const longTasks = getRouteRunLongTasks(record, finishedPerfTime);
-  const modelResources = getRouteRunModelResources(record, finishedPerfTime);
-  const analysis = analyzeRouteRun(record, longTasks, modelResources, getRouteStepLabel);
-  const finalizedRecord = {
-    ...record,
+  const finalizedRecord = finalizeBenchmarkRouteRunRecord({
+    record,
+    benchmark: runtimeState.benchmark,
     status,
-    finishedAt: Date.now(),
-    loadMs: runtimeState.benchmark.loadMs,
-    firstFrameMs: runtimeState.benchmark.firstFrameMs,
-    motionAvgMs: metrics.averageMs,
-    motionMaxMs: metrics.maxMs,
-    analysis,
-    trace: {
-      frames: record.frames,
-      longTasks,
-      modelResources,
-      lodWarmups: record.lodWarmups
-    }
-  };
+    longTaskBuffer,
+    getRouteStepLabel
+  });
 
   routeRunHistory.unshift(finalizedRecord);
   routeRunHistory.length = Math.min(routeRunHistory.length, maxRouteRunHistory);
@@ -1134,51 +1086,6 @@ function finalizeRouteRunRecord(runtimeState, status) {
   renderRouteAnalysis();
   runtimeState.routeRecord = null;
   return finalizedRecord;
-}
-
-function snapshotBenchmarkMetrics(benchmark) {
-  if (!benchmark) {
-    return {
-      averageMs: null,
-      maxMs: null
-    };
-  }
-
-  const averageMs = benchmark.wasMoving && benchmark.motionFrames > 0 && benchmark.motionTime > 0
-    ? (benchmark.motionTime / benchmark.motionFrames) * 1000
-    : benchmark.lastMotionMs;
-  const maxMs = benchmark.wasMoving && Number.isFinite(benchmark.motionMaxMs)
-    ? benchmark.motionMaxMs
-    : benchmark.lastMotionMaxMs;
-
-  return {
-    averageMs: Number.isFinite(averageMs) ? averageMs : null,
-    maxMs: Number.isFinite(maxMs) ? maxMs : null
-  };
-}
-
-function getRouteRunLongTasks(record, finishedPerfTime) {
-  return longTaskBuffer
-    .slice(record.longTaskStartIndex)
-    .filter((entry) => entry.startTime <= finishedPerfTime && entry.startTime + entry.duration >= record.startedPerfTime)
-    .map((entry) => ({
-      startMs: Number((entry.startTime - record.startedPerfTime).toFixed(2)),
-      durationMs: Number(entry.duration.toFixed(2))
-    }));
-}
-
-function getRouteRunModelResources(record, finishedPerfTime) {
-  return (performance.getEntriesByType('resource') as PerformanceResourceTiming[])
-    .slice(record.resourceStartIndex)
-    .filter((entry) => entry.startTime <= finishedPerfTime)
-    .filter((entry) => isTrackedModelResource(entry.name))
-    .map((entry) => ({
-      name: simplifyResourceName(entry.name),
-      startMs: Number((entry.startTime - record.startedPerfTime).toFixed(2)),
-      durationMs: Number(entry.duration.toFixed(2)),
-      transferSize: entry.transferSize ?? 0,
-      encodedBodySize: entry.encodedBodySize ?? 0
-    }));
 }
 
 function getRouteStepLabel(routeId, stepIndex) {
@@ -1375,31 +1282,8 @@ function installRouteAnalysisBridge() {
   };
 }
 
-function beginVariantBenchmark(variantId: string): VariantBenchmark {
-  const benchmark = {
-    loadMs: null,
-    firstFrameMs: null,
-    motionTime: 0,
-    motionFrames: 0,
-    motionMaxMs: null,
-    lastMotionMs: null,
-    lastMotionMaxMs: null,
-    wasMoving: false
-  };
-  variantBenchmarks.set(variantId, benchmark);
-  return benchmark;
-}
-
 function getVariantBenchmark(variantId: string | null | undefined): VariantBenchmark | null {
-  if (!variantId) {
-    return null;
-  }
-
-  if (!variantBenchmarks.has(variantId)) {
-    return beginVariantBenchmark(variantId);
-  }
-
-  return variantBenchmarks.get(variantId) ?? null;
+  return getStoredVariantBenchmark(variantBenchmarks, variantId);
 }
 
 function publishVariantBenchmark(variantId) {
@@ -1415,69 +1299,6 @@ function renderVariantBenchmark(variantId) {
   metricMotion.textContent = formatMotionMetric(benchmark);
 }
 
-function beginMotionSession(benchmark) {
-  if (!benchmark) {
-    return;
-  }
-
-  benchmark.motionTime = 0;
-  benchmark.motionFrames = 0;
-  benchmark.motionMaxMs = null;
-  benchmark.wasMoving = true;
-}
-
-function sampleMotionFrame(benchmark, dt) {
-  if (!benchmark) {
-    return;
-  }
-
-  if (!benchmark.wasMoving) {
-    beginMotionSession(benchmark);
-  }
-
-  benchmark.motionFrames += 1;
-  benchmark.motionTime += dt;
-  const frameMs = dt * 1000;
-  benchmark.motionMaxMs = benchmark.motionMaxMs === null
-    ? frameMs
-    : Math.max(benchmark.motionMaxMs, frameMs);
-}
-
-function endMotionSession(benchmark) {
-  if (!benchmark?.wasMoving) {
-    return false;
-  }
-
-  benchmark.wasMoving = false;
-  if (benchmark.motionFrames > 0 && benchmark.motionTime > 0) {
-    benchmark.lastMotionMs = (benchmark.motionTime / benchmark.motionFrames) * 1000;
-    benchmark.lastMotionMaxMs = benchmark.motionMaxMs;
-    return true;
-  }
-
-  return false;
-}
-
-function trackFirstFrame(app, variantId, switchStartedAt) {
-  if (!Number.isFinite(switchStartedAt)) {
-    return;
-  }
-
-  const resolveFirstFrame = () => {
-    const benchmark = getVariantBenchmark(variantId);
-    if (!benchmark || Number.isFinite(benchmark.firstFrameMs)) {
-      return;
-    }
-
-    benchmark.firstFrameMs = performance.now() - switchStartedAt;
-    publishVariantBenchmark(variantId);
-  };
-
-  app.once('frameend', resolveFirstFrame);
-  window.requestAnimationFrame(() => {
-    window.requestAnimationFrame(resolveFirstFrame);
-  });
-}
 
 function vec3(tuple) {
   return new pc.Vec3(tuple[0], tuple[1], tuple[2]);
