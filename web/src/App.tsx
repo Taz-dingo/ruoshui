@@ -1,4 +1,5 @@
 import { CameraPanel } from './components/CameraPanel';
+import { PresetPanel } from './components/PresetPanel';
 import { RouteDiagnosticsPanel } from './components/RouteDiagnosticsPanel';
 import { VariantPanel } from './components/VariantPanel';
 import type { ViewerContent } from './types';
@@ -145,7 +146,17 @@ export function App({
                   </div>
                   <RouteDiagnosticsPanel />
                 </div>
-                <div className="preset-list" id="preset-list" />
+                <PresetPanel
+                  initialState={{
+                    summary: firstPreset.name,
+                    items: data.presets.map((preset) => ({
+                      id: preset.id,
+                      name: preset.name,
+                      summary: preset.summary,
+                      isActive: preset.id === firstPreset.id
+                    }))
+                  }}
+                />
               </div>
             </section>
 
