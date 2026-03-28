@@ -302,3 +302,15 @@ export interface VariantPanelViewState {
   summary: string;
   items: VariantPanelItemView[];
 }
+
+export interface PresetPanelItemView {
+  id: string;
+  name: string;
+  summary: string;
+  isActive: boolean;
+}
+
+export interface PresetPanelViewState {
+  summary: string;
+  items: PresetPanelItemView[];
+}

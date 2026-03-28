@@ -32,6 +32,7 @@ import { captureOrbitView, createOrbitController, restoreOrbitView, setOrbitPres
 import { detachVariantFromRuntime, loadVariantIntoRuntime } from './runtime/variant-loader';
 import type { CameraViewState, RouteDiagnosticsViewState, RouteRunRecord, VariantBenchmark, ViewerContent } from './types';
 import { publishCameraState } from './ui/camera-store';
+import { presetSelectEventName, publishPresetPanelState } from './ui/preset-panel-store';
 import { publishRouteDiagnosticsState } from './ui/route-diagnostics-store';
 import { publishVariantPanelState, variantSelectEventName } from './ui/variant-panel-store';
 import { requireElement } from './utils/dom';
@@ -60,7 +61,6 @@ initLongTaskObserver(longTaskBuffer);
 
 const sceneContainer = requireElement<HTMLDivElement>('#scene');
 const routeList = requireElement<HTMLDivElement>('#route-list');
-const presetList = requireElement<HTMLDivElement>('#preset-list');
 const runRouteCurrentVariantButton = requireElement<HTMLButtonElement>('#run-route-current-variant');
 const runRouteSuiteButton = requireElement<HTMLButtonElement>('#run-route-suite');
 const routeBatchNote = requireElement<HTMLElement>('#route-batch-note');
@@ -114,24 +114,11 @@ let activeBenchmarkRunPromise: Promise<any> | null = null;
 let isVariantPanelDisabled = false;
 
 const routeButtons = new Map();
-const presetButtons = new Map();
 const variantBenchmarks = new Map<string, VariantBenchmark>();
 const routeRunHistory: RouteRunRecord[] = getInitialRouteRunHistory(
   routeRunHistoryStorageKey,
   maxRouteRunHistory
 );
-
-for (const preset of data.presets) {
-  const button = document.createElement('button');
-  button.className = 'preset';
-  button.type = 'button';
-  button.innerHTML = `<strong>${preset.name}</strong><span>${preset.summary}</span>`;
-  button.addEventListener('click', () => {
-    activatePreset(preset.id);
-  });
-  presetButtons.set(preset.id, button);
-  presetList.append(button);
-}
 
 for (const route of benchmarkRoutes) {
   const button = document.createElement('button');
@@ -147,6 +134,14 @@ for (const route of benchmarkRoutes) {
 
 focusSceneButton.addEventListener('click', () => activatePreset(firstPreset.id));
 focusOverviewButton.addEventListener('click', () => activatePreset('hover'));
+window.addEventListener(presetSelectEventName, (event) => {
+  const presetId = (event as CustomEvent<{ presetId?: string }>).detail?.presetId;
+  if (!presetId) {
+    return;
+  }
+
+  activatePreset(presetId);
+});
 window.addEventListener(variantSelectEventName, (event) => {
   const variantId = (event as CustomEvent<{ variantId?: string }>).detail?.variantId;
   if (!variantId) {
@@ -491,9 +486,7 @@ function setOpenInspectorPanel(panelId) {
 }
 
 function updatePresetButtons() {
-  for (const [presetId, button] of presetButtons) {
-    button.classList.toggle('is-active', presetId === activePresetId);
-  }
+  publishPresetPanel();
 }
 
 function updateVariantButtons() {
@@ -523,6 +516,19 @@ function publishVariantPanel() {
       meta: `${variant.size} · ${variant.retention}`,
       isActive: variant.id === activeVariantId,
       disabled: isVariantPanelDisabled
+    }))
+  });
+}
+
+function publishPresetPanel() {
+  const activePreset = data.presets.find((preset) => preset.id === activePresetId) ?? firstPreset;
+  publishPresetPanelState({
+    summary: activePreset.name,
+    items: data.presets.map((preset) => ({
+      id: preset.id,
+      name: preset.name,
+      summary: preset.summary,
+      isActive: preset.id === activePresetId
     }))
   });
 }
