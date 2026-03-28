@@ -29,6 +29,7 @@ import { bindRuntimeViewport, bindRuntimeVisibility, createRuntimeApp } from './
 import { createOrbitController } from './runtime/orbit';
 import { createRuntimeUpdateHandler } from './runtime/update-loop';
 import { detachVariantFromRuntime, loadVariantIntoRuntime } from './runtime/variant-loader';
+import { createVariantOrchestrationController } from './runtime/variant-orchestration';
 import type { RouteRunRecord, VariantBenchmark, ViewerContent } from './types';
 import { useViewerUiStore } from './ui/viewer-ui-store';
 import {
@@ -177,6 +178,51 @@ const routeBenchmarkController = createRouteBenchmarkController({
   startBenchmarkRoute,
   stopActiveBenchmarkRoute
 });
+const variantOrchestrationController = createVariantOrchestrationController({
+  pc,
+  presets: data.presets,
+  variantsById,
+  sceneContainer,
+  getRuntime: () => runtime,
+  setRuntime: (runtimeState) => {
+    runtime = runtimeState;
+  },
+  getActiveVariantId: () => activeVariantId,
+  setActiveVariantId: (variantId) => {
+    activeVariantId = variantId;
+  },
+  getActivePresetId: () => activePresetId,
+  setActivePresetId: (presetId) => {
+    activePresetId = presetId;
+  },
+  getActiveRouteId: () => activeRouteId,
+  issueLoadToken: () => {
+    currentLoadToken += 1;
+    return currentLoadToken;
+  },
+  isCurrentLoadToken: (loadToken) => loadToken === currentLoadToken,
+  createBenchmark: (variantId) =>
+    beginStoredVariantBenchmark(variantBenchmarks, variantId),
+  renderVariantMeta,
+  updateVariantButtons,
+  updatePresetButtons,
+  setVariantButtonsDisabled,
+  setPresetSummary: (summary) => {
+    presetsSummary.textContent = summary;
+  },
+  setStatus: (title, detail) => {
+    statusTitle.textContent = title;
+    statusDetail.textContent = detail;
+  },
+  stopActiveBenchmarkRoute,
+  captureCurrentView,
+  restoreCurrentView,
+  createRuntime,
+  moveCamera,
+  publishVariantBenchmark,
+  getVariantBenchmark,
+  configureUnifiedGsplat
+});
 
 focusSceneButton.addEventListener('click', () => activatePreset(firstPreset.id));
 focusOverviewButton.addEventListener('click', () => activatePreset('hover'));
@@ -294,106 +340,15 @@ function renderRenderScaleMeta(percent) {
 }
 
 async function activateVariant(variantId, initial = false, forceReload = false) {
-  const variant = variantsById.get(variantId);
-
-  if (!variant) {
-    return;
-  }
-
-  if (!initial && !forceReload && variantId === activeVariantId) {
-    return;
-  }
-
-  if (activeRouteId) {
-    stopActiveBenchmarkRoute('未播放', 'switch');
-  }
-
-  const loadToken = ++currentLoadToken;
-  const switchStartedAt = performance.now();
-  const preservedView = initial ? null : captureCurrentView(runtime);
-  const benchmark = beginStoredVariantBenchmark(variantBenchmarks, variant.id);
-  activeVariantId = variant.id;
-  updateVariantButtons();
-  renderVariantMeta(variant);
-  setVariantButtonsDisabled(true);
-  statusTitle.textContent = '切换中';
-  statusDetail.textContent = `${variant.name}`;
-
-  try {
-    const nextRuntime = await mountRuntime(variant, { switchStartedAt, benchmark });
-    if (loadToken !== currentLoadToken) {
-      nextRuntime?.destroy?.();
-      return;
-    }
-
-    runtime = nextRuntime;
-    const restored = restoreCurrentView(runtime, preservedView);
-    if (!restored) {
-      activatePreset(activePresetId || 'hover', true);
-    }
-    statusTitle.textContent = '场景已就绪';
-    statusDetail.textContent = `${variant.size} · ${variant.retention} 保留`;
-  } catch (error) {
-    statusTitle.textContent = '加载失败';
-    statusDetail.textContent = error instanceof Error ? error.message : '未知错误';
-    throw error;
-  } finally {
-    if (loadToken === currentLoadToken) {
-      setVariantButtonsDisabled(false);
-    }
-  }
-}
-
-async function mountRuntime(variant, timings: any) {
-  if (runtime) {
-    await loadVariantIntoRuntime({
-      pc,
-      runtimeState: runtime,
-      variant,
-      timings,
-      createBenchmark: () => beginStoredVariantBenchmark(variantBenchmarks, variant.id),
-      publishVariantBenchmark,
-      configureUnifiedGsplat,
-      trackFirstFrame: (app, variantId, switchStartedAt) =>
-        trackBenchmarkFirstFrame(
-          app,
-          variantId,
-          switchStartedAt,
-          getVariantBenchmark,
-          publishVariantBenchmark
-        )
-    });
-    return runtime;
-  }
-
-  sceneContainer.replaceChildren();
-  const canvas = document.createElement('canvas');
-  const rect = sceneContainer.getBoundingClientRect();
-  canvas.width = Math.max(1, Math.round(rect.width));
-  canvas.height = Math.max(1, Math.round(rect.height));
-  canvas.style.width = '100%';
-  canvas.style.height = '100%';
-  sceneContainer.append(canvas);
-  return createRuntime(canvas, variant, timings);
+  return variantOrchestrationController.activateVariant(
+    variantId,
+    initial,
+    forceReload
+  );
 }
 
 function activatePreset(presetId, immediate = false) {
-  const preset = data.presets.find((entry) => entry.id === presetId);
-  if (!preset) {
-    return;
-  }
-
-  if (activeRouteId) {
-    stopActiveBenchmarkRoute('镜头接管', 'manual');
-  }
-
-  activePresetId = preset.id;
-  presetsSummary.textContent = preset.name;
-  updatePresetButtons();
-
-  if (runtime) {
-    moveCamera(runtime, preset, immediate);
-  }
+  variantOrchestrationController.activatePreset(presetId, immediate);
 }
 
 function activateBenchmarkRoute(routeId) {
