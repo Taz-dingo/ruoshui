@@ -6,8 +6,9 @@ import {
   routeAnalysisCopyFeedbackMs,
   routeRunHistoryStorageKey
 } from './config';
-import { getInitialRouteRunHistory, getLatestRouteAnalysisExport } from './benchmark/history';
+import { getInitialRouteRunHistory } from './benchmark/history';
 import { createRouteDiagnosticsController } from './benchmark/diagnostics-controller';
+import { createRouteBenchmarkController } from './benchmark/route-benchmark-controller';
 import {
   beginStoredVariantBenchmark,
   getStoredVariantBenchmark,
@@ -133,6 +134,48 @@ const routeDiagnosticsController = createRouteDiagnosticsController({
   },
   getActiveBenchmarkRunPromise: () => activeBenchmarkRunPromise,
   runVariantRouteBenchmark: (options) => runVariantRouteBenchmark(options)
+});
+const routeBenchmarkController = createRouteBenchmarkController({
+  benchmarkRoutes,
+  benchmarkRoutesById,
+  variants: data.variants,
+  variantsById,
+  currentVariantRepeatCount,
+  frameSchema: Object.keys(frameSampleIndices),
+  routeRunHistory,
+  getRuntime: () => runtime,
+  getSelectedRouteId: () => selectedRouteId,
+  setSelectedRouteId: (routeId) => {
+    selectedRouteId = routeId;
+  },
+  getActiveRouteId: () => activeRouteId,
+  setActiveRouteId: (routeId) => {
+    activeRouteId = routeId;
+  },
+  getActiveVariantId: () => activeVariantId,
+  getIsBatchBenchmarkRunning: () => isBatchBenchmarkRunning,
+  setIsBatchBenchmarkRunning: (isRunning) => {
+    isBatchBenchmarkRunning = isRunning;
+  },
+  setActiveSuiteRunId: (suiteId) => {
+    activeSuiteRunId = suiteId;
+  },
+  setActiveBenchmarkRunPromise: (promise) => {
+    activeBenchmarkRunPromise = promise;
+  },
+  setRouteSummaryText: (summaryText) => {
+    routeSummaryText = summaryText;
+  },
+  setStatus: (title, detail) => {
+    statusTitle.textContent = title;
+    statusDetail.textContent = detail;
+  },
+  publishRouteControls,
+  updateRouteButtons,
+  setVariantButtonsDisabled,
+  activateVariant,
+  startBenchmarkRoute,
+  stopActiveBenchmarkRoute
 });
 
 focusSceneButton.addEventListener('click', () => activatePreset(firstPreset.id));
@@ -354,144 +397,19 @@ function activatePreset(presetId, immediate = false) {
 }
 
 function activateBenchmarkRoute(routeId) {
-  const route = benchmarkRoutesById.get(routeId);
-
-  if (!route) {
-    return;
-  }
-
-  selectedRouteId = route.id;
-  if (activeRouteId === routeId) {
-    stopActiveBenchmarkRoute();
-    return;
-  }
-
-  activeRouteId = route.id;
-  routeSummaryText = `${route.name} · 运行中`;
-  updateRouteButtons();
-
-  if (runtime) {
-    startBenchmarkRoute(runtime, route);
-  }
+  routeBenchmarkController.activateBenchmarkRoute(routeId);
 }
 
 async function runRouteBenchmarkSuite() {
-  const routeId = selectedRouteId ?? benchmarkRoutes[0]?.id;
-  const route = routeId ? benchmarkRoutesById.get(routeId) : null;
-
-  if (!route || isBatchBenchmarkRunning) {
-    return;
-  }
-
-  isBatchBenchmarkRunning = true;
-  publishRouteControls();
-  setVariantButtonsDisabled(true);
-  statusTitle.textContent = '标准测试中';
-
-  try {
-    activeSuiteRunId = `suite-${Date.now()}`;
-    for (let index = 0; index < data.variants.length; index += 1) {
-      const variant = data.variants[index];
-      statusDetail.textContent = `${route.name} · ${index + 1}/${data.variants.length} · ${variant.name}`;
-      await activateVariant(variant.id, false, true);
-      await playBenchmarkRouteOnce(route.id);
-    }
-
-    statusTitle.textContent = '标准测试完成';
-    statusDetail.textContent = `${route.name} · 已记录 ${data.variants.length} 个版本`;
-  } catch (error) {
-    statusTitle.textContent = '标准测试中断';
-    statusDetail.textContent = error instanceof Error ? error.message : '未知错误';
-    throw error;
-  } finally {
-    activeSuiteRunId = null;
-    isBatchBenchmarkRunning = false;
-    publishRouteControls();
-    setVariantButtonsDisabled(false);
-    updateRouteButtons();
-  }
+  return routeBenchmarkController.runRouteBenchmarkSuite();
 }
 
 async function runCurrentVariantRouteBenchmark() {
-  return runVariantRouteBenchmark({
-    routeId: selectedRouteId ?? benchmarkRoutes[0]?.id,
-    variantId: activeVariantId,
-    repeatCount: currentVariantRepeatCount,
-    suitePrefix: 'single'
-  });
+  return routeBenchmarkController.runCurrentVariantRouteBenchmark();
 }
 
 async function runVariantRouteBenchmark(options: any = {}) {
-  const routeId = options.routeId ?? selectedRouteId ?? benchmarkRoutes[0]?.id;
-  const route = routeId ? benchmarkRoutesById.get(routeId) : null;
-  const variantId = options.variantId ?? activeVariantId;
-  const variant = variantsById.get(variantId);
-  const repeatCount = Number.isFinite(options.repeatCount)
-    ? Math.max(1, Math.floor(options.repeatCount))
-    : currentVariantRepeatCount;
-  const suitePrefix = options.suitePrefix ?? 'single';
-
-  if (!route || !variant || isBatchBenchmarkRunning) {
-    return null;
-  }
-
-  activeBenchmarkRunPromise = (async () => {
-    isBatchBenchmarkRunning = true;
-    publishRouteControls();
-    setVariantButtonsDisabled(true);
-    statusTitle.textContent = '单版本测试中';
-
-    try {
-      activeSuiteRunId = `${suitePrefix}-${Date.now()}`;
-      for (let index = 0; index < repeatCount; index += 1) {
-        statusDetail.textContent = `${route.name} · ${variant.name} · 第 ${index + 1}/${repeatCount} 次`;
-        await activateVariant(variant.id, false, true);
-        await playBenchmarkRouteOnce(route.id);
-      }
-      statusTitle.textContent = '单版本测试完成';
-      statusDetail.textContent = `${route.name} · ${variant.name} 已记录 ${repeatCount} 次`;
-      return getLatestRouteAnalysisExport(routeRunHistory, Object.keys(frameSampleIndices));
-    } catch (error) {
-      statusTitle.textContent = '单版本测试中断';
-      statusDetail.textContent = error instanceof Error ? error.message : '未知错误';
-      throw error;
-    } finally {
-      activeSuiteRunId = null;
-      isBatchBenchmarkRunning = false;
-      activeBenchmarkRunPromise = null;
-      publishRouteControls();
-      setVariantButtonsDisabled(false);
-      updateRouteButtons();
-    }
-  })();
-
-  return activeBenchmarkRunPromise;
-}
-
-function playBenchmarkRouteOnce(routeId) {
-  const route = benchmarkRoutesById.get(routeId);
-
-  if (!runtime || !route) {
-    return Promise.reject(new Error('缺少可运行的轨迹或运行时'));
-  }
-
-  return new Promise<void>((resolve, reject) => {
-    selectedRouteId = route.id;
-    activeRouteId = route.id;
-    routeSummaryText = `${route.name} · 运行中`;
-    updateRouteButtons();
-    publishRouteControls();
-    startBenchmarkRoute(runtime, route, {
-      onFinish: (record: any) => {
-        if (!record || record.status !== 'completed') {
-          reject(new Error(`${route.name} 未完整跑完`));
-          return;
-        }
-
-        resolve(record);
-      }
-    });
-  });
+  return routeBenchmarkController.runVariantRouteBenchmark(options);
 }
 
 function setOpenInspectorPanel(panelId) {
