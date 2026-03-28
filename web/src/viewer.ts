@@ -13,12 +13,13 @@ import {
   routeAnalysisCopyFeedbackMs,
   routeRunHistoryStorageKey
 } from './config';
-import { analyzeRouteRun, formatHotspotResourceSummary, formatWorstStepLabel, getWorstStep, isTrackedModelResource, simplifyResourceName } from './benchmark/analysis';
+import { analyzeRouteRun, isTrackedModelResource, simplifyResourceName } from './benchmark/analysis';
+import { buildRouteAnalysisSummary, formatRouteAnalysisSummaryText, getInitialRouteRunHistory, getLatestRouteAnalysisExport, getLatestSuiteRecords, persistRouteRunHistory } from './benchmark/history';
 import { applyRenderScaleToRuntime, createPerformanceMode, getInitialRenderScalePercent, getMaxSupportedPixelRatio, normalizeRenderScalePercent, persistRenderScalePercent, updatePerformanceMode } from './performance/render-scale';
 import { captureOrbitView, createOrbitController, restoreOrbitView, setOrbitPreset, updateOrbitController } from './runtime/orbit';
 import type { BenchmarkRoute, RouteRunRecord, VariantBenchmark, ViewerContent } from './types';
 import { requireElement } from './utils/dom';
-import { formatMetricMs, formatMetricPeakMs, formatMetricText, formatMotionMetric, formatRouteRunStatus, formatRouteRunTime, formatVec3 } from './utils/format';
+import { formatMetricMs, formatMetricPeakMs, formatMotionMetric, formatRouteRunStatus, formatRouteRunTime, formatVec3 } from './utils/format';
 import { clamp, radToDeg, roundNumber } from './utils/math';
 
 const pc: any = await import(/* @vite-ignore */ 'https://esm.sh/playcanvas@2.17.2?bundle');
@@ -111,7 +112,10 @@ const variantButtons = new Map();
 const routeButtons = new Map();
 const presetButtons = new Map();
 const variantBenchmarks = new Map<string, VariantBenchmark>();
-const routeRunHistory: RouteRunRecord[] = getInitialRouteRunHistory();
+const routeRunHistory: RouteRunRecord[] = getInitialRouteRunHistory(
+  routeRunHistoryStorageKey,
+  maxRouteRunHistory
+);
 
 for (const variant of data.variants) {
   const button = document.createElement('button');
@@ -418,7 +422,7 @@ async function runVariantRouteBenchmark(options: any = {}) {
       }
       statusTitle.textContent = '单版本测试完成';
       statusDetail.textContent = `${route.name} · ${variant.name} 已记录 ${repeatCount} 次`;
-      return getLatestRouteAnalysisExport();
+      return getLatestRouteAnalysisExport(routeRunHistory, Object.keys(frameSampleIndices));
     } catch (error) {
       statusTitle.textContent = '单版本测试中断';
       statusDetail.textContent = error instanceof Error ? error.message : '未知错误';
@@ -1125,7 +1129,7 @@ function finalizeRouteRunRecord(runtimeState, status) {
 
   routeRunHistory.unshift(finalizedRecord);
   routeRunHistory.length = Math.min(routeRunHistory.length, maxRouteRunHistory);
-  persistRouteRunHistory(routeRunHistory);
+  persistRouteRunHistory(routeRunHistoryStorageKey, routeRunHistory);
   renderRouteRunHistory();
   renderRouteAnalysis();
   runtimeState.routeRecord = null;
@@ -1217,7 +1221,7 @@ function renderRouteRunHistory() {
 }
 
 function renderRouteAnalysis() {
-  const records = getLatestSuiteRecords();
+  const records = getLatestSuiteRecords(routeRunHistory);
   routeAnalysisRanking.replaceChildren();
   routeAnalysisHotspots.replaceChildren();
 
@@ -1269,48 +1273,8 @@ function renderRouteAnalysis() {
   }
 }
 
-function getLatestSuiteRecords() {
-  const latestSuiteId = routeRunHistory.find((entry) => entry.suiteId)?.suiteId;
-  if (!latestSuiteId) {
-    return [];
-  }
-
-  return routeRunHistory.filter((entry) => entry.suiteId === latestSuiteId);
-}
-
-function buildRouteAnalysisSummary(records) {
-  const sorted = [...records].sort((left, right) => (left.analysis?.frameStats?.avgMs ?? Infinity) - (right.analysis?.frameStats?.avgMs ?? Infinity));
-  const hotspots = records
-    .flatMap((record) => (record.analysis?.hotspots ?? []).map((hotspot) => ({
-      ...hotspot,
-      variantId: record.variantId,
-      variantName: record.variantName,
-      resourceSummary: formatHotspotResourceSummary(hotspot.resources)
-    })))
-    .sort((left, right) => right.peakMs - left.peakMs)
-    .slice(0, 5);
-
-  return {
-    suiteId: records[0]?.suiteId ?? 'manual',
-    routeName: records[0]?.routeName ?? '未知轨迹',
-    ranking: sorted.map((record) => ({
-      variantId: record.variantId,
-      variantName: record.variantName,
-      avgMs: formatMetricText(record.analysis?.frameStats?.avgMs),
-      p95Ms: formatMetricText(record.analysis?.frameStats?.p95Ms),
-      p99Ms: formatMetricText(record.analysis?.frameStats?.p99Ms),
-      peakMs: formatMetricText(record.analysis?.frameStats?.peakMs),
-      stallCount: record.analysis?.stallCount ?? 0,
-      worstStepLabel: formatWorstStepLabel(record.analysis?.stepStats),
-      worstStepP95Ms: formatMetricText(getWorstStep(record.analysis?.stepStats)?.p95Ms),
-      worstStepPeakMs: formatMetricText(getWorstStep(record.analysis?.stepStats)?.peakMs)
-    })),
-    hotspots
-  };
-}
-
 async function copyLatestRouteAnalysis(mode) {
-  const exportPayload = getLatestRouteAnalysisExport();
+  const exportPayload = getLatestRouteAnalysisExport(routeRunHistory, Object.keys(frameSampleIndices));
   if (!exportPayload) {
     setRouteAnalysisCopyNote('还没有可导出的标准测试结果。');
     return;
@@ -1329,7 +1293,7 @@ async function copyLatestRouteAnalysis(mode) {
 }
 
 function downloadLatestRouteAnalysisJson() {
-  const exportPayload = getLatestRouteAnalysisExport();
+  const exportPayload = getLatestRouteAnalysisExport(routeRunHistory, Object.keys(frameSampleIndices));
   if (!exportPayload) {
     setRouteAnalysisCopyNote('还没有可导出的标准测试结果。');
     return;
@@ -1355,7 +1319,7 @@ function setRouteAnalysisCopyNote(text) {
   }
 
   routeAnalysisCopyTimeoutId = window.setTimeout(() => {
-    const records = getLatestSuiteRecords();
+    const records = getLatestSuiteRecords(routeRunHistory);
     routeAnalysisCopyNote.textContent = records.length > 0
       ? `最新批次：${records[0].suiteId} · 可复制或下载`
       : '跑完一轮标准测试后可复制。';
@@ -1363,48 +1327,10 @@ function setRouteAnalysisCopyNote(text) {
   }, routeAnalysisCopyFeedbackMs);
 }
 
-function formatRouteAnalysisSummaryText(summary, records) {
-  const rankingLines = summary.ranking
-    .map((item, index) => `${index + 1}. ${item.variantName}: avg ${item.avgMs}, p95 ${item.p95Ms}, peak ${item.peakMs}, stalls ${item.stallCount}, worst ${item.worstStepLabel} (${item.worstStepP95Ms})`)
-    .join('\n');
-  const hotspotLines = summary.hotspots.length > 0
-    ? summary.hotspots
-      .map((hotspot, index) => `${index + 1}. ${hotspot.variantName} / ${hotspot.stepLabel}: ${hotspot.peakMs} ms, ${hotspot.likelyCause}, 视角 ${hotspot.camera.distance}m ${hotspot.camera.pitch}°/${hotspot.camera.yaw}°, 资源 ${hotspot.modelResourceCount}, 长任务 ${hotspot.longTaskCount}`)
-      .join('\n')
-    : '无明显热点';
-
-  return [
-    `Suite: ${summary.suiteId}`,
-    `Route: ${summary.routeName}`,
-    '',
-    'Ranking:',
-    rankingLines,
-    '',
-    'Hotspots:',
-    hotspotLines,
-    '',
-    `Records: ${records.length}`
-  ].join('\n');
-}
-
-function getLatestRouteAnalysisExport() {
-  const records = getLatestSuiteRecords();
-  if (records.length === 0) {
-    return null;
-  }
-
-  return {
-    exportedAt: new Date().toISOString(),
-    frameSchema: Object.keys(frameSampleIndices),
-    summary: buildRouteAnalysisSummary(records),
-    records
-  };
-}
-
 function installRouteAnalysisBridge() {
   window.__ruoshuiPerf = {
     latest() {
-      return getLatestRouteAnalysisExport();
+      return getLatestRouteAnalysisExport(routeRunHistory, Object.keys(frameSampleIndices));
     },
     history() {
       return routeRunHistory;
@@ -1417,7 +1343,7 @@ function installRouteAnalysisBridge() {
     },
     clearHistory() {
       routeRunHistory.length = 0;
-      persistRouteRunHistory(routeRunHistory);
+      persistRouteRunHistory(routeRunHistoryStorageKey, routeRunHistory);
       renderRouteRunHistory();
       renderRouteAnalysis();
     },
@@ -1447,28 +1373,6 @@ function installRouteAnalysisBridge() {
       return activeBenchmarkRunPromise;
     }
   };
-}
-
-function getInitialRouteRunHistory(): RouteRunRecord[] {
-  try {
-    const saved = window.localStorage.getItem(routeRunHistoryStorageKey);
-    if (!saved) {
-      return [];
-    }
-
-    const parsed = JSON.parse(saved);
-    return Array.isArray(parsed) ? parsed.slice(0, maxRouteRunHistory) : [];
-  } catch {
-    return [];
-  }
-}
-
-function persistRouteRunHistory(history) {
-  try {
-    window.localStorage.setItem(routeRunHistoryStorageKey, JSON.stringify(history));
-  } catch {
-    return;
-  }
 }
 
 function beginVariantBenchmark(variantId: string): VariantBenchmark {
