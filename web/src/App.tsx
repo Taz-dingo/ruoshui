@@ -5,6 +5,7 @@ import { PresetPanel } from './components/PresetPanel';
 import { RouteControlsPanel } from './components/RouteControlsPanel';
 import { RouteDiagnosticsPanel } from './components/RouteDiagnosticsPanel';
 import { VariantPanel } from './components/VariantPanel';
+import { defaultSceneLookSettings } from './runtime/scene-look';
 import type { ViewerContent } from './types';
 import { useViewerUiStore } from './ui/viewer-ui-store';
 
@@ -16,7 +17,7 @@ interface AppProps {
   renderScaleMinPercent: number;
 }
 
-export function App({
+function App({
   data,
   showPerfHud,
   maxRenderScalePercent,
@@ -165,6 +166,56 @@ export function App({
               </div>
             </section>
 
+            <section className="inspector-section" data-panel="scene-look">
+              <button className="inspector-toggle" type="button" data-toggle="scene-look" aria-expanded="false">
+                <span className="section-title">画面表现</span>
+                <span className="toggle-meta" id="scene-look-summary">默认</span>
+              </button>
+              <div className="inspector-body" data-body="scene-look">
+                <div className="scene-look-controls">
+                  <label className="scene-look-control">
+                    <span>亮度</span>
+                    <input
+                      className="quality-slider"
+                      id="scene-look-brightness"
+                      type="range"
+                      min="80"
+                      max="140"
+                      step="1"
+                      defaultValue={defaultSceneLookSettings.brightnessPercent}
+                    />
+                    <strong id="scene-look-brightness-value">{defaultSceneLookSettings.brightnessPercent}%</strong>
+                  </label>
+                  <label className="scene-look-control">
+                    <span>对比</span>
+                    <input
+                      className="quality-slider"
+                      id="scene-look-contrast"
+                      type="range"
+                      min="80"
+                      max="130"
+                      step="1"
+                      defaultValue={defaultSceneLookSettings.contrastPercent}
+                    />
+                    <strong id="scene-look-contrast-value">{defaultSceneLookSettings.contrastPercent}%</strong>
+                  </label>
+                  <label className="scene-look-control">
+                    <span>饱和</span>
+                    <input
+                      className="quality-slider"
+                      id="scene-look-saturation"
+                      type="range"
+                      min="70"
+                      max="140"
+                      step="1"
+                      defaultValue={defaultSceneLookSettings.saturationPercent}
+                    />
+                    <strong id="scene-look-saturation-value">{defaultSceneLookSettings.saturationPercent}%</strong>
+                  </label>
+                </div>
+              </div>
+            </section>
+
             <section className="inspector-section" data-panel="presets">
               <button className="inspector-toggle" type="button" data-toggle="presets" aria-expanded="false">
                 <span className="section-title">导览镜头</span>
@@ -195,3 +246,7 @@ export function App({
     </main>
   );
 }
+
+export {
+  App
+};

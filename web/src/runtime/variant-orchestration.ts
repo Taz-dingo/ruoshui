@@ -2,6 +2,7 @@ import { trackBenchmarkFirstFrame } from '../benchmark/runtime';
 import { configureUnifiedGsplat } from './runtime-factory';
 import { loadVariantIntoRuntime } from './variant-loader';
 import type { CameraPreset, VariantBenchmark, ViewerVariant } from '../types';
+import type { SceneLookSettings } from './scene-look';
 
 interface CreateVariantOrchestrationControllerArgs {
   pc: any;
@@ -15,6 +16,7 @@ interface CreateVariantOrchestrationControllerArgs {
   getActivePresetId: () => string;
   setActivePresetId: (presetId: string) => void;
   getActiveRouteId: () => string | null;
+  getSceneLook: () => SceneLookSettings;
   issueLoadToken: () => number;
   isCurrentLoadToken: (loadToken: number) => boolean;
   createBenchmark: (variantId: string) => VariantBenchmark;
@@ -27,7 +29,12 @@ interface CreateVariantOrchestrationControllerArgs {
   stopActiveBenchmarkRoute: (summaryText?: string, status?: string) => void;
   captureCurrentView: (runtimeState: any) => any;
   restoreCurrentView: (runtimeState: any, snapshot: any) => boolean;
-  createRuntime: (canvasElement: HTMLCanvasElement, variant: ViewerVariant, timings?: any) => Promise<any>;
+  createRuntime: (
+    canvasElement: HTMLCanvasElement,
+    variant: ViewerVariant,
+    timings?: any,
+    sceneLook?: SceneLookSettings
+  ) => Promise<any>;
   moveCamera: (runtimeState: any, preset: CameraPreset, immediate?: boolean) => void;
   publishVariantBenchmark: (variantId: string) => void;
   getVariantBenchmark: (variantId: string) => VariantBenchmark | null;
@@ -45,6 +52,7 @@ function createVariantOrchestrationController({
   getActivePresetId,
   setActivePresetId,
   getActiveRouteId,
+  getSceneLook,
   issueLoadToken,
   isCurrentLoadToken,
   createBenchmark,
@@ -93,7 +101,7 @@ function createVariantOrchestrationController({
     canvas.style.width = '100%';
     canvas.style.height = '100%';
     sceneContainer.append(canvas);
-    return createRuntime(canvas, variant, timings);
+    return createRuntime(canvas, variant, timings, getSceneLook());
   }
 
   function activatePreset(presetId: string, immediate = false) {

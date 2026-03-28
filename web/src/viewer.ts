@@ -3,16 +3,16 @@ import {
   frameSampleIndices,
   maxRouteRunHistory,
   routeAnalysisCopyFeedbackMs,
-  routeRunHistoryStorageKey
-} from './config';
-import { getInitialRouteRunHistory } from './benchmark/history';
-import { createRouteDiagnosticsController } from './benchmark/diagnostics-controller';
-import { createRouteBenchmarkController } from './benchmark/route-benchmark-controller';
+  routeRunHistoryStorageKey,
+} from "./config";
+import { getInitialRouteRunHistory } from "./benchmark/history";
+import { createRouteDiagnosticsController } from "./benchmark/diagnostics-controller";
+import { createRouteBenchmarkController } from "./benchmark/route-benchmark-controller";
 import {
   beginStoredVariantBenchmark,
   getStoredVariantBenchmark,
   initLongTaskObserver,
-} from './benchmark/runtime';
+} from "./benchmark/runtime";
 import {
   advanceRuntimeBenchmarkRoute as advanceBenchmarkPlaybackRoute,
   captureRuntimeView,
@@ -20,74 +20,134 @@ import {
   restoreRuntimeView,
   startRuntimeBenchmarkRoute,
   stopRuntimeBenchmarkRoute as stopBenchmarkPlaybackRoute,
-  updateRuntimeBenchmarkRoute as updateBenchmarkPlaybackRoute
-} from './benchmark/playback';
-import { applyRenderScaleToRuntime, getInitialRenderScalePercent, getMaxSupportedPixelRatio, normalizeRenderScalePercent, persistRenderScalePercent } from './performance/render-scale';
-import { createViewerRuntime } from './runtime/runtime-factory';
-import { createVariantOrchestrationController } from './runtime/variant-orchestration';
-import type { RouteRunRecord, VariantBenchmark, ViewerContent } from './types';
-import { useViewerUiStore } from './ui/viewer-ui-store';
-import { createViewerShellController } from './ui/viewer-shell-controller';
+  updateRuntimeBenchmarkRoute as updateBenchmarkPlaybackRoute,
+} from "./benchmark/playback";
+import {
+  applyRenderScaleToRuntime,
+  getInitialRenderScalePercent,
+  getMaxSupportedPixelRatio,
+  normalizeRenderScalePercent,
+  persistRenderScalePercent,
+} from "./performance/render-scale";
+import { createViewerRuntime } from "./runtime/runtime-factory";
+import {
+  applyRuntimeSceneLook,
+  formatSceneLookSummary,
+  loadSceneLookSettings,
+  normalizeSceneLookSettings,
+  persistSceneLookSettings,
+} from "./runtime/scene-look";
+import { createVariantOrchestrationController } from "./runtime/variant-orchestration";
+import type { RouteRunRecord, VariantBenchmark, ViewerContent } from "./types";
+import { useViewerUiStore } from "./ui/viewer-ui-store";
+import { createViewerShellController } from "./ui/viewer-shell-controller";
 import {
   syncPresetPanelState,
   syncRouteControlsState,
-  syncVariantPanelState
-} from './ui/viewer-ui-sync';
-import { requireElement } from './utils/dom';
+  syncVariantPanelState,
+} from "./ui/viewer-ui-sync";
+import { requireElement } from "./utils/dom";
 
-const pc: any = await import(/* @vite-ignore */ 'https://esm.sh/playcanvas@2.17.2?bundle');
+const pc: any = await import(
+  /* @vite-ignore */ "https://esm.sh/playcanvas@2.17.2?bundle"
+);
 
 const data = window.__ruoshuiInitialData;
 
 if (!data) {
-  throw new Error('Missing initial viewer content');
+  throw new Error("Missing initial viewer content");
 }
 
 const showPerfHud = import.meta.env.DEV;
-const variantsById = new Map(data.variants.map((variant) => [variant.id, variant]));
+const variantsById = new Map(
+  data.variants.map((variant) => [variant.id, variant]),
+);
 const benchmarkRoutes = data.benchmarkRoutes ?? [];
-const benchmarkRoutesById = new Map(benchmarkRoutes.map((route) => [route.id, route]));
+const benchmarkRoutesById = new Map(
+  benchmarkRoutes.map((route) => [route.id, route]),
+);
 const firstPreset = data.presets[0];
-const defaultVariant = variantsById.get(data.scene.defaultVariantId) ?? data.variants[0];
-const maxRenderScalePercent = Math.round(getMaxSupportedPixelRatio(window) * 100);
-let activeRenderScalePercent = getInitialRenderScalePercent(window, maxRenderScalePercent);
+const defaultVariant =
+  variantsById.get(data.scene.defaultVariantId) ?? data.variants[0];
+const maxRenderScalePercent = Math.round(
+  getMaxSupportedPixelRatio(window) * 100,
+);
+let activeRenderScalePercent = getInitialRenderScalePercent(
+  window,
+  maxRenderScalePercent,
+);
+let activeSceneLook = loadSceneLookSettings(window);
 const longTaskBuffer: Array<{ startTime: number; duration: number }> = [];
 
 initLongTaskObserver(longTaskBuffer);
 
-const sceneContainer = requireElement<HTMLDivElement>('#scene');
-const copyRouteAnalysisSummaryButton = requireElement<HTMLButtonElement>('#copy-route-analysis-summary');
-const copyRouteAnalysisJsonButton = requireElement<HTMLButtonElement>('#copy-route-analysis-json');
-const downloadRouteAnalysisJsonButton = requireElement<HTMLButtonElement>('#download-route-analysis-json');
-const renderScaleSlider = requireElement<HTMLInputElement>('#render-scale-slider');
-const statusTitle = requireElement<HTMLElement>('#status-title');
-const statusDetail = requireElement<HTMLElement>('#status-detail');
-const variantSize = requireElement<HTMLElement>('#variant-size');
-const variantSplats = requireElement<HTMLElement>('#variant-splats');
-const variantRetention = requireElement<HTMLElement>('#variant-retention');
-const variantTitle = requireElement<HTMLElement>('#variant-title');
-const variantNote = requireElement<HTMLElement>('#variant-note');
-const metricLoad = requireElement<HTMLElement>('#metric-load');
-const metricFirstFrame = requireElement<HTMLElement>('#metric-first-frame');
-const metricMotion = requireElement<HTMLElement>('#metric-motion');
-const renderScaleValue = requireElement<HTMLElement>('#render-scale-value');
-const renderScaleNote = requireElement<HTMLElement>('#render-scale-note');
-const focusSceneButton = requireElement<HTMLButtonElement>('#focus-scene');
-const focusOverviewButton = requireElement<HTMLButtonElement>('#focus-overview');
-const qualitySummary = requireElement<HTMLElement>('#quality-summary');
-const presetsSummary = requireElement<HTMLElement>('#presets-summary');
-const perfFps = showPerfHud ? requireElement<HTMLElement>('#perf-fps') : null;
-const perfMs = showPerfHud ? requireElement<HTMLElement>('#perf-ms') : null;
-const perfRender = showPerfHud ? requireElement<HTMLElement>('#perf-render') : null;
-const perfScale = showPerfHud ? requireElement<HTMLElement>('#perf-scale') : null;
-const inspectorToggles = [...document.querySelectorAll<HTMLButtonElement>('[data-toggle]')];
+const sceneContainer = requireElement<HTMLDivElement>("#scene");
+const copyRouteAnalysisSummaryButton = requireElement<HTMLButtonElement>(
+  "#copy-route-analysis-summary",
+);
+const copyRouteAnalysisJsonButton = requireElement<HTMLButtonElement>(
+  "#copy-route-analysis-json",
+);
+const downloadRouteAnalysisJsonButton = requireElement<HTMLButtonElement>(
+  "#download-route-analysis-json",
+);
+const renderScaleSlider = requireElement<HTMLInputElement>(
+  "#render-scale-slider",
+);
+const statusTitle = requireElement<HTMLElement>("#status-title");
+const statusDetail = requireElement<HTMLElement>("#status-detail");
+const variantSize = requireElement<HTMLElement>("#variant-size");
+const variantSplats = requireElement<HTMLElement>("#variant-splats");
+const variantRetention = requireElement<HTMLElement>("#variant-retention");
+const variantTitle = requireElement<HTMLElement>("#variant-title");
+const variantNote = requireElement<HTMLElement>("#variant-note");
+const metricLoad = requireElement<HTMLElement>("#metric-load");
+const metricFirstFrame = requireElement<HTMLElement>("#metric-first-frame");
+const metricMotion = requireElement<HTMLElement>("#metric-motion");
+const renderScaleValue = requireElement<HTMLElement>("#render-scale-value");
+const renderScaleNote = requireElement<HTMLElement>("#render-scale-note");
+const sceneLookSummary = requireElement<HTMLElement>("#scene-look-summary");
+const sceneLookBrightness = requireElement<HTMLInputElement>(
+  "#scene-look-brightness",
+);
+const sceneLookBrightnessValue = requireElement<HTMLElement>(
+  "#scene-look-brightness-value",
+);
+const sceneLookContrast = requireElement<HTMLInputElement>(
+  "#scene-look-contrast",
+);
+const sceneLookContrastValue = requireElement<HTMLElement>(
+  "#scene-look-contrast-value",
+);
+const sceneLookSaturation = requireElement<HTMLInputElement>(
+  "#scene-look-saturation",
+);
+const sceneLookSaturationValue = requireElement<HTMLElement>(
+  "#scene-look-saturation-value",
+);
+const focusSceneButton = requireElement<HTMLButtonElement>("#focus-scene");
+const focusOverviewButton =
+  requireElement<HTMLButtonElement>("#focus-overview");
+const qualitySummary = requireElement<HTMLElement>("#quality-summary");
+const presetsSummary = requireElement<HTMLElement>("#presets-summary");
+const perfFps = showPerfHud ? requireElement<HTMLElement>("#perf-fps") : null;
+const perfMs = showPerfHud ? requireElement<HTMLElement>("#perf-ms") : null;
+const perfRender = showPerfHud
+  ? requireElement<HTMLElement>("#perf-render")
+  : null;
+const perfScale = showPerfHud
+  ? requireElement<HTMLElement>("#perf-scale")
+  : null;
+const inspectorToggles = [
+  ...document.querySelectorAll<HTMLButtonElement>("[data-toggle]"),
+];
 const inspectorBodies = new Map(
-  [...document.querySelectorAll<HTMLElement>('[data-body]')]
-    .map((element) => [element.dataset.body ?? '', element] as const)
-    .filter(([panelId]) => panelId)
+  [...document.querySelectorAll<HTMLElement>("[data-body]")]
+    .map((element) => [element.dataset.body ?? "", element] as const)
+    .filter(([panelId]) => panelId),
 );
 if (inspectorToggles.length === 0 || inspectorBodies.size === 0) {
-  throw new Error('Failed to initialize UI shell');
+  throw new Error("Failed to initialize UI shell");
 }
 
 let runtime: any = null;
@@ -101,16 +161,20 @@ let isBatchBenchmarkRunning = false;
 let activeSuiteRunId: string | null = null;
 let activeBenchmarkRunPromise: Promise<any> | null = null;
 let isVariantPanelDisabled = false;
-let lastVariantSelectionSequence = useViewerUiStore.getState().variantSelectionRequest.sequence;
-let lastPresetSelectionSequence = useViewerUiStore.getState().presetSelectionRequest.sequence;
-let lastRouteSelectionSequence = useViewerUiStore.getState().routeSelectionRequest.sequence;
-let lastRunCurrentRouteBenchmarkRequest = useViewerUiStore.getState().runCurrentRouteBenchmarkRequest;
+let lastVariantSelectionSequence =
+  useViewerUiStore.getState().variantSelectionRequest.sequence;
+let lastPresetSelectionSequence =
+  useViewerUiStore.getState().presetSelectionRequest.sequence;
+let lastRouteSelectionSequence =
+  useViewerUiStore.getState().routeSelectionRequest.sequence;
+let lastRunCurrentRouteBenchmarkRequest =
+  useViewerUiStore.getState().runCurrentRouteBenchmarkRequest;
 let lastRunRouteSuiteRequest = useViewerUiStore.getState().runRouteSuiteRequest;
-let routeSummaryText = '未播放';
+let routeSummaryText = "未播放";
 const variantBenchmarks = new Map<string, VariantBenchmark>();
 const routeRunHistory: RouteRunRecord[] = getInitialRouteRunHistory(
   routeRunHistoryStorageKey,
-  maxRouteRunHistory
+  maxRouteRunHistory,
 );
 const routeDiagnosticsController = createRouteDiagnosticsController({
   frameSchema: Object.keys(frameSampleIndices),
@@ -128,7 +192,7 @@ const routeDiagnosticsController = createRouteDiagnosticsController({
     return totalSteps ? `Step ${ordinal}/${totalSteps}` : `Step ${ordinal}`;
   },
   getActiveBenchmarkRunPromise: () => activeBenchmarkRunPromise,
-  runVariantRouteBenchmark: (options) => runVariantRouteBenchmark(options)
+  runVariantRouteBenchmark: (options) => runVariantRouteBenchmark(options),
 });
 const routeBenchmarkController = createRouteBenchmarkController({
   benchmarkRoutes,
@@ -170,7 +234,7 @@ const routeBenchmarkController = createRouteBenchmarkController({
   setVariantButtonsDisabled,
   activateVariant,
   startBenchmarkRoute,
-  stopActiveBenchmarkRoute
+  stopActiveBenchmarkRoute,
 });
 const viewerShellController = createViewerShellController({
   inspectorToggles,
@@ -194,7 +258,7 @@ const viewerShellController = createViewerShellController({
   publishVariantPanel,
   getVariantBenchmark,
   getActiveVariantId: () => activeVariantId,
-  getActiveRenderScalePercent: () => activeRenderScalePercent
+  getActiveRenderScalePercent: () => activeRenderScalePercent,
 });
 const variantOrchestrationController = createVariantOrchestrationController({
   pc,
@@ -214,6 +278,7 @@ const variantOrchestrationController = createVariantOrchestrationController({
     activePresetId = presetId;
   },
   getActiveRouteId: () => activeRouteId,
+  getSceneLook: () => activeSceneLook,
   issueLoadToken: () => {
     currentLoadToken += 1;
     return currentLoadToken;
@@ -221,7 +286,8 @@ const variantOrchestrationController = createVariantOrchestrationController({
   isCurrentLoadToken: (loadToken) => loadToken === currentLoadToken,
   createBenchmark: (variantId) =>
     beginStoredVariantBenchmark(variantBenchmarks, variantId),
-  renderVariantMeta: (variant) => viewerShellController.renderVariantMeta(variant),
+  renderVariantMeta: (variant) =>
+    viewerShellController.renderVariantMeta(variant),
   updateVariantButtons,
   updatePresetButtons,
   setVariantButtonsDisabled,
@@ -238,18 +304,20 @@ const variantOrchestrationController = createVariantOrchestrationController({
   createRuntime,
   moveCamera,
   publishVariantBenchmark,
-  getVariantBenchmark
+  getVariantBenchmark,
 });
 
-focusSceneButton.addEventListener('click', () => activatePreset(firstPreset.id));
-focusOverviewButton.addEventListener('click', () => activatePreset('hover'));
+focusSceneButton.addEventListener("click", () =>
+  activatePreset(firstPreset.id),
+);
+focusOverviewButton.addEventListener("click", () => activatePreset("hover"));
 useViewerUiStore.subscribe((state) => {
   const {
     presetSelectionRequest,
     variantSelectionRequest,
     routeSelectionRequest,
     runCurrentRouteBenchmarkRequest,
-    runRouteSuiteRequest
+    runRouteSuiteRequest,
   } = state;
 
   if (presetSelectionRequest.sequence !== lastPresetSelectionSequence) {
@@ -286,21 +354,24 @@ useViewerUiStore.subscribe((state) => {
     void runRouteBenchmarkSuite();
   }
 });
-copyRouteAnalysisSummaryButton.addEventListener('click', () => {
-  void routeDiagnosticsController.copyLatestRouteAnalysis('summary');
+copyRouteAnalysisSummaryButton.addEventListener("click", () => {
+  void routeDiagnosticsController.copyLatestRouteAnalysis("summary");
 });
-copyRouteAnalysisJsonButton.addEventListener('click', () => {
-  void routeDiagnosticsController.copyLatestRouteAnalysis('json');
+copyRouteAnalysisJsonButton.addEventListener("click", () => {
+  void routeDiagnosticsController.copyLatestRouteAnalysis("json");
 });
-downloadRouteAnalysisJsonButton.addEventListener('click', () => {
+downloadRouteAnalysisJsonButton.addEventListener("click", () => {
   routeDiagnosticsController.downloadLatestRouteAnalysisJson();
 });
-renderScaleSlider.addEventListener('input', (event) => {
+renderScaleSlider.addEventListener("input", (event) => {
   const nextPercent = Number((event.currentTarget as HTMLInputElement).value);
   activateRenderScale(nextPercent);
 });
+sceneLookBrightness.addEventListener("input", applySceneLookFromControls);
+sceneLookContrast.addEventListener("input", applySceneLookFromControls);
+sceneLookSaturation.addEventListener("input", applySceneLookFromControls);
 for (const toggle of inspectorToggles) {
-  toggle.addEventListener('click', () => {
+  toggle.addEventListener("click", () => {
     const { toggle: panelId } = toggle.dataset;
     if (!panelId) {
       return;
@@ -316,14 +387,15 @@ updateRouteButtons();
 publishRouteControls();
 renderVariantMeta(defaultVariant);
 renderRenderScaleMeta(activeRenderScalePercent);
+renderSceneLookMeta(activeSceneLook);
 renderCameraMeta(null);
 renderPerfHud(null);
 routeDiagnosticsController.publishRouteDiagnostics();
 routeDiagnosticsController.installRouteAnalysisBridge();
 viewerShellController.setOpenInspectorPanel(openInspectorPanel);
 
-statusTitle.textContent = '加载中';
-statusDetail.textContent = '准备场景资源';
+statusTitle.textContent = "加载中";
+statusDetail.textContent = "准备场景资源";
 
 await activateVariant(defaultVariant.id, true);
 
@@ -332,7 +404,10 @@ function renderVariantMeta(variant) {
 }
 
 function activateRenderScale(nextPercent) {
-  const normalizedPercent = normalizeRenderScalePercent(nextPercent, maxRenderScalePercent);
+  const normalizedPercent = normalizeRenderScalePercent(
+    nextPercent,
+    maxRenderScalePercent,
+  );
   activeRenderScalePercent = normalizedPercent;
   renderScaleSlider.value = String(normalizedPercent);
   persistRenderScalePercent(window, normalizedPercent);
@@ -345,11 +420,37 @@ function renderRenderScaleMeta(percent) {
   viewerShellController.renderRenderScaleMeta(percent);
 }
 
-async function activateVariant(variantId, initial = false, forceReload = false) {
+function applySceneLookFromControls() {
+  const nextSceneLook = normalizeSceneLookSettings({
+    brightnessPercent: Number(sceneLookBrightness.value),
+    contrastPercent: Number(sceneLookContrast.value),
+    saturationPercent: Number(sceneLookSaturation.value),
+  });
+  activeSceneLook = nextSceneLook;
+  persistSceneLookSettings(window, nextSceneLook);
+  renderSceneLookMeta(nextSceneLook);
+  applyRuntimeSceneLook(runtime, nextSceneLook);
+}
+
+function renderSceneLookMeta(sceneLook) {
+  sceneLookBrightness.value = String(sceneLook.brightnessPercent);
+  sceneLookContrast.value = String(sceneLook.contrastPercent);
+  sceneLookSaturation.value = String(sceneLook.saturationPercent);
+  sceneLookBrightnessValue.textContent = `${sceneLook.brightnessPercent}%`;
+  sceneLookContrastValue.textContent = `${sceneLook.contrastPercent}%`;
+  sceneLookSaturationValue.textContent = `${sceneLook.saturationPercent}%`;
+  sceneLookSummary.textContent = formatSceneLookSummary(sceneLook);
+}
+
+async function activateVariant(
+  variantId,
+  initial = false,
+  forceReload = false,
+) {
   return variantOrchestrationController.activateVariant(
     variantId,
     initial,
-    forceReload
+    forceReload,
   );
 }
 
@@ -400,7 +501,7 @@ function publishVariantPanel() {
     variants: data.variants,
     activeVariantId,
     defaultVariant,
-    disabled: isVariantPanelDisabled
+    disabled: isVariantPanelDisabled,
   });
 }
 
@@ -408,7 +509,7 @@ function publishPresetPanel() {
   syncPresetPanelState({
     presets: data.presets,
     activePresetId,
-    firstPreset
+    firstPreset,
   });
 }
 
@@ -420,11 +521,16 @@ function publishRouteControls() {
     routeSummaryText,
     variantCount: data.variants.length,
     isBatchBenchmarkRunning,
-    currentVariantRepeatCount
+    currentVariantRepeatCount,
   });
 }
 
-async function createRuntime(canvasElement, variant, timings: any = {}) {
+async function createRuntime(
+  canvasElement,
+  variant,
+  timings: any = {},
+  sceneLook = activeSceneLook,
+) {
   return createViewerRuntime({
     pc,
     canvasElement,
@@ -433,6 +539,7 @@ async function createRuntime(canvasElement, variant, timings: any = {}) {
     runtimeWindow: window,
     runtimeDocument: document,
     renderScalePercent: activeRenderScalePercent,
+    sceneLook,
     firstPreset,
     createBenchmark: (variantId) =>
       beginStoredVariantBenchmark(variantBenchmarks, variantId),
@@ -442,7 +549,7 @@ async function createRuntime(canvasElement, variant, timings: any = {}) {
     getActiveRouteId: () => activeRouteId,
     stopActiveBenchmarkRoute,
     renderCameraMeta,
-    renderPerfHud
+    renderPerfHud,
   });
 }
 
@@ -452,7 +559,7 @@ function moveCamera(runtimeState, preset, immediate = false) {
     preset,
     immediate,
     pc,
-    vec3
+    vec3,
   });
 }
 
@@ -463,21 +570,21 @@ function startBenchmarkRoute(runtimeState, route, options: any = {}) {
     suiteId: activeSuiteRunId,
     renderScalePercent: activeRenderScalePercent,
     longTaskBuffer,
-    onFinish: options.onFinish ?? null
+    onFinish: options.onFinish ?? null,
   });
   publishVariantBenchmark(runtimeState?.variantId);
   advanceBenchmarkRoute(runtimeState);
 }
 
-function stopBenchmarkRoute(runtimeState, status = 'aborted') {
+function stopBenchmarkRoute(runtimeState, status = "aborted") {
   stopBenchmarkPlaybackRoute({
     runtimeState,
     status,
-    finalizeRouteRunRecord
+    finalizeRouteRunRecord,
   });
 }
 
-function stopActiveBenchmarkRoute(summaryText = '未播放', status = 'aborted') {
+function stopActiveBenchmarkRoute(summaryText = "未播放", status = "aborted") {
   if (runtime) {
     stopBenchmarkRoute(runtime, status);
   }
@@ -498,7 +605,7 @@ function advanceBenchmarkRoute(runtimeState) {
     updateRouteSummary: (summaryText) => {
       routeSummaryText = summaryText;
       publishRouteControls();
-    }
+    },
   });
 }
 
@@ -506,7 +613,7 @@ function updateBenchmarkRoute(runtimeState, dt) {
   return updateBenchmarkPlaybackRoute({
     runtimeState,
     dt,
-    advanceRuntimeBenchmarkRoute: () => advanceBenchmarkRoute(runtimeState)
+    advanceRuntimeBenchmarkRoute: () => advanceBenchmarkRoute(runtimeState),
   });
 }
 
@@ -518,15 +625,20 @@ function restoreCurrentView(runtimeState, snapshot) {
   return restoreRuntimeView({
     runtimeState,
     snapshot,
-    pc
+    pc,
   });
 }
 
 function finalizeRouteRunRecord(runtimeState, status) {
-  return routeDiagnosticsController.finalizeRouteRunRecord(runtimeState, status);
+  return routeDiagnosticsController.finalizeRouteRunRecord(
+    runtimeState,
+    status,
+  );
 }
 
-function getVariantBenchmark(variantId: string | null | undefined): VariantBenchmark | null {
+function getVariantBenchmark(
+  variantId: string | null | undefined,
+): VariantBenchmark | null {
   return getStoredVariantBenchmark(variantBenchmarks, variantId);
 }
 
@@ -539,7 +651,6 @@ function publishVariantBenchmark(variantId) {
 function renderVariantBenchmark(variantId) {
   viewerShellController.renderVariantBenchmark(variantId);
 }
-
 
 function vec3(tuple) {
   return new pc.Vec3(tuple[0], tuple[1], tuple[2]);
