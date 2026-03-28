@@ -39,17 +39,12 @@ import {
 } from "./runtime/scene-look";
 import { createVariantOrchestrationController } from "./runtime/variant-orchestration";
 import type { RouteRunRecord, VariantBenchmark, ViewerContent } from "./types";
-import { useViewerUiStore } from "./ui/viewer-ui-store";
+import { createViewerPanelController } from "./ui/viewer-panel-controller";
 import {
   initializeViewerStartup,
   installViewerStartupBindings,
 } from "./ui/viewer-startup-controller";
 import { createViewerShellController } from "./ui/viewer-shell-controller";
-import {
-  syncPresetPanelState,
-  syncRouteControlsState,
-  syncVariantPanelState,
-} from "./ui/viewer-ui-sync";
 import { requireElement } from "./utils/dom";
 
 const pc: any = await import(
@@ -171,6 +166,25 @@ const routeRunHistory: RouteRunRecord[] = getInitialRouteRunHistory(
   routeRunHistoryStorageKey,
   maxRouteRunHistory,
 );
+const viewerPanelController = createViewerPanelController({
+  variants: data.variants,
+  defaultVariant,
+  presets: data.presets,
+  firstPreset,
+  benchmarkRoutes,
+  variantCount: data.variants.length,
+  currentVariantRepeatCount,
+  getActiveVariantId: () => activeVariantId,
+  getActivePresetId: () => activePresetId,
+  getSelectedRouteId: () => selectedRouteId,
+  getActiveRouteId: () => activeRouteId,
+  getRouteSummaryText: () => routeSummaryText,
+  getIsBatchBenchmarkRunning: () => isBatchBenchmarkRunning,
+  getIsVariantPanelDisabled: () => isVariantPanelDisabled,
+  setIsVariantPanelDisabled: (disabled) => {
+    isVariantPanelDisabled = disabled;
+  },
+});
 const routeDiagnosticsController = createRouteDiagnosticsController({
   frameSchema: Object.keys(frameSampleIndices),
   copyFeedbackMs: routeAnalysisCopyFeedbackMs,
@@ -437,49 +451,31 @@ function setOpenInspectorPanel(panelId) {
 }
 
 function updatePresetButtons() {
-  publishPresetPanel();
+  viewerPanelController.updatePresetButtons();
 }
 
 function updateVariantButtons() {
-  publishVariantPanel();
+  viewerPanelController.updateVariantButtons();
 }
 
 function updateRouteButtons() {
-  publishRouteControls();
+  viewerPanelController.updateRouteButtons();
 }
 
 function setVariantButtonsDisabled(disabled) {
-  isVariantPanelDisabled = disabled;
-  publishVariantPanel();
+  viewerPanelController.setVariantButtonsDisabled(disabled);
 }
 
 function publishVariantPanel() {
-  syncVariantPanelState({
-    variants: data.variants,
-    activeVariantId,
-    defaultVariant,
-    disabled: isVariantPanelDisabled,
-  });
+  viewerPanelController.publishVariantPanel();
 }
 
 function publishPresetPanel() {
-  syncPresetPanelState({
-    presets: data.presets,
-    activePresetId,
-    firstPreset,
-  });
+  viewerPanelController.publishPresetPanel();
 }
 
 function publishRouteControls() {
-  syncRouteControlsState({
-    benchmarkRoutes,
-    selectedRouteId,
-    activeRouteId,
-    routeSummaryText,
-    variantCount: data.variants.length,
-    isBatchBenchmarkRunning,
-    currentVariantRepeatCount,
-  });
+  viewerPanelController.publishRouteControls();
 }
 
 async function createRuntime(
