@@ -314,3 +314,22 @@ export interface PresetPanelViewState {
   summary: string;
   items: PresetPanelItemView[];
 }
+
+export interface RouteControlItemView {
+  id: string;
+  name: string;
+  summary: string;
+  isActive: boolean;
+  isRunning: boolean;
+  disabled: boolean;
+}
+
+export interface RouteControlsViewState {
+  summary: string;
+  batchNote: string;
+  runCurrentLabel: string;
+  runSuiteLabel: string;
+  runCurrentDisabled: boolean;
+  runSuiteDisabled: boolean;
+  items: RouteControlItemView[];
+}

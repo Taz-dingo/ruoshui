@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import type {
   CameraViewState,
   PresetPanelViewState,
+  RouteControlsViewState,
   RouteDiagnosticsViewState,
   VariantPanelViewState
 } from '../types';
@@ -17,14 +18,22 @@ interface ViewerUiStoreState {
   routeDiagnostics: RouteDiagnosticsViewState;
   variantPanel: VariantPanelViewState | null;
   presetPanel: PresetPanelViewState | null;
+  routeControls: RouteControlsViewState | null;
   variantSelectionRequest: SelectionRequest;
   presetSelectionRequest: SelectionRequest;
+  routeSelectionRequest: SelectionRequest;
+  runCurrentRouteBenchmarkRequest: number;
+  runRouteSuiteRequest: number;
   setCamera: (camera: CameraViewState) => void;
   setRouteDiagnostics: (routeDiagnostics: RouteDiagnosticsViewState) => void;
   setVariantPanel: (variantPanel: VariantPanelViewState) => void;
   setPresetPanel: (presetPanel: PresetPanelViewState) => void;
+  setRouteControls: (routeControls: RouteControlsViewState) => void;
   requestVariantSelection: (variantId: string) => void;
   requestPresetSelection: (presetId: string) => void;
+  requestRouteSelection: (routeId: string) => void;
+  requestRunCurrentRouteBenchmark: () => void;
+  requestRunRouteSuite: () => void;
 }
 
 export const emptyCameraState: CameraViewState = {
@@ -52,6 +61,7 @@ export const useViewerUiStore = create<ViewerUiStoreState>((set) => ({
   routeDiagnostics: emptyRouteDiagnosticsState,
   variantPanel: null,
   presetPanel: null,
+  routeControls: null,
   variantSelectionRequest: {
     id: null,
     sequence: 0
@@ -60,10 +70,17 @@ export const useViewerUiStore = create<ViewerUiStoreState>((set) => ({
     id: null,
     sequence: 0
   },
+  routeSelectionRequest: {
+    id: null,
+    sequence: 0
+  },
+  runCurrentRouteBenchmarkRequest: 0,
+  runRouteSuiteRequest: 0,
   setCamera: (camera) => set({ camera }),
   setRouteDiagnostics: (routeDiagnostics) => set({ routeDiagnostics }),
   setVariantPanel: (variantPanel) => set({ variantPanel }),
   setPresetPanel: (presetPanel) => set({ presetPanel }),
+  setRouteControls: (routeControls) => set({ routeControls }),
   requestVariantSelection: (variantId) =>
     set((state) => ({
       variantSelectionRequest: {
@@ -77,5 +94,20 @@ export const useViewerUiStore = create<ViewerUiStoreState>((set) => ({
         id: presetId,
         sequence: state.presetSelectionRequest.sequence + 1
       }
+    })),
+  requestRouteSelection: (routeId) =>
+    set((state) => ({
+      routeSelectionRequest: {
+        id: routeId,
+        sequence: state.routeSelectionRequest.sequence + 1
+      }
+    })),
+  requestRunCurrentRouteBenchmark: () =>
+    set((state) => ({
+      runCurrentRouteBenchmarkRequest: state.runCurrentRouteBenchmarkRequest + 1
+    })),
+  requestRunRouteSuite: () =>
+    set((state) => ({
+      runRouteSuiteRequest: state.runRouteSuiteRequest + 1
     }))
 }));
