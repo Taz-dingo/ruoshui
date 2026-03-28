@@ -27,14 +27,13 @@ import { createViewerRuntime } from './runtime/runtime-factory';
 import { createVariantOrchestrationController } from './runtime/variant-orchestration';
 import type { RouteRunRecord, VariantBenchmark, ViewerContent } from './types';
 import { useViewerUiStore } from './ui/viewer-ui-store';
+import { createViewerShellController } from './ui/viewer-shell-controller';
 import {
-  syncCameraState,
   syncPresetPanelState,
   syncRouteControlsState,
   syncVariantPanelState
 } from './ui/viewer-ui-sync';
 import { requireElement } from './utils/dom';
-import { formatMetricMs, formatMotionMetric } from './utils/format';
 
 const pc: any = await import(/* @vite-ignore */ 'https://esm.sh/playcanvas@2.17.2?bundle');
 
@@ -173,6 +172,30 @@ const routeBenchmarkController = createRouteBenchmarkController({
   startBenchmarkRoute,
   stopActiveBenchmarkRoute
 });
+const viewerShellController = createViewerShellController({
+  inspectorToggles,
+  inspectorBodies,
+  variantSize,
+  variantSplats,
+  variantRetention,
+  variantTitle,
+  variantNote,
+  metricLoad,
+  metricFirstFrame,
+  metricMotion,
+  renderScaleValue,
+  qualitySummary,
+  renderScaleNote,
+  showPerfHud,
+  perfFps,
+  perfMs,
+  perfRender,
+  perfScale,
+  publishVariantPanel,
+  getVariantBenchmark,
+  getActiveVariantId: () => activeVariantId,
+  getActiveRenderScalePercent: () => activeRenderScalePercent
+});
 const variantOrchestrationController = createVariantOrchestrationController({
   pc,
   presets: data.presets,
@@ -198,7 +221,7 @@ const variantOrchestrationController = createVariantOrchestrationController({
   isCurrentLoadToken: (loadToken) => loadToken === currentLoadToken,
   createBenchmark: (variantId) =>
     beginStoredVariantBenchmark(variantBenchmarks, variantId),
-  renderVariantMeta,
+  renderVariantMeta: (variant) => viewerShellController.renderVariantMeta(variant),
   updateVariantButtons,
   updatePresetButtons,
   setVariantButtonsDisabled,
@@ -297,7 +320,7 @@ renderCameraMeta(null);
 renderPerfHud(null);
 routeDiagnosticsController.publishRouteDiagnostics();
 routeDiagnosticsController.installRouteAnalysisBridge();
-setOpenInspectorPanel(openInspectorPanel);
+viewerShellController.setOpenInspectorPanel(openInspectorPanel);
 
 statusTitle.textContent = '加载中';
 statusDetail.textContent = '准备场景资源';
@@ -305,13 +328,7 @@ statusDetail.textContent = '准备场景资源';
 await activateVariant(defaultVariant.id, true);
 
 function renderVariantMeta(variant) {
-  variantSize.textContent = variant.size;
-  variantSplats.textContent = variant.splats;
-  variantRetention.textContent = variant.retention;
-  variantTitle.textContent = variant.name;
-  variantNote.textContent = variant.note;
-  publishVariantPanel();
-  renderVariantBenchmark(variant.id);
+  viewerShellController.renderVariantMeta(variant);
 }
 
 function activateRenderScale(nextPercent) {
@@ -325,12 +342,7 @@ function activateRenderScale(nextPercent) {
 }
 
 function renderRenderScaleMeta(percent) {
-  const pixelRatio = (percent / 100).toFixed(2);
-  renderScaleValue.textContent = `${percent}% · x${pixelRatio}`;
-  qualitySummary.textContent = `${percent}%`;
-  renderScaleNote.textContent = percent >= 100
-    ? '原生像素比'
-    : '降低像素比，换取更稳帧率';
+  viewerShellController.renderRenderScaleMeta(percent);
 }
 
 async function activateVariant(variantId, initial = false, forceReload = false) {
@@ -363,16 +375,7 @@ async function runVariantRouteBenchmark(options: any = {}) {
 
 function setOpenInspectorPanel(panelId) {
   openInspectorPanel = panelId;
-
-  for (const toggle of inspectorToggles) {
-    const isOpen = toggle.dataset.toggle === panelId;
-    toggle.classList.toggle('is-active', isOpen);
-    toggle.setAttribute('aria-expanded', String(isOpen));
-  }
-
-  for (const [bodyId, body] of inspectorBodies) {
-    body.classList.toggle('is-open', bodyId === panelId);
-  }
+  viewerShellController.setOpenInspectorPanel(panelId);
 }
 
 function updatePresetButtons() {
@@ -534,10 +537,7 @@ function publishVariantBenchmark(variantId) {
 }
 
 function renderVariantBenchmark(variantId) {
-  const benchmark = getVariantBenchmark(variantId);
-  metricLoad.textContent = formatMetricMs(benchmark?.loadMs);
-  metricFirstFrame.textContent = formatMetricMs(benchmark?.firstFrameMs);
-  metricMotion.textContent = formatMotionMetric(benchmark);
+  viewerShellController.renderVariantBenchmark(variantId);
 }
 
 
@@ -546,33 +546,9 @@ function vec3(tuple) {
 }
 
 function renderCameraMeta(runtimeState) {
-  syncCameraState(runtimeState);
+  viewerShellController.renderCameraMeta(runtimeState);
 }
 
 function renderPerfHud(runtimeState) {
-  if (!showPerfHud || !perfFps || !perfMs || !perfRender || !perfScale) {
-    return;
-  }
-
-  perfScale.textContent = `${activeRenderScalePercent}%`;
-
-  if (!runtimeState?.app || !runtimeState?.performanceMode) {
-    perfFps.textContent = '—';
-    perfMs.textContent = '—';
-    perfRender.textContent = '未加载';
-    return;
-  }
-
-  const sampleTime = runtimeState.perfHudElapsed;
-  const frameCount = runtimeState.perfHudFrames;
-  if (sampleTime > 0 && frameCount > 0) {
-    const fps = frameCount / sampleTime;
-    const ms = (sampleTime / frameCount) * 1000;
-    perfFps.textContent = `${Math.round(fps)}`;
-    perfMs.textContent = `${ms.toFixed(1)} ms`;
-  }
-
-  const isRendering = runtimeState.app.autoRender || runtimeState.performanceMode.isInteracting;
-  perfRender.textContent = isRendering ? '活动' : '静止';
-  renderVariantBenchmark(activeVariantId);
+  viewerShellController.renderPerfHud(runtimeState);
 }
