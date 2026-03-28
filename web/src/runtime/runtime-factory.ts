@@ -2,6 +2,7 @@ import { renderWakeSeconds } from '../config';
 import { trackBenchmarkFirstFrame } from '../benchmark/runtime';
 import { bindRuntimeViewport, bindRuntimeVisibility, createRuntimeApp } from './bootstrap';
 import { createOrbitController } from './orbit';
+import { applyRuntimeSceneLook } from './scene-look';
 import { createRuntimeUpdateHandler } from './update-loop';
 import { detachVariantFromRuntime, loadVariantIntoRuntime } from './variant-loader';
 import type {
@@ -10,6 +11,7 @@ import type {
   VariantBenchmark,
   ViewerVariant
 } from '../types';
+import type { SceneLookSettings } from './scene-look';
 
 interface CreateViewerRuntimeArgs {
   pc: any;
@@ -19,6 +21,7 @@ interface CreateViewerRuntimeArgs {
   runtimeWindow: Window;
   runtimeDocument: Document;
   renderScalePercent: number;
+  sceneLook: SceneLookSettings;
   firstPreset: CameraPreset;
   createBenchmark: (variantId: string) => VariantBenchmark;
   getVariantBenchmark: (variantId: string) => VariantBenchmark | null;
@@ -38,6 +41,7 @@ function createViewerRuntime({
   runtimeWindow,
   runtimeDocument,
   renderScalePercent,
+  sceneLook,
   firstPreset,
   createBenchmark,
   getVariantBenchmark,
@@ -114,6 +118,8 @@ function createViewerRuntime({
       app.destroy();
     }
   };
+
+  applyRuntimeSceneLook(runtimeState, sceneLook);
 
   orbit.onManualInput = () => {
     if (getActiveRouteId()) {
@@ -228,6 +234,7 @@ function vec3(pc: any, tuple: [number, number, number]) {
 }
 
 export {
+  applyRuntimeSceneLook,
   configureUnifiedGsplat,
   createViewerRuntime
 };

@@ -308,6 +308,8 @@
   .route-analysis-hotspots,
   .route-analysis,
   .route-log,
+  .scene-look-controls,
+  .scene-look-control,
   .quality-control,
   .quality-meta {
     @apply grid gap-2;
@@ -512,6 +514,26 @@
 
   .quality-meta strong {
     @apply text-[13px];
+  }
+
+  .scene-look-controls {
+    @apply gap-2.5;
+  }
+
+  .scene-look-control {
+    @apply rounded-[14px] border px-3 py-2.5;
+    border-color: rgba(231, 218, 198, 0.08);
+    background: rgba(244, 236, 222, 0.03);
+  }
+
+  .scene-look-control span {
+    @apply text-[10px] uppercase tracking-[0.04em];
+    color: rgba(231, 218, 198, 0.58);
+  }
+
+  .scene-look-control strong {
+    @apply text-[12px] font-semibold;
+    color: var(--accent-strong);
   }
 
   .metric-card {
