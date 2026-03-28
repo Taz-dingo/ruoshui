@@ -15,20 +15,27 @@ import {
 } from './config';
 import { formatRouteAnalysisSummaryText, getInitialRouteRunHistory, getLatestRouteAnalysisExport, persistRouteRunHistory } from './benchmark/history';
 import {
-  beginMotionSession,
   beginStoredVariantBenchmark,
-  createBenchmarkRouteRunRecord,
   endMotionSession,
-  finalizeBenchmarkRouteRunRecord,
   getStoredVariantBenchmark,
   initLongTaskObserver,
   recordBenchmarkRouteFrame,
   sampleMotionFrame,
   trackBenchmarkFirstFrame
 } from './benchmark/runtime';
+import {
+  advanceRuntimeBenchmarkRoute as advanceBenchmarkPlaybackRoute,
+  captureRuntimeView,
+  finalizeRuntimeRouteRunRecord,
+  moveRuntimeCamera,
+  restoreRuntimeView,
+  startRuntimeBenchmarkRoute,
+  stopRuntimeBenchmarkRoute as stopBenchmarkPlaybackRoute,
+  updateRuntimeBenchmarkRoute as updateBenchmarkPlaybackRoute
+} from './benchmark/playback';
 import { applyRenderScaleToRuntime, createPerformanceMode, getInitialRenderScalePercent, getMaxSupportedPixelRatio, normalizeRenderScalePercent, persistRenderScalePercent, updatePerformanceMode } from './performance/render-scale';
 import { createLoopController } from './runtime/lifecycle';
-import { captureOrbitView, createOrbitController, restoreOrbitView, setOrbitPreset, updateOrbitController } from './runtime/orbit';
+import { createOrbitController, updateOrbitController } from './runtime/orbit';
 import { detachVariantFromRuntime, loadVariantIntoRuntime } from './runtime/variant-loader';
 import type { RouteRunRecord, VariantBenchmark, ViewerContent } from './types';
 import { useViewerUiStore } from './ui/viewer-ui-store';
@@ -768,44 +775,34 @@ async function createRuntime(canvasElement, variant, timings: any = {}) {
 }
 
 function moveCamera(runtimeState, preset, immediate = false) {
-  setOrbitPreset(runtimeState.orbit, vec3(preset.position), vec3(preset.target), immediate, pc);
-  runtimeState.requestRender();
+  moveRuntimeCamera({
+    runtimeState,
+    preset,
+    immediate,
+    pc,
+    vec3
+  });
 }
 
 function startBenchmarkRoute(runtimeState, route, options: any = {}) {
-  if (!runtimeState || !route?.steps?.length) {
-    return;
-  }
-
-  beginMotionSession(runtimeState.benchmark);
-  publishVariantBenchmark(runtimeState.variantId);
-  runtimeState.routeRecord = createBenchmarkRouteRunRecord({
+  startRuntimeBenchmarkRoute({
+    runtimeState,
     route,
-    variantId: runtimeState.variantId,
-    variantName: runtimeState.variantMeta?.name ?? runtimeState.variantId,
     suiteId: activeSuiteRunId,
     renderScalePercent: activeRenderScalePercent,
-    longTaskStartIndex: longTaskBuffer.length,
-    resourceStartIndex: performance.getEntriesByType('resource').length
+    longTaskBuffer,
+    onFinish: options.onFinish ?? null
   });
-  runtimeState.routePlayback = {
-    route,
-    onFinish: options.onFinish ?? null,
-    stepIndex: -1,
-    stepRemaining: 0
-  };
+  publishVariantBenchmark(runtimeState?.variantId);
   advanceBenchmarkRoute(runtimeState);
 }
 
 function stopBenchmarkRoute(runtimeState, status = 'aborted') {
-  if (!runtimeState) {
-    return;
-  }
-
-  const playback = runtimeState.routePlayback;
-  const finalizedRecord = finalizeRouteRunRecord(runtimeState, status);
-  runtimeState.routePlayback = null;
-  playback?.onFinish?.(finalizedRecord);
+  stopBenchmarkPlaybackRoute({
+    runtimeState,
+    status,
+    finalizeRouteRunRecord
+  });
 }
 
 function stopActiveBenchmarkRoute(summaryText = '未播放', status = 'aborted') {
@@ -819,63 +816,38 @@ function stopActiveBenchmarkRoute(summaryText = '未播放', status = 'aborted')
 }
 
 function advanceBenchmarkRoute(runtimeState) {
-  const playback = runtimeState?.routePlayback;
-
-  if (!playback) {
-    return false;
-  }
-
-  playback.stepIndex += 1;
-  if (playback.stepIndex >= playback.route.steps.length) {
-    if (activeRouteId === playback.route.id) {
-      stopActiveBenchmarkRoute(`${playback.route.name} · 完成`, 'completed');
-    } else {
-      stopBenchmarkRoute(runtimeState, 'completed');
+  return advanceBenchmarkPlaybackRoute({
+    runtimeState,
+    pc,
+    vec3,
+    activeRouteId,
+    onActiveRouteCompleted: stopActiveBenchmarkRoute,
+    stopRuntimeBenchmarkRoute: stopBenchmarkRoute,
+    updateRouteSummary: (summaryText) => {
+      routeSummaryText = summaryText;
+      publishRouteControls();
     }
-    return false;
-  }
-
-  const step = playback.route.steps[playback.stepIndex];
-  const duration = Number.isFinite(step.duration) ? Math.max(step.duration, 0) : 1.35;
-  const hold = Number.isFinite(step.hold) ? Math.max(step.hold, 0) : 0.35;
-  const immediate = duration === 0;
-  setOrbitPreset(runtimeState.orbit, vec3(step.position), vec3(step.target), immediate, pc, duration);
-  playback.stepRemaining = duration + hold;
-  runtimeState.requestRender?.();
-
-  if (activeRouteId === playback.route.id) {
-    routeSummaryText = `${playback.route.name} · ${playback.stepIndex + 1}/${playback.route.steps.length}`;
-    publishRouteControls();
-  }
-
-  return true;
+  });
 }
 
 function updateBenchmarkRoute(runtimeState, dt) {
-  const playback = runtimeState?.routePlayback;
-
-  if (!playback) {
-    return false;
-  }
-
-  playback.stepRemaining -= dt;
-  if (playback.stepRemaining > 0) {
-    return false;
-  }
-
-  return advanceBenchmarkRoute(runtimeState);
+  return updateBenchmarkPlaybackRoute({
+    runtimeState,
+    dt,
+    advanceRuntimeBenchmarkRoute: () => advanceBenchmarkRoute(runtimeState)
+  });
 }
 
 function captureCurrentView(runtimeState) {
-  return captureOrbitView(runtimeState?.orbit);
+  return captureRuntimeView(runtimeState);
 }
 
 function restoreCurrentView(runtimeState, snapshot) {
-  if (!restoreOrbitView(runtimeState?.orbit, snapshot, pc)) {
-    return false;
-  }
-  runtimeState.requestRender?.();
-  return true;
+  return restoreRuntimeView({
+    runtimeState,
+    snapshot,
+    pc
+  });
 }
 
 function configureUnifiedGsplat(app, variant) {
@@ -983,25 +955,17 @@ function getUnifiedLodRiskSnapshot(orbit) {
 }
 
 function finalizeRouteRunRecord(runtimeState, status) {
-  const record = runtimeState?.routeRecord;
-  if (!record) {
-    return null;
-  }
-
-  const finalizedRecord = finalizeBenchmarkRouteRunRecord({
-    record,
-    benchmark: runtimeState.benchmark,
+  return finalizeRuntimeRouteRunRecord({
+    runtimeState,
     status,
     longTaskBuffer,
+    routeRunHistory,
+    maxRouteRunHistory,
+    routeRunHistoryStorageKey,
+    persistRouteRunHistory,
+    publishRouteDiagnostics,
     getRouteStepLabel
   });
-
-  routeRunHistory.unshift(finalizedRecord);
-  routeRunHistory.length = Math.min(routeRunHistory.length, maxRouteRunHistory);
-  persistRouteRunHistory(routeRunHistoryStorageKey, routeRunHistory);
-  publishRouteDiagnostics();
-  runtimeState.routeRecord = null;
-  return finalizedRecord;
 }
 
 function getRouteStepLabel(routeId, stepIndex) {
