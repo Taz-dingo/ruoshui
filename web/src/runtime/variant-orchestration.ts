@@ -1,4 +1,5 @@
 import { trackBenchmarkFirstFrame } from '../benchmark/runtime';
+import { configureUnifiedGsplat } from './runtime-factory';
 import { loadVariantIntoRuntime } from './variant-loader';
 import type { CameraPreset, VariantBenchmark, ViewerVariant } from '../types';
 
@@ -30,7 +31,6 @@ interface CreateVariantOrchestrationControllerArgs {
   moveCamera: (runtimeState: any, preset: CameraPreset, immediate?: boolean) => void;
   publishVariantBenchmark: (variantId: string) => void;
   getVariantBenchmark: (variantId: string) => VariantBenchmark | null;
-  configureUnifiedGsplat: (app: any, variant: ViewerVariant) => any;
 }
 
 function createVariantOrchestrationController({
@@ -60,8 +60,7 @@ function createVariantOrchestrationController({
   createRuntime,
   moveCamera,
   publishVariantBenchmark,
-  getVariantBenchmark,
-  configureUnifiedGsplat
+  getVariantBenchmark
 }: CreateVariantOrchestrationControllerArgs) {
   async function mountRuntime(variant: ViewerVariant, timings: any) {
     const runtime = getRuntime();
