@@ -1,13 +1,13 @@
 import type { PresetPanelViewState } from '../types';
 import { useViewerUiStore } from '../ui/viewer-ui-store';
+import { requestPresetSelection } from '../viewer-command-bus';
 
 interface PresetPanelProps {
   initialState: PresetPanelViewState;
 }
 
-export function PresetPanel({ initialState }: PresetPanelProps) {
+function PresetPanel({ initialState }: PresetPanelProps) {
   const state = useViewerUiStore((store) => store.presetPanel ?? initialState);
-  const requestPresetSelection = useViewerUiStore((store) => store.requestPresetSelection);
 
   return (
     <div className="preset-list">
@@ -25,3 +25,7 @@ export function PresetPanel({ initialState }: PresetPanelProps) {
     </div>
   );
 }
+
+export {
+  PresetPanel
+};

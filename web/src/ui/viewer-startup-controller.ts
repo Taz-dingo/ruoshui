@@ -1,6 +1,9 @@
-import type { SceneLookSettings } from "../runtime/scene-look";
-import type { ViewerVariant } from "../types";
-import { useViewerUiStore } from "./viewer-ui-store";
+import type { SceneLookSettings } from '../runtime/scene-look';
+import type { ViewerVariant } from '../types';
+import {
+  subscribeViewerCommands,
+  type ViewerCommand
+} from '../viewer-command-bus';
 
 interface InstallViewerStartupBindingsArgs {
   activatePreset: (presetId: string) => void;
@@ -43,105 +46,53 @@ function installViewerStartupBindings({
   copyLatestRouteAnalysisJson,
   downloadLatestRouteAnalysisJson,
   activateRenderScale,
-  applySceneLook,
+  applySceneLook
 }: InstallViewerStartupBindingsArgs) {
-  let lastVariantSelectionSequence =
-    useViewerUiStore.getState().variantSelectionRequest.sequence;
-  let lastPresetSelectionSequence =
-    useViewerUiStore.getState().presetSelectionRequest.sequence;
-  let lastRouteSelectionSequence =
-    useViewerUiStore.getState().routeSelectionRequest.sequence;
-  let lastCopyRouteAnalysisJsonRequest =
-    useViewerUiStore.getState().copyRouteAnalysisJsonRequest;
-  let lastCopyRouteAnalysisSummaryRequest =
-    useViewerUiStore.getState().copyRouteAnalysisSummaryRequest;
-  let lastDownloadRouteAnalysisJsonRequest =
-    useViewerUiStore.getState().downloadRouteAnalysisJsonRequest;
-  let lastRenderScaleRequest = useViewerUiStore.getState().renderScaleRequest.sequence;
-  let lastSceneLookRequest = useViewerUiStore.getState().sceneLookRequest.sequence;
-  let lastRunCurrentRouteBenchmarkRequest =
-    useViewerUiStore.getState().runCurrentRouteBenchmarkRequest;
-  let lastRunRouteSuiteRequest = useViewerUiStore.getState().runRouteSuiteRequest;
-
-  const unsubscribe = useViewerUiStore.subscribe((state) => {
-    const {
-      copyRouteAnalysisJsonRequest,
-      copyRouteAnalysisSummaryRequest,
-      downloadRouteAnalysisJsonRequest,
-      presetSelectionRequest,
-      renderScaleRequest,
-      sceneLookRequest,
-      variantSelectionRequest,
-      routeSelectionRequest,
-      runCurrentRouteBenchmarkRequest,
-      runRouteSuiteRequest,
-    } = state;
-
-    if (presetSelectionRequest.sequence !== lastPresetSelectionSequence) {
-      lastPresetSelectionSequence = presetSelectionRequest.sequence;
-      if (presetSelectionRequest.id) {
-        activatePreset(presetSelectionRequest.id);
-      }
-    }
-
-    if (variantSelectionRequest.sequence !== lastVariantSelectionSequence) {
-      lastVariantSelectionSequence = variantSelectionRequest.sequence;
-      if (variantSelectionRequest.id) {
-        void activateVariant(variantSelectionRequest.id);
-      }
-    }
-
-    if (routeSelectionRequest.sequence !== lastRouteSelectionSequence) {
-      lastRouteSelectionSequence = routeSelectionRequest.sequence;
-      if (routeSelectionRequest.id) {
-        activateBenchmarkRoute(routeSelectionRequest.id);
-      }
-    }
-
-    if (copyRouteAnalysisSummaryRequest !== lastCopyRouteAnalysisSummaryRequest) {
-      lastCopyRouteAnalysisSummaryRequest = copyRouteAnalysisSummaryRequest;
-      void copyLatestRouteAnalysisSummary();
-    }
-
-    if (copyRouteAnalysisJsonRequest !== lastCopyRouteAnalysisJsonRequest) {
-      lastCopyRouteAnalysisJsonRequest = copyRouteAnalysisJsonRequest;
-      void copyLatestRouteAnalysisJson();
-    }
-
-    if (downloadRouteAnalysisJsonRequest !== lastDownloadRouteAnalysisJsonRequest) {
-      lastDownloadRouteAnalysisJsonRequest = downloadRouteAnalysisJsonRequest;
-      downloadLatestRouteAnalysisJson();
-    }
-
-    if (renderScaleRequest.sequence !== lastRenderScaleRequest) {
-      lastRenderScaleRequest = renderScaleRequest.sequence;
-      activateRenderScale(renderScaleRequest.value);
-    }
-
-    if (sceneLookRequest.sequence !== lastSceneLookRequest) {
-      lastSceneLookRequest = sceneLookRequest.sequence;
-      applySceneLook({
-        brightnessPercent: sceneLookRequest.brightnessPercent,
-        contrastPercent: sceneLookRequest.contrastPercent,
-        saturationPercent: sceneLookRequest.saturationPercent,
-      });
-    }
-
-    if (runCurrentRouteBenchmarkRequest !== lastRunCurrentRouteBenchmarkRequest) {
-      lastRunCurrentRouteBenchmarkRequest = runCurrentRouteBenchmarkRequest;
-      void runCurrentVariantRouteBenchmark();
-    }
-
-    if (runRouteSuiteRequest !== lastRunRouteSuiteRequest) {
-      lastRunRouteSuiteRequest = runRouteSuiteRequest;
-      void runRouteBenchmarkSuite();
+  const unsubscribe = subscribeViewerCommands((command: ViewerCommand) => {
+    switch (command.type) {
+      case 'select-preset':
+        activatePreset(command.presetId);
+        return;
+      case 'select-variant':
+        void activateVariant(command.variantId);
+        return;
+      case 'select-route':
+        activateBenchmarkRoute(command.routeId);
+        return;
+      case 'copy-route-analysis-summary':
+        void copyLatestRouteAnalysisSummary();
+        return;
+      case 'copy-route-analysis-json':
+        void copyLatestRouteAnalysisJson();
+        return;
+      case 'download-route-analysis-json':
+        downloadLatestRouteAnalysisJson();
+        return;
+      case 'set-render-scale':
+        activateRenderScale(command.value);
+        return;
+      case 'set-scene-look':
+        applySceneLook({
+          brightnessPercent: command.brightnessPercent,
+          contrastPercent: command.contrastPercent,
+          saturationPercent: command.saturationPercent
+        });
+        return;
+      case 'run-current-route-benchmark':
+        void runCurrentVariantRouteBenchmark();
+        return;
+      case 'run-route-suite':
+        void runRouteBenchmarkSuite();
+        return;
+      default:
+        return;
     }
   });
 
   return {
     destroy() {
       unsubscribe();
-    },
+    }
   };
 }
 
@@ -160,7 +111,7 @@ function initializeViewerStartup({
   renderPerfHud,
   publishRouteDiagnostics,
   installRouteAnalysisBridge,
-  setStatus,
+  setStatus
 }: InitializeViewerStartupArgs) {
   updatePresetButtons();
   updateVariantButtons();
@@ -173,10 +124,10 @@ function initializeViewerStartup({
   renderPerfHud(null);
   publishRouteDiagnostics();
   installRouteAnalysisBridge();
-  setStatus("加载中", "准备场景资源");
+  setStatus('加载中', '准备场景资源');
 }
 
 export {
   initializeViewerStartup,
-  installViewerStartupBindings,
+  installViewerStartupBindings
 };

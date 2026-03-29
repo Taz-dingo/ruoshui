@@ -1,4 +1,7 @@
+import { useEffect, useState } from 'react';
+
 import { useViewerUiStore } from '../ui/viewer-ui-store';
+import { requestRenderScaleChange } from '../viewer-command-bus';
 
 interface RenderScaleSectionProps {
   activeRenderScalePercent: number;
@@ -16,12 +19,17 @@ function RenderScaleSection({
   renderScaleMinPercent
 }: RenderScaleSectionProps) {
   const renderScale = useViewerUiStore((store) => store.renderScale);
-  const renderScaleRequest = useViewerUiStore(
-    (store) => store.renderScaleRequest
-  );
-  const requestRenderScaleChange = useViewerUiStore(
-    (store) => store.requestRenderScaleChange
-  );
+  const [draftPercent, setDraftPercent] = useState(activeRenderScalePercent);
+
+  useEffect(() => {
+    const nextPercent = Number.parseInt(renderScale.summary, 10);
+    if (Number.isFinite(nextPercent)) {
+      setDraftPercent(nextPercent);
+      return;
+    }
+
+    setDraftPercent(activeRenderScalePercent);
+  }, [activeRenderScalePercent, renderScale.summary]);
 
   return (
     <section className="inspector-section" data-panel="quality">
@@ -45,14 +53,12 @@ function RenderScaleSection({
             min={renderScaleMinPercent}
             max={maxRenderScalePercent}
             step="5"
-            value={
-              renderScaleRequest.sequence > 0
-                ? renderScaleRequest.value
-                : activeRenderScalePercent
-            }
-            onChange={(event) =>
-              requestRenderScaleChange(Number(event.currentTarget.value))
-            }
+            value={draftPercent}
+            onChange={(event) => {
+              const nextPercent = Number(event.currentTarget.value);
+              setDraftPercent(nextPercent);
+              requestRenderScaleChange(nextPercent);
+            }}
           />
           <div className="quality-meta">
             <strong>{renderScale.value}</strong>

@@ -1,4 +1,7 @@
+import { useEffect, useState } from 'react';
+
 import { useViewerUiStore } from '../ui/viewer-ui-store';
+import { requestSceneLookChange } from '../viewer-command-bus';
 
 interface SceneLookSectionProps {
   isOpen: boolean;
@@ -6,10 +9,24 @@ interface SceneLookSectionProps {
 }
 
 function SceneLookSection({ isOpen, onToggle }: SceneLookSectionProps) {
-  const requestSceneLookChange = useViewerUiStore(
-    (store) => store.requestSceneLookChange
-  );
   const sceneLook = useViewerUiStore((store) => store.sceneLook);
+  const [draftSceneLook, setDraftSceneLook] = useState({
+    brightnessPercent: sceneLook.brightnessPercent,
+    contrastPercent: sceneLook.contrastPercent,
+    saturationPercent: sceneLook.saturationPercent
+  });
+
+  useEffect(() => {
+    setDraftSceneLook({
+      brightnessPercent: sceneLook.brightnessPercent,
+      contrastPercent: sceneLook.contrastPercent,
+      saturationPercent: sceneLook.saturationPercent
+    });
+  }, [
+    sceneLook.brightnessPercent,
+    sceneLook.contrastPercent,
+    sceneLook.saturationPercent
+  ]);
 
   return (
     <section className="inspector-section" data-panel="scene-look">
@@ -35,14 +52,16 @@ function SceneLookSection({ isOpen, onToggle }: SceneLookSectionProps) {
               min="80"
               max="140"
               step="1"
-              value={sceneLook.brightnessPercent}
-              onChange={(event) =>
-                requestSceneLookChange({
+              value={draftSceneLook.brightnessPercent}
+              onChange={(event) => {
+                const nextSceneLook = {
                   brightnessPercent: Number(event.currentTarget.value),
-                  contrastPercent: sceneLook.contrastPercent,
-                  saturationPercent: sceneLook.saturationPercent
-                })
-              }
+                  contrastPercent: draftSceneLook.contrastPercent,
+                  saturationPercent: draftSceneLook.saturationPercent
+                };
+                setDraftSceneLook(nextSceneLook);
+                requestSceneLookChange(nextSceneLook);
+              }}
             />
             <strong>{sceneLook.brightnessValue}</strong>
           </label>
@@ -54,14 +73,16 @@ function SceneLookSection({ isOpen, onToggle }: SceneLookSectionProps) {
               min="80"
               max="130"
               step="1"
-              value={sceneLook.contrastPercent}
-              onChange={(event) =>
-                requestSceneLookChange({
-                  brightnessPercent: sceneLook.brightnessPercent,
+              value={draftSceneLook.contrastPercent}
+              onChange={(event) => {
+                const nextSceneLook = {
+                  brightnessPercent: draftSceneLook.brightnessPercent,
                   contrastPercent: Number(event.currentTarget.value),
-                  saturationPercent: sceneLook.saturationPercent
-                })
-              }
+                  saturationPercent: draftSceneLook.saturationPercent
+                };
+                setDraftSceneLook(nextSceneLook);
+                requestSceneLookChange(nextSceneLook);
+              }}
             />
             <strong>{sceneLook.contrastValue}</strong>
           </label>
@@ -73,14 +94,16 @@ function SceneLookSection({ isOpen, onToggle }: SceneLookSectionProps) {
               min="70"
               max="140"
               step="1"
-              value={sceneLook.saturationPercent}
-              onChange={(event) =>
-                requestSceneLookChange({
-                  brightnessPercent: sceneLook.brightnessPercent,
-                  contrastPercent: sceneLook.contrastPercent,
+              value={draftSceneLook.saturationPercent}
+              onChange={(event) => {
+                const nextSceneLook = {
+                  brightnessPercent: draftSceneLook.brightnessPercent,
+                  contrastPercent: draftSceneLook.contrastPercent,
                   saturationPercent: Number(event.currentTarget.value)
-                })
-              }
+                };
+                setDraftSceneLook(nextSceneLook);
+                requestSceneLookChange(nextSceneLook);
+              }}
             />
             <strong>{sceneLook.saturationValue}</strong>
           </label>
