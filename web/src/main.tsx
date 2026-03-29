@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import './style.css';
 import { App } from './App';
-import type { ViewerContent } from './types';
+import type { ViewerContent } from './viewer-content-types';
 import { createViewerConfig } from './viewer-config';
 
 const appElement = document.getElementById('app');

@@ -8,9 +8,9 @@ import { RenderScaleSection } from './components/RenderScaleSection';
 import { SceneLookSection } from './components/SceneLookSection';
 import { SceneMetaPanel } from './components/SceneMetaPanel';
 import { VariantPanel } from './components/VariantPanel';
-import type { ViewerContent } from './types';
 import { useViewerUiStore } from './ui/viewer-ui-store';
 import type { ViewerConfig } from './viewer-config';
+import type { ViewerContent } from './viewer-content-types';
 
 interface AppProps {
   data: ViewerContent;

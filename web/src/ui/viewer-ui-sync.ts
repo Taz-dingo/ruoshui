@@ -11,12 +11,16 @@ import type {
   VariantPanelViewState
 } from '../types';
 import {
+  formatSceneLookSummary,
+} from '../runtime/scene-look';
+import {
   formatMetricMs,
   formatMetricPeakMs,
   formatRouteRunStatus,
   formatRouteRunTime,
   formatVec3
 } from '../utils/format';
+import type { SceneLookSettings } from '../runtime/scene-look';
 import { radToDeg } from '../utils/math';
 import { useViewerUiStore } from './viewer-ui-store';
 
@@ -63,7 +67,7 @@ interface CameraRuntimeLike {
   lastCameraSnapshot?: string;
 }
 
-export function syncVariantPanelState(options: SyncVariantPanelOptions): VariantPanelViewState {
+function syncVariantPanelState(options: SyncVariantPanelOptions): VariantPanelViewState {
   const { variants, activeVariantId, defaultVariant, disabled } = options;
   const activeVariant = variants.find((variant) => variant.id === activeVariantId) ?? defaultVariant;
   const state = {
@@ -81,7 +85,7 @@ export function syncVariantPanelState(options: SyncVariantPanelOptions): Variant
   return state;
 }
 
-export function syncPresetPanelState(options: SyncPresetPanelOptions): PresetPanelViewState {
+function syncPresetPanelState(options: SyncPresetPanelOptions): PresetPanelViewState {
   const { presets, activePresetId, firstPreset } = options;
   const activePreset = presets.find((preset) => preset.id === activePresetId) ?? firstPreset;
   const state = {
@@ -98,7 +102,7 @@ export function syncPresetPanelState(options: SyncPresetPanelOptions): PresetPan
   return state;
 }
 
-export function syncRouteControlsState(options: SyncRouteControlsOptions): RouteControlsViewState {
+function syncRouteControlsState(options: SyncRouteControlsOptions): RouteControlsViewState {
   const {
     benchmarkRoutes,
     selectedRouteId,
@@ -134,7 +138,7 @@ export function syncRouteControlsState(options: SyncRouteControlsOptions): Route
   return state;
 }
 
-export function buildRouteDiagnosticsState(
+function buildRouteDiagnosticsState(
   options: SyncRouteDiagnosticsOptions
 ): RouteDiagnosticsViewState {
   const { routeRunHistory, routeAnalysisCopyNoteOverride } = options;
@@ -202,13 +206,13 @@ export function buildRouteDiagnosticsState(
   };
 }
 
-export function syncRouteDiagnosticsState(options: SyncRouteDiagnosticsOptions): RouteDiagnosticsViewState {
+function syncRouteDiagnosticsState(options: SyncRouteDiagnosticsOptions): RouteDiagnosticsViewState {
   const state = buildRouteDiagnosticsState(options);
   useViewerUiStore.getState().setRouteDiagnostics(state);
   return state;
 }
 
-export function buildCameraState(runtimeState: CameraRuntimeLike): CameraViewState | null {
+function buildCameraState(runtimeState: CameraRuntimeLike): CameraViewState | null {
   if (!runtimeState?.orbit) {
     return {
       summary: '等待视角',
@@ -251,7 +255,7 @@ export function buildCameraState(runtimeState: CameraRuntimeLike): CameraViewSta
   };
 }
 
-export function syncCameraState(runtimeState: CameraRuntimeLike): CameraViewState | null {
+function syncCameraState(runtimeState: CameraRuntimeLike): CameraViewState | null {
   const state = buildCameraState(runtimeState);
   if (state) {
     useViewerUiStore.getState().setCamera(state);
@@ -259,3 +263,47 @@ export function syncCameraState(runtimeState: CameraRuntimeLike): CameraViewStat
 
   return state;
 }
+
+function setPresetPanelSummary(summary: string) {
+  const presetPanel = useViewerUiStore.getState().presetPanel;
+  if (!presetPanel) {
+    return;
+  }
+
+  useViewerUiStore.getState().setPresetPanel({
+    ...presetPanel,
+    summary
+  });
+}
+
+function setViewerStatus(title: string, detail: string) {
+  useViewerUiStore.getState().setStatus({
+    title,
+    detail
+  });
+}
+
+function syncSceneLookState(sceneLook: SceneLookSettings) {
+  useViewerUiStore.getState().setSceneLook({
+    summary: formatSceneLookSummary(sceneLook),
+    brightnessPercent: sceneLook.brightnessPercent,
+    contrastPercent: sceneLook.contrastPercent,
+    saturationPercent: sceneLook.saturationPercent,
+    brightnessValue: `${sceneLook.brightnessPercent}%`,
+    contrastValue: `${sceneLook.contrastPercent}%`,
+    saturationValue: `${sceneLook.saturationPercent}%`
+  });
+}
+
+export {
+  buildCameraState,
+  buildRouteDiagnosticsState,
+  setPresetPanelSummary,
+  setViewerStatus,
+  syncCameraState,
+  syncPresetPanelState,
+  syncRouteControlsState,
+  syncRouteDiagnosticsState,
+  syncSceneLookState,
+  syncVariantPanelState
+};

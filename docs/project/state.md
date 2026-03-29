@@ -133,6 +133,8 @@
 - 当前前端样式体系已开始从单体手写 `CSS` 迁移到 `Tailwind CSS`，以降低后续 UI 调整与 AI 协作成本
 - 当前 `Web MVP` 的主要交互面板已逐步迁移到 `React + Zustand`，包括版本切换、镜头预设、相机信息、轨迹控制与诊断面板
 - 当前前端状态管理边界已进一步纠偏：`Zustand` 只保留共享运行时状态与 `React -> PlayCanvas` 的桥接请求，面板展开这类局部 `UI` 状态回归 `React` 组件内状态
+- 已将 `viewer` 相关类型拆分为 `benchmark / runtime / content / ui` 四个域文件，避免继续把全部前端类型堆回单一 `types.ts`
+- 已将散落在 `viewer.ts` 内的 `UI store` 写入进一步收口到 `web/src/ui/viewer-ui-sync.ts`，当前 `viewer.ts` 更明确地只承担组合入口与运行时编排
 - 已将轨迹播放与基准测试辅助逻辑从 `web/src/viewer.ts` 拆到 `web/src/benchmark/playback.ts`，当前代码重构方向继续收敛为“保留 PlayCanvas 运行时、逐步把 orchestration / UI / benchmark 分层”
 - 当前前端技术栈判断已进一步收口：保留 `React + Vite + Zustand + Tailwind + PlayCanvas/SOG` 作为主线；短期只考虑补 `Radix/shadcn` 这类开源原语层和 `Biome` 这类格式检查工具，不切换 `Three.js` 或更重框架
 - 当前“极致性能”方向也已补充判断：若后续只考虑最终效果与浏览器内渲染上限，真正值得投入的不是单纯换 `Rust` 或换 `Three.js`，而是优先验证 `WebGPU`、`Worker + OffscreenCanvas`、以及 `Rust/WASM` 在解码/流送/调度热路径上的组合；但这应作为后续性能分支，而不是现在立刻推翻现有运行时
