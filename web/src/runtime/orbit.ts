@@ -88,7 +88,7 @@ export function createOrbitController(
     currentDistance: spherical.distance,
     desiredDistance: spherical.distance,
     minDistance: 0.35,
-    maxDistance: 12,
+    maxDistance: 3,
     rotateSpeed: 0.0055,
     panSpeed: 0.0018,
     zoomSpeed: 0.0012,
@@ -210,8 +210,8 @@ export function restoreOrbitView(
   orbit.desiredYaw = snapshot.yaw;
   orbit.currentPitch = clampedPitch;
   orbit.desiredPitch = clampedPitch;
-  orbit.currentDistance = snapshot.distance;
-  orbit.desiredDistance = snapshot.distance;
+  orbit.currentDistance = clamp(snapshot.distance, orbit.minDistance, orbit.maxDistance);
+  orbit.desiredDistance = clamp(snapshot.distance, orbit.minDistance, orbit.maxDistance);
   applyOrbit(orbit, 1, pc);
   return true;
 }
@@ -293,11 +293,20 @@ function applyOrbit(orbit: OrbitController, damping: number, pc: PlayCanvasModul
   const previousDistance = orbit.currentDistance;
   const blend = damping >= 1 ? 1 : 1 - Math.pow(1 - damping, 2);
   clampOrbitTarget(orbit.desiredTarget);
+  orbit.desiredDistance = clamp(
+    orbit.desiredDistance,
+    orbit.minDistance,
+    orbit.maxDistance
+  );
   orbit.currentTarget.lerp(orbit.currentTarget, orbit.desiredTarget, blend);
   clampOrbitTarget(orbit.currentTarget);
   orbit.currentYaw = lerpAngle(orbit.currentYaw, orbit.desiredYaw, blend);
   orbit.currentPitch = lerp(orbit.currentPitch, orbit.desiredPitch, blend);
-  orbit.currentDistance = lerp(orbit.currentDistance, orbit.desiredDistance, blend);
+  orbit.currentDistance = clamp(
+    lerp(orbit.currentDistance, orbit.desiredDistance, blend),
+    orbit.minDistance,
+    orbit.maxDistance
+  );
 
   const position = orbitToPosition(
     orbit.currentTarget,

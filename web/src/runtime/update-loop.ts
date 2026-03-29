@@ -14,6 +14,7 @@ import {
 } from '../benchmark/runtime';
 import { updatePerformanceMode } from '../performance/render-scale';
 import { updateOrbitController } from './orbit';
+import { applyUnifiedGsplatProfile } from './unified-gsplat-profile';
 import { clamp, radToDeg, roundNumber } from '../utils/math';
 
 interface CreateRuntimeUpdateHandlerArgs {
@@ -114,9 +115,14 @@ function updateUnifiedLodWarmup(runtimeState: any, dt: number, isMoving: boolean
 
   const nextMode = state.warmSecondsRemaining > 0 ? 'warmup' : 'base';
   const modeChanged = state.mode !== nextMode;
+  let profileChanged = false;
 
   if (modeChanged) {
     state.mode = nextMode;
+    const nextProfile =
+      nextMode === 'warmup' ? state.warmupProfile ?? state.baseProfile : state.baseProfile;
+    profileChanged = applyUnifiedGsplatProfile(runtimeState?.app?.scene?.gsplat, nextProfile);
+    state.activeProfile = nextMode;
     if (runtimeState.routeRecord) {
       runtimeState.routeRecord.lodWarmups.push({
         elapsedMs: roundNumber(
@@ -134,7 +140,7 @@ function updateUnifiedLodWarmup(runtimeState: any, dt: number, isMoving: boolean
     state.warmSecondsRemaining = Math.max(0, state.warmSecondsRemaining - dt);
   }
 
-  return modeChanged;
+  return modeChanged || profileChanged;
 }
 
 function isUnifiedLodWarmupActive(runtimeState: any) {

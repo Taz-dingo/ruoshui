@@ -3,11 +3,15 @@ import { trackBenchmarkFirstFrame } from '../benchmark/runtime';
 import { bindRuntimeViewport, bindRuntimeVisibility, createRuntimeApp } from './bootstrap';
 import { createOrbitController } from './orbit';
 import { applyRuntimeSceneLook } from './scene-look';
+import {
+  applyUnifiedGsplatProfile,
+  deriveWarmupUnifiedGsplatProfile,
+  normalizeUnifiedGsplatProfile
+} from './unified-gsplat-profile';
 import { createRuntimeUpdateHandler } from './update-loop';
 import { detachVariantFromRuntime, loadVariantIntoRuntime } from './variant-loader';
 import type {
   CameraPreset,
-  UnifiedGsplatProfile,
   ViewerVariant
 } from '../content/types';
 import type { VariantBenchmark } from '../benchmark/types';
@@ -186,47 +190,11 @@ function configureUnifiedGsplat(app: any, variant: ViewerVariant) {
   return {
     mode: 'base',
     baseProfile,
+    warmupProfile: deriveWarmupUnifiedGsplatProfile(baseProfile),
+    activeProfile: 'base',
     warmSecondsRemaining: 0,
     riskSnapshot: null
   };
-}
-
-function normalizeUnifiedGsplatProfile(profile: UnifiedGsplatProfile | undefined) {
-  return {
-    lodUnderfillLimit: Number.isFinite(profile?.lodUnderfillLimit)
-      ? profile.lodUnderfillLimit
-      : undefined,
-    cooldownTicks: Number.isFinite(profile?.cooldownTicks)
-      ? profile.cooldownTicks
-      : undefined,
-    lodUpdateDistance: Number.isFinite(profile?.lodUpdateDistance)
-      ? profile.lodUpdateDistance
-      : undefined,
-    lodUpdateAngle: Number.isFinite(profile?.lodUpdateAngle)
-      ? profile.lodUpdateAngle
-      : undefined,
-    lodBehindPenalty: Number.isFinite(profile?.lodBehindPenalty)
-      ? profile.lodBehindPenalty
-      : undefined
-  };
-}
-
-function applyUnifiedGsplatProfile(sceneGsplat: any, profile: UnifiedGsplatProfile) {
-  if (!sceneGsplat || !profile) {
-    return false;
-  }
-
-  let changed = false;
-  for (const [key, value] of Object.entries(profile)) {
-    if (!Number.isFinite(value) || sceneGsplat[key] === value) {
-      continue;
-    }
-
-    sceneGsplat[key] = value;
-    changed = true;
-  }
-
-  return changed;
 }
 
 function vec3(pc: any, tuple: [number, number, number]) {

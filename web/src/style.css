@@ -20,7 +20,7 @@
     --shadow: 0 18px 44px rgba(25, 16, 11, 0.24);
     --panel-blur: 10px;
     --rail-left-width: 336px;
-    --rail-right-width: 412px;
+    --rail-right-width: 336px;
   }
 
   * {
@@ -68,6 +68,87 @@
 
   .scene canvas {
     @apply block h-full w-full;
+  }
+
+  .progressive-shell {
+    background:
+      radial-gradient(circle at top left, rgba(129, 170, 116, 0.14), transparent 30%),
+      radial-gradient(circle at bottom right, rgba(148, 108, 77, 0.16), transparent 34%),
+      linear-gradient(180deg, #1d1713 0%, #120f0d 100%);
+  }
+
+  .progressive-scene::after {
+    background:
+      linear-gradient(180deg, rgba(16, 13, 11, 0.1) 0%, rgba(16, 13, 11, 0.42) 100%);
+  }
+
+  .progressive-overlay {
+    @apply pointer-events-none absolute inset-x-0 top-0 z-[3] flex justify-center p-4;
+  }
+
+  .progressive-card {
+    @apply pointer-events-auto flex w-full max-w-[920px] flex-col gap-4 rounded-[24px] px-5 py-4;
+    background: rgba(39, 30, 24, 0.68);
+    border-color: rgba(207, 184, 151, 0.18);
+    backdrop-filter: blur(12px);
+  }
+
+  .progressive-head {
+    @apply flex items-start justify-between gap-4;
+  }
+
+  .progressive-head h1 {
+    @apply m-0 text-[28px] leading-none tracking-[-0.05em];
+  }
+
+  .progressive-kicker {
+    @apply m-0 text-[11px] uppercase tracking-[0.12em];
+    color: rgba(231, 218, 198, 0.58);
+  }
+
+  .progressive-summary {
+    @apply m-0 max-w-[720px] text-[13px] leading-[1.5];
+    color: var(--muted);
+  }
+
+  .progressive-grid {
+    @apply grid gap-2.5;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .progressive-switches {
+    @apply flex flex-wrap gap-2;
+  }
+
+  .progressive-metric {
+    @apply flex min-w-0 flex-col gap-1 rounded-[16px] border px-3 py-2.5;
+    border-color: rgba(207, 184, 151, 0.14);
+    background: rgba(244, 236, 222, 0.03);
+  }
+
+  .progressive-metric span {
+    @apply text-[10px] uppercase tracking-[0.05em];
+    color: rgba(231, 218, 198, 0.58);
+  }
+
+  .progressive-metric strong {
+    @apply min-w-0 text-[13px] font-semibold;
+    color: var(--text);
+  }
+
+  .progressive-bar {
+    @apply h-1.5 w-full overflow-hidden rounded-full;
+    background: rgba(244, 236, 222, 0.08);
+  }
+
+  .progressive-bar span {
+    @apply block h-full rounded-full transition-[width] duration-200 ease-out;
+    background: linear-gradient(90deg, #a8c97d 0%, #c7e39e 100%);
+  }
+
+  .progressive-foot {
+    @apply flex flex-wrap gap-x-4 gap-y-1 text-[11px];
+    color: rgba(231, 218, 198, 0.74);
   }
 
   .perf-hud {
@@ -559,12 +640,12 @@
 
     .rail {
       @apply w-full overflow-visible pr-0;
-      width: min(100%, 420px);
+      width: min(100%, var(--rail-left-width));
     }
 
     .inspector {
       @apply w-full opacity-100;
-      width: min(100%, 460px);
+      width: min(100%, var(--rail-right-width));
       transform: none;
     }
   }
@@ -609,6 +690,22 @@
     .panel,
     .inspector {
       transition: none;
+    }
+  }
+
+  @media (max-width: 900px) {
+    .progressive-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 640px) {
+    .progressive-head {
+      @apply flex-col items-start;
+    }
+
+    .progressive-grid {
+      grid-template-columns: minmax(0, 1fr);
     }
   }
 }
