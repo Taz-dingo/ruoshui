@@ -1,4 +1,5 @@
 import { trackBenchmarkFirstFrame } from '../benchmark/runtime';
+import { createSceneCanvas } from './canvas-host';
 import { configureUnifiedGsplat } from './runtime-factory';
 import { loadVariantIntoRuntime } from './variant-loader';
 import type { CameraPreset, VariantBenchmark, ViewerVariant } from '../types';
@@ -93,14 +94,7 @@ function createVariantOrchestrationController({
       return runtime;
     }
 
-    sceneContainer.replaceChildren();
-    const canvas = document.createElement('canvas');
-    const rect = sceneContainer.getBoundingClientRect();
-    canvas.width = Math.max(1, Math.round(rect.width));
-    canvas.height = Math.max(1, Math.round(rect.height));
-    canvas.style.width = '100%';
-    canvas.style.height = '100%';
-    sceneContainer.append(canvas);
+    const canvas = createSceneCanvas(sceneContainer);
     return createRuntime(canvas, variant, timings, getSceneLook());
   }
 

@@ -32,7 +32,6 @@ interface SceneLookRequest {
 }
 
 interface ViewerUiStoreState {
-  activeInspectorPanel: string | null;
   camera: CameraViewState;
   copyRouteAnalysisJsonRequest: number;
   copyRouteAnalysisSummaryRequest: number;
@@ -54,7 +53,6 @@ interface ViewerUiStoreState {
   routeSelectionRequest: SelectionRequest;
   runCurrentRouteBenchmarkRequest: number;
   runRouteSuiteRequest: number;
-  setActiveInspectorPanel: (panelId: string | null) => void;
   setCamera: (camera: CameraViewState) => void;
   setPerfHud: (perfHud: PerfHudViewState) => void;
   setRenderScale: (renderScale: RenderScaleViewState) => void;
@@ -141,7 +139,6 @@ const emptyPerfHudState: PerfHudViewState = {
 };
 
 const useViewerUiStore = create<ViewerUiStoreState>((set) => ({
-  activeInspectorPanel: null,
   camera: emptyCameraState,
   copyRouteAnalysisJsonRequest: 0,
   copyRouteAnalysisSummaryRequest: 0,
@@ -180,7 +177,6 @@ const useViewerUiStore = create<ViewerUiStoreState>((set) => ({
   },
   runCurrentRouteBenchmarkRequest: 0,
   runRouteSuiteRequest: 0,
-  setActiveInspectorPanel: (activeInspectorPanel) => set({ activeInspectorPanel }),
   setCamera: (camera) => set({ camera }),
   setPerfHud: (perfHud) => set({ perfHud }),
   setRenderScale: (renderScale) => set({ renderScale }),
