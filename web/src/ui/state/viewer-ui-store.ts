@@ -2,6 +2,7 @@ import { create } from 'zustand';
 
 import type {
   CameraViewState,
+  HighlightAuthoringViewState,
   HighlightOverlayViewState,
   PerfHudViewState,
   PresetPanelViewState,
@@ -17,6 +18,7 @@ import type {
 
 interface ViewerUiStoreState {
   camera: CameraViewState;
+  highlightAuthoring: HighlightAuthoringViewState;
   highlightOverlay: HighlightOverlayViewState;
   perfHud: PerfHudViewState;
   renderScale: RenderScaleViewState;
@@ -29,6 +31,7 @@ interface ViewerUiStoreState {
   presetPanel: PresetPanelViewState | null;
   routeControls: RouteControlsViewState | null;
   setCamera: (camera: CameraViewState) => void;
+  setHighlightAuthoring: (highlightAuthoring: HighlightAuthoringViewState) => void;
   setHighlightOverlay: (highlightOverlay: HighlightOverlayViewState) => void;
   setPerfHud: (perfHud: PerfHudViewState) => void;
   setRenderScale: (renderScale: RenderScaleViewState) => void;
@@ -64,6 +67,21 @@ const emptyRouteDiagnosticsState: RouteDiagnosticsViewState = {
 
 const emptyHighlightOverlayState: HighlightOverlayViewState = {
   items: []
+};
+
+const emptyHighlightAuthoringState: HighlightAuthoringViewState = {
+  isEnabled: false,
+  planeY: 0.08,
+  planeYValue: '0.08',
+  summary: '关闭',
+  point: '—',
+  pointPosition: null,
+  previewLeft: 0,
+  previewTop: 0,
+  previewVisible: false,
+  note: '进入打点模式后，点击场景记录一个近似落点。',
+  jsonSnippet: '',
+  copyNote: '生成后可复制 JSON。'
 };
 
 const emptyStatusState: StatusViewState = {
@@ -110,6 +128,7 @@ const emptyPerfHudState: PerfHudViewState = {
 
 const useViewerUiStore = create<ViewerUiStoreState>((set) => ({
   camera: emptyCameraState,
+  highlightAuthoring: emptyHighlightAuthoringState,
   highlightOverlay: emptyHighlightOverlayState,
   perfHud: emptyPerfHudState,
   renderScale: emptyRenderScaleState,
@@ -122,6 +141,7 @@ const useViewerUiStore = create<ViewerUiStoreState>((set) => ({
   presetPanel: null,
   routeControls: null,
   setCamera: (camera) => set({ camera }),
+  setHighlightAuthoring: (highlightAuthoring) => set({ highlightAuthoring }),
   setHighlightOverlay: (highlightOverlay) => set({ highlightOverlay }),
   setPerfHud: (perfHud) => set({ perfHud }),
   setRenderScale: (renderScale) => set({ renderScale }),
@@ -137,6 +157,7 @@ const useViewerUiStore = create<ViewerUiStoreState>((set) => ({
 
 export {
   emptyCameraState,
+  emptyHighlightAuthoringState,
   emptyHighlightOverlayState,
   emptyPerfHudState,
   emptyRenderScaleState,

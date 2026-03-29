@@ -71,11 +71,27 @@
   }
 
   .highlight-layer {
-    @apply pointer-events-none absolute inset-0 z-[3];
+    @apply pointer-events-none absolute inset-0 z-[2];
+  }
+
+  .highlight-layer.is-authoring {
+    @apply pointer-events-auto;
+  }
+
+  .highlight-authoring-capture {
+    @apply pointer-events-auto absolute inset-0 cursor-crosshair;
+  }
+
+  .highlight-authoring-hint {
+    @apply absolute top-4 left-1/2 -translate-x-1/2 rounded-full border px-3 py-1.5 text-[11px] uppercase tracking-[0.08em];
+    border-color: rgba(168, 201, 125, 0.26);
+    background: rgba(47, 36, 29, 0.78);
+    color: rgba(244, 236, 222, 0.92);
+    backdrop-filter: blur(12px);
   }
 
   .highlight-pin {
-    @apply pointer-events-auto absolute inline-flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 rounded-full border px-2.5 py-1.5 text-left transition-[opacity,transform,background-color,border-color] duration-180 ease-out;
+    @apply pointer-events-auto absolute inline-flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 rounded-full border px-2.5 py-1.5 text-left transition-[opacity,background-color,border-color] duration-180 ease-out;
     border-color: rgba(207, 184, 151, 0.18);
     background: rgba(37, 28, 23, 0.22);
     color: var(--text);
@@ -103,6 +119,24 @@
   .highlight-pin-label {
     @apply text-[11px] font-semibold;
     color: rgba(244, 236, 222, 0.94);
+  }
+
+  .highlight-preview {
+    @apply pointer-events-none absolute inline-flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 rounded-full border px-2.5 py-1.5;
+    border-color: rgba(199, 227, 158, 0.38);
+    background: rgba(35, 52, 24, 0.72);
+    color: rgba(244, 236, 222, 0.96);
+    backdrop-filter: blur(12px);
+  }
+
+  .highlight-preview-dot {
+    @apply h-2.5 w-2.5 shrink-0 rounded-full;
+    background: #d7efad;
+    box-shadow: 0 0 0 6px rgba(199, 227, 158, 0.16);
+  }
+
+  .highlight-preview-label {
+    @apply text-[11px] font-semibold;
   }
 
   .highlight-card {
@@ -153,6 +187,36 @@
 
   .highlight-card-actions {
     @apply flex justify-start;
+  }
+
+  .highlight-authoring-panel,
+  .highlight-authoring-meta {
+    @apply grid gap-2;
+  }
+
+  .highlight-authoring-actions {
+    @apply grid grid-cols-2 gap-2;
+  }
+
+  .highlight-authoring-meta strong {
+    @apply text-[10px] uppercase tracking-[0.04em];
+    color: rgba(231, 218, 198, 0.58);
+  }
+
+  .highlight-authoring-meta span,
+  .highlight-authoring-note,
+  .highlight-authoring-copy-note {
+    @apply text-[11px] leading-[1.5];
+    color: var(--muted);
+  }
+
+  .highlight-authoring-code {
+    @apply m-0 max-h-52 overflow-auto rounded-[14px] border px-3 py-2.5 text-[11px] leading-[1.5];
+    border-color: rgba(231, 218, 198, 0.08);
+    background: rgba(244, 236, 222, 0.03);
+    color: rgba(244, 236, 222, 0.9);
+    white-space: pre-wrap;
+    word-break: break-word;
   }
 
   .progressive-shell {
@@ -252,7 +316,7 @@
   }
 
   .hud {
-    @apply pointer-events-none relative z-[2] grid h-full min-h-screen gap-4 overflow-hidden p-4;
+    @apply pointer-events-none relative z-[4] grid h-full min-h-screen gap-4 overflow-hidden p-4;
     grid-template-columns: var(--rail-left-width) minmax(0, 1fr) var(--rail-right-width);
   }
 

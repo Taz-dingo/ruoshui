@@ -69,6 +69,21 @@ interface HighlightOverlayViewState {
   items: HighlightPinView[];
 }
 
+interface HighlightAuthoringViewState {
+  isEnabled: boolean;
+  planeY: number;
+  planeYValue: string;
+  summary: string;
+  point: string;
+  pointPosition: [number, number, number] | null;
+  previewLeft: number;
+  previewTop: number;
+  previewVisible: boolean;
+  note: string;
+  jsonSnippet: string;
+  copyNote: string;
+}
+
 interface StatusViewState {
   title: string;
   detail: string;
@@ -156,6 +171,7 @@ interface RouteControlsViewState {
 }
 
 export type {
+  HighlightAuthoringViewState,
   CameraViewState,
   HighlightOverlayViewState,
   HighlightPinView,

@@ -6,6 +6,16 @@ interface CopyRouteAnalysisSummaryCommand {
   type: 'copy-route-analysis-summary';
 }
 
+interface CopyHighlightDraftCommand {
+  type: 'copy-highlight-draft';
+}
+
+interface CaptureHighlightPointCommand {
+  type: 'capture-highlight-point';
+  clientX: number;
+  clientY: number;
+}
+
 interface DownloadRouteAnalysisJsonCommand {
   type: 'download-route-analysis-json';
 }
@@ -30,6 +40,16 @@ interface SceneLookChangeCommand {
   saturationPercent: number;
 }
 
+interface SetHighlightAuthoringEnabledCommand {
+  type: 'set-highlight-authoring-enabled';
+  enabled: boolean;
+}
+
+interface SetHighlightPlaneYCommand {
+  type: 'set-highlight-plane-y';
+  value: number;
+}
+
 interface SelectPresetCommand {
   type: 'select-preset';
   presetId: string;
@@ -48,11 +68,15 @@ interface SelectVariantCommand {
 type ViewerCommand =
   | CopyRouteAnalysisJsonCommand
   | CopyRouteAnalysisSummaryCommand
+  | CopyHighlightDraftCommand
+  | CaptureHighlightPointCommand
   | DownloadRouteAnalysisJsonCommand
   | RenderScaleChangeCommand
   | RunCurrentRouteBenchmarkCommand
   | RunRouteSuiteCommand
   | SceneLookChangeCommand
+  | SetHighlightAuthoringEnabledCommand
+  | SetHighlightPlaneYCommand
   | SelectPresetCommand
   | SelectRouteCommand
   | SelectVariantCommand;
@@ -81,6 +105,18 @@ function requestCopyRouteAnalysisJson() {
 
 function requestCopyRouteAnalysisSummary() {
   emitViewerCommand({ type: 'copy-route-analysis-summary' });
+}
+
+function requestCopyHighlightDraft() {
+  emitViewerCommand({ type: 'copy-highlight-draft' });
+}
+
+function requestCaptureHighlightPoint(clientX: number, clientY: number) {
+  emitViewerCommand({
+    type: 'capture-highlight-point',
+    clientX,
+    clientY
+  });
 }
 
 function requestDownloadRouteAnalysisJson() {
@@ -123,6 +159,20 @@ function requestSceneLookChange(command: Omit<SceneLookChangeCommand, 'type'>) {
   });
 }
 
+function requestSetHighlightAuthoringEnabled(enabled: boolean) {
+  emitViewerCommand({
+    type: 'set-highlight-authoring-enabled',
+    enabled
+  });
+}
+
+function requestSetHighlightPlaneY(value: number) {
+  emitViewerCommand({
+    type: 'set-highlight-plane-y',
+    value
+  });
+}
+
 function requestVariantSelection(variantId: string) {
   emitViewerCommand({
     type: 'select-variant',
@@ -131,6 +181,8 @@ function requestVariantSelection(variantId: string) {
 }
 
 export {
+  requestCaptureHighlightPoint,
+  requestCopyHighlightDraft,
   requestCopyRouteAnalysisJson,
   requestCopyRouteAnalysisSummary,
   requestDownloadRouteAnalysisJson,
@@ -140,6 +192,8 @@ export {
   requestRunCurrentRouteBenchmark,
   requestRunRouteSuite,
   requestSceneLookChange,
+  requestSetHighlightAuthoringEnabled,
+  requestSetHighlightPlaneY,
   requestVariantSelection,
   subscribeViewerCommands
 };

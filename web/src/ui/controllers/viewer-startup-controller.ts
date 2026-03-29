@@ -11,11 +11,15 @@ interface InstallViewerStartupBindingsArgs {
   activateBenchmarkRoute: (routeId: string) => void;
   runCurrentVariantRouteBenchmark: () => void | Promise<unknown>;
   runRouteBenchmarkSuite: () => void | Promise<unknown>;
+  captureHighlightPoint: (clientX: number, clientY: number) => void;
+  copyHighlightDraft: () => void | Promise<unknown>;
   copyLatestRouteAnalysisSummary: () => void | Promise<unknown>;
   copyLatestRouteAnalysisJson: () => void | Promise<unknown>;
   downloadLatestRouteAnalysisJson: () => void;
   activateRenderScale: (nextPercent: number) => void;
   applySceneLook: (sceneLook: SceneLookSettings) => void;
+  setHighlightAuthoringEnabled: (enabled: boolean) => void;
+  setHighlightPlaneY: (value: number) => void;
 }
 
 interface InitializeViewerStartupArgs {
@@ -43,11 +47,15 @@ function installViewerStartupBindings({
   activateBenchmarkRoute,
   runCurrentVariantRouteBenchmark,
   runRouteBenchmarkSuite,
+  captureHighlightPoint,
+  copyHighlightDraft,
   copyLatestRouteAnalysisSummary,
   copyLatestRouteAnalysisJson,
   downloadLatestRouteAnalysisJson,
   activateRenderScale,
-  applySceneLook
+  applySceneLook,
+  setHighlightAuthoringEnabled,
+  setHighlightPlaneY
 }: InstallViewerStartupBindingsArgs) {
   const unsubscribe = subscribeViewerCommands((command: ViewerCommand) => {
     switch (command.type) {
@@ -66,6 +74,12 @@ function installViewerStartupBindings({
       case 'copy-route-analysis-json':
         void copyLatestRouteAnalysisJson();
         return;
+      case 'copy-highlight-draft':
+        void copyHighlightDraft();
+        return;
+      case 'capture-highlight-point':
+        captureHighlightPoint(command.clientX, command.clientY);
+        return;
       case 'download-route-analysis-json':
         downloadLatestRouteAnalysisJson();
         return;
@@ -78,6 +92,12 @@ function installViewerStartupBindings({
           contrastPercent: command.contrastPercent,
           saturationPercent: command.saturationPercent
         });
+        return;
+      case 'set-highlight-authoring-enabled':
+        setHighlightAuthoringEnabled(command.enabled);
+        return;
+      case 'set-highlight-plane-y':
+        setHighlightPlaneY(command.value);
         return;
       case 'run-current-route-benchmark':
         void runCurrentVariantRouteBenchmark();
