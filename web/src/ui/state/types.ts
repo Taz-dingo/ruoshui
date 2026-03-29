@@ -57,6 +57,18 @@ interface CameraViewState {
   angle: string;
 }
 
+interface HighlightPinView {
+  id: string;
+  name: string;
+  left: number;
+  top: number;
+  isVisible: boolean;
+}
+
+interface HighlightOverlayViewState {
+  items: HighlightPinView[];
+}
+
 interface StatusViewState {
   title: string;
   detail: string;
@@ -145,6 +157,8 @@ interface RouteControlsViewState {
 
 export type {
   CameraViewState,
+  HighlightOverlayViewState,
+  HighlightPinView,
   PerfHudViewState,
   PresetPanelItemView,
   PresetPanelViewState,

@@ -1,6 +1,7 @@
 import { buildRouteAnalysisSummary, getLatestSuiteRecords } from '../../benchmark/history';
 import type {
   CameraViewState,
+  HighlightOverlayViewState,
   PresetPanelViewState,
   RouteControlsViewState,
   RouteDiagnosticsViewState,
@@ -64,6 +65,10 @@ interface OrbitSnapshotLike {
 interface CameraRuntimeLike {
   orbit?: OrbitSnapshotLike | null;
   lastCameraSnapshot?: string;
+}
+
+interface SyncHighlightOverlayOptions {
+  items: HighlightOverlayViewState['items'];
 }
 
 function syncVariantPanelState(options: SyncVariantPanelOptions): VariantPanelViewState {
@@ -263,6 +268,17 @@ function syncCameraState(runtimeState: CameraRuntimeLike): CameraViewState | nul
   return state;
 }
 
+function syncHighlightOverlayState(
+  options: SyncHighlightOverlayOptions
+): HighlightOverlayViewState {
+  const state = {
+    items: options.items
+  };
+
+  useViewerUiStore.getState().setHighlightOverlay(state);
+  return state;
+}
+
 function setPresetPanelSummary(summary: string) {
   const presetPanel = useViewerUiStore.getState().presetPanel;
   if (!presetPanel) {
@@ -300,6 +316,7 @@ export {
   setPresetPanelSummary,
   setViewerStatus,
   syncCameraState,
+  syncHighlightOverlayState,
   syncPresetPanelState,
   syncRouteControlsState,
   syncRouteDiagnosticsState,

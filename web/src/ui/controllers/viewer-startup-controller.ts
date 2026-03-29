@@ -30,6 +30,7 @@ interface InitializeViewerStartupArgs {
   renderSceneLookMeta: (sceneLook: SceneLookSettings) => void;
   activeSceneLook: SceneLookSettings;
   renderCameraMeta: (runtimeState: any) => void;
+  renderHighlightOverlay: (runtimeState: any) => void;
   renderPerfHud: (runtimeState: any) => void;
   publishRouteDiagnostics: () => void;
   installRouteAnalysisBridge: () => void;
@@ -108,6 +109,7 @@ function initializeViewerStartup({
   renderSceneLookMeta,
   activeSceneLook,
   renderCameraMeta,
+  renderHighlightOverlay,
   renderPerfHud,
   publishRouteDiagnostics,
   installRouteAnalysisBridge,
@@ -121,6 +123,7 @@ function initializeViewerStartup({
   renderRenderScaleMeta(activeRenderScalePercent);
   renderSceneLookMeta(activeSceneLook);
   renderCameraMeta(null);
+  renderHighlightOverlay(null);
   renderPerfHud(null);
   publishRouteDiagnostics();
   installRouteAnalysisBridge();

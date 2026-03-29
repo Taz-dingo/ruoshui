@@ -2,6 +2,7 @@ import { create } from 'zustand';
 
 import type {
   CameraViewState,
+  HighlightOverlayViewState,
   PerfHudViewState,
   PresetPanelViewState,
   RenderScaleViewState,
@@ -16,6 +17,7 @@ import type {
 
 interface ViewerUiStoreState {
   camera: CameraViewState;
+  highlightOverlay: HighlightOverlayViewState;
   perfHud: PerfHudViewState;
   renderScale: RenderScaleViewState;
   routeDiagnostics: RouteDiagnosticsViewState;
@@ -27,6 +29,7 @@ interface ViewerUiStoreState {
   presetPanel: PresetPanelViewState | null;
   routeControls: RouteControlsViewState | null;
   setCamera: (camera: CameraViewState) => void;
+  setHighlightOverlay: (highlightOverlay: HighlightOverlayViewState) => void;
   setPerfHud: (perfHud: PerfHudViewState) => void;
   setRenderScale: (renderScale: RenderScaleViewState) => void;
   setRouteDiagnostics: (routeDiagnostics: RouteDiagnosticsViewState) => void;
@@ -57,6 +60,10 @@ const emptyRouteDiagnosticsState: RouteDiagnosticsViewState = {
   rankingEmptyText: '运行“当前轨迹 × 全版本”后，这里会出现排行榜和卡顿热点。',
   hotspotItems: [],
   hotspotEmptyText: null
+};
+
+const emptyHighlightOverlayState: HighlightOverlayViewState = {
+  items: []
 };
 
 const emptyStatusState: StatusViewState = {
@@ -103,6 +110,7 @@ const emptyPerfHudState: PerfHudViewState = {
 
 const useViewerUiStore = create<ViewerUiStoreState>((set) => ({
   camera: emptyCameraState,
+  highlightOverlay: emptyHighlightOverlayState,
   perfHud: emptyPerfHudState,
   renderScale: emptyRenderScaleState,
   routeDiagnostics: emptyRouteDiagnosticsState,
@@ -114,6 +122,7 @@ const useViewerUiStore = create<ViewerUiStoreState>((set) => ({
   presetPanel: null,
   routeControls: null,
   setCamera: (camera) => set({ camera }),
+  setHighlightOverlay: (highlightOverlay) => set({ highlightOverlay }),
   setPerfHud: (perfHud) => set({ perfHud }),
   setRenderScale: (renderScale) => set({ renderScale }),
   setRouteDiagnostics: (routeDiagnostics) => set({ routeDiagnostics }),
@@ -128,6 +137,7 @@ const useViewerUiStore = create<ViewerUiStoreState>((set) => ({
 
 export {
   emptyCameraState,
+  emptyHighlightOverlayState,
   emptyPerfHudState,
   emptyRenderScaleState,
   emptyRouteDiagnosticsState,
