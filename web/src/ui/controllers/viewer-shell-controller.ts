@@ -1,4 +1,7 @@
-import { projectHighlightPins } from '../../runtime/highlight-projection';
+import {
+  projectHighlightPins,
+  projectWorldPoint
+} from '../../runtime/highlight-projection';
 import { syncCameraState, syncHighlightOverlayState } from '../state/viewer-ui-sync';
 import { formatMetricMs, formatMotionMetric } from '../../utils/format';
 import { useViewerUiStore } from '../state/viewer-ui-store';
@@ -59,15 +62,53 @@ function createViewerShellController({
   };
 
   const renderHighlightOverlay = (runtimeState: any) => {
-    if (highlights.length === 0) {
+    if (!runtimeState?.camera || !runtimeState?.canvasElement) {
+      syncHighlightOverlayState({ items: [] });
+      const highlightAuthoring = useViewerUiStore.getState().highlightAuthoring;
+      if (highlightAuthoring.previewVisible) {
+        useViewerUiStore.getState().setHighlightAuthoring({
+          ...highlightAuthoring,
+          previewLeft: 0,
+          previewTop: 0,
+          previewVisible: false
+        });
+      }
       return;
     }
 
-    const items = projectHighlightPins({
-      pc,
-      runtimeState,
-      highlights
-    });
+    const highlightAuthoring = useViewerUiStore.getState().highlightAuthoring;
+
+    if (!highlightAuthoring.pointPosition) {
+      if (highlightAuthoring.previewVisible) {
+        useViewerUiStore.getState().setHighlightAuthoring({
+          ...highlightAuthoring,
+          previewLeft: 0,
+          previewTop: 0,
+          previewVisible: false
+        });
+      }
+    } else {
+      const projectedPreview = projectWorldPoint(
+        pc,
+        runtimeState,
+        highlightAuthoring.pointPosition
+      );
+
+      useViewerUiStore.getState().setHighlightAuthoring({
+        ...highlightAuthoring,
+        previewLeft: projectedPreview?.left ?? 0,
+        previewTop: projectedPreview?.top ?? 0,
+        previewVisible: projectedPreview?.isVisible ?? false
+      });
+    }
+
+    const items = highlights.length > 0
+      ? projectHighlightPins({
+          pc,
+          runtimeState,
+          highlights
+        })
+      : [];
     const snapshot = items
       .map((item) =>
         `${item.id}:${item.isVisible ? 1 : 0}:${Math.round(item.left)}:${Math.round(item.top)}`

@@ -24,6 +24,7 @@ import {
   normalizeSceneLookSettings,
   persistSceneLookSettings
 } from '../runtime/scene-look';
+import { captureHighlightDraft } from '../runtime/highlight-authoring';
 import { createViewerSessionState } from '../runtime/viewer-session-state';
 import { createVariantOrchestrationController } from '../runtime/variant-orchestration';
 import { createViewerRuntimeController } from '../runtime/viewer-runtime-controller';
@@ -39,6 +40,7 @@ import {
   setViewerStatus,
   syncSceneLookState
 } from '../ui/state/viewer-ui-sync';
+import { useViewerUiStore } from '../ui/state/viewer-ui-store';
 import type { ViewerConfig } from './viewer-config';
 import type { ViewerContent } from '../content/types';
 
@@ -252,12 +254,99 @@ async function initializeViewer({
   });
   const { activatePreset } = variantOrchestrationController;
 
+  let highlightAuthoringEnabled = false;
+  let highlightPlaneY = 0.08;
+
+  function publishHighlightAuthoringState(overrides: Partial<{
+    copyNote: string;
+    jsonSnippet: string;
+    note: string;
+    point: string;
+    pointPosition: [number, number, number] | null;
+  }> = {}) {
+    const currentState = useViewerUiStore.getState().highlightAuthoring;
+    useViewerUiStore.getState().setHighlightAuthoring({
+      ...currentState,
+      isEnabled: highlightAuthoringEnabled,
+      planeY: highlightPlaneY,
+      planeYValue: highlightPlaneY.toFixed(2),
+      summary: highlightAuthoringEnabled
+        ? `打点中 · y=${highlightPlaneY.toFixed(2)}`
+        : currentState.jsonSnippet
+          ? '已生成草稿'
+          : '关闭',
+      ...overrides
+    });
+  }
+
+  function setHighlightAuthoringEnabled(enabled: boolean) {
+    highlightAuthoringEnabled = enabled;
+    publishHighlightAuthoringState({
+      note: enabled
+        ? '点击场景记录一个近似落点；当前用水平参考平面估算。'
+        : useViewerUiStore.getState().highlightAuthoring.note
+    });
+    session.getRuntime()?.requestRender?.();
+  }
+
+  function setHighlightPlaneY(value: number) {
+    highlightPlaneY = Number(value.toFixed(2));
+    publishHighlightAuthoringState();
+    session.getRuntime()?.requestRender?.();
+  }
+
+  function captureHighlightPoint(clientX: number, clientY: number) {
+    const runtimeState = session.getRuntime();
+    const draft = captureHighlightDraft({
+      pc,
+      runtimeState,
+      clientX,
+      clientY,
+      planeY: highlightPlaneY,
+      presetId: session.getActivePresetId()
+    });
+
+    if (!draft) {
+      publishHighlightAuthoringState({
+        note: '当前没有可用运行时，或点击落在场景区域外。',
+        copyNote: '请先进入打点模式，再点击场景。'
+      });
+      return;
+    }
+
+    publishHighlightAuthoringState({
+      point: draft.pointText,
+      pointPosition: draft.point,
+      note: draft.note,
+      jsonSnippet: draft.jsonSnippet,
+      copyNote: '已生成草稿，可直接复制到内容配置。'
+    });
+    runtimeState?.requestRender?.();
+  }
+
+  async function copyHighlightDraft() {
+    const draft = useViewerUiStore.getState().highlightAuthoring.jsonSnippet;
+    if (!draft) {
+      publishHighlightAuthoringState({
+        copyNote: '还没有草稿可复制。'
+      });
+      return;
+    }
+
+    await navigator.clipboard.writeText(draft);
+    publishHighlightAuthoringState({
+      copyNote: '已复制到剪贴板。'
+    });
+  }
+
   installViewerStartupBindings({
     activatePreset,
     activateVariant,
     activateBenchmarkRoute,
     runCurrentVariantRouteBenchmark,
     runRouteBenchmarkSuite,
+    captureHighlightPoint,
+    copyHighlightDraft,
     copyLatestRouteAnalysisSummary: () =>
       routeDiagnosticsController.copyLatestRouteAnalysis('summary'),
     copyLatestRouteAnalysisJson: () =>
@@ -265,7 +354,9 @@ async function initializeViewer({
     downloadLatestRouteAnalysisJson: () =>
       routeDiagnosticsController.downloadLatestRouteAnalysisJson(),
     activateRenderScale,
-    applySceneLook
+    applySceneLook,
+    setHighlightAuthoringEnabled,
+    setHighlightPlaneY
   });
 
   initializeViewerStartup({
@@ -286,6 +377,7 @@ async function initializeViewer({
     installRouteAnalysisBridge: routeDiagnosticsController.installRouteAnalysisBridge,
     setStatus: setViewerStatus
   });
+  publishHighlightAuthoringState();
 
   await activateVariant(viewerConfig.defaultVariant.id, true);
 

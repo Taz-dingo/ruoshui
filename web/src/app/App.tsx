@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 
 import { CameraPanel } from '../components/viewer/CameraPanel';
 import { HeroPanel } from '../components/viewer/HeroPanel';
+import { HighlightAuthoringSection } from '../components/viewer/HighlightAuthoringSection';
 import { HighlightLayer } from '../components/viewer/HighlightLayer';
 import { PresetsSection } from '../components/viewer/PresetsSection';
 import { RenderScaleSection } from '../components/viewer/RenderScaleSection';
@@ -84,6 +85,10 @@ function App({
             <CameraPanel
               isOpen={activeInspectorPanel === 'camera'}
               onToggle={() => toggleInspectorPanel('camera')}
+            />
+            <HighlightAuthoringSection
+              isOpen={activeInspectorPanel === 'highlight-authoring'}
+              onToggle={() => toggleInspectorPanel('highlight-authoring')}
             />
           </div>
         </aside>
