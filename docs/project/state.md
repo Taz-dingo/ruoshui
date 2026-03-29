@@ -138,6 +138,13 @@
 - 已将 `web/src` 顶层继续降噪：当前组合入口收口到 `web/src/app/`，领域类型分别回收到 `content / benchmark / runtime / ui` 目录，旧的根级 `types.ts` 已移除
 - 已将 `components` 与 `ui` 继续做第二层分组：当前 viewer 组件统一放到 `web/src/components/viewer/`，`ui` 目录则按 `commands / controllers / state` 分开，减少“同层混放不同抽象层”的噪音
 - 已将轨迹播放与基准测试辅助逻辑从 `web/src/viewer.ts` 拆到 `web/src/benchmark/playback.ts`，当前代码重构方向继续收敛为“保留 PlayCanvas 运行时、逐步把 orchestration / UI / benchmark 分层”
+- 已完成关于“丝滑渐进加载”的一次更明确判断：当前单文件 `SOG` 链路本质上仍是整包下载后再建资源，不足以复现原版那种连续生长式高斯加载；短期尝试过多阶段轻量 `SOG` 预览链，但主观体感表现为明显闪烁与阶段跳变，因此当前已撤回，重新回到稳定的单次加载；长期若要真正对齐，则需要前缀可渲染的 progressive splat 格式与自定义 loader / resource
+- 围绕“真正连续生长式加载”的技术判断现已收口：单文件 `SOG` 不具备我们想要的连续生长式体验；`progressive runtime` 分支虽然验证了替代链路可行，但当前用户已明确不再把“渐进式加载”作为主线目标，因此该分支转入归档状态，不继续抢占主线资源
+- 当前主线重新明确为：继续保留 `React + Vite + Zustand + Tailwind + PlayCanvas/SOG`，把后续投入集中到真实产品功能、交互打磨、代码整理和稳定性，而不是继续切换到底层 progressive 资产链
+- `SOG -> PLY` 的首个 converter spike 已落地到 `/Users/tazdingo/Dingo Projetcts/ruoshui/web/scripts/sog-to-ply.mjs`，并已成功把 `assets/hhuc.sog` 转出一版完整的 `outputs/iteration-005-progressive-runtime/hhuc-from-sog.ply`；当前默认输出 `SH degree 2`，优先对齐 `GaussianSplats3D` 的可用范围
+- 已开出第一版真实 `progressive runtime` spike 页面：`/Users/tazdingo/Dingo Projetcts/ruoshui/web/progressive.html`，当前使用 `GaussianSplats3D progressiveLoad` 直接加载 `/models/hhuc-progressive.ply`，用于主观验证“边下边显示”的体感
+- 已把 `PLY -> KSPLAT` 这一段也串起来：新增 `/Users/tazdingo/Dingo Projetcts/ruoshui/web/scripts/ply-to-ksplat.mjs`，并产出 `outputs/iteration-005-progressive-runtime/hhuc-from-sog.ksplat`
+- 当前这一轮压缩结果已明确收效：同一模型从 `hhuc-from-sog.ply` 的约 `292 MiB` 进一步压到 `hhuc-from-sog.ksplat` 的约 `120 MiB`；这些产物当前保留为技术调研资产，而不是接下来 `Web MVP` 的默认交付链
 - 当前前端技术栈判断已进一步收口：保留 `React + Vite + Zustand + Tailwind + PlayCanvas/SOG` 作为主线；短期只考虑补 `Radix/shadcn` 这类开源原语层和 `Biome` 这类格式检查工具，不切换 `Three.js` 或更重框架
 - 当前“极致性能”方向也已补充判断：若后续只考虑最终效果与浏览器内渲染上限，真正值得投入的不是单纯换 `Rust` 或换 `Three.js`，而是优先验证 `WebGPU`、`Worker + OffscreenCanvas`、以及 `Rust/WASM` 在解码/流送/调度热路径上的组合；但这应作为后续性能分支，而不是现在立刻推翻现有运行时
 - 已补充一条前端代码风格约定：`web/` 下的 `TS/JS` 模块优先使用文件末尾统一 `export { ... }`，避免在每个函数或常量声明前分散写 `export`
@@ -158,7 +165,7 @@
 
 当前最重要的任务是：
 
-- 保留当前 `CityGaussian V1-original` 训练入口准备成果，但前端主线继续聚焦 `PlayCanvas/SOG`：一边把 `Web MVP` 的代码从单体 `viewer.ts` 继续拆成更清晰的 `TS` 模块，一边围绕真实浏览器体验做加载、轨迹基准和性能优化
+- 保留当前 `CityGaussian V1-original` 训练入口准备成果，但前端主线继续聚焦 `PlayCanvas/SOG`：优先补 `Web MVP` 的产品功能、交互细节、代码模块化与稳定性验证，不再继续把“渐进式加载”当作当前迭代目标
 
 当前已确认的最近阻塞：
 
@@ -166,7 +173,7 @@
 - 当前主要阻塞已从“素材能不能成”切到“当前结果怎么交付”：训练 checkpoint `3.2 GB`、训练目录 `3.8 GB`，还不是 `Web` 可直接承受的资产形态
 - 当前首轮导出基线已经拿到，但默认 `sh_coeffs` 导出约 `1.10 GiB`，即使切到 `rgb` 导出也仍有约 `267 MiB`，离 `Web MVP` 直接加载仍有距离
 - 当前还已确认：对 `rgb` 二进制 `PLY` 做传输压缩，`gzip` / `zstd` 只能再压到约 `200 MiB` 出头，仍不足以把问题变成“可直接上线”
-- 当前 viewer 方向也已初步收敛：PlayCanvas 当前不应被假设为“直接吃 Nerfstudio `PLY`”，短期更现实的原型候选是 `GaussianSplats3D` 一类的 `PLY / ksplat` 路线
+- 当前 viewer 主线已重新收口：继续以 `PlayCanvas/SOG` 为正式交付链；`GaussianSplats3D progressive` 相关验证保留为归档研究，不作为当前产品分支继续推进
 - 现有结果的主观质量已经达到可接受范围，因此下一步不是继续证明“能不能重建”，而是证明“能不能被部署、加载和体验”
 - 当前下一步已从“文档层兼容性核查”推进到“最小浏览器入口已准备好，等待真实加载观察”
 - 当前浏览器观察与空间分析已经进一步收敛出优先方向：应优先处理底部大尺度离群高斯，而不是先追求格式转换

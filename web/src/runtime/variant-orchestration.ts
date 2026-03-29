@@ -139,6 +139,7 @@ function createVariantOrchestrationController({
     }
 
     const loadToken = issueLoadToken();
+    const hadExistingRuntime = Boolean(getRuntime());
     const switchStartedAt = performance.now();
     const preservedView = initial ? null : captureCurrentView(getRuntime());
     const benchmark = createBenchmark(variant.id);
@@ -151,10 +152,13 @@ function createVariantOrchestrationController({
     try {
       const nextRuntime = await mountRuntime(variant, {
         switchStartedAt,
-        benchmark
+        benchmark,
+        shouldAbort: () => !isCurrentLoadToken(loadToken)
       });
       if (!isCurrentLoadToken(loadToken)) {
-        nextRuntime?.destroy?.();
+        if (!hadExistingRuntime) {
+          nextRuntime?.destroy?.();
+        }
         return;
       }
 

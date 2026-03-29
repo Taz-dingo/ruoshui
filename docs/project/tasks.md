@@ -40,6 +40,14 @@
 - [x] 将前端主要面板迁移到 `React + Zustand`
 - [x] 将轨迹播放与基准测试 helper 从 `viewer.ts` 拆到独立模块
 - [x] 固定 `web/` 模块的统一尾部导出风格
+- [x] 试做一版多阶段 `SOG` 预览链，用于逼近“先稀后密”的渐进加载体感
+- [x] 验证并撤回实验性多阶段 `SOG` 预览链：确认其主观表现为闪烁与跳变，当前回退到稳定单次加载路径
+- [x] 明确真正的“渐进生长”方向需要切换到支持 progressive append 的资产 / loader 链路，而不是继续在单文件 `SOG` 上做视觉补丁
+- [x] 启动 `progressive runtime` 分支：以 `GaussianSplats3D` 为首选目标，验证高质量资产的非 `SOG` 输入链
+- [x] 判断高质量第三方 `.sog` 当前先走“自建 `SOG -> progressive splat` 转换器”更现实，并已落地 `SOG -> PLY` spike
+- [x] 落地 `SOG -> PLY` converter spike，并产出首版完整 `PLY` 资产用于后续 `GaussianSplats3D progressiveLoad` 验证
+- [x] 串起 `PLY -> KSPLAT` 压缩链，并把 `progressive.html` 升级为 `PLY / KSPLAT` 可切换对照页
+- [x] 归档 `progressive runtime` 分支：确认其更适合作为技术调研资产，而不是当前 `Web MVP` 主线
 
 ### P2
 
@@ -56,6 +64,7 @@
 - 大方向使用 `Web` 是正确的，因为它最容易被打开、传播和体验
 - 第一版不先做数据库、登录和社区系统
 - 当前最关键风险已经切到“场景能否以 `Web MVP` 可接受的体积被交付、加载和体验”
+- 关于“渐进式加载”的阶段性判断已收口：这条线已完成必要验证，但当前不再作为主线目标继续投入；`Web MVP` 继续以 `PlayCanvas/SOG` 为正式交付链
 - `Iteration 001` 首轮 headless 评估指标为 `PSNR 20.25 / SSIM 0.599 / LPIPS 0.338`
 - 当前结果已能辨识校园主结构，但存在明显 `floaters`、边缘拉花和局部遮挡伪影
 - 当前子集已经完成“效果验证是否达到主观要求”的任务，不再优先继续挑更好子集
