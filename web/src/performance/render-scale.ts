@@ -1,5 +1,9 @@
 import { renderScaleMinPercent, renderScaleStorageKey } from '../config';
-import type { PerformanceMode, RenderScaleAppLike, RenderScaleRuntimeLike } from '../types';
+import type {
+  PerformanceMode,
+  RenderScaleAppLike,
+  RenderScaleRuntimeLike
+} from '../runtime/types';
 import { clamp } from '../utils/math';
 
 export function createPerformanceMode(runtimeWindow: Window, lockedPercent: number): PerformanceMode {

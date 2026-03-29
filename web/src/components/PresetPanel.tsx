@@ -1,6 +1,6 @@
-import type { PresetPanelViewState } from '../types';
+import type { PresetPanelViewState } from '../ui/types';
 import { useViewerUiStore } from '../ui/viewer-ui-store';
-import { requestPresetSelection } from '../viewer-command-bus';
+import { requestPresetSelection } from '../ui/viewer-command-bus';
 
 interface PresetPanelProps {
   initialState: PresetPanelViewState;

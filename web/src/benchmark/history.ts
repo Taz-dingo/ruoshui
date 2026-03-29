@@ -3,7 +3,7 @@ import {
   formatWorstStepLabel,
   getWorstStep
 } from './analysis';
-import type { RouteRunRecord } from '../types';
+import type { RouteRunRecord } from './types';
 import { formatMetricText } from '../utils/format';
 
 export function getLatestSuiteRecords(history: RouteRunRecord[]): RouteRunRecord[] {

@@ -1,5 +1,6 @@
 import { getLatestRouteAnalysisExport } from './history';
-import type { BenchmarkRoute, RouteRunRecord, ViewerVariant } from '../types';
+import type { RouteRunRecord } from './types';
+import type { BenchmarkRoute, ViewerVariant } from '../content/types';
 
 interface CreateRouteBenchmarkControllerArgs {
   benchmarkRoutes: BenchmarkRoute[];

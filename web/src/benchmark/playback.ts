@@ -10,11 +10,10 @@ import {
   type OrbitSnapshot
 } from '../runtime/orbit';
 import type {
-  BenchmarkRoute,
   RouteRunRecord,
-  VariantBenchmark,
-  ViewerVariant
-} from '../types';
+  VariantBenchmark
+} from './types';
+import type { BenchmarkRoute, ViewerVariant } from '../content/types';
 
 interface CameraTargetPreset {
   position: [number, number, number];

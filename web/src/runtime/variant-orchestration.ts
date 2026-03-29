@@ -2,7 +2,8 @@ import { trackBenchmarkFirstFrame } from '../benchmark/runtime';
 import { createSceneCanvas } from './canvas-host';
 import { configureUnifiedGsplat } from './runtime-factory';
 import { loadVariantIntoRuntime } from './variant-loader';
-import type { CameraPreset, VariantBenchmark, ViewerVariant } from '../types';
+import type { VariantBenchmark } from '../benchmark/types';
+import type { CameraPreset, ViewerVariant } from '../content/types';
 import type { SceneLookSettings } from './scene-look';
 
 interface CreateVariantOrchestrationControllerArgs {

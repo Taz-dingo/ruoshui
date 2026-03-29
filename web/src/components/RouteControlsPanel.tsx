@@ -1,10 +1,10 @@
-import type { RouteControlsViewState } from '../types';
+import type { RouteControlsViewState } from '../ui/types';
 import { useViewerUiStore } from '../ui/viewer-ui-store';
 import {
   requestRouteSelection,
   requestRunCurrentRouteBenchmark,
   requestRunRouteSuite
-} from '../viewer-command-bus';
+} from '../ui/viewer-command-bus';
 
 interface RouteControlsPanelProps {
   initialState: RouteControlsViewState;

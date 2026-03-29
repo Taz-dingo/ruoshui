@@ -1,4 +1,5 @@
-import type { VariantBenchmark, Vector3Like } from '../types';
+import type { VariantBenchmark } from '../benchmark/types';
+import type { Vector3Like } from '../runtime/types';
 
 export function formatMetricMs(value: number | null | undefined): string {
   if (!Number.isFinite(value)) {

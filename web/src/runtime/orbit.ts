@@ -4,7 +4,7 @@ import {
   minOrbitPitchDeg,
   minOrbitTargetY
 } from '../config';
-import type { PerformanceMode } from '../types';
+import type { PerformanceMode } from './types';
 import { clamp, degToRad, easeInOutCubic, lerp, lerpAngle } from '../utils/math';
 
 type OrbitVector = any;

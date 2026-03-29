@@ -12,7 +12,7 @@ import type {
   SceneMetricsViewState,
   StatusViewState,
   VariantPanelViewState
-} from '../viewer-ui-types';
+} from './types';
 
 interface ViewerUiStoreState {
   camera: CameraViewState;

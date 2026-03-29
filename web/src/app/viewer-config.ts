@@ -1,10 +1,19 @@
-import { renderScaleMinPercent } from './config';
+import { renderScaleMinPercent } from '../config';
 import {
   getInitialRenderScalePercent,
   getMaxSupportedPixelRatio
-} from './performance/render-scale';
-import type { PresetPanelViewState, RouteControlsViewState, VariantPanelViewState } from './viewer-ui-types';
-import type { BenchmarkRoute, CameraPreset, ViewerContent, ViewerVariant } from './viewer-content-types';
+} from '../performance/render-scale';
+import type {
+  PresetPanelViewState,
+  RouteControlsViewState,
+  VariantPanelViewState
+} from '../ui/types';
+import type {
+  BenchmarkRoute,
+  CameraPreset,
+  ViewerContent,
+  ViewerVariant
+} from '../content/types';
 
 interface ViewerConfig {
   activeRenderScalePercent: number;
