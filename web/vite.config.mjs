@@ -135,27 +135,11 @@ const assetEntries = [
   {
     routePrefix: '/models/hhuc-lod/',
     sourceDir: path.join(rootDir, 'outputs', 'iteration-004-sog-opt', 'lod')
-  },
-  {
-    routePath: '/models/hhuc-progressive.ply',
-    sourceFile: path.join(rootDir, 'outputs', 'iteration-005-progressive-runtime', 'hhuc-from-sog.ply')
-  },
-  {
-    routePath: '/models/hhuc-progressive.ksplat',
-    sourceFile: path.join(rootDir, 'outputs', 'iteration-005-progressive-runtime', 'hhuc-from-sog.ksplat')
   }
 ];
 
 export default defineConfig({
   plugins: [tailwindcss(), react(), externalAssetsPlugin(assetEntries)],
-  build: {
-    rollupOptions: {
-      input: {
-        main: path.resolve(__dirname, 'index.html'),
-        progressive: path.resolve(__dirname, 'progressive.html')
-      }
-    }
-  },
   server: {
     host: '0.0.0.0'
   },
