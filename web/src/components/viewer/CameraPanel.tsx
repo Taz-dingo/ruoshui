@@ -1,4 +1,4 @@
-import { useViewerUiStore } from '../ui/viewer-ui-store';
+import { useViewerUiStore } from '../../ui/state/viewer-ui-store';
 
 interface CameraPanelProps {
   isOpen: boolean;

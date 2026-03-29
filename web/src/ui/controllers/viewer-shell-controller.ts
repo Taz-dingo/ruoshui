@@ -1,8 +1,8 @@
-import { syncCameraState } from './viewer-ui-sync';
-import { formatMetricMs, formatMotionMetric } from '../utils/format';
-import { useViewerUiStore } from './viewer-ui-store';
-import type { VariantBenchmark } from '../benchmark/types';
-import type { ViewerVariant } from '../content/types';
+import { syncCameraState } from '../state/viewer-ui-sync';
+import { formatMetricMs, formatMotionMetric } from '../../utils/format';
+import { useViewerUiStore } from '../state/viewer-ui-store';
+import type { VariantBenchmark } from '../../benchmark/types';
+import type { ViewerVariant } from '../../content/types';
 
 interface CreateViewerShellControllerArgs {
   showPerfHud: boolean;

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
-import { useViewerUiStore } from '../ui/viewer-ui-store';
-import { requestSceneLookChange } from '../ui/viewer-command-bus';
+import { useViewerUiStore } from '../../ui/state/viewer-ui-store';
+import { requestSceneLookChange } from '../../ui/commands/viewer-command-bus';
 
 interface SceneLookSectionProps {
   isOpen: boolean;

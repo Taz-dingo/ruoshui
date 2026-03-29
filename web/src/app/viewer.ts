@@ -28,17 +28,17 @@ import { createViewerSessionState } from '../runtime/viewer-session-state';
 import { createVariantOrchestrationController } from '../runtime/variant-orchestration';
 import { createViewerRuntimeController } from '../runtime/viewer-runtime-controller';
 import type { RouteRunRecord, VariantBenchmark } from '../benchmark/types';
-import { createViewerPanelController } from '../ui/viewer-panel-controller';
+import { createViewerPanelController } from '../ui/controllers/viewer-panel-controller';
 import {
   initializeViewerStartup,
   installViewerStartupBindings
-} from '../ui/viewer-startup-controller';
-import { createViewerShellController } from '../ui/viewer-shell-controller';
+} from '../ui/controllers/viewer-startup-controller';
+import { createViewerShellController } from '../ui/controllers/viewer-shell-controller';
 import {
   setPresetPanelSummary,
   setViewerStatus,
   syncSceneLookState
-} from '../ui/viewer-ui-sync';
+} from '../ui/state/viewer-ui-sync';
 import type { ViewerConfig } from './viewer-config';
 import type { ViewerContent } from '../content/types';
 

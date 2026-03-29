@@ -1,9 +1,12 @@
-import { emptyRouteDiagnosticsState, useViewerUiStore } from '../ui/viewer-ui-store';
+import {
+  emptyRouteDiagnosticsState,
+  useViewerUiStore
+} from '../../ui/state/viewer-ui-store';
 import {
   requestCopyRouteAnalysisJson,
   requestCopyRouteAnalysisSummary,
   requestDownloadRouteAnalysisJson
-} from '../ui/viewer-command-bus';
+} from '../../ui/commands/viewer-command-bus';
 
 function RouteDiagnosticsPanel() {
   const state = useViewerUiStore((store) => store.routeDiagnostics ?? emptyRouteDiagnosticsState);

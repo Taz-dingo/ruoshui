@@ -5,7 +5,7 @@ import {
 } from './history';
 import { triggerFileDownload } from '../platform/file-download';
 import { finalizeBenchmarkRouteRunRecord } from './runtime';
-import { syncRouteDiagnosticsState } from '../ui/viewer-ui-sync';
+import { syncRouteDiagnosticsState } from '../ui/state/viewer-ui-sync';
 import type { RouteRunRecord } from './types';
 import type { BenchmarkRoute, ViewerVariant } from '../content/types';
 

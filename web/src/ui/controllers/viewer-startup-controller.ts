@@ -1,9 +1,9 @@
-import type { SceneLookSettings } from '../runtime/scene-look';
-import type { ViewerVariant } from '../content/types';
+import type { SceneLookSettings } from '../../runtime/scene-look';
+import type { ViewerVariant } from '../../content/types';
 import {
   subscribeViewerCommands,
   type ViewerCommand
-} from './viewer-command-bus';
+} from '../commands/viewer-command-bus';
 
 interface InstallViewerStartupBindingsArgs {
   activatePreset: (presetId: string) => void;

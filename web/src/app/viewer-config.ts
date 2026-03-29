@@ -7,7 +7,7 @@ import type {
   PresetPanelViewState,
   RouteControlsViewState,
   VariantPanelViewState
-} from '../ui/types';
+} from '../ui/state/types';
 import type {
   BenchmarkRoute,
   CameraPreset,

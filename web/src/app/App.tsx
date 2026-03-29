@@ -1,14 +1,14 @@
 import type { RefObject } from 'react';
 import { useEffect, useState } from 'react';
 
-import { CameraPanel } from '../components/CameraPanel';
-import { HeroPanel } from '../components/HeroPanel';
-import { PresetsSection } from '../components/PresetsSection';
-import { RenderScaleSection } from '../components/RenderScaleSection';
-import { SceneLookSection } from '../components/SceneLookSection';
-import { SceneMetaPanel } from '../components/SceneMetaPanel';
-import { VariantPanel } from '../components/VariantPanel';
-import { useViewerUiStore } from '../ui/viewer-ui-store';
+import { CameraPanel } from '../components/viewer/CameraPanel';
+import { HeroPanel } from '../components/viewer/HeroPanel';
+import { PresetsSection } from '../components/viewer/PresetsSection';
+import { RenderScaleSection } from '../components/viewer/RenderScaleSection';
+import { SceneLookSection } from '../components/viewer/SceneLookSection';
+import { SceneMetaPanel } from '../components/viewer/SceneMetaPanel';
+import { VariantPanel } from '../components/viewer/VariantPanel';
+import { useViewerUiStore } from '../ui/state/viewer-ui-store';
 import type { ViewerConfig } from './viewer-config';
 import type { ViewerContent } from '../content/types';
 

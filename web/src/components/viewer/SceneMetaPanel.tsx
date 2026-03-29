@@ -1,4 +1,4 @@
-import { useViewerUiStore } from '../ui/viewer-ui-store';
+import { useViewerUiStore } from '../../ui/state/viewer-ui-store';
 
 function SceneMetaPanel() {
   const status = useViewerUiStore((store) => store.status);
