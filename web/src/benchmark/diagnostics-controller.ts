@@ -3,6 +3,7 @@ import {
   getLatestRouteAnalysisExport,
   persistRouteRunHistory
 } from './history';
+import { triggerFileDownload } from '../platform/file-download';
 import { finalizeBenchmarkRouteRunRecord } from './runtime';
 import { syncRouteDiagnosticsState } from '../ui/viewer-ui-sync';
 import type { BenchmarkRoute, RouteRunRecord, ViewerVariant } from '../types';
@@ -92,17 +93,13 @@ function createRouteDiagnosticsController({
     const blob = new Blob([JSON.stringify(exportPayload, null, 2)], {
       type: 'application/json'
     });
-    const url = URL.createObjectURL(blob);
     const routeSlug = exportPayload.summary.routeName
       .replace(/[^\p{Letter}\p{Number}-]+/gu, '-')
       .replace(/-+/g, '-');
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `ruoshui-route-analysis-${routeSlug}-${exportPayload.summary.suiteId}.json`;
-    document.body.append(link);
-    link.click();
-    link.remove();
-    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+    triggerFileDownload({
+      blob,
+      fileName: `ruoshui-route-analysis-${routeSlug}-${exportPayload.summary.suiteId}.json`
+    });
     setRouteAnalysisCopyNote('已下载 JSON。');
   };
 

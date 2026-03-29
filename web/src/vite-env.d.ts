@@ -7,7 +7,6 @@ interface ImportMeta {
 }
 
 interface Window {
-  __ruoshuiInitialData?: import('./types').ViewerContent;
   __ruoshuiPerf?: {
     latest: () => unknown;
     history: () => unknown;

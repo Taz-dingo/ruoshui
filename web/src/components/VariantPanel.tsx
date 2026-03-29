@@ -3,14 +3,13 @@ import { useViewerUiStore } from '../ui/viewer-ui-store';
 
 interface VariantPanelProps {
   initialState: VariantPanelViewState;
+  isOpen: boolean;
+  onToggle: () => void;
 }
 
-export function VariantPanel({ initialState }: VariantPanelProps) {
-  const activeInspectorPanel = useViewerUiStore((store) => store.activeInspectorPanel);
+function VariantPanel({ initialState, isOpen, onToggle }: VariantPanelProps) {
   const state = useViewerUiStore((store) => store.variantPanel ?? initialState);
-  const setActiveInspectorPanel = useViewerUiStore((store) => store.setActiveInspectorPanel);
   const requestVariantSelection = useViewerUiStore((store) => store.requestVariantSelection);
-  const isOpen = activeInspectorPanel === 'variants';
 
   return (
     <section className="inspector-section variant-section" data-panel="variants">
@@ -18,7 +17,7 @@ export function VariantPanel({ initialState }: VariantPanelProps) {
         className={`inspector-toggle${isOpen ? ' is-active' : ''}`}
         type="button"
         aria-expanded={isOpen}
-        onClick={() => setActiveInspectorPanel(isOpen ? null : 'variants')}
+        onClick={onToggle}
       >
         <span className="section-title">模型版本</span>
         <span className="toggle-meta">{state.summary}</span>
@@ -44,3 +43,7 @@ export function VariantPanel({ initialState }: VariantPanelProps) {
     </section>
   );
 }
+
+export {
+  VariantPanel
+};

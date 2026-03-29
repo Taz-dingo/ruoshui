@@ -173,7 +173,6 @@ function initializeViewerStartup({
   renderPerfHud(null);
   publishRouteDiagnostics();
   installRouteAnalysisBridge();
-  useViewerUiStore.getState().setActiveInspectorPanel(null);
   setStatus("加载中", "准备场景资源");
 }
 

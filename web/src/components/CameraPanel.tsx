@@ -1,10 +1,12 @@
 import { useViewerUiStore } from '../ui/viewer-ui-store';
 
-export function CameraPanel() {
-  const activeInspectorPanel = useViewerUiStore((store) => store.activeInspectorPanel);
-  const setActiveInspectorPanel = useViewerUiStore((store) => store.setActiveInspectorPanel);
+interface CameraPanelProps {
+  isOpen: boolean;
+  onToggle: () => void;
+}
+
+function CameraPanel({ isOpen, onToggle }: CameraPanelProps) {
   const state = useViewerUiStore((store) => store.camera);
-  const isOpen = activeInspectorPanel === 'camera';
 
   return (
     <section className="inspector-section" data-panel="camera">
@@ -12,7 +14,7 @@ export function CameraPanel() {
         className={`inspector-toggle${isOpen ? ' is-active' : ''}`}
         type="button"
         aria-expanded={isOpen}
-        onClick={() => setActiveInspectorPanel(isOpen ? null : 'camera')}
+        onClick={onToggle}
       >
         <span className="section-title">相机信息</span>
         <span className="toggle-meta">{state.summary}</span>
@@ -40,3 +42,7 @@ export function CameraPanel() {
     </section>
   );
 }
+
+export {
+  CameraPanel
+};

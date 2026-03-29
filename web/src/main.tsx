@@ -1,10 +1,10 @@
+import { createRef } from 'react';
 import ReactDOM from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import './style.css';
 import { App } from './App';
-import { renderScaleMinPercent } from './config';
-import { getInitialRenderScalePercent, getMaxSupportedPixelRatio } from './performance/render-scale';
 import type { ViewerContent } from './types';
+import { createViewerConfig } from './viewer-config';
 
 const appElement = document.getElementById('app');
 
@@ -20,21 +20,20 @@ const data = await fetch('/content/mvp.json').then(async (response): Promise<Vie
   return response.json() as Promise<ViewerContent>;
 });
 
-const showPerfHud = import.meta.env.DEV;
-const maxRenderScalePercent = Math.round(getMaxSupportedPixelRatio(window) * 100);
-const activeRenderScalePercent = getInitialRenderScalePercent(window, maxRenderScalePercent);
-
-window.__ruoshuiInitialData = data;
+const sceneContainerRef = createRef<HTMLDivElement>();
+const viewerConfig = createViewerConfig({
+  data,
+  runtimeWindow: window,
+  showPerfHud: import.meta.env.DEV
+});
 
 const root = ReactDOM.createRoot(appElement);
 flushSync(() => {
   root.render(
     <App
       data={data}
-      showPerfHud={showPerfHud}
-      maxRenderScalePercent={maxRenderScalePercent}
-      activeRenderScalePercent={activeRenderScalePercent}
-      renderScaleMinPercent={renderScaleMinPercent}
+      sceneContainerRef={sceneContainerRef}
+      viewerConfig={viewerConfig}
     />
   );
 });
@@ -43,4 +42,16 @@ await new Promise<void>((resolve) => {
   window.requestAnimationFrame(() => resolve());
 });
 
-await import('./viewer');
+const sceneContainer = sceneContainerRef.current;
+
+if (!sceneContainer) {
+  throw new Error('Missing scene container');
+}
+
+const { initializeViewer } = await import('./viewer');
+
+await initializeViewer({
+  data,
+  sceneContainer,
+  viewerConfig
+});
