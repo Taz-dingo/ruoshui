@@ -20,7 +20,6 @@ import {
 } from './performance/render-scale';
 import {
   applyRuntimeSceneLook,
-  formatSceneLookSummary,
   loadSceneLookSettings,
   normalizeSceneLookSettings,
   persistSceneLookSettings
@@ -28,15 +27,20 @@ import {
 import { createViewerSessionState } from './runtime/viewer-session-state';
 import { createVariantOrchestrationController } from './runtime/variant-orchestration';
 import { createViewerRuntimeController } from './runtime/viewer-runtime-controller';
-import type { RouteRunRecord, VariantBenchmark, ViewerContent } from './types';
+import type { RouteRunRecord, VariantBenchmark } from './benchmark-types';
 import { createViewerPanelController } from './ui/viewer-panel-controller';
 import {
   initializeViewerStartup,
   installViewerStartupBindings
 } from './ui/viewer-startup-controller';
 import { createViewerShellController } from './ui/viewer-shell-controller';
-import { useViewerUiStore } from './ui/viewer-ui-store';
+import {
+  setPresetPanelSummary,
+  setViewerStatus,
+  syncSceneLookState
+} from './ui/viewer-ui-sync';
 import type { ViewerConfig } from './viewer-config';
+import type { ViewerContent } from './viewer-content-types';
 
 interface InitializeViewerArgs {
   data: ViewerContent;
@@ -89,6 +93,24 @@ async function initializeViewer({
     getIsVariantPanelDisabled: session.getIsVariantPanelDisabled,
     setIsVariantPanelDisabled: session.setIsVariantPanelDisabled
   });
+  const {
+    publishRouteControls,
+    publishVariantPanel,
+    setVariantButtonsDisabled,
+    updatePresetButtons,
+    updateRouteButtons,
+    updateVariantButtons
+  } = viewerPanelController;
+
+  function createVariantBenchmark(variantId: string) {
+    return beginStoredVariantBenchmark(variantBenchmarks, variantId);
+  }
+
+  function getVariantBenchmark(
+    variantId: string | null | undefined
+  ): VariantBenchmark | null {
+    return getStoredVariantBenchmark(variantBenchmarks, variantId);
+  }
 
   const viewerShellController = createViewerShellController({
     showPerfHud: viewerConfig.showPerfHud,
@@ -97,6 +119,13 @@ async function initializeViewer({
     getActiveVariantId: session.getActiveVariantId,
     getActiveRenderScalePercent: session.getActiveRenderScalePercent
   });
+  const {
+    renderCameraMeta,
+    renderPerfHud,
+    renderRenderScaleMeta,
+    renderVariantBenchmark,
+    renderVariantMeta
+  } = viewerShellController;
 
   const viewerRuntimeController = createViewerRuntimeController({
     pc,
@@ -120,6 +149,18 @@ async function initializeViewer({
     renderCameraMeta,
     renderPerfHud
   });
+  const {
+    captureCurrentView,
+    createRuntime,
+    moveCamera,
+    restoreCurrentView,
+    startBenchmarkRoute,
+    stopActiveBenchmarkRoute
+  } = viewerRuntimeController;
+
+  async function runVariantRouteBenchmark(options: any = {}) {
+    return routeBenchmarkController.runVariantRouteBenchmark(options);
+  }
 
   const routeDiagnosticsController = createRouteDiagnosticsController({
     frameSchema: Object.keys(frameSampleIndices),
@@ -142,7 +183,6 @@ async function initializeViewer({
     getActiveBenchmarkRunPromise: session.getActiveBenchmarkRunPromise,
     runVariantRouteBenchmark: (options) => runVariantRouteBenchmark(options)
   });
-
   const routeBenchmarkController = createRouteBenchmarkController({
     benchmarkRoutes: viewerConfig.benchmarkRoutes,
     benchmarkRoutesById: viewerConfig.benchmarkRoutesById,
@@ -162,7 +202,7 @@ async function initializeViewer({
     setActiveSuiteRunId: session.setActiveSuiteRunId,
     setActiveBenchmarkRunPromise: session.setActiveBenchmarkRunPromise,
     setRouteSummaryText: session.setRouteSummaryText,
-    setStatus: setUiStatus,
+    setStatus: setViewerStatus,
     publishRouteControls,
     updateRouteButtons,
     setVariantButtonsDisabled,
@@ -170,6 +210,11 @@ async function initializeViewer({
     startBenchmarkRoute,
     stopActiveBenchmarkRoute
   });
+  const {
+    activateBenchmarkRoute,
+    runCurrentVariantRouteBenchmark,
+    runRouteBenchmarkSuite
+  } = routeBenchmarkController;
 
   const variantOrchestrationController = createVariantOrchestrationController({
     pc,
@@ -191,8 +236,8 @@ async function initializeViewer({
     updateVariantButtons,
     updatePresetButtons,
     setVariantButtonsDisabled,
-    setPresetSummary,
-    setStatus: setUiStatus,
+    setPresetSummary: setPresetPanelSummary,
+    setStatus: setViewerStatus,
     stopActiveBenchmarkRoute,
     captureCurrentView,
     restoreCurrentView,
@@ -201,6 +246,7 @@ async function initializeViewer({
     publishVariantBenchmark,
     getVariantBenchmark
   });
+  const { activatePreset } = variantOrchestrationController;
 
   installViewerStartupBindings({
     activatePreset,
@@ -223,81 +269,20 @@ async function initializeViewer({
     updateVariantButtons,
     updateRouteButtons,
     publishRouteControls,
-    renderVariantMeta: viewerShellController.renderVariantMeta,
+    renderVariantMeta,
     defaultVariant: viewerConfig.defaultVariant,
-    renderRenderScaleMeta: viewerShellController.renderRenderScaleMeta,
+    renderRenderScaleMeta,
     activeRenderScalePercent: session.getActiveRenderScalePercent(),
-    renderSceneLookMeta,
+    renderSceneLookMeta: syncSceneLookState,
     activeSceneLook: session.getActiveSceneLook(),
     renderCameraMeta,
     renderPerfHud,
     publishRouteDiagnostics: routeDiagnosticsController.publishRouteDiagnostics,
     installRouteAnalysisBridge: routeDiagnosticsController.installRouteAnalysisBridge,
-    setStatus: setUiStatus
+    setStatus: setViewerStatus
   });
 
   await activateVariant(viewerConfig.defaultVariant.id, true);
-
-  function setUiStatus(title: string, detail: string) {
-    useViewerUiStore.getState().setStatus({
-      title,
-      detail
-    });
-  }
-
-  function setPresetSummary(summary: string) {
-    const presetPanel = useViewerUiStore.getState().presetPanel;
-    if (!presetPanel) {
-      return;
-    }
-
-    useViewerUiStore.getState().setPresetPanel({
-      ...presetPanel,
-      summary
-    });
-  }
-
-  function createVariantBenchmark(variantId: string) {
-    return beginStoredVariantBenchmark(variantBenchmarks, variantId);
-  }
-
-  function activateRenderScale(nextPercent: number) {
-    const normalizedPercent = normalizeRenderScalePercent(
-      nextPercent,
-      viewerConfig.maxRenderScalePercent
-    );
-    session.setActiveRenderScalePercent(normalizedPercent);
-    persistRenderScalePercent(window, normalizedPercent);
-    viewerShellController.renderRenderScaleMeta(normalizedPercent);
-    applyRenderScaleToRuntime(
-      session.getRuntime(),
-      normalizedPercent,
-      viewerConfig.maxRenderScalePercent
-    );
-    renderPerfHud(session.getRuntime());
-  }
-
-  function applySceneLook(sceneLook: ReturnType<typeof session.getActiveSceneLook>) {
-    const nextSceneLook = normalizeSceneLookSettings(sceneLook);
-    session.setActiveSceneLook(nextSceneLook);
-    persistSceneLookSettings(window, nextSceneLook);
-    renderSceneLookMeta(nextSceneLook);
-    applyRuntimeSceneLook(session.getRuntime(), nextSceneLook);
-  }
-
-  function renderSceneLookMeta(
-    sceneLook: ReturnType<typeof session.getActiveSceneLook>
-  ) {
-    useViewerUiStore.getState().setSceneLook({
-      summary: formatSceneLookSummary(sceneLook),
-      brightnessPercent: sceneLook.brightnessPercent,
-      contrastPercent: sceneLook.contrastPercent,
-      saturationPercent: sceneLook.saturationPercent,
-      brightnessValue: `${sceneLook.brightnessPercent}%`,
-      contrastValue: `${sceneLook.contrastPercent}%`,
-      saturationValue: `${sceneLook.saturationPercent}%`
-    });
-  }
 
   async function activateVariant(
     variantId: string,
@@ -311,103 +296,32 @@ async function initializeViewer({
     );
   }
 
-  function activatePreset(presetId: string, immediate = false) {
-    variantOrchestrationController.activatePreset(presetId, immediate);
-  }
-
-  function activateBenchmarkRoute(routeId: string) {
-    routeBenchmarkController.activateBenchmarkRoute(routeId);
-  }
-
-  async function runRouteBenchmarkSuite() {
-    return routeBenchmarkController.runRouteBenchmarkSuite();
-  }
-
-  async function runCurrentVariantRouteBenchmark() {
-    return routeBenchmarkController.runCurrentVariantRouteBenchmark();
-  }
-
-  async function runVariantRouteBenchmark(options: any = {}) {
-    return routeBenchmarkController.runVariantRouteBenchmark(options);
-  }
-
-  function updatePresetButtons() {
-    viewerPanelController.updatePresetButtons();
-  }
-
-  function updateVariantButtons() {
-    viewerPanelController.updateVariantButtons();
-  }
-
-  function updateRouteButtons() {
-    viewerPanelController.updateRouteButtons();
-  }
-
-  function setVariantButtonsDisabled(disabled: boolean) {
-    viewerPanelController.setVariantButtonsDisabled(disabled);
-  }
-
-  function publishVariantPanel() {
-    viewerPanelController.publishVariantPanel();
-  }
-
-  function publishRouteControls() {
-    viewerPanelController.publishRouteControls();
-  }
-
-  async function createRuntime(
-    canvasElement: HTMLCanvasElement,
-    variant: (typeof data.variants)[number],
-    timings: any = {},
-    sceneLook = session.getActiveSceneLook()
-  ) {
-    return viewerRuntimeController.createRuntime(
-      canvasElement,
-      variant,
-      timings,
-      sceneLook
-    );
-  }
-
-  function moveCamera(
-    runtimeState: any,
-    preset: (typeof data.presets)[number],
-    immediate = false
-  ) {
-    viewerRuntimeController.moveCamera(runtimeState, preset, immediate);
-  }
-
-  function startBenchmarkRoute(runtimeState: any, route: any, options: any = {}) {
-    viewerRuntimeController.startBenchmarkRoute(runtimeState, route, options);
-  }
-
-  function stopActiveBenchmarkRoute(
-    summaryText = '未播放',
-    status = 'aborted'
-  ) {
-    viewerRuntimeController.stopActiveBenchmarkRoute(
-      session.getRuntime(),
-      summaryText,
-      status
-    );
-  }
-
-  function captureCurrentView(runtimeState: any) {
-    return viewerRuntimeController.captureCurrentView(runtimeState);
-  }
-
-  function restoreCurrentView(runtimeState: any, snapshot: any) {
-    return viewerRuntimeController.restoreCurrentView(runtimeState, snapshot);
-  }
-
   function finalizeRouteRunRecord(runtimeState: any, status: string) {
     return routeDiagnosticsController.finalizeRouteRunRecord(runtimeState, status);
   }
 
-  function getVariantBenchmark(
-    variantId: string | null | undefined
-  ): VariantBenchmark | null {
-    return getStoredVariantBenchmark(variantBenchmarks, variantId);
+  function activateRenderScale(nextPercent: number) {
+    const normalizedPercent = normalizeRenderScalePercent(
+      nextPercent,
+      viewerConfig.maxRenderScalePercent
+    );
+    session.setActiveRenderScalePercent(normalizedPercent);
+    persistRenderScalePercent(window, normalizedPercent);
+    renderRenderScaleMeta(normalizedPercent);
+    applyRenderScaleToRuntime(
+      session.getRuntime(),
+      normalizedPercent,
+      viewerConfig.maxRenderScalePercent
+    );
+    renderPerfHud(session.getRuntime());
+  }
+
+  function applySceneLook(sceneLook: ReturnType<typeof session.getActiveSceneLook>) {
+    const nextSceneLook = normalizeSceneLookSettings(sceneLook);
+    session.setActiveSceneLook(nextSceneLook);
+    persistSceneLookSettings(window, nextSceneLook);
+    syncSceneLookState(nextSceneLook);
+    applyRuntimeSceneLook(session.getRuntime(), nextSceneLook);
   }
 
   function publishVariantBenchmark(variantId: string) {
@@ -415,15 +329,7 @@ async function initializeViewer({
       return;
     }
 
-    viewerShellController.renderVariantBenchmark(variantId);
-  }
-
-  function renderCameraMeta(runtimeState: any) {
-    viewerShellController.renderCameraMeta(runtimeState);
-  }
-
-  function renderPerfHud(runtimeState: any) {
-    viewerShellController.renderPerfHud(runtimeState);
+    renderVariantBenchmark(variantId);
   }
 }
 

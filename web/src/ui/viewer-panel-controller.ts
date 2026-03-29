@@ -2,8 +2,8 @@ import {
   syncPresetPanelState,
   syncRouteControlsState,
   syncVariantPanelState,
-} from "./viewer-ui-sync";
-import type { BenchmarkRoute, CameraPreset, ViewerVariant } from "../types";
+} from './viewer-ui-sync';
+import type { BenchmarkRoute, CameraPreset, ViewerVariant } from '../viewer-content-types';
 
 interface CreateViewerPanelControllerArgs {
   variants: ViewerVariant[];
