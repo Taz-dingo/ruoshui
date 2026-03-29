@@ -1,10 +1,10 @@
 import { analyzeRouteRun, isTrackedModelResource, simplifyResourceName } from './analysis';
 import type {
-  BenchmarkRoute,
   LongTaskEntry,
   RouteRunRecord,
   VariantBenchmark
-} from '../types';
+} from './types';
+import type { BenchmarkRoute } from '../content/types';
 import { radToDeg } from '../utils/math';
 
 interface RawLongTaskEntry {

@@ -1,15 +1,14 @@
 import { buildRouteAnalysisSummary, getLatestSuiteRecords } from '../benchmark/history';
 import type {
-  BenchmarkRoute,
   CameraViewState,
   PresetPanelViewState,
   RouteControlsViewState,
   RouteDiagnosticsViewState,
-  RouteRunRecord,
-  Vector3Like,
-  ViewerVariant,
   VariantPanelViewState
-} from '../types';
+} from './types';
+import type { RouteRunRecord } from '../benchmark/types';
+import type { BenchmarkRoute, ViewerVariant } from '../content/types';
+import type { Vector3Like } from '../runtime/types';
 import {
   formatSceneLookSummary,
 } from '../runtime/scene-look';

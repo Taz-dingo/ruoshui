@@ -6,7 +6,8 @@ import {
 import { triggerFileDownload } from '../platform/file-download';
 import { finalizeBenchmarkRouteRunRecord } from './runtime';
 import { syncRouteDiagnosticsState } from '../ui/viewer-ui-sync';
-import type { BenchmarkRoute, RouteRunRecord, ViewerVariant } from '../types';
+import type { RouteRunRecord } from './types';
+import type { BenchmarkRoute, ViewerVariant } from '../content/types';
 
 interface RawLongTaskEntry {
   startTime: number;

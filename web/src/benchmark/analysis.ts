@@ -8,7 +8,7 @@ import type {
   RouteRunRecord,
   StallWindow,
   StepStats
-} from '../types';
+} from './types';
 import { computeQuantile, rangesOverlap, roundNumber } from '../utils/math';
 
 export function analyzeRouteRun(

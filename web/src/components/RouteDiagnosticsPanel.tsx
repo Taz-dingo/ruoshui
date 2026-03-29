@@ -3,7 +3,7 @@ import {
   requestCopyRouteAnalysisJson,
   requestCopyRouteAnalysisSummary,
   requestDownloadRouteAnalysisJson
-} from '../viewer-command-bus';
+} from '../ui/viewer-command-bus';
 
 function RouteDiagnosticsPanel() {
   const state = useViewerUiStore((store) => store.routeDiagnostics ?? emptyRouteDiagnosticsState);

@@ -1,46 +1,46 @@
-import { createRouteDiagnosticsController } from './benchmark/diagnostics-controller';
-import { getInitialRouteRunHistory } from './benchmark/history';
-import { createRouteBenchmarkController } from './benchmark/route-benchmark-controller';
+import { createRouteDiagnosticsController } from '../benchmark/diagnostics-controller';
+import { getInitialRouteRunHistory } from '../benchmark/history';
+import { createRouteBenchmarkController } from '../benchmark/route-benchmark-controller';
 import {
   beginStoredVariantBenchmark,
   getStoredVariantBenchmark,
   initLongTaskObserver
-} from './benchmark/runtime';
+} from '../benchmark/runtime';
 import {
   currentVariantRepeatCount,
   frameSampleIndices,
   maxRouteRunHistory,
   routeAnalysisCopyFeedbackMs,
   routeRunHistoryStorageKey
-} from './config';
+} from '../config';
 import {
   applyRenderScaleToRuntime,
   normalizeRenderScalePercent,
   persistRenderScalePercent
-} from './performance/render-scale';
+} from '../performance/render-scale';
 import {
   applyRuntimeSceneLook,
   loadSceneLookSettings,
   normalizeSceneLookSettings,
   persistSceneLookSettings
-} from './runtime/scene-look';
-import { createViewerSessionState } from './runtime/viewer-session-state';
-import { createVariantOrchestrationController } from './runtime/variant-orchestration';
-import { createViewerRuntimeController } from './runtime/viewer-runtime-controller';
-import type { RouteRunRecord, VariantBenchmark } from './benchmark-types';
-import { createViewerPanelController } from './ui/viewer-panel-controller';
+} from '../runtime/scene-look';
+import { createViewerSessionState } from '../runtime/viewer-session-state';
+import { createVariantOrchestrationController } from '../runtime/variant-orchestration';
+import { createViewerRuntimeController } from '../runtime/viewer-runtime-controller';
+import type { RouteRunRecord, VariantBenchmark } from '../benchmark/types';
+import { createViewerPanelController } from '../ui/viewer-panel-controller';
 import {
   initializeViewerStartup,
   installViewerStartupBindings
-} from './ui/viewer-startup-controller';
-import { createViewerShellController } from './ui/viewer-shell-controller';
+} from '../ui/viewer-startup-controller';
+import { createViewerShellController } from '../ui/viewer-shell-controller';
 import {
   setPresetPanelSummary,
   setViewerStatus,
   syncSceneLookState
-} from './ui/viewer-ui-sync';
+} from '../ui/viewer-ui-sync';
 import type { ViewerConfig } from './viewer-config';
-import type { ViewerContent } from './viewer-content-types';
+import type { ViewerContent } from '../content/types';
 
 interface InitializeViewerArgs {
   data: ViewerContent;

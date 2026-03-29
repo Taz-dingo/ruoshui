@@ -2,7 +2,7 @@ import { PresetPanel } from './PresetPanel';
 import { RouteControlsPanel } from './RouteControlsPanel';
 import { RouteDiagnosticsPanel } from './RouteDiagnosticsPanel';
 import { useViewerUiStore } from '../ui/viewer-ui-store';
-import type { ViewerConfig } from '../viewer-config';
+import type { ViewerConfig } from '../app/viewer-config';
 
 interface PresetsSectionProps {
   isOpen: boolean;

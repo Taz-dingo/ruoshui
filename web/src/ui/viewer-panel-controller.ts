@@ -3,7 +3,7 @@ import {
   syncRouteControlsState,
   syncVariantPanelState,
 } from './viewer-ui-sync';
-import type { BenchmarkRoute, CameraPreset, ViewerVariant } from '../viewer-content-types';
+import type { BenchmarkRoute, CameraPreset, ViewerVariant } from '../content/types';
 
 interface CreateViewerPanelControllerArgs {
   variants: ViewerVariant[];

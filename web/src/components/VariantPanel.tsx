@@ -1,6 +1,6 @@
-import type { VariantPanelViewState } from '../types';
+import type { VariantPanelViewState } from '../ui/types';
 import { useViewerUiStore } from '../ui/viewer-ui-store';
-import { requestVariantSelection } from '../viewer-command-bus';
+import { requestVariantSelection } from '../ui/viewer-command-bus';
 
 interface VariantPanelProps {
   initialState: VariantPanelViewState;

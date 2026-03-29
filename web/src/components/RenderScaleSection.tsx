@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { useViewerUiStore } from '../ui/viewer-ui-store';
-import { requestRenderScaleChange } from '../viewer-command-bus';
+import { requestRenderScaleChange } from '../ui/viewer-command-bus';
 
 interface RenderScaleSectionProps {
   activeRenderScalePercent: number;

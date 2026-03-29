@@ -8,9 +8,9 @@ import { detachVariantFromRuntime, loadVariantIntoRuntime } from './variant-load
 import type {
   CameraPreset,
   UnifiedGsplatProfile,
-  VariantBenchmark,
   ViewerVariant
-} from '../types';
+} from '../content/types';
+import type { VariantBenchmark } from '../benchmark/types';
 import type { SceneLookSettings } from './scene-look';
 
 interface CreateViewerRuntimeArgs {
