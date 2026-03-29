@@ -58,6 +58,9 @@ interface ViewerHighlight {
   title: string;
   body: string;
   presetId: string;
+  position: [number, number, number];
+  imageUrl?: string;
+  imageAlt?: string;
 }
 
 interface ViewerContent {

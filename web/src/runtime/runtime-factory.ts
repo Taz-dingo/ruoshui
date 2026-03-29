@@ -34,6 +34,7 @@ interface CreateViewerRuntimeArgs {
   getActiveRouteId: () => string | null;
   stopActiveBenchmarkRoute: (summaryText?: string, status?: string) => void;
   renderCameraMeta: (runtimeState: any) => void;
+  renderHighlightOverlay: (runtimeState: any) => void;
   renderPerfHud: (runtimeState: any) => void;
 }
 
@@ -54,6 +55,7 @@ function createViewerRuntime({
   getActiveRouteId,
   stopActiveBenchmarkRoute,
   renderCameraMeta,
+  renderHighlightOverlay,
   renderPerfHud
 }: CreateViewerRuntimeArgs) {
   const { app, performanceMode, loopController } = createRuntimeApp({
@@ -92,6 +94,7 @@ function createViewerRuntime({
   const runtimeState = {
     variantId: variant.id,
     app,
+    camera,
     canvasElement,
     orbit,
     benchmark: timings.benchmark ?? createBenchmark(variant.id),
@@ -104,6 +107,7 @@ function createViewerRuntime({
     variantMeta: variant,
     unifiedLodState: null,
     lastCameraSnapshot: '',
+    lastHighlightOverlaySnapshot: '',
     cameraMetaElapsed: 0,
     perfHudElapsed: 0,
     perfHudFrames: 0,
@@ -140,6 +144,7 @@ function createViewerRuntime({
     runtimeState,
     onResume: () => {
       renderCameraMeta(runtimeState);
+      renderHighlightOverlay(runtimeState);
       renderPerfHud(runtimeState);
     }
   });
@@ -150,6 +155,7 @@ function createViewerRuntime({
     updateBenchmarkRoute,
     publishVariantBenchmark,
     renderCameraMeta,
+    renderHighlightOverlay,
     renderPerfHud
   });
   app.on('update', handleUpdate);

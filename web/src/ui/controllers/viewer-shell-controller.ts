@@ -1,10 +1,13 @@
-import { syncCameraState } from '../state/viewer-ui-sync';
+import { projectHighlightPins } from '../../runtime/highlight-projection';
+import { syncCameraState, syncHighlightOverlayState } from '../state/viewer-ui-sync';
 import { formatMetricMs, formatMotionMetric } from '../../utils/format';
 import { useViewerUiStore } from '../state/viewer-ui-store';
 import type { VariantBenchmark } from '../../benchmark/types';
-import type { ViewerVariant } from '../../content/types';
+import type { ViewerHighlight, ViewerVariant } from '../../content/types';
 
 interface CreateViewerShellControllerArgs {
+  pc: any;
+  highlights: ViewerHighlight[];
   showPerfHud: boolean;
   publishVariantPanel: () => void;
   getVariantBenchmark: (variantId: string | null | undefined) => VariantBenchmark | null;
@@ -13,6 +16,8 @@ interface CreateViewerShellControllerArgs {
 }
 
 function createViewerShellController({
+  pc,
+  highlights,
   showPerfHud,
   publishVariantPanel,
   getVariantBenchmark,
@@ -51,6 +56,30 @@ function createViewerShellController({
 
   const renderCameraMeta = (runtimeState: any) => {
     syncCameraState(runtimeState);
+  };
+
+  const renderHighlightOverlay = (runtimeState: any) => {
+    if (highlights.length === 0) {
+      return;
+    }
+
+    const items = projectHighlightPins({
+      pc,
+      runtimeState,
+      highlights
+    });
+    const snapshot = items
+      .map((item) =>
+        `${item.id}:${item.isVisible ? 1 : 0}:${Math.round(item.left)}:${Math.round(item.top)}`
+      )
+      .join('|');
+
+    if (runtimeState?.lastHighlightOverlaySnapshot === snapshot) {
+      return;
+    }
+
+    runtimeState.lastHighlightOverlaySnapshot = snapshot;
+    syncHighlightOverlayState({ items });
   };
 
   const renderPerfHud = (runtimeState: any) => {
@@ -94,6 +123,7 @@ function createViewerShellController({
 
   return {
     renderCameraMeta,
+    renderHighlightOverlay,
     renderPerfHud,
     renderRenderScaleMeta,
     renderVariantBenchmark,

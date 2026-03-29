@@ -113,6 +113,8 @@ async function initializeViewer({
   }
 
   const viewerShellController = createViewerShellController({
+    pc,
+    highlights: data.highlights ?? [],
     showPerfHud: viewerConfig.showPerfHud,
     publishVariantPanel,
     getVariantBenchmark,
@@ -121,6 +123,7 @@ async function initializeViewer({
   });
   const {
     renderCameraMeta,
+    renderHighlightOverlay,
     renderPerfHud,
     renderRenderScaleMeta,
     renderVariantBenchmark,
@@ -147,6 +150,7 @@ async function initializeViewer({
     publishRouteControls,
     finalizeRouteRunRecord,
     renderCameraMeta,
+    renderHighlightOverlay,
     renderPerfHud
   });
   const {
@@ -276,6 +280,7 @@ async function initializeViewer({
     renderSceneLookMeta: syncSceneLookState,
     activeSceneLook: session.getActiveSceneLook(),
     renderCameraMeta,
+    renderHighlightOverlay,
     renderPerfHud,
     publishRouteDiagnostics: routeDiagnosticsController.publishRouteDiagnostics,
     installRouteAnalysisBridge: routeDiagnosticsController.installRouteAnalysisBridge,

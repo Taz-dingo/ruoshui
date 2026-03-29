@@ -29,6 +29,7 @@ interface CreateViewerRuntimeControllerArgs {
   publishRouteControls: () => void;
   finalizeRouteRunRecord: (runtimeState: any, status: string) => any;
   renderCameraMeta: (runtimeState: any) => void;
+  renderHighlightOverlay: (runtimeState: any) => void;
   renderPerfHud: (runtimeState: any) => void;
 }
 
@@ -51,6 +52,7 @@ function createViewerRuntimeController({
   publishRouteControls,
   finalizeRouteRunRecord,
   renderCameraMeta,
+  renderHighlightOverlay,
   renderPerfHud,
 }: CreateViewerRuntimeControllerArgs) {
   function stopBenchmarkRoute(runtimeState: any, status = "aborted") {
@@ -120,6 +122,7 @@ function createViewerRuntimeController({
       stopActiveBenchmarkRoute: (summaryText?: string, status?: string) =>
         stopActiveBenchmarkRoute(null, summaryText, status),
       renderCameraMeta,
+      renderHighlightOverlay,
       renderPerfHud,
     });
   }

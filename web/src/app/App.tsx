@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 
 import { CameraPanel } from '../components/viewer/CameraPanel';
 import { HeroPanel } from '../components/viewer/HeroPanel';
+import { HighlightLayer } from '../components/viewer/HighlightLayer';
 import { PresetsSection } from '../components/viewer/PresetsSection';
 import { RenderScaleSection } from '../components/viewer/RenderScaleSection';
 import { SceneLookSection } from '../components/viewer/SceneLookSection';
@@ -44,6 +45,7 @@ function App({
   return (
     <main className="shell">
       <div className="scene" ref={sceneContainerRef} />
+      <HighlightLayer highlights={data.highlights ?? []} />
       <div className="hud">
         <section className="rail">
           <HeroPanel

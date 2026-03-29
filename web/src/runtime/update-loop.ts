@@ -23,6 +23,7 @@ interface CreateRuntimeUpdateHandlerArgs {
   updateBenchmarkRoute: (runtimeState: any, dt: number) => boolean;
   publishVariantBenchmark: (variantId: string) => void;
   renderCameraMeta: (runtimeState: any) => void;
+  renderHighlightOverlay: (runtimeState: any) => void;
   renderPerfHud: (runtimeState: any) => void;
 }
 
@@ -32,6 +33,7 @@ function createRuntimeUpdateHandler({
   updateBenchmarkRoute,
   publishVariantBenchmark,
   renderCameraMeta,
+  renderHighlightOverlay,
   renderPerfHud
 }: CreateRuntimeUpdateHandlerArgs) {
   return (dt: number) => {
@@ -79,6 +81,8 @@ function createRuntimeUpdateHandler({
       renderCameraMeta(runtimeState);
       runtimeState.cameraMetaElapsed = 0;
     }
+
+    renderHighlightOverlay(runtimeState);
 
     runtimeState.perfHudElapsed += dt;
     runtimeState.perfHudFrames += 1;

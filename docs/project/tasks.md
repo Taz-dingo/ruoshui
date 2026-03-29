@@ -48,6 +48,7 @@
 - [x] 落地 `SOG -> PLY` converter spike，并产出首版完整 `PLY` 资产用于后续 `GaussianSplats3D progressiveLoad` 验证
 - [x] 串起 `PLY -> KSPLAT` 压缩链，并把 `progressive.html` 升级为 `PLY / KSPLAT` 可切换对照页
 - [x] 归档 `progressive runtime` 分支：确认其更适合作为技术调研资产，而不是当前 `Web MVP` 主线
+- [x] 落地首版场景内三维点位图文功能：用 `React` 覆盖层渲染点位，用 `PlayCanvas` 相机投影驱动屏幕定位，点击点位联动镜头并展开图文卡片
 
 ### P2
 

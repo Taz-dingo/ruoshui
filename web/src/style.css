@@ -70,6 +70,91 @@
     @apply block h-full w-full;
   }
 
+  .highlight-layer {
+    @apply pointer-events-none absolute inset-0 z-[3];
+  }
+
+  .highlight-pin {
+    @apply pointer-events-auto absolute inline-flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 rounded-full border px-2.5 py-1.5 text-left transition-[opacity,transform,background-color,border-color] duration-180 ease-out;
+    border-color: rgba(207, 184, 151, 0.18);
+    background: rgba(37, 28, 23, 0.22);
+    color: var(--text);
+    backdrop-filter: blur(0);
+  }
+
+  .highlight-pin:hover,
+  .highlight-pin:focus-visible,
+  .highlight-pin.is-active {
+    border-color: rgba(168, 201, 125, 0.42);
+    background: rgba(47, 36, 29, 0.76);
+    backdrop-filter: blur(12px);
+  }
+
+  .highlight-pin.is-hidden {
+    @apply pointer-events-none opacity-0;
+  }
+
+  .highlight-pin-dot {
+    @apply h-2.5 w-2.5 shrink-0 rounded-full;
+    background: var(--accent);
+    box-shadow: 0 0 0 6px rgba(168, 201, 125, 0.12);
+  }
+
+  .highlight-pin-label {
+    @apply text-[11px] font-semibold;
+    color: rgba(244, 236, 222, 0.94);
+  }
+
+  .highlight-card {
+    @apply pointer-events-auto absolute bottom-4 left-1/2 z-[4] flex w-[min(420px,calc(100vw-2rem))] -translate-x-1/2 flex-col overflow-hidden rounded-[22px];
+    border-color: rgba(207, 184, 151, 0.16);
+    background: rgba(47, 36, 29, 0.76);
+    backdrop-filter: blur(14px);
+    box-shadow: var(--shadow);
+  }
+
+  .highlight-card-image {
+    @apply block h-44 w-full object-cover;
+    background: rgba(244, 236, 222, 0.06);
+  }
+
+  .highlight-card-body {
+    @apply grid gap-3 p-4;
+  }
+
+  .highlight-card-head {
+    @apply flex items-start justify-between gap-3;
+  }
+
+  .highlight-card-kicker {
+    @apply text-[10px] uppercase tracking-[0.12em];
+    color: rgba(199, 227, 158, 0.78);
+  }
+
+  .highlight-card h2 {
+    @apply mt-1 mb-0 text-[18px] leading-[1.1] tracking-[-0.04em];
+  }
+
+  .highlight-card p {
+    @apply m-0 text-[12px] leading-[1.6];
+    color: var(--muted);
+  }
+
+  .highlight-card-close {
+    @apply inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-transparent bg-transparent text-[20px] leading-none transition-colors duration-180 ease-out;
+    color: rgba(231, 218, 198, 0.72);
+  }
+
+  .highlight-card-close:hover {
+    border-color: rgba(207, 184, 151, 0.16);
+    background: rgba(244, 236, 222, 0.04);
+    color: var(--text);
+  }
+
+  .highlight-card-actions {
+    @apply flex justify-start;
+  }
+
   .progressive-shell {
     background:
       radial-gradient(circle at top left, rgba(129, 170, 116, 0.14), transparent 30%),
@@ -683,6 +768,10 @@
 
     .perf-hud {
       @apply right-3 bottom-3 max-w-[220px];
+    }
+
+    .highlight-card {
+      @apply bottom-3 w-[calc(100vw-1.5rem)];
     }
   }
 
