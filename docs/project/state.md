@@ -154,6 +154,9 @@
 - 当前默认对比版本已切到 `hhuc-h0-dec75.sog`，作为首个更平衡的 `Web` 候选
 - 当前 `Web MVP` 已新增首版场景内三维点位覆盖层：点位由 `React` 覆盖层渲染、位置由 `PlayCanvas` 相机投影驱动，点击后可联动镜头并展开图文卡片；当前仍是只读内容配置版，不涉及用户发布与后台编辑
 - 当前已开始补内部三维打点 authoring 工具：方向是先支持点击打点、位置草稿与内容录入，再决定如何接到后续论坛 / 内容服务；这条线仍在继续收口，不算已完成能力
+- 已新增仓库级 `pnpm workspace` 底座：当前仓库开始按 `web/ + services/forum-api/ + packages/shared/` 演进，避免为了后端需求推翻现有前端结构
+- 已初始化 `services/forum-api`：当前已落地 `Hono` 服务入口、`Drizzle` schema、对象存储 upload ticket 抽象，以及面向论坛 / 点位 / 媒体的最小 API 路由
+- 已初始化 `packages/shared`：当前已补论坛帖子、点位、媒体、上传 ticket 的 `zod schema` 与共享类型，作为前后端 contract 起点
 
 ## 当前已知素材状态
 
@@ -197,6 +200,7 @@
 - 当前关于性能技术栈的最新判断是：若要继续追求浏览器内 `3DGS/SOG` 上限，应优先按“`PlayCanvas/SOG` 现栈优化 → `WebGPU` 可行性验证 → `Worker/WASM` 热路径迁移 → 必要时再看自研 `WebGPU renderer`”这个顺序推进，而不是先做纯语言层替换
 - 当前前端命名约定进一步明确：`React` 组件文件使用 `PascalCase`，其余 `TS` 模块与工具文件统一使用 `kebab-case`；当前目录里看到的不是 `snake_case` 混用，而是按职责区分的两套命名
 - 当前产品边界已出现一条新变化：虽然主体验仍是纪念展示，但已开始需要数据库、媒体存储与论坛雏形；后端策略已初步收口为“同仓库 `monorepo` + 独立服务”，而不是把现有前端整体迁到 `Next.js`
+- 当前论坛底座的技术选择也已落地：先用 `Hono + Drizzle + PostgreSQL` 建最小内容服务，再通过对象存储抽象去接后续真实 `OSS`
 
 这一步的目标不是前端展示，而是验证：
 
