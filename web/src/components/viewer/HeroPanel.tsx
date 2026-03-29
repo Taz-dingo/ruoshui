@@ -1,4 +1,4 @@
-import { requestPresetSelection } from '../ui/viewer-command-bus';
+import { requestPresetSelection } from '../../ui/commands/viewer-command-bus';
 
 interface HeroPanelProps {
   subtitle: string;

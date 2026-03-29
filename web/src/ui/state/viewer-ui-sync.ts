@@ -1,4 +1,4 @@
-import { buildRouteAnalysisSummary, getLatestSuiteRecords } from '../benchmark/history';
+import { buildRouteAnalysisSummary, getLatestSuiteRecords } from '../../benchmark/history';
 import type {
   CameraViewState,
   PresetPanelViewState,
@@ -6,21 +6,21 @@ import type {
   RouteDiagnosticsViewState,
   VariantPanelViewState
 } from './types';
-import type { RouteRunRecord } from '../benchmark/types';
-import type { BenchmarkRoute, ViewerVariant } from '../content/types';
-import type { Vector3Like } from '../runtime/types';
+import type { RouteRunRecord } from '../../benchmark/types';
+import type { BenchmarkRoute, ViewerVariant } from '../../content/types';
+import type { Vector3Like } from '../../runtime/types';
 import {
   formatSceneLookSummary,
-} from '../runtime/scene-look';
+} from '../../runtime/scene-look';
 import {
   formatMetricMs,
   formatMetricPeakMs,
   formatRouteRunStatus,
   formatRouteRunTime,
   formatVec3
-} from '../utils/format';
-import type { SceneLookSettings } from '../runtime/scene-look';
-import { radToDeg } from '../utils/math';
+} from '../../utils/format';
+import type { SceneLookSettings } from '../../runtime/scene-look';
+import { radToDeg } from '../../utils/math';
 import { useViewerUiStore } from './viewer-ui-store';
 
 interface SyncVariantPanelOptions {
