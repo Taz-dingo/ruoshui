@@ -1,15 +1,17 @@
 import type { RouteControlsViewState } from '../types';
 import { useViewerUiStore } from '../ui/viewer-ui-store';
+import {
+  requestRouteSelection,
+  requestRunCurrentRouteBenchmark,
+  requestRunRouteSuite
+} from '../viewer-command-bus';
 
 interface RouteControlsPanelProps {
   initialState: RouteControlsViewState;
 }
 
-export function RouteControlsPanel({ initialState }: RouteControlsPanelProps) {
+function RouteControlsPanel({ initialState }: RouteControlsPanelProps) {
   const state = useViewerUiStore((store) => store.routeControls ?? initialState);
-  const requestRouteSelection = useViewerUiStore((store) => store.requestRouteSelection);
-  const requestRunCurrentRouteBenchmark = useViewerUiStore((store) => store.requestRunCurrentRouteBenchmark);
-  const requestRunRouteSuite = useViewerUiStore((store) => store.requestRunRouteSuite);
 
   return (
     <div className="route-group">
@@ -55,3 +57,7 @@ export function RouteControlsPanel({ initialState }: RouteControlsPanelProps) {
     </div>
   );
 }
+
+export {
+  RouteControlsPanel
+};

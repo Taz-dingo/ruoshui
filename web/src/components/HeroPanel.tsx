@@ -1,4 +1,4 @@
-import { useViewerUiStore } from '../ui/viewer-ui-store';
+import { requestPresetSelection } from '../viewer-command-bus';
 
 interface HeroPanelProps {
   subtitle: string;
@@ -11,10 +11,6 @@ function HeroPanel({
   title,
   firstPresetId
 }: HeroPanelProps) {
-  const requestPresetSelection = useViewerUiStore(
-    (store) => store.requestPresetSelection
-  );
-
   return (
     <div className="hero">
       <h1>{title}</h1>

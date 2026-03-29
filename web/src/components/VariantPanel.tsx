@@ -1,5 +1,6 @@
 import type { VariantPanelViewState } from '../types';
 import { useViewerUiStore } from '../ui/viewer-ui-store';
+import { requestVariantSelection } from '../viewer-command-bus';
 
 interface VariantPanelProps {
   initialState: VariantPanelViewState;
@@ -9,7 +10,6 @@ interface VariantPanelProps {
 
 function VariantPanel({ initialState, isOpen, onToggle }: VariantPanelProps) {
   const state = useViewerUiStore((store) => store.variantPanel ?? initialState);
-  const requestVariantSelection = useViewerUiStore((store) => store.requestVariantSelection);
 
   return (
     <section className="inspector-section variant-section" data-panel="variants">

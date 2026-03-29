@@ -1,10 +1,12 @@
 import { emptyRouteDiagnosticsState, useViewerUiStore } from '../ui/viewer-ui-store';
+import {
+  requestCopyRouteAnalysisJson,
+  requestCopyRouteAnalysisSummary,
+  requestDownloadRouteAnalysisJson
+} from '../viewer-command-bus';
 
-export function RouteDiagnosticsPanel() {
+function RouteDiagnosticsPanel() {
   const state = useViewerUiStore((store) => store.routeDiagnostics ?? emptyRouteDiagnosticsState);
-  const requestCopyRouteAnalysisSummary = useViewerUiStore((store) => store.requestCopyRouteAnalysisSummary);
-  const requestCopyRouteAnalysisJson = useViewerUiStore((store) => store.requestCopyRouteAnalysisJson);
-  const requestDownloadRouteAnalysisJson = useViewerUiStore((store) => store.requestDownloadRouteAnalysisJson);
 
   return (
     <>
@@ -109,3 +111,7 @@ export function RouteDiagnosticsPanel() {
     </>
   );
 }
+
+export {
+  RouteDiagnosticsPanel
+};
