@@ -18,6 +18,7 @@
 
 ```bash
 pnpm install
+cp services/forum-api/.env.example services/forum-api/.env
 pnpm dev:forum-api
 ```
 
@@ -27,5 +28,23 @@ pnpm dev:forum-api
 
 - `GET /health`
 - `GET /api/forum/bootstrap`
+- `GET /api/forum/scenes/:sceneId/bootstrap`
+- `PUT /api/forum/scenes/:sceneId`
+- `POST /api/forum/posts`
+- `POST /api/forum/pins`
 - `GET /api/storage/status`
 - `POST /api/storage/upload-requests`
+
+## 数据库
+
+已提供：
+
+- `drizzle.config.ts`
+- 首个 migration：`services/forum-api/drizzle/`
+
+常用命令：
+
+```bash
+pnpm --filter @ruoshui/forum-api db:generate
+pnpm --filter @ruoshui/forum-api db:migrate
+```

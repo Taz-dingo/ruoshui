@@ -157,6 +157,7 @@
 - 已新增仓库级 `pnpm workspace` 底座：当前仓库开始按 `web/ + services/forum-api/ + packages/shared/` 演进，避免为了后端需求推翻现有前端结构
 - 已初始化 `services/forum-api`：当前已落地 `Hono` 服务入口、`Drizzle` schema、对象存储 upload ticket 抽象，以及面向论坛 / 点位 / 媒体的最小 API 路由
 - 已初始化 `packages/shared`：当前已补论坛帖子、点位、媒体、上传 ticket 的 `zod schema` 与共享类型，作为前后端 contract 起点
+- 已将后端进一步推进到首个可用阶段：当前已接入 `Drizzle + postgres` 数据访问层、生成首个 migration，并落地 `scene bootstrap / scene upsert / post create / pin create` 四个接口
 
 ## 当前已知素材状态
 
@@ -201,6 +202,7 @@
 - 当前前端命名约定进一步明确：`React` 组件文件使用 `PascalCase`，其余 `TS` 模块与工具文件统一使用 `kebab-case`；当前目录里看到的不是 `snake_case` 混用，而是按职责区分的两套命名
 - 当前产品边界已出现一条新变化：虽然主体验仍是纪念展示，但已开始需要数据库、媒体存储与论坛雏形；后端策略已初步收口为“同仓库 `monorepo` + 独立服务”，而不是把现有前端整体迁到 `Next.js`
 - 当前论坛底座的技术选择也已落地：先用 `Hono + Drizzle + PostgreSQL` 建最小内容服务，再通过对象存储抽象去接后续真实 `OSS`
+- 当前论坛底座的更具体状态也已明确：服务本身可以启动并通过 health / upload 冒烟，但数据库仍需本机或线上 `PostgreSQL` 实例后才能完成真实写入联调
 
 这一步的目标不是前端展示，而是验证：
 

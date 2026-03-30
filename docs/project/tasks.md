@@ -52,6 +52,8 @@
 - [ ] 收口内部三维打点 authoring 工具：支持点击打点、预览定位、草稿复制，并为后续内容入库保留字段
 - [x] 明确后端结构：同仓库 `monorepo` + 独立 `forum-api` 服务
 - [x] 选定论坛底座：数据库、对象存储抽象与共享类型方案
+- [x] 接入首版数据库访问层：`Drizzle/PostgreSQL` client、repository 与首个 migration
+- [x] 落地首批论坛接口：场景 bootstrap、场景 upsert、帖子创建、点位创建
 
 ### P2
 
@@ -70,6 +72,7 @@
 - 当前不先做完整登录、审核和开放式社区系统，但已开始为数据库、媒体存储与论坛雏形铺底
 - 后端当前已收口为：同仓库 `monorepo`、保留现有 `web/`，新增独立 `services/forum-api/` 服务，而不是整体迁到 `Next.js`
 - 当前论坛底座方案已收口为：`Hono + Drizzle + PostgreSQL + 对象存储抽象 + shared zod schema`
+- 当前论坛底座已从“纯骨架”推进到“可对接前端”的第一步：已补 `scene bootstrap / scene upsert / post create / pin create` 四个真实接口，并生成首个 `Drizzle` migration
 - 当前最关键风险已经切到“场景能否以 `Web MVP` 可接受的体积被交付、加载和体验”
 - 关于“渐进式加载”的阶段性判断已收口：这条线已完成必要验证，但当前不再作为主线目标继续投入；`Web MVP` 继续以 `PlayCanvas/SOG` 为正式交付链
 - `Iteration 001` 首轮 headless 评估指标为 `PSNR 20.25 / SSIM 0.599 / LPIPS 0.338`
