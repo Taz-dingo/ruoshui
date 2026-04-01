@@ -42,6 +42,7 @@ function createRuntimeApp({
     mouse: new pc.Mouse(canvasElement),
     touch: new pc.TouchDevice(canvasElement),
     graphicsDeviceOptions: {
+      alpha: true,
       antialias: false,
       powerPreference: 'high-performance'
     }
