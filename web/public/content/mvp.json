@@ -1,7 +1,7 @@
 {
   "scene": {
     "title": "若水广场",
-    "subtitle": "在浏览器里重新俯瞰常州老校区",
+    "subtitle": "把那几年，安静地留在这一眼俯瞰里。",
     "summary": "先用《知天下AI》给出的高质量 `SOG` 成果回答一件最重要的事：若水广场能不能先以 Web MVP 的形态成立。现在这一页进一步回答第二个问题：不重训的前提下，哪一版派生模型最适合正式上 Web。",
     "format": "Spatially Ordered Gaussians (SOG)",
     "bounds": "3.08 × 1.45 × 3.17",
