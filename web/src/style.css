@@ -57,10 +57,12 @@
   .scene {
     @apply absolute inset-0;
     background:
-      radial-gradient(circle at 50% 14%, rgba(182, 225, 255, 0.2), transparent 22%),
-      radial-gradient(circle at 18% 24%, rgba(108, 172, 227, 0.16), transparent 26%),
-      radial-gradient(circle at 80% 78%, rgba(65, 106, 160, 0.18), transparent 30%),
+      linear-gradient(180deg, rgba(15, 33, 55, 0.08) 0%, rgba(7, 14, 24, 0.26) 100%),
+      url('/images/sky/qwantani-morning-puresky.webp'),
       linear-gradient(180deg, #2d527b 0%, #183252 36%, #0e1d31 68%, #0b121d 100%);
+    background-position: center center, center top, center center;
+    background-repeat: no-repeat;
+    background-size: cover, cover, cover;
   }
 
   .scene::before,
@@ -71,19 +73,17 @@
 
   .scene::before {
     background:
-      linear-gradient(rgba(220, 239, 255, 0.028) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(220, 239, 255, 0.022) 1px, transparent 1px),
-      radial-gradient(circle at 50% 50%, rgba(175, 216, 255, 0.12), transparent 62%);
-    background-size: 52px 52px, 52px 52px, 100% 100%;
-    mask-image: radial-gradient(circle at 50% 50%, black 42%, transparent 100%);
-    opacity: 0.7;
+      radial-gradient(circle at 68% 38%, rgba(255, 249, 232, 0.18), transparent 18%),
+      radial-gradient(circle at 24% 62%, rgba(176, 220, 255, 0.12), transparent 26%),
+      linear-gradient(180deg, rgba(195, 226, 255, 0.06) 0%, rgba(195, 226, 255, 0) 44%);
+    opacity: 0.82;
     animation: ruoshui-scene-breathe 7s ease-in-out infinite;
   }
 
   .scene::after {
     background:
-      linear-gradient(90deg, rgba(8, 18, 34, 0.54) 0%, rgba(8, 18, 34, 0.14) 36%, rgba(8, 18, 34, 0.06) 58%, rgba(8, 18, 34, 0.18) 100%),
-      linear-gradient(180deg, rgba(28, 61, 98, 0.08) 0%, rgba(8, 15, 27, 0.34) 100%);
+      linear-gradient(90deg, rgba(8, 18, 34, 0.46) 0%, rgba(8, 18, 34, 0.08) 38%, rgba(8, 18, 34, 0.04) 58%, rgba(8, 18, 34, 0.12) 100%),
+      linear-gradient(180deg, rgba(18, 42, 71, 0.04) 0%, rgba(8, 15, 27, 0.3) 100%);
   }
 
   .scene canvas {
