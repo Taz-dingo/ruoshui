@@ -1,6 +1,7 @@
 import { renderWakeSeconds } from '../config';
 import { trackBenchmarkFirstFrame } from '../benchmark/runtime';
 import { bindRuntimeViewport, bindRuntimeVisibility, createRuntimeApp } from './bootstrap';
+import { createRuntimeEnvironment, updateRuntimeEnvironment } from './environment';
 import { createOrbitController } from './orbit';
 import { applyRuntimeSceneLook } from './scene-look';
 import {
@@ -92,6 +93,7 @@ function createViewerRuntime({
     initialTarget,
     performanceMode
   );
+  const environment = createRuntimeEnvironment(pc, app);
 
   const runtimeState = {
     variantId: variant.id,
@@ -99,6 +101,7 @@ function createViewerRuntime({
     camera,
     canvasElement,
     orbit,
+    environment,
     benchmark: timings.benchmark ?? createBenchmark(variant.id),
     performanceMode,
     loopController,
@@ -128,6 +131,7 @@ function createViewerRuntime({
       app.destroy();
     }
   };
+  updateRuntimeEnvironment(runtimeState);
 
   applyRuntimeSceneLook(runtimeState, sceneLook);
 
