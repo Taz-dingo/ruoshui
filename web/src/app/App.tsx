@@ -2,6 +2,7 @@ import type { RefObject } from 'react';
 import { useEffect, useState } from 'react';
 
 import { CameraPanel } from '../components/viewer/CameraPanel';
+import { CameraMiniMap } from '../components/viewer/CameraMiniMap';
 import { HeroPanel } from '../components/viewer/HeroPanel';
 import { HighlightAuthoringSection } from '../components/viewer/HighlightAuthoringSection';
 import { HighlightLayer } from '../components/viewer/HighlightLayer';
@@ -30,6 +31,7 @@ function App({
   const setVariantPanel = useViewerUiStore((store) => store.setVariantPanel);
   const setPresetPanel = useViewerUiStore((store) => store.setPresetPanel);
   const setRouteControls = useViewerUiStore((store) => store.setRouteControls);
+  const camera = useViewerUiStore((store) => store.camera);
   const perfHud = useViewerUiStore((store) => store.perfHud);
 
   const toggleInspectorPanel = (panelId: string) => {
@@ -61,6 +63,17 @@ function App({
         <div />
 
         <aside className="detail">
+          {data.scene.miniMap ? (
+            <div className="detail-map">
+              <CameraMiniMap
+                map={data.scene.miniMap}
+                position={camera.positionValue}
+                target={camera.targetValue}
+                yawDeg={camera.yawValue}
+                distance={camera.distanceValue}
+              />
+            </div>
+          ) : null}
           <div className="panel panel-reveal inspector">
             <VariantPanel
               initialState={viewerConfig.initialVariantPanel}
@@ -85,7 +98,6 @@ function App({
             />
             <CameraPanel
               isOpen={activeInspectorPanel === 'camera'}
-              miniMap={data.scene.miniMap}
               onToggle={() => toggleInspectorPanel('camera')}
             />
             <HighlightAuthoringSection

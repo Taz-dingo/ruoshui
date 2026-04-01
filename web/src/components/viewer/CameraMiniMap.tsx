@@ -1,5 +1,5 @@
 import type { MiniMapConfig } from '../../content/types';
-import { clamp } from '../../utils/math';
+import { clamp, degToRad } from '../../utils/math';
 
 interface CameraMiniMapProps {
   map: MiniMapConfig;

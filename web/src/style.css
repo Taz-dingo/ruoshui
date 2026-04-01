@@ -390,6 +390,10 @@
     @apply w-full justify-self-end items-end;
   }
 
+  .detail-map {
+    @apply w-full;
+  }
+
   .rail::-webkit-scrollbar,
   .detail::-webkit-scrollbar {
     width: 8px;
@@ -776,7 +780,7 @@
   }
 
   .minimap-card {
-    @apply mb-2 grid gap-2.5 rounded-[18px] border px-3 py-3;
+    @apply mb-2 grid w-full gap-2.5 rounded-[18px] border px-3 py-3;
     border-color: rgba(231, 218, 198, 0.08);
     background: rgba(244, 236, 222, 0.035);
   }
