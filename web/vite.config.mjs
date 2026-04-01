@@ -117,6 +117,10 @@ const assetEntries = [
     sourceFile: path.join(rootDir, 'assets', 'hhuc.sog')
   },
   {
+    routePath: '/models/hhuc-edited.sog',
+    sourceFile: path.join(rootDir, 'assets', 'hhuc-edited.sog')
+  },
+  {
     routePath: '/models/hhuc-h0.sog',
     sourceFile: path.join(rootDir, 'outputs', 'iteration-004-sog-opt', 'hhuc-h0.sog')
   },
