@@ -53,7 +53,12 @@ const emptyCameraState: CameraViewState = {
   position: '—',
   target: '—',
   distance: '—',
-  angle: '—'
+  angle: '—',
+  positionValue: null,
+  targetValue: null,
+  distanceValue: null,
+  pitchValue: null,
+  yawValue: null
 };
 
 const emptyRouteDiagnosticsState: RouteDiagnosticsViewState = {

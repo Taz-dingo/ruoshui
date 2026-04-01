@@ -5,6 +5,29 @@ interface ViewerScene {
   format: string;
   bounds: string;
   defaultVariantId: string;
+  miniMap?: MiniMapConfig;
+}
+
+interface MiniMapBounds {
+  minX: number;
+  maxX: number;
+  minZ: number;
+  maxZ: number;
+}
+
+interface MiniMapLandmark {
+  id: string;
+  name: string;
+  x: number;
+  z: number;
+}
+
+interface MiniMapConfig {
+  label: string;
+  subtitle: string;
+  bounds: MiniMapBounds;
+  northAngleDeg?: number;
+  landmarks?: MiniMapLandmark[];
 }
 
 interface UnifiedGsplatProfile {
@@ -77,6 +100,9 @@ export type {
   BenchmarkRoute,
   BenchmarkRouteStep,
   CameraPreset,
+  MiniMapBounds,
+  MiniMapConfig,
+  MiniMapLandmark,
   UnifiedGsplatProfile,
   ViewerContent,
   ViewerHighlight,
