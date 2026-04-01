@@ -1,6 +1,11 @@
 import { renderWakeSeconds } from '../config';
 import { trackBenchmarkFirstFrame } from '../benchmark/runtime';
 import { bindRuntimeViewport, bindRuntimeVisibility, createRuntimeApp } from './bootstrap';
+import {
+  createRuntimeEnvironment,
+  destroyRuntimeEnvironment,
+  updateRuntimeEnvironment
+} from './environment';
 import { createOrbitController } from './orbit';
 import { applyRuntimeSceneLook } from './scene-look';
 import {
@@ -39,7 +44,7 @@ interface CreateViewerRuntimeArgs {
   renderPerfHud: (runtimeState: any) => void;
 }
 
-function createViewerRuntime({
+async function createViewerRuntime({
   pc,
   canvasElement,
   variant,
@@ -92,6 +97,7 @@ function createViewerRuntime({
     initialTarget,
     performanceMode
   );
+  const environment = await createRuntimeEnvironment(pc, app);
 
   const runtimeState = {
     variantId: variant.id,
@@ -99,6 +105,7 @@ function createViewerRuntime({
     camera,
     canvasElement,
     orbit,
+    environment,
     benchmark: timings.benchmark ?? createBenchmark(variant.id),
     performanceMode,
     loopController,
@@ -125,10 +132,12 @@ function createViewerRuntime({
       detachVariantFromRuntime(runtimeState);
       viewportBinding.destroy();
       orbit.destroy();
+      destroyRuntimeEnvironment(environment);
       app.destroy();
     }
   };
 
+  updateRuntimeEnvironment(runtimeState);
   applyRuntimeSceneLook(runtimeState, sceneLook);
 
   orbit.onManualInput = () => {
@@ -168,7 +177,7 @@ function createViewerRuntime({
     destroyRuntime();
   };
 
-  return loadVariantIntoRuntime({
+  await loadVariantIntoRuntime({
     pc,
     runtimeState,
     variant,
@@ -185,7 +194,9 @@ function createViewerRuntime({
         getVariantBenchmark,
         publishVariantBenchmark
       )
-  }).then(() => runtimeState);
+  });
+
+  return runtimeState;
 }
 
 function configureUnifiedGsplat(app: any, variant: ViewerVariant) {

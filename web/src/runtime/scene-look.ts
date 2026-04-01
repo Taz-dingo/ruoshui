@@ -16,7 +16,7 @@ interface RuntimeSceneLookLike {
 }
 
 const baseSceneSkyboxIntensity = 0.65;
-const sceneLookStorageKey = 'ruoshui-scene-look-v2';
+const sceneLookStorageKey = 'ruoshui-scene-look-v4';
 const defaultSceneLookSettings: SceneLookSettings = {
   brightnessPercent: 105,
   contrastPercent: 120,
@@ -42,6 +42,14 @@ function normalizeSceneLookSettings(
 }
 
 function buildSceneCanvasFilter(settings: SceneLookSettings) {
+  if (
+    settings.brightnessPercent === 100 &&
+    settings.contrastPercent === 100 &&
+    settings.saturationPercent === 100
+  ) {
+    return 'none';
+  }
+
   return `brightness(${settings.brightnessPercent}%) contrast(${settings.contrastPercent}%) saturate(${settings.saturationPercent}%)`;
 }
 

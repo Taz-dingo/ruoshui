@@ -13,6 +13,7 @@ import {
   sampleMotionFrame
 } from '../benchmark/runtime';
 import { updatePerformanceMode } from '../performance/render-scale';
+import { updateRuntimeEnvironment } from './environment';
 import { updateOrbitController } from './orbit';
 import { applyUnifiedGsplatProfile } from './unified-gsplat-profile';
 import { clamp, radToDeg, roundNumber } from '../utils/math';
@@ -35,10 +36,11 @@ function createRuntimeUpdateHandler({
   renderCameraMeta,
   renderHighlightOverlay,
   renderPerfHud
-}: CreateRuntimeUpdateHandlerArgs) {
+  }: CreateRuntimeUpdateHandlerArgs) {
   return (dt: number) => {
     const routeChanged = updateBenchmarkRoute(runtimeState, dt);
     const orbitChanged = updateOrbitController(runtimeState.orbit, dt, pc);
+    updateRuntimeEnvironment(runtimeState);
     const performanceChanged = updatePerformanceMode(runtimeState.performanceMode, runtimeState.app, dt);
     const isMoving =
       routeChanged || orbitChanged || runtimeState.performanceMode.isInteracting;
