@@ -56,11 +56,30 @@
 
   .scene {
     @apply absolute inset-0;
+    background:
+      radial-gradient(circle at 22% 20%, rgba(168, 201, 125, 0.16), transparent 24%),
+      radial-gradient(circle at 78% 76%, rgba(145, 103, 74, 0.16), transparent 28%),
+      linear-gradient(180deg, #241b15 0%, #17120f 100%);
   }
 
+  .scene::before,
   .scene::after {
     content: "";
     @apply pointer-events-none absolute inset-0;
+  }
+
+  .scene::before {
+    background:
+      linear-gradient(rgba(244, 236, 222, 0.028) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(244, 236, 222, 0.024) 1px, transparent 1px),
+      radial-gradient(circle at 50% 50%, rgba(199, 227, 158, 0.08), transparent 62%);
+    background-size: 46px 46px, 46px 46px, 100% 100%;
+    mask-image: radial-gradient(circle at 50% 50%, black 42%, transparent 100%);
+    opacity: 0.85;
+    animation: ruoshui-scene-breathe 7s ease-in-out infinite;
+  }
+
+  .scene::after {
     background:
       linear-gradient(90deg, rgba(23, 18, 15, 0.72) 0%, rgba(23, 18, 15, 0.26) 34%, rgba(23, 18, 15, 0.08) 58%, rgba(23, 18, 15, 0.22) 100%),
       linear-gradient(180deg, rgba(36, 28, 22, 0.06) 0%, rgba(23, 18, 15, 0.44) 100%);
@@ -830,6 +849,23 @@
     100% {
       opacity: 0.42;
       transform: scale(0.96);
+    }
+  }
+
+  @keyframes ruoshui-scene-breathe {
+    0% {
+      opacity: 0.58;
+      transform: scale(1);
+    }
+
+    50% {
+      opacity: 0.88;
+      transform: scale(1.02);
+    }
+
+    100% {
+      opacity: 0.58;
+      transform: scale(1);
     }
   }
 }
