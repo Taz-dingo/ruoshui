@@ -124,9 +124,9 @@ const emptyRenderScaleState: RenderScaleViewState = {
 
 const emptySceneLookState: SceneLookViewState = {
   summary: '默认',
-  brightnessPercent: 105,
-  contrastPercent: 120,
-  saturationPercent: 115,
+  brightnessPercent: 100,
+  contrastPercent: 100,
+  saturationPercent: 100,
   brightnessValue: '—',
   contrastValue: '—',
   saturationValue: '—'
