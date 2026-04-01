@@ -38,6 +38,7 @@ interface InitializeViewerStartupArgs {
   renderPerfHud: (runtimeState: any) => void;
   publishRouteDiagnostics: () => void;
   installRouteAnalysisBridge: () => void;
+  setLoading: (mode: 'boot' | 'switch') => void;
   setStatus: (title: string, detail: string) => void;
 }
 
@@ -133,6 +134,7 @@ function initializeViewerStartup({
   renderPerfHud,
   publishRouteDiagnostics,
   installRouteAnalysisBridge,
+  setLoading,
   setStatus
 }: InitializeViewerStartupArgs) {
   updatePresetButtons();
@@ -147,6 +149,7 @@ function initializeViewerStartup({
   renderPerfHud(null);
   publishRouteDiagnostics();
   installRouteAnalysisBridge();
+  setLoading('boot');
   setStatus('加载中', '准备场景资源');
 }
 

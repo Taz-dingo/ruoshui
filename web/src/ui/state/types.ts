@@ -84,6 +84,11 @@ interface HighlightAuthoringViewState {
   copyNote: string;
 }
 
+interface LoadingViewState {
+  visible: boolean;
+  mode: 'boot' | 'switch';
+}
+
 interface StatusViewState {
   title: string;
   detail: string;
@@ -175,6 +180,7 @@ export type {
   CameraViewState,
   HighlightOverlayViewState,
   HighlightPinView,
+  LoadingViewState,
   PerfHudViewState,
   PresetPanelItemView,
   PresetPanelViewState,

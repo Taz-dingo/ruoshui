@@ -4,6 +4,7 @@ import type {
   CameraViewState,
   HighlightAuthoringViewState,
   HighlightOverlayViewState,
+  LoadingViewState,
   PerfHudViewState,
   PresetPanelViewState,
   RenderScaleViewState,
@@ -20,6 +21,7 @@ interface ViewerUiStoreState {
   camera: CameraViewState;
   highlightAuthoring: HighlightAuthoringViewState;
   highlightOverlay: HighlightOverlayViewState;
+  loading: LoadingViewState;
   perfHud: PerfHudViewState;
   renderScale: RenderScaleViewState;
   routeDiagnostics: RouteDiagnosticsViewState;
@@ -33,6 +35,7 @@ interface ViewerUiStoreState {
   setCamera: (camera: CameraViewState) => void;
   setHighlightAuthoring: (highlightAuthoring: HighlightAuthoringViewState) => void;
   setHighlightOverlay: (highlightOverlay: HighlightOverlayViewState) => void;
+  setLoading: (loading: LoadingViewState) => void;
   setPerfHud: (perfHud: PerfHudViewState) => void;
   setRenderScale: (renderScale: RenderScaleViewState) => void;
   setRouteDiagnostics: (routeDiagnostics: RouteDiagnosticsViewState) => void;
@@ -89,6 +92,11 @@ const emptyStatusState: StatusViewState = {
   detail: '连接运行时'
 };
 
+const emptyLoadingState: LoadingViewState = {
+  visible: true,
+  mode: 'boot'
+};
+
 const emptySceneMetaState: SceneMetaViewState = {
   title: '—',
   size: '—',
@@ -130,6 +138,7 @@ const useViewerUiStore = create<ViewerUiStoreState>((set) => ({
   camera: emptyCameraState,
   highlightAuthoring: emptyHighlightAuthoringState,
   highlightOverlay: emptyHighlightOverlayState,
+  loading: emptyLoadingState,
   perfHud: emptyPerfHudState,
   renderScale: emptyRenderScaleState,
   routeDiagnostics: emptyRouteDiagnosticsState,
@@ -143,6 +152,7 @@ const useViewerUiStore = create<ViewerUiStoreState>((set) => ({
   setCamera: (camera) => set({ camera }),
   setHighlightAuthoring: (highlightAuthoring) => set({ highlightAuthoring }),
   setHighlightOverlay: (highlightOverlay) => set({ highlightOverlay }),
+  setLoading: (loading) => set({ loading }),
   setPerfHud: (perfHud) => set({ perfHud }),
   setRenderScale: (renderScale) => set({ renderScale }),
   setRouteDiagnostics: (routeDiagnostics) => set({ routeDiagnostics }),
@@ -159,6 +169,7 @@ export {
   emptyCameraState,
   emptyHighlightAuthoringState,
   emptyHighlightOverlayState,
+  emptyLoadingState,
   emptyPerfHudState,
   emptyRenderScaleState,
   emptyRouteDiagnosticsState,

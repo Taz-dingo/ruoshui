@@ -36,7 +36,9 @@ import {
 } from '../ui/controllers/viewer-startup-controller';
 import { createViewerShellController } from '../ui/controllers/viewer-shell-controller';
 import {
+  clearViewerLoading,
   setPresetPanelSummary,
+  setViewerLoading,
   setViewerStatus,
   syncSceneLookState
 } from '../ui/state/viewer-ui-sync';
@@ -153,7 +155,8 @@ async function initializeViewer({
     finalizeRouteRunRecord,
     renderCameraMeta,
     renderHighlightOverlay,
-    renderPerfHud
+    renderPerfHud,
+    setStatus: setViewerStatus
   });
   const {
     captureCurrentView,
@@ -243,6 +246,8 @@ async function initializeViewer({
     updatePresetButtons,
     setVariantButtonsDisabled,
     setPresetSummary: setPresetPanelSummary,
+    setLoading: setViewerLoading,
+    clearLoading: clearViewerLoading,
     setStatus: setViewerStatus,
     stopActiveBenchmarkRoute,
     captureCurrentView,
@@ -375,6 +380,7 @@ async function initializeViewer({
     renderPerfHud,
     publishRouteDiagnostics: routeDiagnosticsController.publishRouteDiagnostics,
     installRouteAnalysisBridge: routeDiagnosticsController.installRouteAnalysisBridge,
+    setLoading: setViewerLoading,
     setStatus: setViewerStatus
   });
   publishHighlightAuthoringState();

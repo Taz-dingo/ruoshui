@@ -27,6 +27,8 @@ interface CreateVariantOrchestrationControllerArgs {
   updatePresetButtons: () => void;
   setVariantButtonsDisabled: (disabled: boolean) => void;
   setPresetSummary: (summary: string) => void;
+  setLoading: (mode: 'boot' | 'switch') => void;
+  clearLoading: () => void;
   setStatus: (title: string, detail: string) => void;
   stopActiveBenchmarkRoute: (summaryText?: string, status?: string) => void;
   captureCurrentView: (runtimeState: any) => any;
@@ -63,6 +65,8 @@ function createVariantOrchestrationController({
   updatePresetButtons,
   setVariantButtonsDisabled,
   setPresetSummary,
+  setLoading,
+  clearLoading,
   setStatus,
   stopActiveBenchmarkRoute,
   captureCurrentView,
@@ -83,6 +87,7 @@ function createVariantOrchestrationController({
         createBenchmark: () => createBenchmark(variant.id),
         publishVariantBenchmark,
         configureUnifiedGsplat,
+        setStatus,
         trackFirstFrame: (app, variantId, switchStartedAt) =>
           trackBenchmarkFirstFrame(
             app,
@@ -147,7 +152,11 @@ function createVariantOrchestrationController({
     updateVariantButtons();
     renderVariantMeta(variant);
     setVariantButtonsDisabled(true);
-    setStatus('切换中', variant.name);
+    setLoading(initial ? 'boot' : 'switch');
+    setStatus(
+      initial ? '正在展开' : '正在切换',
+      initial ? `准备进入 ${variant.name}` : `切换至 ${variant.name}`
+    );
 
     try {
       const nextRuntime = await mountRuntime(variant, {
@@ -168,11 +177,13 @@ function createVariantOrchestrationController({
         activatePreset(getActivePresetId() || 'hover', true);
       }
       setStatus('场景已就绪', `${variant.size} · ${variant.retention} 保留`);
+      clearLoading();
     } catch (error) {
       setStatus(
         '加载失败',
         error instanceof Error ? error.message : '未知错误'
       );
+      clearLoading();
       throw error;
     } finally {
       if (isCurrentLoadToken(loadToken)) {
