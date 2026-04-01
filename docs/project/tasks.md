@@ -55,7 +55,7 @@
 - [x] 接入首版数据库访问层：`Drizzle/PostgreSQL` client、repository 与首个 migration
 - [x] 落地首批论坛接口：场景 bootstrap、场景 upsert、帖子创建、点位创建
 - [ ] 为场景补天空盒或等价环境背景
-- [ ] 优化相机控制手感与限制策略
+- [x] 优化相机控制手感与限制策略
 - [x] 为首屏进入和模型切换补更自然的 loading / parsing 体验
 - [ ] 增加学校位置与相机状态小地图
 - [ ] 收敛首页 / 场景页文案，改成更怀念向表达

@@ -76,6 +76,35 @@ function createVariantOrchestrationController({
   publishVariantBenchmark,
   getVariantBenchmark
 }: CreateVariantOrchestrationControllerArgs) {
+  function clearLoadingAfterPresent(runtimeState: any, loadToken: number) {
+    let resolved = false;
+
+    const finalize = () => {
+      if (resolved) {
+        return;
+      }
+
+      resolved = true;
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          if (isCurrentLoadToken(loadToken)) {
+            clearLoading();
+          }
+        });
+      });
+    };
+
+    if (!runtimeState?.app?.once) {
+      finalize();
+      return;
+    }
+
+    runtimeState.app.once('frameend', finalize);
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(finalize);
+    });
+  }
+
   async function mountRuntime(variant: ViewerVariant, timings: any) {
     const runtime = getRuntime();
     if (runtime) {
@@ -177,7 +206,7 @@ function createVariantOrchestrationController({
         activatePreset(getActivePresetId() || 'hover', true);
       }
       setStatus('场景已就绪', `${variant.size} · ${variant.retention} 保留`);
-      clearLoading();
+      clearLoadingAfterPresent(nextRuntime, loadToken);
     } catch (error) {
       setStatus(
         '加载失败',

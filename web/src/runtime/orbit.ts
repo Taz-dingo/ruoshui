@@ -1,8 +1,16 @@
 import {
+  maxOrbitDistance,
   maxOrbitPitchDeg,
+  minOrbitDistance,
   minOrbitCameraY,
   minOrbitPitchDeg,
-  minOrbitTargetY
+  minOrbitTargetY,
+  orbitDamping,
+  orbitPanDistanceFactor,
+  orbitPitchScreenFactor,
+  orbitRotateScreenFactor,
+  orbitWheelDeltaClamp,
+  orbitZoomExponentialSpeed
 } from '../config';
 import type { PerformanceMode } from './types';
 import { clamp, degToRad, easeInOutCubic, lerp, lerpAngle } from '../utils/math';
@@ -59,6 +67,7 @@ export interface OrbitController {
   onManualInput: (() => void) | null;
   tempRight: OrbitVector;
   tempUp: OrbitVector;
+  tempForward: OrbitVector;
   tempPosition: OrbitVector;
   destroy: () => void;
   cancelInteraction: () => void;
@@ -87,12 +96,12 @@ export function createOrbitController(
     desiredPitch: spherical.pitch,
     currentDistance: spherical.distance,
     desiredDistance: spherical.distance,
-    minDistance: 0.35,
-    maxDistance: 3,
-    rotateSpeed: 0.0055,
-    panSpeed: 0.0018,
-    zoomSpeed: 0.0012,
-    damping: 0.14,
+    minDistance: minOrbitDistance,
+    maxDistance: maxOrbitDistance,
+    rotateSpeed: orbitRotateScreenFactor,
+    panSpeed: orbitPanDistanceFactor,
+    zoomSpeed: orbitZoomExponentialSpeed,
+    damping: orbitDamping,
     pointerMode: null,
     lastX: 0,
     lastY: 0,
@@ -100,6 +109,7 @@ export function createOrbitController(
     onManualInput: null,
     tempRight: new pc.Vec3(),
     tempUp: new pc.Vec3(),
+    tempForward: new pc.Vec3(),
     tempPosition: new pc.Vec3(),
     destroy: () => {},
     cancelInteraction: () => {}
@@ -107,7 +117,8 @@ export function createOrbitController(
 
   const beginPointer = (event: any) => {
     orbit.onManualInput?.();
-    orbit.pointerMode = event.button === 2 ? 'pan' : 'rotate';
+    orbit.pointerMode =
+      event.button === 2 || event.button === 1 || event.shiftKey ? 'pan' : 'rotate';
     if (performanceMode) {
       performanceMode.isInteracting = true;
     }
@@ -129,18 +140,48 @@ export function createOrbitController(
     orbit.lastX = event.clientX;
     orbit.lastY = event.clientY;
 
+    const viewportWidth = Math.max(
+      orbit.canvasElement.clientWidth || orbit.canvasElement.width || 1,
+      1
+    );
+    const viewportHeight = Math.max(
+      orbit.canvasElement.clientHeight || orbit.canvasElement.height || 1,
+      1
+    );
+
     if (orbit.pointerMode === 'rotate') {
       orbit.transition = null;
-      orbit.desiredYaw -= dx * orbit.rotateSpeed;
-      orbit.desiredPitch = clampOrbitPitch(orbit.desiredPitch - dy * orbit.rotateSpeed);
+      orbit.desiredYaw -= (dx / viewportWidth) * Math.PI * orbit.rotateSpeed;
+      orbit.desiredPitch = clampOrbitPitch(
+        orbit.desiredPitch -
+          (dy / viewportHeight) * Math.PI * orbit.rotateSpeed * orbitPitchScreenFactor
+      );
       return;
     }
 
-    const distanceFactor = Math.max(orbit.currentDistance, 0.5);
-    const right = orbit.tempRight.copy(camera.right).mulScalar(-dx * orbit.panSpeed * distanceFactor);
-    const up = orbit.tempUp.copy(camera.up).mulScalar(dy * orbit.panSpeed * distanceFactor);
+    const distanceFactor = Math.max(orbit.currentDistance, 0.55);
+    const right = orbit.tempRight.copy(camera.right);
+    right.y = 0;
+    if (right.lengthSq() < 0.000001) {
+      right.set(1, 0, 0);
+    } else {
+      right.normalize();
+    }
+
+    const forward = orbit.tempForward.copy(camera.forward);
+    forward.y = 0;
+    if (forward.lengthSq() < 0.000001) {
+      forward.set(0, 0, -1);
+    } else {
+      forward.normalize();
+    }
+
+    const rightOffset = (-dx / viewportWidth) * orbit.panSpeed * distanceFactor;
+    const forwardOffset = (dy / viewportHeight) * orbit.panSpeed * distanceFactor;
     orbit.transition = null;
-    orbit.desiredTarget.add(right).add(up);
+    orbit.desiredTarget
+      .add(right.mulScalar(rightOffset))
+      .add(forward.mulScalar(forwardOffset));
     clampOrbitTarget(orbit.desiredTarget);
   };
 
@@ -148,7 +189,8 @@ export function createOrbitController(
     event.preventDefault();
     orbit.onManualInput?.();
     orbit.transition = null;
-    const scale = Math.exp(event.deltaY * orbit.zoomSpeed);
+    const deltaY = normalizeWheelDelta(event);
+    const scale = Math.exp(deltaY * orbit.zoomSpeed);
     orbit.desiredDistance = clamp(
       orbit.desiredDistance * scale,
       orbit.minDistance,
@@ -328,6 +370,17 @@ function applyOrbit(orbit: OrbitController, damping: number, pc: PlayCanvasModul
     Math.abs(previousPitch - orbit.currentPitch) > 0.00001 ||
     Math.abs(previousDistance - orbit.currentDistance) > 0.00001
   );
+}
+
+function normalizeWheelDelta(event: WheelEvent) {
+  const deltaScale =
+    event.deltaMode === WheelEvent.DOM_DELTA_LINE
+      ? 16
+      : event.deltaMode === WheelEvent.DOM_DELTA_PAGE
+        ? 120
+        : 1;
+
+  return clamp(event.deltaY * deltaScale, -orbitWheelDeltaClamp, orbitWheelDeltaClamp);
 }
 
 function positionToOrbit(position: OrbitVector, target: OrbitVector) {

@@ -18,6 +18,14 @@ export const minOrbitPitchDeg = 6;
 export const maxOrbitPitchDeg = 89;
 export const minOrbitTargetY = 0;
 export const minOrbitCameraY = 0;
+export const minOrbitDistance = 0.42;
+export const maxOrbitDistance = 3;
+export const orbitRotateScreenFactor = 1.15;
+export const orbitPitchScreenFactor = 0.92;
+export const orbitPanDistanceFactor = 1.55;
+export const orbitZoomExponentialSpeed = 0.00085;
+export const orbitWheelDeltaClamp = 220;
+export const orbitDamping = 0.08;
 
 export const frameSampleIndices = {
   elapsedMs: 0,
