@@ -3,7 +3,7 @@ import { useViewerUiStore } from '../../ui/state/viewer-ui-store';
 function LoadingOverlay() {
   const loading = useViewerUiStore((store) => store.loading);
   const sceneMeta = useViewerUiStore((store) => store.sceneMeta);
-  const modeLabel = loading.mode === 'boot' ? '正在展开旧校区' : '正在切换场景版本';
+  const modeLabel = loading.mode === 'boot' ? '场景载入中' : '版本切换中';
 
   return (
     <div
