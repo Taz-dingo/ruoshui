@@ -1,11 +1,14 @@
+import type { MiniMapConfig } from '../../content/types';
 import { useViewerUiStore } from '../../ui/state/viewer-ui-store';
+import { CameraMiniMap } from './CameraMiniMap';
 
 interface CameraPanelProps {
   isOpen: boolean;
   onToggle: () => void;
+  miniMap?: MiniMapConfig;
 }
 
-function CameraPanel({ isOpen, onToggle }: CameraPanelProps) {
+function CameraPanel({ isOpen, onToggle, miniMap }: CameraPanelProps) {
   const state = useViewerUiStore((store) => store.camera);
 
   return (
@@ -20,6 +23,15 @@ function CameraPanel({ isOpen, onToggle }: CameraPanelProps) {
         <span className="toggle-meta">{state.summary}</span>
       </button>
       <div className={`inspector-body${isOpen ? ' is-open' : ''}`} data-body="camera">
+        {miniMap ? (
+          <CameraMiniMap
+            map={miniMap}
+            position={state.positionValue}
+            target={state.targetValue}
+            yawDeg={state.yawValue}
+            distance={state.distanceValue}
+          />
+        ) : null}
         <div className="camera-grid">
           <div className="camera-card">
             <span>位置</span>

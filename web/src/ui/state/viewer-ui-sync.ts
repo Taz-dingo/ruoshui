@@ -223,7 +223,12 @@ function buildCameraState(runtimeState: CameraRuntimeLike): CameraViewState | nu
       position: '—',
       target: '—',
       distance: '—',
-      angle: '—'
+      angle: '—',
+      positionValue: null,
+      targetValue: null,
+      distanceValue: null,
+      pitchValue: null,
+      yawValue: null
     };
   }
 
@@ -255,7 +260,12 @@ function buildCameraState(runtimeState: CameraRuntimeLike): CameraViewState | nu
     position: formatVec3(position),
     target: formatVec3(target),
     distance: `${distance.toFixed(2)} m`,
-    angle: `${pitch}° / ${yaw}°`
+    angle: `${pitch}° / ${yaw}°`,
+    positionValue: [position.x, position.y, position.z],
+    targetValue: [target.x, target.y, target.z],
+    distanceValue: distance,
+    pitchValue: pitch,
+    yawValue: yaw
   };
 }
 

@@ -55,6 +55,11 @@ interface CameraViewState {
   target: string;
   distance: string;
   angle: string;
+  positionValue: [number, number, number] | null;
+  targetValue: [number, number, number] | null;
+  distanceValue: number | null;
+  pitchValue: number | null;
+  yawValue: number | null;
 }
 
 interface HighlightPinView {

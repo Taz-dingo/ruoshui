@@ -85,6 +85,7 @@ function App({
             />
             <CameraPanel
               isOpen={activeInspectorPanel === 'camera'}
+              miniMap={data.scene.miniMap}
               onToggle={() => toggleInspectorPanel('camera')}
             />
             <HighlightAuthoringSection
