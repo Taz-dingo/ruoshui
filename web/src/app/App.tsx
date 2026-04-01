@@ -5,6 +5,7 @@ import { CameraPanel } from '../components/viewer/CameraPanel';
 import { HeroPanel } from '../components/viewer/HeroPanel';
 import { HighlightAuthoringSection } from '../components/viewer/HighlightAuthoringSection';
 import { HighlightLayer } from '../components/viewer/HighlightLayer';
+import { LoadingOverlay } from '../components/viewer/LoadingOverlay';
 import { PresetsSection } from '../components/viewer/PresetsSection';
 import { RenderScaleSection } from '../components/viewer/RenderScaleSection';
 import { SceneLookSection } from '../components/viewer/SceneLookSection';
@@ -47,6 +48,7 @@ function App({
     <main className="shell">
       <div className="scene" ref={sceneContainerRef} />
       <HighlightLayer highlights={data.highlights ?? []} />
+      <LoadingOverlay />
       <div className="hud">
         <section className="rail">
           <HeroPanel

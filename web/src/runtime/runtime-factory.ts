@@ -30,6 +30,7 @@ interface CreateViewerRuntimeArgs {
   createBenchmark: (variantId: string) => VariantBenchmark;
   getVariantBenchmark: (variantId: string) => VariantBenchmark | null;
   publishVariantBenchmark: (variantId: string) => void;
+  setStatus?: (title: string, detail: string) => void;
   updateBenchmarkRoute: (runtimeState: any, dt: number) => boolean;
   getActiveRouteId: () => string | null;
   stopActiveBenchmarkRoute: (summaryText?: string, status?: string) => void;
@@ -51,6 +52,7 @@ function createViewerRuntime({
   createBenchmark,
   getVariantBenchmark,
   publishVariantBenchmark,
+  setStatus,
   updateBenchmarkRoute,
   getActiveRouteId,
   stopActiveBenchmarkRoute,
@@ -174,6 +176,7 @@ function createViewerRuntime({
     createBenchmark: () => createBenchmark(variant.id),
     publishVariantBenchmark,
     configureUnifiedGsplat,
+    setStatus,
     trackFirstFrame: (targetApp, variantId, switchStartedAt) =>
       trackBenchmarkFirstFrame(
         targetApp,

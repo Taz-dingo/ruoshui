@@ -6,6 +6,7 @@ interface LoadRuntimeVariantArgs {
   createBenchmark: () => any;
   publishVariantBenchmark: (variantId: string) => void;
   configureUnifiedGsplat: (app: any, variant: any) => any;
+  setStatus?: (title: string, detail: string) => void;
   trackFirstFrame: (app: any, variantId: string, switchStartedAt: number) => void;
 }
 
@@ -68,6 +69,7 @@ async function loadVariantIntoRuntime({
   createBenchmark,
   publishVariantBenchmark,
   configureUnifiedGsplat,
+  setStatus,
   trackFirstFrame
 }: LoadRuntimeVariantArgs) {
   if (!runtimeState?.app) {
@@ -87,6 +89,7 @@ async function loadVariantIntoRuntime({
   runtimeState.routeRecord = null;
   runtimeState.unifiedLodState = null;
 
+  setStatus?.('加载中', `读取 ${variant.name} 资源`);
   const assetLoadStartedAt = performance.now();
   const loadedSplatAsset = await loadGsplatAsset(pc, runtimeState, variant.id, variant.assetUrl);
 
@@ -96,10 +99,12 @@ async function loadVariantIntoRuntime({
     return;
   }
 
+  setStatus?.('解析中', '整理高斯索引与场景层级');
   attachLoadedSplat(pc, runtimeState, loadedSplatAsset, variant, configureUnifiedGsplat);
 
   benchmark.loadMs = performance.now() - assetLoadStartedAt;
   publishVariantBenchmark(variant.id);
+  setStatus?.('显影中', '把校园细节落到当前视角');
   trackFirstFrame(runtimeState.app, variant.id, timings.switchStartedAt);
   runtimeState.requestRender?.();
 }

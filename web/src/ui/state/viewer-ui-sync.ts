@@ -298,6 +298,20 @@ function setViewerStatus(title: string, detail: string) {
   });
 }
 
+function setViewerLoading(mode: 'boot' | 'switch' = 'switch') {
+  useViewerUiStore.getState().setLoading({
+    visible: true,
+    mode
+  });
+}
+
+function clearViewerLoading() {
+  useViewerUiStore.getState().setLoading({
+    visible: false,
+    mode: 'switch'
+  });
+}
+
 function syncSceneLookState(sceneLook: SceneLookSettings) {
   useViewerUiStore.getState().setSceneLook({
     summary: formatSceneLookSummary(sceneLook),
@@ -313,7 +327,9 @@ function syncSceneLookState(sceneLook: SceneLookSettings) {
 export {
   buildCameraState,
   buildRouteDiagnosticsState,
+  clearViewerLoading,
   setPresetPanelSummary,
+  setViewerLoading,
   setViewerStatus,
   syncCameraState,
   syncHighlightOverlayState,

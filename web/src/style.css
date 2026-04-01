@@ -74,6 +74,76 @@
     @apply pointer-events-none absolute inset-0 z-[2];
   }
 
+  .loading-overlay {
+    @apply pointer-events-none absolute inset-0 z-[5] opacity-0 transition-opacity duration-300 ease-out;
+  }
+
+  .loading-overlay.is-visible {
+    @apply pointer-events-auto opacity-100;
+  }
+
+  .loading-overlay-scrim {
+    @apply absolute inset-0;
+    background:
+      radial-gradient(circle at 22% 24%, rgba(168, 201, 125, 0.18), transparent 24%),
+      radial-gradient(circle at 78% 78%, rgba(145, 103, 74, 0.18), transparent 26%),
+      linear-gradient(135deg, rgba(23, 18, 15, 0.92) 0%, rgba(23, 18, 15, 0.7) 48%, rgba(23, 18, 15, 0.86) 100%);
+    backdrop-filter: blur(14px);
+  }
+
+  .loading-overlay[data-mode='switch'] .loading-overlay-scrim {
+    background:
+      radial-gradient(circle at 22% 24%, rgba(168, 201, 125, 0.12), transparent 24%),
+      radial-gradient(circle at 78% 78%, rgba(145, 103, 74, 0.12), transparent 26%),
+      linear-gradient(135deg, rgba(23, 18, 15, 0.72) 0%, rgba(23, 18, 15, 0.42) 48%, rgba(23, 18, 15, 0.64) 100%);
+    backdrop-filter: blur(10px);
+  }
+
+  .loading-overlay-copy {
+    @apply absolute left-6 right-6 bottom-6 max-w-[420px];
+  }
+
+  .loading-overlay-kicker {
+    @apply block text-[11px] uppercase tracking-[0.22em];
+    color: rgba(199, 227, 158, 0.78);
+  }
+
+  .loading-overlay-copy h2 {
+    @apply mt-3 mb-0 text-[clamp(28px,4vw,44px)] leading-[0.96] tracking-[-0.06em];
+    text-wrap: balance;
+  }
+
+  .loading-overlay-copy p {
+    @apply mt-3 mb-0 max-w-[28rem] text-[13px] leading-[1.6];
+    color: rgba(244, 236, 222, 0.76);
+  }
+
+  .loading-overlay-track {
+    @apply mt-5 h-px w-full overflow-hidden;
+    background: rgba(244, 236, 222, 0.16);
+  }
+
+  .loading-overlay-track-fill {
+    @apply block h-full w-1/3;
+    background: linear-gradient(90deg, rgba(199, 227, 158, 0) 0%, rgba(199, 227, 158, 0.92) 45%, rgba(244, 236, 222, 0) 100%);
+    animation: ruoshui-loading-sweep 1.35s ease-in-out infinite;
+  }
+
+  .loading-overlay-meta {
+    @apply mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[11px];
+    color: rgba(231, 218, 198, 0.58);
+  }
+
+  .loading-overlay-meta span {
+    @apply inline-flex items-center gap-2;
+  }
+
+  .loading-overlay-meta span:not(:last-child)::after {
+    content: "";
+    @apply inline-block h-1 w-1 rounded-full;
+    background: rgba(231, 218, 198, 0.28);
+  }
+
   .highlight-layer.is-authoring {
     @apply pointer-events-auto;
   }
@@ -688,6 +758,16 @@
   .variant:disabled {
     @apply cursor-wait opacity-55;
     transform: none;
+  }
+
+  @keyframes ruoshui-loading-sweep {
+    0% {
+      transform: translateX(-140%);
+    }
+
+    100% {
+      transform: translateX(320%);
+    }
   }
 }
 
