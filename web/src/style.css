@@ -37,9 +37,9 @@
     @apply min-h-screen font-sans font-normal;
     line-height: 1.4;
     background:
-      radial-gradient(circle at top left, rgba(132, 158, 93, 0.2), transparent 32%),
-      radial-gradient(circle at bottom right, rgba(122, 88, 61, 0.2), transparent 32%),
-      linear-gradient(180deg, #261c16 0%, #17120f 100%);
+      radial-gradient(circle at top left, rgba(113, 171, 222, 0.2), transparent 30%),
+      radial-gradient(circle at bottom right, rgba(74, 108, 152, 0.18), transparent 32%),
+      linear-gradient(180deg, #152337 0%, #0d1522 100%);
     color: var(--text);
   }
 
@@ -57,9 +57,10 @@
   .scene {
     @apply absolute inset-0;
     background:
-      radial-gradient(circle at 22% 20%, rgba(168, 201, 125, 0.16), transparent 24%),
-      radial-gradient(circle at 78% 76%, rgba(145, 103, 74, 0.16), transparent 28%),
-      linear-gradient(180deg, #241b15 0%, #17120f 100%);
+      radial-gradient(circle at 50% 14%, rgba(182, 225, 255, 0.2), transparent 22%),
+      radial-gradient(circle at 18% 24%, rgba(108, 172, 227, 0.16), transparent 26%),
+      radial-gradient(circle at 80% 78%, rgba(65, 106, 160, 0.18), transparent 30%),
+      linear-gradient(180deg, #2d527b 0%, #183252 36%, #0e1d31 68%, #0b121d 100%);
   }
 
   .scene::before,
@@ -70,19 +71,19 @@
 
   .scene::before {
     background:
-      linear-gradient(rgba(244, 236, 222, 0.028) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(244, 236, 222, 0.024) 1px, transparent 1px),
-      radial-gradient(circle at 50% 50%, rgba(199, 227, 158, 0.08), transparent 62%);
-    background-size: 46px 46px, 46px 46px, 100% 100%;
+      linear-gradient(rgba(220, 239, 255, 0.028) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(220, 239, 255, 0.022) 1px, transparent 1px),
+      radial-gradient(circle at 50% 50%, rgba(175, 216, 255, 0.12), transparent 62%);
+    background-size: 52px 52px, 52px 52px, 100% 100%;
     mask-image: radial-gradient(circle at 50% 50%, black 42%, transparent 100%);
-    opacity: 0.85;
+    opacity: 0.7;
     animation: ruoshui-scene-breathe 7s ease-in-out infinite;
   }
 
   .scene::after {
     background:
-      linear-gradient(90deg, rgba(23, 18, 15, 0.72) 0%, rgba(23, 18, 15, 0.26) 34%, rgba(23, 18, 15, 0.08) 58%, rgba(23, 18, 15, 0.22) 100%),
-      linear-gradient(180deg, rgba(36, 28, 22, 0.06) 0%, rgba(23, 18, 15, 0.44) 100%);
+      linear-gradient(90deg, rgba(8, 18, 34, 0.54) 0%, rgba(8, 18, 34, 0.14) 36%, rgba(8, 18, 34, 0.06) 58%, rgba(8, 18, 34, 0.18) 100%),
+      linear-gradient(180deg, rgba(28, 61, 98, 0.08) 0%, rgba(8, 15, 27, 0.34) 100%);
   }
 
   .scene canvas {
@@ -104,17 +105,17 @@
   .loading-overlay-scrim {
     @apply absolute inset-0;
     background:
-      radial-gradient(circle at 22% 24%, rgba(168, 201, 125, 0.18), transparent 24%),
-      radial-gradient(circle at 78% 78%, rgba(145, 103, 74, 0.18), transparent 26%),
-      linear-gradient(135deg, rgba(23, 18, 15, 0.92) 0%, rgba(23, 18, 15, 0.7) 48%, rgba(23, 18, 15, 0.86) 100%);
+      radial-gradient(circle at 22% 24%, rgba(150, 214, 255, 0.18), transparent 24%),
+      radial-gradient(circle at 78% 78%, rgba(82, 126, 189, 0.18), transparent 26%),
+      linear-gradient(135deg, rgba(12, 25, 44, 0.9) 0%, rgba(13, 31, 53, 0.68) 48%, rgba(9, 18, 31, 0.84) 100%);
     backdrop-filter: blur(14px);
   }
 
   .loading-overlay[data-mode='switch'] .loading-overlay-scrim {
     background:
-      radial-gradient(circle at 22% 24%, rgba(168, 201, 125, 0.12), transparent 24%),
-      radial-gradient(circle at 78% 78%, rgba(145, 103, 74, 0.12), transparent 26%),
-      linear-gradient(135deg, rgba(23, 18, 15, 0.72) 0%, rgba(23, 18, 15, 0.42) 48%, rgba(23, 18, 15, 0.64) 100%);
+      radial-gradient(circle at 22% 24%, rgba(150, 214, 255, 0.12), transparent 24%),
+      radial-gradient(circle at 78% 78%, rgba(82, 126, 189, 0.12), transparent 26%),
+      linear-gradient(135deg, rgba(10, 22, 38, 0.66) 0%, rgba(11, 25, 44, 0.36) 48%, rgba(9, 18, 31, 0.58) 100%);
     backdrop-filter: blur(10px);
   }
 
