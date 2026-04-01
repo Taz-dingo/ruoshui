@@ -50,7 +50,6 @@ function App({
       <div className="hud">
         <section className="rail">
           <HeroPanel
-            firstPresetId={viewerConfig.firstPreset.id}
             subtitle={data.scene.subtitle}
             title={data.scene.title}
           />

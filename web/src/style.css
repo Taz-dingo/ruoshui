@@ -302,10 +302,6 @@
     color: var(--muted);
   }
 
-  .hero-actions {
-    @apply mt-3 flex flex-wrap gap-2.5;
-  }
-
   .button {
     @apply cursor-pointer appearance-none rounded-full border border-transparent px-[13px] py-[9px] text-[12px] transition-[transform,border-color,background-color,color] duration-180 ease-out;
   }
