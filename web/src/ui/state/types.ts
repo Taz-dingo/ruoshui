@@ -134,6 +134,7 @@ interface PerfHudViewState {
   ms: string;
   render: string;
   scale: string;
+  backend: string;
 }
 
 interface VariantPanelItemView {

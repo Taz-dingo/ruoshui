@@ -135,7 +135,8 @@ function createViewerShellController({
         fps: '—',
         ms: '—',
         render: '未加载',
-        scale: `${getActiveRenderScalePercent()}%`
+        scale: `${getActiveRenderScalePercent()}%`,
+        backend: '—'
       });
       return;
     }
@@ -157,7 +158,8 @@ function createViewerShellController({
       fps: fpsText,
       ms: msText,
       render: isRendering ? '活动' : '静止',
-      scale: `${getActiveRenderScalePercent()}%`
+      scale: `${getActiveRenderScalePercent()}%`,
+      backend: runtimeState.graphicsBackend ?? '—'
     });
     renderVariantBenchmark(getActiveVariantId());
   };

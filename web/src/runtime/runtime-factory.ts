@@ -65,7 +65,7 @@ async function createViewerRuntime({
   renderHighlightOverlay,
   renderPerfHud
 }: CreateViewerRuntimeArgs) {
-  const { app, performanceMode, loopController } = createRuntimeApp({
+  const { app, graphicsBackend, performanceMode, loopController } = createRuntimeApp({
     pc,
     canvasElement,
     runtimeWindow,
@@ -107,6 +107,7 @@ async function createViewerRuntime({
     orbit,
     environment,
     benchmark: timings.benchmark ?? createBenchmark(variant.id),
+    graphicsBackend,
     performanceMode,
     loopController,
     routePlayback: null,
