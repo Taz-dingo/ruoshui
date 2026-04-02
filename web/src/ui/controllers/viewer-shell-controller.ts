@@ -136,7 +136,8 @@ function createViewerShellController({
         ms: '—',
         render: '未加载',
         scale: `${getActiveRenderScalePercent()}%`,
-        backend: '—'
+        backend: '—',
+        gpu: '未检测'
       });
       return;
     }
@@ -159,7 +160,8 @@ function createViewerShellController({
       ms: msText,
       render: isRendering ? '活动' : '静止',
       scale: `${getActiveRenderScalePercent()}%`,
-      backend: runtimeState.graphicsBackend ?? '—'
+      backend: runtimeState.graphicsBackend ?? '—',
+      gpu: formatGpuDiagnostics(runtimeState.gpuDiagnostics, runtimeState.graphicsBackend)
     });
     renderVariantBenchmark(getActiveVariantId());
   };
@@ -172,6 +174,15 @@ function createViewerShellController({
     renderVariantBenchmark,
     renderVariantMeta
   };
+}
+
+function formatGpuDiagnostics(diagnostics: any, backend: string) {
+  if (!diagnostics?.navigatorGpuAvailable) {
+    return 'navigator.gpu: 无';
+  }
+
+  const adapterText = diagnostics.adapterName ?? 'Adapter 未返回';
+  return `${backend} · ${adapterText}`;
 }
 
 export {

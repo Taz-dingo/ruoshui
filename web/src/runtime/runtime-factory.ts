@@ -1,6 +1,10 @@
 import { renderWakeSeconds } from '../config';
 import { trackBenchmarkFirstFrame } from '../benchmark/runtime';
-import { bindRuntimeViewport, bindRuntimeVisibility, createRuntimeApp } from './bootstrap';
+import {
+  bindRuntimeViewport,
+  bindRuntimeVisibility,
+  createRuntimeApp
+} from './bootstrap';
 import {
   createRuntimeEnvironment,
   destroyRuntimeEnvironment,
@@ -32,6 +36,7 @@ interface CreateViewerRuntimeArgs {
   renderScalePercent: number;
   sceneLook: SceneLookSettings;
   firstPreset: CameraPreset;
+  gpuDiagnostics?: any;
   createBenchmark: (variantId: string) => VariantBenchmark;
   getVariantBenchmark: (variantId: string) => VariantBenchmark | null;
   publishVariantBenchmark: (variantId: string) => void;
@@ -54,6 +59,7 @@ async function createViewerRuntime({
   renderScalePercent,
   sceneLook,
   firstPreset,
+  gpuDiagnostics = null,
   createBenchmark,
   getVariantBenchmark,
   publishVariantBenchmark,
@@ -69,7 +75,8 @@ async function createViewerRuntime({
     pc,
     canvasElement,
     runtimeWindow,
-    renderScalePercent
+    renderScalePercent,
+    gpuDiagnostics
   });
   const viewportBinding = bindRuntimeViewport({
     app,
@@ -108,6 +115,7 @@ async function createViewerRuntime({
     environment,
     benchmark: timings.benchmark ?? createBenchmark(variant.id),
     graphicsBackend,
+    gpuDiagnostics,
     performanceMode,
     loopController,
     routePlayback: null,

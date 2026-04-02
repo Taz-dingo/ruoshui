@@ -125,6 +125,9 @@ function App({
           <span className="perf-chip">
             图形 <strong>{perfHud.backend}</strong>
           </span>
+          <span className="perf-chip">
+            GPU <strong>{perfHud.gpu}</strong>
+          </span>
         </aside>
       ) : null}
     </main>

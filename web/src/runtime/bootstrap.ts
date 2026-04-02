@@ -6,6 +6,13 @@ interface CreateRuntimeAppArgs {
   canvasElement: HTMLCanvasElement;
   runtimeWindow: Window;
   renderScalePercent: number;
+  gpuDiagnostics?: GraphicsBackendDiagnostics | null;
+}
+
+interface GraphicsBackendDiagnostics {
+  navigatorGpuAvailable: boolean;
+  adapterName: string | null;
+  preferredBackends: string[];
 }
 
 interface BindRuntimeViewportArgs {
@@ -36,7 +43,8 @@ function createRuntimeApp({
   pc,
   canvasElement,
   runtimeWindow,
-  renderScalePercent
+  renderScalePercent,
+  gpuDiagnostics = null
 }: CreateRuntimeAppArgs) {
   const deviceTypes = resolvePreferredDeviceTypes(pc, runtimeWindow);
   const app = new pc.Application(canvasElement, {
@@ -63,8 +71,37 @@ function createRuntimeApp({
   return {
     app,
     graphicsBackend: formatGraphicsBackend(app.graphicsDevice),
+    gpuDiagnostics,
     performanceMode,
     loopController
+  };
+}
+
+async function collectGraphicsBackendDiagnostics(pc: any, runtimeWindow: Window): Promise<GraphicsBackendDiagnostics> {
+  const navigatorWithGpu = runtimeWindow.navigator as Navigator & {
+    gpu?: {
+      requestAdapter?: () => Promise<any>;
+    };
+  };
+  const navigatorGpuAvailable = Boolean(navigatorWithGpu.gpu);
+  const preferredBackends = resolvePreferredDeviceTypes(pc, runtimeWindow).map((deviceType) =>
+    String(deviceType)
+  );
+  let adapterName: string | null = null;
+
+  if (navigatorGpuAvailable) {
+    try {
+      const adapter = await navigatorWithGpu.gpu?.requestAdapter?.();
+      adapterName = adapter?.info?.description ?? adapter?.info?.vendor ?? 'Adapter 可用';
+    } catch {
+      adapterName = 'Adapter 请求失败';
+    }
+  }
+
+  return {
+    navigatorGpuAvailable,
+    adapterName,
+    preferredBackends
   };
 }
 
@@ -211,6 +248,7 @@ function bindRuntimeVisibility({
 export {
   bindRuntimeViewport,
   bindRuntimeVisibility,
+  collectGraphicsBackendDiagnostics,
   createRuntimeApp,
   formatGraphicsBackend
 };
