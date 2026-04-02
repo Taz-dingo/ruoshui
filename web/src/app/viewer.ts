@@ -43,6 +43,7 @@ import {
   syncSceneLookState
 } from '../ui/state/viewer-ui-sync';
 import { useViewerUiStore } from '../ui/state/viewer-ui-store';
+import { collectGraphicsBackendDiagnostics } from '../runtime/bootstrap';
 import type { ViewerConfig } from './viewer-config';
 import type { ViewerContent } from '../content/types';
 
@@ -62,6 +63,7 @@ async function initializeViewer({
   viewerConfig
 }: InitializeViewerArgs) {
   const pc = await playCanvasPromise;
+  const gpuDiagnostics = await collectGraphicsBackendDiagnostics(pc, window);
   const initialSceneLook = loadSceneLookSettings(window);
   const session = createViewerSessionState({
     defaultVariantId: viewerConfig.defaultVariant.id,
@@ -140,6 +142,7 @@ async function initializeViewer({
     runtimeWindow: window,
     runtimeDocument: document,
     longTaskBuffer,
+    gpuDiagnostics,
     getActiveRouteId: session.getActiveRouteId,
     getActiveSuiteRunId: session.getActiveSuiteRunId,
     getActiveRenderScalePercent: session.getActiveRenderScalePercent,

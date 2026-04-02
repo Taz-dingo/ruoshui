@@ -135,6 +135,7 @@ interface PerfHudViewState {
   render: string;
   scale: string;
   backend: string;
+  gpu: string;
 }
 
 interface VariantPanelItemView {

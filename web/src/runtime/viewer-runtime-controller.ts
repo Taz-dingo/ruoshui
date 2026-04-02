@@ -15,6 +15,7 @@ interface CreateViewerRuntimeControllerArgs {
   runtimeWindow: Window;
   runtimeDocument: Document;
   longTaskBuffer: Array<{ startTime: number; duration: number }>;
+  gpuDiagnostics?: any;
   getActiveRouteId: () => string | null;
   getActiveSuiteRunId: () => string | null;
   getActiveRenderScalePercent: () => number;
@@ -40,6 +41,7 @@ function createViewerRuntimeController({
   runtimeWindow,
   runtimeDocument,
   longTaskBuffer,
+  gpuDiagnostics = null,
   getActiveRouteId,
   getActiveSuiteRunId,
   getActiveRenderScalePercent,
@@ -116,6 +118,7 @@ function createViewerRuntimeController({
       renderScalePercent: getActiveRenderScalePercent(),
       sceneLook,
       firstPreset,
+      gpuDiagnostics,
       createBenchmark,
       getVariantBenchmark,
       publishVariantBenchmark,
