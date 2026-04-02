@@ -122,6 +122,9 @@ function App({
           <span className="perf-chip">
             比例 <strong>{perfHud.scale}</strong>
           </span>
+          <span className="perf-chip">
+            图形 <strong>{perfHud.backend}</strong>
+          </span>
         </aside>
       ) : null}
     </main>

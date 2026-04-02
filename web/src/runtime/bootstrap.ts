@@ -38,13 +38,15 @@ function createRuntimeApp({
   runtimeWindow,
   renderScalePercent
 }: CreateRuntimeAppArgs) {
+  const deviceTypes = resolvePreferredDeviceTypes(pc, runtimeWindow);
   const app = new pc.Application(canvasElement, {
     mouse: new pc.Mouse(canvasElement),
     touch: new pc.TouchDevice(canvasElement),
     graphicsDeviceOptions: {
       alpha: true,
       antialias: false,
-      powerPreference: 'high-performance'
+      powerPreference: 'high-performance',
+      deviceTypes
     }
   });
 
@@ -60,9 +62,41 @@ function createRuntimeApp({
 
   return {
     app,
+    graphicsBackend: formatGraphicsBackend(app.graphicsDevice),
     performanceMode,
     loopController
   };
+}
+
+function resolvePreferredDeviceTypes(pc: any, runtimeWindow: Window) {
+  const deviceTypes = [];
+  const hasNavigatorGpu = 'gpu' in runtimeWindow.navigator;
+
+  if (hasNavigatorGpu && pc.DEVICETYPE_WEBGPU) {
+    deviceTypes.push(pc.DEVICETYPE_WEBGPU);
+  }
+
+  if (pc.DEVICETYPE_WEBGL2) {
+    deviceTypes.push(pc.DEVICETYPE_WEBGL2);
+  }
+
+  return deviceTypes;
+}
+
+function formatGraphicsBackend(graphicsDevice: any) {
+  if (!graphicsDevice) {
+    return '未知';
+  }
+
+  if (graphicsDevice.isWebGPU || graphicsDevice.deviceType === 'webgpu') {
+    return 'WebGPU';
+  }
+
+  if (graphicsDevice.isWebGL2 || graphicsDevice.deviceType === 'webgl2') {
+    return 'WebGL2';
+  }
+
+  return String(graphicsDevice.deviceType ?? '未知');
 }
 
 function bindRuntimeViewport({
@@ -177,5 +211,6 @@ function bindRuntimeVisibility({
 export {
   bindRuntimeViewport,
   bindRuntimeVisibility,
-  createRuntimeApp
+  createRuntimeApp,
+  formatGraphicsBackend
 };

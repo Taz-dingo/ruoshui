@@ -136,7 +136,8 @@ const emptyPerfHudState: PerfHudViewState = {
   fps: '—',
   ms: '—',
   render: '启动中',
-  scale: '—'
+  scale: '—',
+  backend: '—'
 };
 
 const useViewerUiStore = create<ViewerUiStoreState>((set) => ({
