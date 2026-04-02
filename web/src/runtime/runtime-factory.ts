@@ -71,7 +71,7 @@ async function createViewerRuntime({
   renderHighlightOverlay,
   renderPerfHud
 }: CreateViewerRuntimeArgs) {
-  const { app, graphicsBackend, performanceMode, loopController } = createRuntimeApp({
+  const { app, graphicsBackend, performanceMode, loopController } = await createRuntimeApp({
     pc,
     canvasElement,
     runtimeWindow,

@@ -39,7 +39,7 @@ interface BindRuntimeVisibilityArgs {
   onResume?: (() => void) | null;
 }
 
-function createRuntimeApp({
+async function createRuntimeApp({
   pc,
   canvasElement,
   runtimeWindow,
@@ -47,15 +47,22 @@ function createRuntimeApp({
   gpuDiagnostics = null
 }: CreateRuntimeAppArgs) {
   const deviceTypes = resolvePreferredDeviceTypes(pc, runtimeWindow);
+  const graphicsDeviceOptions = {
+    alpha: true,
+    antialias: false,
+    powerPreference: 'high-performance',
+    deviceTypes
+  };
+  const graphicsDevice = await createPreferredGraphicsDevice(
+    pc,
+    canvasElement,
+    graphicsDeviceOptions
+  );
   const app = new pc.Application(canvasElement, {
     mouse: new pc.Mouse(canvasElement),
     touch: new pc.TouchDevice(canvasElement),
-    graphicsDeviceOptions: {
-      alpha: true,
-      antialias: false,
-      powerPreference: 'high-performance',
-      deviceTypes
-    }
+    graphicsDevice,
+    graphicsDeviceOptions
   });
 
   const performanceMode = createPerformanceMode(runtimeWindow, renderScalePercent);
@@ -75,6 +82,18 @@ function createRuntimeApp({
     performanceMode,
     loopController
   };
+}
+
+async function createPreferredGraphicsDevice(
+  pc: any,
+  canvasElement: HTMLCanvasElement,
+  options: Record<string, unknown>
+) {
+  if (typeof pc.createGraphicsDevice === 'function') {
+    return pc.createGraphicsDevice(canvasElement, options);
+  }
+
+  return null;
 }
 
 async function collectGraphicsBackendDiagnostics(pc: any, runtimeWindow: Window): Promise<GraphicsBackendDiagnostics> {
