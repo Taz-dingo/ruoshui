@@ -3,6 +3,10 @@ import {
   getInitialRenderScalePercent,
   getMaxSupportedPixelRatio
 } from '../performance/render-scale';
+import {
+  loadGraphicsBackendPreference,
+  type GraphicsBackendPreference
+} from '../runtime/bootstrap';
 import type {
   PresetPanelViewState,
   RouteControlsViewState,
@@ -21,11 +25,13 @@ interface ViewerConfig {
   benchmarkRoutesById: Map<string, BenchmarkRoute>;
   defaultVariant: ViewerVariant;
   firstPreset: CameraPreset;
+  graphicsBackendPreference: GraphicsBackendPreference;
   initialPresetPanel: PresetPanelViewState;
   initialRouteControls: RouteControlsViewState;
   initialVariantPanel: VariantPanelViewState;
   maxRenderScalePercent: number;
   renderScaleMinPercent: number;
+  showExperimentalControls: boolean;
   showPerfHud: boolean;
   variantsById: Map<string, ViewerVariant>;
 }
@@ -33,6 +39,7 @@ interface ViewerConfig {
 interface CreateViewerConfigArgs {
   data: ViewerContent;
   runtimeWindow: Window;
+  showExperimentalControls: boolean;
   showPerfHud: boolean;
 }
 
@@ -111,6 +118,7 @@ function buildInitialRouteControls(data: ViewerContent) {
 function createViewerConfig({
   data,
   runtimeWindow,
+  showExperimentalControls,
   showPerfHud
 }: CreateViewerConfigArgs): ViewerConfig {
   const defaultVariant = requireDefaultVariant(data);
@@ -131,11 +139,13 @@ function createViewerConfig({
     ),
     defaultVariant,
     firstPreset,
+    graphicsBackendPreference: loadGraphicsBackendPreference(runtimeWindow),
     initialPresetPanel: buildInitialPresetPanel(data, firstPreset),
     initialRouteControls: buildInitialRouteControls(data),
     initialVariantPanel: buildInitialVariantPanel(data, defaultVariant),
     maxRenderScalePercent,
     renderScaleMinPercent,
+    showExperimentalControls,
     showPerfHud,
     variantsById: new Map(data.variants.map((variant) => [variant.id, variant]))
   };

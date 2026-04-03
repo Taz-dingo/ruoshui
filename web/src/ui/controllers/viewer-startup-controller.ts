@@ -1,5 +1,6 @@
 import type { SceneLookSettings } from '../../runtime/scene-look';
 import type { PostProcessingSettings } from '../../runtime/postprocessing';
+import type { GraphicsBackendPreference } from '../../runtime/bootstrap';
 import type { ViewerVariant } from '../../content/types';
 import {
   subscribeViewerCommands,
@@ -18,6 +19,7 @@ interface InstallViewerStartupBindingsArgs {
   copyLatestRouteAnalysisJson: () => void | Promise<unknown>;
   downloadLatestRouteAnalysisJson: () => void;
   activateRenderScale: (nextPercent: number) => void;
+  setGraphicsBackendPreference: (preference: GraphicsBackendPreference) => void;
   setAntiAliasEnabled: (enabled: boolean) => void;
   applySceneLook: (sceneLook: SceneLookSettings) => void;
   setHighlightAuthoringEnabled: (enabled: boolean) => void;
@@ -57,6 +59,7 @@ function installViewerStartupBindings({
   copyLatestRouteAnalysisJson,
   downloadLatestRouteAnalysisJson,
   activateRenderScale,
+  setGraphicsBackendPreference,
   setAntiAliasEnabled,
   applySceneLook,
   setHighlightAuthoringEnabled,
@@ -90,6 +93,9 @@ function installViewerStartupBindings({
         return;
       case 'set-render-scale':
         activateRenderScale(command.value);
+        return;
+      case 'set-graphics-backend-preference':
+        setGraphicsBackendPreference(command.preference);
         return;
       case 'set-anti-alias':
         setAntiAliasEnabled(command.enabled);

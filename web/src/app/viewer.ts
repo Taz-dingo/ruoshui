@@ -51,7 +51,10 @@ import {
   syncSceneLookState
 } from '../ui/state/viewer-ui-sync';
 import { useViewerUiStore } from '../ui/state/viewer-ui-store';
-import { collectGraphicsBackendDiagnostics } from '../runtime/bootstrap';
+import {
+  collectGraphicsBackendDiagnostics,
+  persistGraphicsBackendPreference
+} from '../runtime/bootstrap';
 import type { ViewerConfig } from './viewer-config';
 import type { ViewerContent } from '../content/types';
 
@@ -151,6 +154,7 @@ async function initializeViewer({
   const viewerRuntimeController = createViewerRuntimeController({
     pc,
     firstPreset: viewerConfig.firstPreset,
+    graphicsBackendPreference: viewerConfig.graphicsBackendPreference,
     runtimeWindow: window,
     runtimeDocument: document,
     longTaskBuffer,
@@ -384,6 +388,7 @@ async function initializeViewer({
     downloadLatestRouteAnalysisJson: () =>
       routeDiagnosticsController.downloadLatestRouteAnalysisJson(),
     activateRenderScale,
+    setGraphicsBackendPreference,
     setAntiAliasEnabled,
     applySceneLook,
     setHighlightAuthoringEnabled,
@@ -485,6 +490,11 @@ async function initializeViewer({
       viewerConfig.maxRenderScalePercent
     );
     renderPerfHud(session.getRuntime());
+  }
+
+  function setGraphicsBackendPreference(preference: 'auto' | 'webgl2' | 'webgpu') {
+    persistGraphicsBackendPreference(window, preference);
+    window.location.reload();
   }
 
   function applySceneLook(sceneLook: ReturnType<typeof session.getActiveSceneLook>) {

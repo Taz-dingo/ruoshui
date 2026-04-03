@@ -24,6 +24,7 @@ const sceneContainerRef = createRef<HTMLDivElement>();
 const viewerConfig = createViewerConfig({
   data,
   runtimeWindow: window,
+  showExperimentalControls: import.meta.env.DEV,
   showPerfHud: import.meta.env.DEV
 });
 
