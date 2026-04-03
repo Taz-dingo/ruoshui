@@ -9,6 +9,7 @@
     "miniMap": {
       "label": "常州老校区",
       "subtitle": "若水广场 · 顶视示意",
+      "imageUrl": "/images/minimap/ruoshui-topdown.svg",
       "bounds": {
         "minX": -2.6,
         "maxX": 2.35,

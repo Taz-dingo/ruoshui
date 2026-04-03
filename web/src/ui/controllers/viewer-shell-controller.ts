@@ -4,6 +4,11 @@ import {
 } from '../../runtime/highlight-projection';
 import { syncCameraState, syncHighlightOverlayState } from '../state/viewer-ui-sync';
 import { formatMetricMs, formatMotionMetric } from '../../utils/format';
+import {
+  formatAntiAliasSummary,
+  getAntiAliasNote,
+  isAntiAliasSupported
+} from '../../runtime/postprocessing';
 import { useViewerUiStore } from '../state/viewer-ui-store';
 import type { VariantBenchmark } from '../../benchmark/types';
 import type { ViewerHighlight, ViewerVariant } from '../../content/types';
@@ -14,6 +19,8 @@ interface CreateViewerShellControllerArgs {
   showPerfHud: boolean;
   publishVariantPanel: () => void;
   getVariantBenchmark: (variantId: string | null | undefined) => VariantBenchmark | null;
+  getActivePostProcessing: () => { fxaaEnabled: boolean };
+  getGraphicsBackend: () => string | null;
   getActiveVariantId: () => string;
   getActiveRenderScalePercent: () => number;
 }
@@ -24,6 +31,8 @@ function createViewerShellController({
   showPerfHud,
   publishVariantPanel,
   getVariantBenchmark,
+  getActivePostProcessing,
+  getGraphicsBackend,
   getActiveVariantId,
   getActiveRenderScalePercent
 }: CreateViewerShellControllerArgs) {
@@ -50,15 +59,27 @@ function createViewerShellController({
 
   const renderRenderScaleMeta = (percent: number) => {
     const pixelRatio = (percent / 100).toFixed(2);
+    const postProcessing = getActivePostProcessing();
+    const graphicsBackend = getGraphicsBackend();
+    const antiAliasAvailable = isAntiAliasSupported(graphicsBackend);
     useViewerUiStore.getState().setRenderScale({
       summary: `${percent}%`,
       value: `${percent}% · x${pixelRatio}`,
-      note: percent >= 100 ? '原生像素比' : '降低像素比，换取更稳帧率'
+      note:
+        percent > 100
+          ? '超采样渲染，边缘会更干净'
+          : percent === 100
+            ? '1x 渲染比例'
+            : '降低像素比，换取更稳帧率',
+      antiAliasEnabled: postProcessing.fxaaEnabled,
+      antiAliasAvailable,
+      antiAliasSummary: formatAntiAliasSummary(postProcessing, graphicsBackend),
+      antiAliasNote: getAntiAliasNote(graphicsBackend)
     });
   };
 
   const renderCameraMeta = (runtimeState: any) => {
-    syncCameraState(runtimeState);
+    syncCameraState(pc, runtimeState);
   };
 
   const renderHighlightOverlay = (runtimeState: any) => {

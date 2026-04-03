@@ -1,4 +1,5 @@
 import type { SceneLookSettings } from '../../runtime/scene-look';
+import type { PostProcessingSettings } from '../../runtime/postprocessing';
 import type { ViewerVariant } from '../../content/types';
 import {
   subscribeViewerCommands,
@@ -17,6 +18,7 @@ interface InstallViewerStartupBindingsArgs {
   copyLatestRouteAnalysisJson: () => void | Promise<unknown>;
   downloadLatestRouteAnalysisJson: () => void;
   activateRenderScale: (nextPercent: number) => void;
+  setAntiAliasEnabled: (enabled: boolean) => void;
   applySceneLook: (sceneLook: SceneLookSettings) => void;
   setHighlightAuthoringEnabled: (enabled: boolean) => void;
   setHighlightPlaneY: (value: number) => void;
@@ -31,6 +33,7 @@ interface InitializeViewerStartupArgs {
   defaultVariant: ViewerVariant;
   renderRenderScaleMeta: (percent: number) => void;
   activeRenderScalePercent: number;
+  activePostProcessing: PostProcessingSettings;
   renderSceneLookMeta: (sceneLook: SceneLookSettings) => void;
   activeSceneLook: SceneLookSettings;
   renderCameraMeta: (runtimeState: any) => void;
@@ -54,6 +57,7 @@ function installViewerStartupBindings({
   copyLatestRouteAnalysisJson,
   downloadLatestRouteAnalysisJson,
   activateRenderScale,
+  setAntiAliasEnabled,
   applySceneLook,
   setHighlightAuthoringEnabled,
   setHighlightPlaneY
@@ -86,6 +90,9 @@ function installViewerStartupBindings({
         return;
       case 'set-render-scale':
         activateRenderScale(command.value);
+        return;
+      case 'set-anti-alias':
+        setAntiAliasEnabled(command.enabled);
         return;
       case 'set-scene-look':
         applySceneLook({
@@ -127,6 +134,7 @@ function initializeViewerStartup({
   defaultVariant,
   renderRenderScaleMeta,
   activeRenderScalePercent,
+  activePostProcessing,
   renderSceneLookMeta,
   activeSceneLook,
   renderCameraMeta,
@@ -143,6 +151,7 @@ function initializeViewerStartup({
   publishRouteControls();
   renderVariantMeta(defaultVariant);
   renderRenderScaleMeta(activeRenderScalePercent);
+  void activePostProcessing;
   renderSceneLookMeta(activeSceneLook);
   renderCameraMeta(null);
   renderHighlightOverlay(null);

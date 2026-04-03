@@ -57,6 +57,7 @@ interface CameraViewState {
   angle: string;
   positionValue: [number, number, number] | null;
   targetValue: [number, number, number] | null;
+  visibleGroundPolygonValue: [number, number, number][];
   distanceValue: number | null;
   pitchValue: number | null;
   yawValue: number | null;
@@ -117,6 +118,10 @@ interface RenderScaleViewState {
   summary: string;
   value: string;
   note: string;
+  antiAliasEnabled: boolean;
+  antiAliasAvailable: boolean;
+  antiAliasSummary: string;
+  antiAliasNote: string;
 }
 
 interface SceneLookViewState {

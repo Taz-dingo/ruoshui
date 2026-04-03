@@ -6,7 +6,7 @@ import type {
 } from '../runtime/types';
 import { clamp } from '../utils/math';
 
-export function createPerformanceMode(runtimeWindow: Window, lockedPercent: number): PerformanceMode {
+function createPerformanceMode(runtimeWindow: Window, lockedPercent: number): PerformanceMode {
   const supportedMaxPixelRatio = getMaxSupportedPixelRatio(runtimeWindow);
   const initialPixelRatio = normalizeRenderScalePercent(lockedPercent, supportedMaxPixelRatio) / 100;
 
@@ -25,7 +25,7 @@ export function createPerformanceMode(runtimeWindow: Window, lockedPercent: numb
   };
 }
 
-export function updatePerformanceMode(performanceMode: PerformanceMode, app: RenderScaleAppLike, dt: number): boolean {
+function updatePerformanceMode(performanceMode: PerformanceMode, app: RenderScaleAppLike, dt: number): boolean {
   if (performanceMode.isLocked) {
     return false;
   }
@@ -66,17 +66,17 @@ export function updatePerformanceMode(performanceMode: PerformanceMode, app: Ren
   return false;
 }
 
-export function getMaxSupportedPixelRatio(runtimeWindow: Window): number {
+function getMaxSupportedPixelRatio(runtimeWindow: Window): number {
   const deviceRatio = Math.max(runtimeWindow.devicePixelRatio || 1, 1);
-  return deviceRatio >= 2 ? 1 : Math.min(deviceRatio, 1.15);
+  return deviceRatio;
 }
 
-export function normalizeRenderScalePercent(value: number, maxRenderScalePercent: number): number {
+function normalizeRenderScalePercent(value: number, maxRenderScalePercent: number): number {
   const clamped = clamp(Number(value) || maxRenderScalePercent, renderScaleMinPercent, maxRenderScalePercent);
-  return Math.round(clamped / 5) * 5;
+  return Math.round(clamped);
 }
 
-export function getInitialRenderScalePercent(runtimeWindow: Window, maxRenderScalePercent: number): number {
+function getInitialRenderScalePercent(runtimeWindow: Window, maxRenderScalePercent: number): number {
   try {
     const savedPercent = runtimeWindow.localStorage.getItem(renderScaleStorageKey);
     if (savedPercent) {
@@ -89,7 +89,7 @@ export function getInitialRenderScalePercent(runtimeWindow: Window, maxRenderSca
   return maxRenderScalePercent;
 }
 
-export function persistRenderScalePercent(runtimeWindow: Window, percent: number): void {
+function persistRenderScalePercent(runtimeWindow: Window, percent: number): void {
   try {
     runtimeWindow.localStorage.setItem(renderScaleStorageKey, String(percent));
   } catch {
@@ -97,7 +97,7 @@ export function persistRenderScalePercent(runtimeWindow: Window, percent: number
   }
 }
 
-export function applyRenderScaleToRuntime(
+function applyRenderScaleToRuntime(
   runtimeState: RenderScaleRuntimeLike | null | undefined,
   percent: number,
   maxRenderScalePercent: number
@@ -116,6 +116,16 @@ export function applyRenderScaleToRuntime(
   syncCanvasResolution(runtimeState.app);
   runtimeState.requestRender?.();
 }
+
+export {
+  applyRenderScaleToRuntime,
+  createPerformanceMode,
+  getInitialRenderScalePercent,
+  getMaxSupportedPixelRatio,
+  normalizeRenderScalePercent,
+  persistRenderScalePercent,
+  updatePerformanceMode
+};
 
 function syncCanvasResolution(app: RenderScaleAppLike): void {
   const canvas = app.graphicsDevice.canvas;

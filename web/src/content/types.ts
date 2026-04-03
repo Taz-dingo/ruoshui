@@ -25,6 +25,7 @@ interface MiniMapLandmark {
 interface MiniMapConfig {
   label: string;
   subtitle: string;
+  imageUrl?: string;
   bounds: MiniMapBounds;
   northAngleDeg?: number;
   landmarks?: MiniMapLandmark[];

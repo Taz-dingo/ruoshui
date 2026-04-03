@@ -63,6 +63,15 @@ interface OrbitSnapshotLike {
 }
 
 interface CameraRuntimeLike {
+  camera?: {
+    camera?: {
+      fov: number;
+      nearClip: number;
+      farClip: number;
+      screenToWorld: (x: number, y: number, z: number, out: Vector3Like) => Vector3Like;
+    } | null;
+  } | null;
+  canvasElement?: HTMLCanvasElement | null;
   orbit?: OrbitSnapshotLike | null;
   lastCameraSnapshot?: string;
 }
@@ -216,7 +225,7 @@ function syncRouteDiagnosticsState(options: SyncRouteDiagnosticsOptions): RouteD
   return state;
 }
 
-function buildCameraState(runtimeState: CameraRuntimeLike): CameraViewState | null {
+function buildCameraState(pc: any, runtimeState: CameraRuntimeLike): CameraViewState | null {
   if (!runtimeState?.orbit) {
     return {
       summary: '等待视角',
@@ -226,6 +235,7 @@ function buildCameraState(runtimeState: CameraRuntimeLike): CameraViewState | nu
       angle: '—',
       positionValue: null,
       targetValue: null,
+      visibleGroundPolygonValue: [],
       distanceValue: null,
       pitchValue: null,
       yawValue: null
@@ -233,11 +243,18 @@ function buildCameraState(runtimeState: CameraRuntimeLike): CameraViewState | nu
   }
 
   const { orbit } = runtimeState;
+  const cameraComponent = runtimeState.camera?.camera;
+  const canvasRect = runtimeState.canvasElement?.getBoundingClientRect();
   const position = orbit.camera.getPosition();
   const target = orbit.currentTarget;
   const distance = orbit.currentDistance;
   const pitch = Math.round(radToDeg(orbit.currentPitch));
   const yaw = Math.round(radToDeg(orbit.currentYaw));
+  const visibleGroundPolygon = buildVisibleGroundPolygon(
+    pc,
+    runtimeState,
+    Math.max(target.y, 0)
+  );
   const snapshot = [
     position.x.toFixed(2),
     position.y.toFixed(2),
@@ -247,7 +264,13 @@ function buildCameraState(runtimeState: CameraRuntimeLike): CameraViewState | nu
     target.z.toFixed(2),
     distance.toFixed(2),
     pitch,
-    yaw
+    yaw,
+    canvasRect?.width?.toFixed?.(0) ?? '0',
+    canvasRect?.height?.toFixed?.(0) ?? '0',
+    cameraComponent?.fov?.toFixed?.(2) ?? '0',
+    visibleGroundPolygon
+      .map((point) => `${point[0].toFixed(2)},${point[2].toFixed(2)}`)
+      .join(';')
   ].join('|');
 
   if (runtimeState.lastCameraSnapshot === snapshot) {
@@ -263,14 +286,97 @@ function buildCameraState(runtimeState: CameraRuntimeLike): CameraViewState | nu
     angle: `${pitch}° / ${yaw}°`,
     positionValue: [position.x, position.y, position.z],
     targetValue: [target.x, target.y, target.z],
+    visibleGroundPolygonValue: visibleGroundPolygon,
     distanceValue: distance,
     pitchValue: pitch,
     yawValue: yaw
   };
 }
 
-function syncCameraState(runtimeState: CameraRuntimeLike): CameraViewState | null {
-  const state = buildCameraState(runtimeState);
+function buildVisibleGroundPolygon(
+  pc: any,
+  runtimeState: CameraRuntimeLike,
+  planeY: number
+) {
+  const cameraComponent = runtimeState.camera?.camera;
+  const canvasElement = runtimeState.canvasElement;
+
+  if (!cameraComponent || !canvasElement) {
+    return [];
+  }
+
+  const rect = canvasElement.getBoundingClientRect();
+  if (!rect.width || !rect.height) {
+    return [];
+  }
+
+  const samples: Array<[number, number]> = [
+    [0, rect.height],
+    [rect.width * 0.5, rect.height],
+    [rect.width, rect.height],
+    [rect.width, rect.height * 0.5],
+    [rect.width, 0],
+    [rect.width * 0.5, 0],
+    [0, 0],
+    [0, rect.height * 0.5]
+  ];
+
+  return samples
+    .map(([screenX, screenY]) =>
+      intersectScreenRayWithGround(pc, cameraComponent, screenX, screenY, planeY)
+    )
+    .filter(isFiniteGroundPoint);
+}
+
+function intersectScreenRayWithGround(
+  pc: any,
+  cameraComponent: NonNullable<NonNullable<CameraRuntimeLike['camera']>['camera']>,
+  screenX: number,
+  screenY: number,
+  planeY: number
+): [number, number, number] | null {
+  const rayStart = cameraComponent.screenToWorld(
+    screenX,
+    screenY,
+    cameraComponent.nearClip,
+    new pc.Vec3()
+  );
+  const rayEnd = cameraComponent.screenToWorld(
+    screenX,
+    screenY,
+    cameraComponent.farClip,
+    new pc.Vec3()
+  );
+  const rayDirection = new pc.Vec3().sub2(rayEnd, rayStart);
+  const hasGroundHit = Math.abs(rayDirection.y) > 1e-5;
+  const t = hasGroundHit ? (planeY - rayStart.y) / rayDirection.y : Number.NaN;
+
+  if (Number.isFinite(t) && t > 0) {
+    const hitPoint: [number, number, number] = [
+      rayStart.x + rayDirection.x * t,
+      planeY,
+      rayStart.z + rayDirection.z * t
+    ];
+    return isFiniteGroundPoint(hitPoint) ? hitPoint : null;
+  }
+
+  const fallbackPoint: [number, number, number] = [rayEnd.x, planeY, rayEnd.z];
+  return isFiniteGroundPoint(fallbackPoint) ? fallbackPoint : null;
+}
+
+function isFiniteGroundPoint(
+  point: [number, number, number] | null | undefined
+): point is [number, number, number] {
+  return Boolean(
+    point &&
+    Number.isFinite(point[0]) &&
+    Number.isFinite(point[1]) &&
+    Number.isFinite(point[2])
+  );
+}
+
+function syncCameraState(pc: any, runtimeState: CameraRuntimeLike): CameraViewState | null {
+  const state = buildCameraState(pc, runtimeState);
   if (state) {
     useViewerUiStore.getState().setCamera(state);
   }

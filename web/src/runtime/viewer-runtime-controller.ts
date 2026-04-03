@@ -20,6 +20,7 @@ interface CreateViewerRuntimeControllerArgs {
   getActiveSuiteRunId: () => string | null;
   getActiveRenderScalePercent: () => number;
   getActiveSceneLook: () => any;
+  getActivePostProcessing: () => any;
   getVariantBenchmark: (variantId: string | null | undefined) => any;
   publishVariantBenchmark: (variantId: string) => void;
   createBenchmark: (variantId: string) => any;
@@ -46,6 +47,7 @@ function createViewerRuntimeController({
   getActiveSuiteRunId,
   getActiveRenderScalePercent,
   getActiveSceneLook,
+  getActivePostProcessing,
   getVariantBenchmark,
   publishVariantBenchmark,
   createBenchmark,
@@ -117,6 +119,7 @@ function createViewerRuntimeController({
       runtimeDocument,
       renderScalePercent: getActiveRenderScalePercent(),
       sceneLook,
+      postProcessing: getActivePostProcessing(),
       firstPreset,
       gpuDiagnostics,
       createBenchmark,

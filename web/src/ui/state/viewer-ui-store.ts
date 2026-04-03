@@ -56,6 +56,7 @@ const emptyCameraState: CameraViewState = {
   angle: '—',
   positionValue: null,
   targetValue: null,
+  visibleGroundPolygonValue: [],
   distanceValue: null,
   pitchValue: null,
   yawValue: null
@@ -119,7 +120,11 @@ const emptySceneMetricsState: SceneMetricsViewState = {
 const emptyRenderScaleState: RenderScaleViewState = {
   summary: '—',
   value: '—',
-  note: '等待渲染参数'
+  note: '等待渲染参数',
+  antiAliasEnabled: false,
+  antiAliasAvailable: false,
+  antiAliasSummary: '关闭',
+  antiAliasNote: '后处理抗锯齿'
 };
 
 const emptySceneLookState: SceneLookViewState = {

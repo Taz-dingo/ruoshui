@@ -1,227 +1,219 @@
 import type { MiniMapConfig } from '../../content/types';
-import { clamp, degToRad } from '../../utils/math';
 
 interface CameraMiniMapProps {
   map: MiniMapConfig;
   position: [number, number, number] | null;
   target: [number, number, number] | null;
+  visibleGroundPolygon: [number, number, number][];
   yawDeg: number | null;
   distance: number | null;
 }
 
-const viewBoxWidth = 220;
-const viewBoxHeight = 168;
-const mapPadding = 18;
+const viewBoxSize = 180;
+const center = viewBoxSize * 0.5;
+const radius = 84;
 
 function CameraMiniMap({
   map,
   position,
   target,
+  visibleGroundPolygon,
   yawDeg,
   distance
 }: CameraMiniMapProps) {
-  const campusRect = {
-    x: mapPadding,
-    y: mapPadding + 8,
-    width: viewBoxWidth - mapPadding * 2,
-    height: viewBoxHeight - mapPadding * 2 - 16
-  };
-  const cameraPoint = projectPoint(position, map, campusRect);
-  const targetPoint = projectPoint(target, map, campusRect);
-  const cameraVisible = Boolean(cameraPoint && targetPoint);
-  const direction = resolveDirection(cameraPoint, targetPoint, yawDeg);
-  const coneDistance = clamp((distance ?? 0.85) * 34, 28, 52);
-  const conePath = cameraPoint
-    ? buildConePath(cameraPoint, direction, coneDistance, 0.32)
-    : null;
-  const northRotateDeg = map.northAngleDeg ?? 0;
+  const bounds = normalizeBounds(map);
+  const fallbackAnchor: [number, number, number] = [
+    (bounds.minX + bounds.maxX) * 0.5,
+    0,
+    (bounds.minZ + bounds.maxZ) * 0.5
+  ];
+  const anchor = isFiniteVec3(position) ? position : fallbackAnchor;
+  const safeTarget = isFiniteVec3(target) ? target : null;
+  const safeYawDeg = Number.isFinite(yawDeg) ? yawDeg : 0;
+  const safeDistance = Number.isFinite(distance) ? distance : null;
+  const safePolygon = visibleGroundPolygon.filter(isFiniteVec3);
+  const scale = resolveMapScale(anchor, safeTarget, safePolygon, bounds, safeDistance);
+  const mapFrame = resolveMapFrame(bounds, anchor, scale);
+  const targetPoint = safeTarget
+    ? projectPointAroundAnchor(safeTarget, anchor, scale)
+    : projectPointAroundAnchor(resolveFallbackTarget(anchor, safeYawDeg), anchor, scale);
+  const visibleGroundPath = buildPolygonPath(
+    safePolygon.map((point) => projectPointAroundAnchor(point, anchor, scale))
+  );
 
   return (
-    <div className="minimap-card">
-      <div className="minimap-head">
-        <div>
-          <strong>{map.label}</strong>
-          <span>{map.subtitle}</span>
-        </div>
-        <span className="minimap-north">
-          北
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <g transform={`rotate(${northRotateDeg} 12 12)`}>
-              <path d="M12 4 L16 14 L12 11 L8 14 Z" />
-            </g>
-          </svg>
-        </span>
-      </div>
+    <div className="minimap-card" aria-label="若水广场当前相机顶视图">
       <svg
         className="minimap-svg"
-        viewBox={`0 0 ${viewBoxWidth} ${viewBoxHeight}`}
+        viewBox={`0 0 ${viewBoxSize} ${viewBoxSize}`}
         role="img"
-        aria-label="若水广场当前相机顶视示意图"
+        aria-label="若水广场当前相机顶视图"
       >
         <defs>
-          <pattern
-            id="ruoshui-minimap-grid"
-            width="20"
-            height="20"
-            patternUnits="userSpaceOnUse"
-          >
-            <path d="M 20 0 L 0 0 0 20" className="minimap-grid-line" />
-          </pattern>
+          <clipPath id="ruoshui-minimap-circle">
+            <circle cx={center} cy={center} r={radius} />
+          </clipPath>
         </defs>
-        <rect
-          className="minimap-bg"
-          x="0"
-          y="0"
-          width={viewBoxWidth}
-          height={viewBoxHeight}
-          rx="22"
-        />
-        <rect
-          className="minimap-campus"
-          x={campusRect.x}
-          y={campusRect.y}
-          width={campusRect.width}
-          height={campusRect.height}
-          rx="20"
-        />
-        <rect
-          className="minimap-grid"
-          x={campusRect.x}
-          y={campusRect.y}
-          width={campusRect.width}
-          height={campusRect.height}
-          rx="20"
-          fill="url(#ruoshui-minimap-grid)"
-        />
-        {map.landmarks?.map((landmark) => {
-          const point = projectPoint([landmark.x, 0, landmark.z], map, campusRect);
-          if (!point) {
-            return null;
-          }
 
-          return (
-            <g key={landmark.id}>
-              <circle className="minimap-landmark-dot" cx={point.x} cy={point.y} r="3.5" />
-              <text className="minimap-landmark-label" x={point.x + 6} y={point.y - 6}>
-                {landmark.name}
-              </text>
-            </g>
-          );
-        })}
-        {conePath ? <path className="minimap-cone" d={conePath} /> : null}
-        {cameraVisible && targetPoint ? (
-          <line
-            className="minimap-track"
-            x1={cameraPoint?.x}
-            y1={cameraPoint?.y}
-            x2={targetPoint.x}
-            y2={targetPoint.y}
-          />
-        ) : null}
-        {targetPoint ? (
-          <>
-            <circle className="minimap-target-ring" cx={targetPoint.x} cy={targetPoint.y} r="8" />
-            <circle className="minimap-target-dot" cx={targetPoint.x} cy={targetPoint.y} r="3.5" />
-          </>
-        ) : null}
-        {cameraPoint ? (
-          <>
-            <circle className="minimap-camera-ring" cx={cameraPoint.x} cy={cameraPoint.y} r="10" />
-            <circle className="minimap-camera-dot" cx={cameraPoint.x} cy={cameraPoint.y} r="4.5" />
-          </>
-        ) : null}
+        <g clipPath="url(#ruoshui-minimap-circle)">
+          <circle className="minimap-bg" cx={center} cy={center} r={radius} />
+          {map.imageUrl ? (
+            <image
+              href={map.imageUrl}
+              x={mapFrame.x}
+              y={mapFrame.y}
+              width={mapFrame.width}
+              height={mapFrame.height}
+              preserveAspectRatio="none"
+            />
+          ) : null}
+          <circle className="minimap-image-tint" cx={center} cy={center} r={radius} />
+          {visibleGroundPath ? (
+            <path className="minimap-footprint" d={visibleGroundPath} />
+          ) : null}
+          {targetPoint ? (
+            <>
+              <line
+                className="minimap-track"
+                x1={center}
+                y1={center}
+                x2={targetPoint.x}
+                y2={targetPoint.y}
+              />
+              <circle className="minimap-target-ring" cx={targetPoint.x} cy={targetPoint.y} r="7" />
+              <circle className="minimap-target-dot" cx={targetPoint.x} cy={targetPoint.y} r="3.5" />
+            </>
+          ) : null}
+          <circle className="minimap-camera-ring" cx={center} cy={center} r="10" />
+          <circle className="minimap-camera-dot" cx={center} cy={center} r="4.5" />
+        </g>
+
       </svg>
-      <div className="minimap-legend">
-        <span>
-          <i className="is-camera" />
-          当前相机
-        </span>
-        <span>
-          <i className="is-target" />
-          当前注视点
-        </span>
-        <span>
-          <i className="is-cone" />
-          朝向 / 可视范围
-        </span>
-      </div>
     </div>
   );
 }
 
-function projectPoint(
-  point: [number, number, number] | null,
-  map: MiniMapConfig,
-  rect: { x: number; y: number; width: number; height: number }
+function resolveMapScale(
+  anchor: [number, number, number],
+  target: [number, number, number] | null,
+  visibleGroundPolygon: [number, number, number][],
+  bounds: ReturnType<typeof normalizeBounds>,
+  distance: number | null
 ) {
-  if (!point) {
+  const polygonRadius = visibleGroundPolygon.reduce((maxRadius, point) => {
+    const dx = Math.abs(point[0] - anchor[0]);
+    const dz = Math.abs(point[2] - anchor[2]);
+    return Math.max(maxRadius, dx, dz);
+  }, 0);
+  const targetRadius = target
+    ? Math.max(Math.abs(target[0] - anchor[0]), Math.abs(target[2] - anchor[2]))
+    : 0;
+  const distanceRadius = distance
+    ? clamp(distance * 0.72, 0.9, 2.3)
+    : 1.2;
+  const desiredWorldRadius = Math.max(
+    polygonRadius * 1.12,
+    targetRadius * 1.35,
+    distanceRadius
+  );
+  const fullWorldRadius = Math.max(
+    bounds.maxX - bounds.minX,
+    bounds.maxZ - bounds.minZ
+  ) * 0.5;
+  const clampedRadius = clamp(desiredWorldRadius, 0.82, fullWorldRadius);
+
+  return radius / Math.max(clampedRadius, 0.001);
+}
+
+function resolveMapFrame(
+  bounds: ReturnType<typeof normalizeBounds>,
+  anchor: [number, number, number],
+  scale: number
+) {
+  const width = (bounds.maxX - bounds.minX) * scale;
+  const height = (bounds.maxZ - bounds.minZ) * scale;
+
+  return {
+    x: safeNumber(center + (bounds.minX - anchor[0]) * scale, center - radius),
+    y: safeNumber(center - (bounds.maxZ - anchor[2]) * scale, center - radius),
+    width: safeNumber(width, radius * 2),
+    height: safeNumber(height, radius * 2)
+  };
+}
+
+function resolveFallbackTarget(
+  anchor: [number, number, number],
+  yawDeg: number | null
+): [number, number, number] {
+  const angle = ((yawDeg ?? 0) * Math.PI) / 180;
+  return [
+    anchor[0] - Math.sin(angle) * 0.65,
+    anchor[1],
+    anchor[2] - Math.cos(angle) * 0.65
+  ];
+}
+
+function projectPointAroundAnchor(
+  point: [number, number, number],
+  anchor: [number, number, number],
+  scale: number
+) {
+  return {
+    x: safeNumber(center + (point[0] - anchor[0]) * scale, center),
+    y: safeNumber(center - (point[2] - anchor[2]) * scale, center)
+  };
+}
+
+function buildPolygonPath(points: Array<{ x: number; y: number }>) {
+  const safePoints = points.filter(
+    (point) => Number.isFinite(point.x) && Number.isFinite(point.y)
+  );
+
+  if (safePoints.length < 3) {
     return null;
   }
 
-  const { minX, maxX, minZ, maxZ } = map.bounds;
-  const normalizedX = clamp((point[0] - minX) / (maxX - minX), 0, 1);
-  const normalizedZ = clamp((point[2] - minZ) / (maxZ - minZ), 0, 1);
-
-  return {
-    x: rect.x + normalizedX * rect.width,
-    y: rect.y + (1 - normalizedZ) * rect.height
-  };
-}
-
-function resolveDirection(
-  cameraPoint: { x: number; y: number } | null,
-  targetPoint: { x: number; y: number } | null,
-  yawDeg: number | null
-) {
-  if (cameraPoint && targetPoint) {
-    const dx = targetPoint.x - cameraPoint.x;
-    const dy = targetPoint.y - cameraPoint.y;
-    const length = Math.hypot(dx, dy);
-
-    if (length > 0.0001) {
-      return {
-        x: dx / length,
-        y: dy / length
-      };
-    }
-  }
-
-  const angle = degToRad((yawDeg ?? 0) + 180);
-  return {
-    x: Math.sin(angle),
-    y: Math.cos(angle)
-  };
-}
-
-function buildConePath(
-  cameraPoint: { x: number; y: number },
-  direction: { x: number; y: number },
-  radius: number,
-  halfAngle: number
-) {
-  const baseAngle = Math.atan2(direction.y, direction.x);
-  const start = polarToPoint(cameraPoint, baseAngle - halfAngle, radius);
-  const end = polarToPoint(cameraPoint, baseAngle + halfAngle, radius);
-
-  return [
-    `M ${cameraPoint.x} ${cameraPoint.y}`,
-    `L ${start.x} ${start.y}`,
-    `A ${radius} ${radius} 0 0 1 ${end.x} ${end.y}`,
-    'Z'
-  ].join(' ');
-}
-
-function polarToPoint(
-  center: { x: number; y: number },
-  angle: number,
-  radius: number
-) {
-  return {
-    x: center.x + Math.cos(angle) * radius,
-    y: center.y + Math.sin(angle) * radius
-  };
+  return safePoints
+    .map((point, index) =>
+      `${index === 0 ? 'M' : 'L'} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`
+    )
+    .concat('Z')
+    .join(' ');
 }
 
 export {
   CameraMiniMap
 };
+
+function normalizeBounds(map: MiniMapConfig) {
+  const minX = safeNumber(map.bounds.minX, -1);
+  const maxX = safeNumber(map.bounds.maxX, 1);
+  const minZ = safeNumber(map.bounds.minZ, -1);
+  const maxZ = safeNumber(map.bounds.maxZ, 1);
+
+  return {
+    minX: Math.min(minX, maxX),
+    maxX: Math.max(minX, maxX),
+    minZ: Math.min(minZ, maxZ),
+    maxZ: Math.max(minZ, maxZ)
+  };
+}
+
+function isFiniteVec3(
+  value: [number, number, number] | null | undefined
+): value is [number, number, number] {
+  return Boolean(
+    value &&
+    Number.isFinite(value[0]) &&
+    Number.isFinite(value[1]) &&
+    Number.isFinite(value[2])
+  );
+}
+
+function safeNumber(value: number, fallback: number) {
+  return Number.isFinite(value) ? value : fallback;
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}

@@ -69,6 +69,7 @@ function App({
                 map={data.scene.miniMap}
                 position={camera.positionValue}
                 target={camera.targetValue}
+                visibleGroundPolygon={camera.visibleGroundPolygonValue}
                 yawDeg={camera.yawValue}
                 distance={camera.distanceValue}
               />

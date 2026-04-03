@@ -25,6 +25,11 @@ interface RenderScaleChangeCommand {
   value: number;
 }
 
+interface AntiAliasChangeCommand {
+  type: 'set-anti-alias';
+  enabled: boolean;
+}
+
 interface RunCurrentRouteBenchmarkCommand {
   type: 'run-current-route-benchmark';
 }
@@ -66,6 +71,7 @@ interface SelectVariantCommand {
 }
 
 type ViewerCommand =
+  | AntiAliasChangeCommand
   | CopyRouteAnalysisJsonCommand
   | CopyRouteAnalysisSummaryCommand
   | CopyHighlightDraftCommand
@@ -137,6 +143,13 @@ function requestRenderScaleChange(value: number) {
   });
 }
 
+function requestAntiAliasChange(enabled: boolean) {
+  emitViewerCommand({
+    type: 'set-anti-alias',
+    enabled
+  });
+}
+
 function requestRouteSelection(routeId: string) {
   emitViewerCommand({
     type: 'select-route',
@@ -181,6 +194,7 @@ function requestVariantSelection(variantId: string) {
 }
 
 export {
+  requestAntiAliasChange,
   requestCaptureHighlightPoint,
   requestCopyHighlightDraft,
   requestCopyRouteAnalysisJson,
