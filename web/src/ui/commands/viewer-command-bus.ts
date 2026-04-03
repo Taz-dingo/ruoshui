@@ -20,6 +20,11 @@ interface DownloadRouteAnalysisJsonCommand {
   type: 'download-route-analysis-json';
 }
 
+interface GraphicsBackendPreferenceChangeCommand {
+  type: 'set-graphics-backend-preference';
+  preference: 'auto' | 'webgl2' | 'webgpu';
+}
+
 interface RenderScaleChangeCommand {
   type: 'set-render-scale';
   value: number;
@@ -77,6 +82,7 @@ type ViewerCommand =
   | CopyHighlightDraftCommand
   | CaptureHighlightPointCommand
   | DownloadRouteAnalysisJsonCommand
+  | GraphicsBackendPreferenceChangeCommand
   | RenderScaleChangeCommand
   | RunCurrentRouteBenchmarkCommand
   | RunRouteSuiteCommand
@@ -127,6 +133,15 @@ function requestCaptureHighlightPoint(clientX: number, clientY: number) {
 
 function requestDownloadRouteAnalysisJson() {
   emitViewerCommand({ type: 'download-route-analysis-json' });
+}
+
+function requestGraphicsBackendPreferenceChange(
+  preference: 'auto' | 'webgl2' | 'webgpu'
+) {
+  emitViewerCommand({
+    type: 'set-graphics-backend-preference',
+    preference
+  });
 }
 
 function requestPresetSelection(presetId: string) {
@@ -200,6 +215,7 @@ export {
   requestCopyRouteAnalysisJson,
   requestCopyRouteAnalysisSummary,
   requestDownloadRouteAnalysisJson,
+  requestGraphicsBackendPreferenceChange,
   requestPresetSelection,
   requestRenderScaleChange,
   requestRouteSelection,

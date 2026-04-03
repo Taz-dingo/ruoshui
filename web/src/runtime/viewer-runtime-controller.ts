@@ -8,12 +8,14 @@ import {
   updateRuntimeBenchmarkRoute as updateBenchmarkPlaybackRoute,
 } from "../benchmark/playback";
 import { createViewerRuntime } from "./runtime-factory";
+import type { GraphicsBackendPreference } from "./bootstrap";
 
 interface CreateViewerRuntimeControllerArgs {
   pc: any;
   firstPreset: any;
   runtimeWindow: Window;
   runtimeDocument: Document;
+  graphicsBackendPreference: GraphicsBackendPreference;
   longTaskBuffer: Array<{ startTime: number; duration: number }>;
   gpuDiagnostics?: any;
   getActiveRouteId: () => string | null;
@@ -41,6 +43,7 @@ function createViewerRuntimeController({
   firstPreset,
   runtimeWindow,
   runtimeDocument,
+  graphicsBackendPreference,
   longTaskBuffer,
   gpuDiagnostics = null,
   getActiveRouteId,
@@ -117,6 +120,7 @@ function createViewerRuntimeController({
       timings,
       runtimeWindow,
       runtimeDocument,
+      graphicsBackendPreference,
       renderScalePercent: getActiveRenderScalePercent(),
       sceneLook,
       postProcessing: getActivePostProcessing(),

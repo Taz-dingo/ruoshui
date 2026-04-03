@@ -4,10 +4,13 @@ import { createLoopController } from './lifecycle';
 interface CreateRuntimeAppArgs {
   pc: any;
   canvasElement: HTMLCanvasElement;
+  graphicsBackendPreference: GraphicsBackendPreference;
   runtimeWindow: Window;
   renderScalePercent: number;
   gpuDiagnostics?: GraphicsBackendDiagnostics | null;
 }
+
+type GraphicsBackendPreference = 'auto' | 'webgl2' | 'webgpu';
 
 interface GraphicsBackendDiagnostics {
   navigatorGpuAvailable: boolean;
@@ -43,13 +46,18 @@ interface BindRuntimeVisibilityArgs {
 async function createRuntimeApp({
   pc,
   canvasElement,
+  graphicsBackendPreference,
   runtimeWindow,
   renderScalePercent,
   gpuDiagnostics = null
 }: CreateRuntimeAppArgs) {
-  const deviceTypes = resolvePreferredDeviceTypes(pc, runtimeWindow);
+  const deviceTypes = resolvePreferredDeviceTypes(
+    pc,
+    runtimeWindow,
+    graphicsBackendPreference
+  );
   const graphicsDeviceOptions = {
-    alpha: true,
+    alpha: false,
     antialias: false,
     powerPreference: 'high-performance',
     deviceTypes
@@ -104,7 +112,7 @@ async function collectGraphicsBackendDiagnostics(pc: any, runtimeWindow: Window)
     };
   };
   const navigatorGpuAvailable = Boolean(navigatorWithGpu.gpu);
-  const preferredBackends = resolvePreferredDeviceTypes(pc, runtimeWindow).map((deviceType) =>
+  const preferredBackends = resolvePreferredDeviceTypes(pc, runtimeWindow, 'auto').map((deviceType) =>
     String(deviceType)
   );
   let adapterName: string | null = null;
@@ -125,15 +133,55 @@ async function collectGraphicsBackendDiagnostics(pc: any, runtimeWindow: Window)
   };
 }
 
-function resolvePreferredDeviceTypes(pc: any, runtimeWindow: Window) {
+const graphicsBackendPreferenceStorageKey = 'ruoshui-graphics-backend-v2';
+
+function normalizeGraphicsBackendPreference(
+  value: string | null | undefined
+): GraphicsBackendPreference {
+  if (value === 'webgl2' || value === 'webgpu') {
+    return value;
+  }
+
+  return 'webgl2';
+}
+
+function loadGraphicsBackendPreference(runtimeWindow: Window): GraphicsBackendPreference {
+  try {
+    return normalizeGraphicsBackendPreference(
+      runtimeWindow.localStorage.getItem(graphicsBackendPreferenceStorageKey)
+    );
+  } catch {
+    return 'webgl2';
+  }
+}
+
+function persistGraphicsBackendPreference(
+  runtimeWindow: Window,
+  preference: GraphicsBackendPreference
+) {
+  try {
+    runtimeWindow.localStorage.setItem(
+      graphicsBackendPreferenceStorageKey,
+      preference
+    );
+  } catch {
+    return;
+  }
+}
+
+function resolvePreferredDeviceTypes(
+  pc: any,
+  runtimeWindow: Window,
+  preference: GraphicsBackendPreference
+) {
   const deviceTypes = [];
   const hasNavigatorGpu = 'gpu' in runtimeWindow.navigator;
 
-  if (hasNavigatorGpu && pc.DEVICETYPE_WEBGPU) {
+  if (preference !== 'webgl2' && hasNavigatorGpu && pc.DEVICETYPE_WEBGPU) {
     deviceTypes.push(pc.DEVICETYPE_WEBGPU);
   }
 
-  if (pc.DEVICETYPE_WEBGL2) {
+  if (preference !== 'webgpu' && pc.DEVICETYPE_WEBGL2) {
     deviceTypes.push(pc.DEVICETYPE_WEBGL2);
   }
 
@@ -274,5 +322,12 @@ export {
   bindRuntimeVisibility,
   collectGraphicsBackendDiagnostics,
   createRuntimeApp,
-  formatGraphicsBackend
+  formatGraphicsBackend,
+  loadGraphicsBackendPreference,
+  normalizeGraphicsBackendPreference,
+  persistGraphicsBackendPreference
+};
+
+export type {
+  GraphicsBackendPreference
 };

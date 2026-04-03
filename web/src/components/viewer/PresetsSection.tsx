@@ -7,12 +7,14 @@ import type { ViewerConfig } from '../../app/viewer-config';
 interface PresetsSectionProps {
   isOpen: boolean;
   onToggle: () => void;
+  showDiagnostics: boolean;
   viewerConfig: ViewerConfig;
 }
 
 function PresetsSection({
   isOpen,
   onToggle,
+  showDiagnostics,
   viewerConfig
 }: PresetsSectionProps) {
   const presetPanel = useViewerUiStore(
@@ -34,8 +36,12 @@ function PresetsSection({
         className={`inspector-body${isOpen ? ' is-open' : ''}`}
         data-body="presets"
       >
-        <RouteControlsPanel initialState={viewerConfig.initialRouteControls} />
-        <RouteDiagnosticsPanel />
+        {showDiagnostics ? (
+          <>
+            <RouteControlsPanel initialState={viewerConfig.initialRouteControls} />
+            <RouteDiagnosticsPanel />
+          </>
+        ) : null}
         <PresetPanel initialState={viewerConfig.initialPresetPanel} />
       </div>
     </section>

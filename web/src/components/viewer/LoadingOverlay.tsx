@@ -3,7 +3,8 @@ import { useViewerUiStore } from '../../ui/state/viewer-ui-store';
 function LoadingOverlay() {
   const loading = useViewerUiStore((store) => store.loading);
   const sceneMeta = useViewerUiStore((store) => store.sceneMeta);
-  const modeLabel = loading.mode === 'boot' ? '场景载入中' : '版本切换中';
+  const modeLabel = loading.mode === 'boot' ? '正在进入' : '正在切换';
+  const modeMeta = loading.mode === 'boot' ? '请稍候' : '准备下一版';
 
   return (
     <div
@@ -28,7 +29,7 @@ function LoadingOverlay() {
         </div>
         <h2>{modeLabel}</h2>
         <div className="loading-overlay-meta">
-          <span>{loading.mode === 'boot' ? '初次进入' : '版本切换'}</span>
+          <span>{modeMeta}</span>
           {sceneMeta.title !== '—' ? <span>{sceneMeta.title}</span> : null}
         </div>
       </div>

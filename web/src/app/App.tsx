@@ -10,7 +10,6 @@ import { LoadingOverlay } from '../components/viewer/LoadingOverlay';
 import { PresetsSection } from '../components/viewer/PresetsSection';
 import { RenderScaleSection } from '../components/viewer/RenderScaleSection';
 import { SceneLookSection } from '../components/viewer/SceneLookSection';
-import { SceneMetaPanel } from '../components/viewer/SceneMetaPanel';
 import { VariantPanel } from '../components/viewer/VariantPanel';
 import { useViewerUiStore } from '../ui/state/viewer-ui-store';
 import type { ViewerConfig } from './viewer-config';
@@ -52,17 +51,54 @@ function App({
       <HighlightLayer highlights={data.highlights ?? []} />
       <LoadingOverlay />
       <div className="hud">
-        <section className="rail">
-          <HeroPanel
-            subtitle={data.scene.subtitle}
-            title={data.scene.title}
-          />
-          <SceneMetaPanel />
-        </section>
+        <aside className="rail rail-primary">
+          <div className="rail-hero">
+            <HeroPanel
+              subtitle={data.scene.subtitle}
+              title={data.scene.title}
+            />
+          </div>
+          <div className="panel panel-reveal inspector sidebar-panel">
+            <VariantPanel
+              initialState={viewerConfig.initialVariantPanel}
+              isOpen={activeInspectorPanel === 'variants'}
+              onToggle={() => toggleInspectorPanel('variants')}
+            />
+            <RenderScaleSection
+              activeRenderScalePercent={viewerConfig.activeRenderScalePercent}
+              graphicsBackendPreference={viewerConfig.graphicsBackendPreference}
+              isOpen={activeInspectorPanel === 'quality'}
+              maxRenderScalePercent={viewerConfig.maxRenderScalePercent}
+              onToggle={() => toggleInspectorPanel('quality')}
+              renderScaleMinPercent={viewerConfig.renderScaleMinPercent}
+              showAdvancedControls={viewerConfig.showExperimentalControls}
+            />
+            <SceneLookSection
+              isOpen={activeInspectorPanel === 'scene-look'}
+              onToggle={() => toggleInspectorPanel('scene-look')}
+            />
+            <PresetsSection
+              isOpen={activeInspectorPanel === 'presets'}
+              onToggle={() => toggleInspectorPanel('presets')}
+              showDiagnostics={viewerConfig.showExperimentalControls}
+              viewerConfig={viewerConfig}
+            />
+            <CameraPanel
+              isOpen={activeInspectorPanel === 'camera'}
+              onToggle={() => toggleInspectorPanel('camera')}
+            />
+            {viewerConfig.showExperimentalControls ? (
+              <HighlightAuthoringSection
+                isOpen={activeInspectorPanel === 'highlight-authoring'}
+                onToggle={() => toggleInspectorPanel('highlight-authoring')}
+              />
+            ) : null}
+          </div>
+        </aside>
 
         <div />
 
-        <aside className="detail">
+        <aside className="detail detail-map-only">
           {data.scene.miniMap ? (
             <div className="detail-map">
               <CameraMiniMap
@@ -75,37 +111,6 @@ function App({
               />
             </div>
           ) : null}
-          <div className="panel panel-reveal inspector">
-            <VariantPanel
-              initialState={viewerConfig.initialVariantPanel}
-              isOpen={activeInspectorPanel === 'variants'}
-              onToggle={() => toggleInspectorPanel('variants')}
-            />
-            <RenderScaleSection
-              activeRenderScalePercent={viewerConfig.activeRenderScalePercent}
-              isOpen={activeInspectorPanel === 'quality'}
-              maxRenderScalePercent={viewerConfig.maxRenderScalePercent}
-              onToggle={() => toggleInspectorPanel('quality')}
-              renderScaleMinPercent={viewerConfig.renderScaleMinPercent}
-            />
-            <SceneLookSection
-              isOpen={activeInspectorPanel === 'scene-look'}
-              onToggle={() => toggleInspectorPanel('scene-look')}
-            />
-            <PresetsSection
-              isOpen={activeInspectorPanel === 'presets'}
-              onToggle={() => toggleInspectorPanel('presets')}
-              viewerConfig={viewerConfig}
-            />
-            <CameraPanel
-              isOpen={activeInspectorPanel === 'camera'}
-              onToggle={() => toggleInspectorPanel('camera')}
-            />
-            <HighlightAuthoringSection
-              isOpen={activeInspectorPanel === 'highlight-authoring'}
-              onToggle={() => toggleInspectorPanel('highlight-authoring')}
-            />
-          </div>
         </aside>
       </div>
 

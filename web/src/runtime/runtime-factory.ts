@@ -5,6 +5,7 @@ import {
   bindRuntimeVisibility,
   createRuntimeApp
 } from './bootstrap';
+import type { GraphicsBackendPreference } from './bootstrap';
 import {
   createRuntimeEnvironment,
   destroyRuntimeEnvironment,
@@ -39,6 +40,7 @@ interface CreateViewerRuntimeArgs {
   timings?: any;
   runtimeWindow: Window;
   runtimeDocument: Document;
+  graphicsBackendPreference: GraphicsBackendPreference;
   renderScalePercent: number;
   sceneLook: SceneLookSettings;
   postProcessing: PostProcessingSettings;
@@ -63,6 +65,7 @@ async function createViewerRuntime({
   timings = {},
   runtimeWindow,
   runtimeDocument,
+  graphicsBackendPreference,
   renderScalePercent,
   sceneLook,
   postProcessing,
@@ -82,6 +85,7 @@ async function createViewerRuntime({
   const { app, graphicsBackend, performanceMode, loopController } = await createRuntimeApp({
     pc,
     canvasElement,
+    graphicsBackendPreference,
     runtimeWindow,
     renderScalePercent,
     gpuDiagnostics
@@ -95,8 +99,17 @@ async function createViewerRuntime({
 
   const camera = new pc.Entity('MemorialCamera');
   camera.addComponent('camera', {
-    clearColor: new pc.Color(0, 0, 0, 0),
+    clearColor: new pc.Color(0, 0, 0, 1),
+    clearColorBuffer: true,
+    clearDepthBuffer: true,
     fov: 52,
+    layers: [
+      pc.LAYERID_WORLD,
+      pc.LAYERID_DEPTH,
+      pc.LAYERID_SKYBOX,
+      pc.LAYERID_IMMEDIATE,
+      pc.LAYERID_UI
+    ],
     nearClip: 0.01,
     farClip: 64
   });
