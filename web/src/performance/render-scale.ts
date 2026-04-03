@@ -8,7 +8,9 @@ import { clamp } from '../utils/math';
 
 function createPerformanceMode(runtimeWindow: Window, lockedPercent: number): PerformanceMode {
   const supportedMaxPixelRatio = getMaxSupportedPixelRatio(runtimeWindow);
-  const initialPixelRatio = normalizeRenderScalePercent(lockedPercent, supportedMaxPixelRatio) / 100;
+  const supportedMaxRenderScalePercent = Math.round(supportedMaxPixelRatio * 100);
+  const initialPixelRatio =
+    normalizeRenderScalePercent(lockedPercent, supportedMaxRenderScalePercent) / 100;
 
   return {
     targetPixelRatio: initialPixelRatio,
