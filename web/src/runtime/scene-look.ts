@@ -58,12 +58,12 @@ function formatSceneLookSummary(settings: SceneLookSettings) {
 }
 
 function loadSceneLookSettings(runtimeWindow: Window) {
-  const storedValue = runtimeWindow.localStorage.getItem(sceneLookStorageKey);
-  if (!storedValue) {
-    return defaultSceneLookSettings;
-  }
-
   try {
+    const storedValue = runtimeWindow.localStorage.getItem(sceneLookStorageKey);
+    if (!storedValue) {
+      return defaultSceneLookSettings;
+    }
+
     return normalizeSceneLookSettings(JSON.parse(storedValue));
   } catch {
     return defaultSceneLookSettings;
@@ -71,7 +71,14 @@ function loadSceneLookSettings(runtimeWindow: Window) {
 }
 
 function persistSceneLookSettings(runtimeWindow: Window, settings: SceneLookSettings) {
-  runtimeWindow.localStorage.setItem(sceneLookStorageKey, JSON.stringify(settings));
+  try {
+    runtimeWindow.localStorage.setItem(
+      sceneLookStorageKey,
+      JSON.stringify(normalizeSceneLookSettings(settings))
+    );
+  } catch {
+    return;
+  }
 }
 
 function applyRuntimeSceneLook(runtimeState: RuntimeSceneLookLike | null | undefined, settings: SceneLookSettings) {

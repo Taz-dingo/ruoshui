@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 
 import { useViewerUiStore } from '../../ui/state/viewer-ui-store';
-import { requestRenderScaleChange } from '../../ui/commands/viewer-command-bus';
+import {
+  requestAntiAliasChange,
+  requestRenderScaleChange
+} from '../../ui/commands/viewer-command-bus';
 
 interface RenderScaleSectionProps {
   activeRenderScalePercent: number;
@@ -52,7 +55,7 @@ function RenderScaleSection({
             type="range"
             min={renderScaleMinPercent}
             max={maxRenderScalePercent}
-            step="5"
+            step="1"
             value={draftPercent}
             onChange={(event) => {
               const nextPercent = Number(event.currentTarget.value);
@@ -64,6 +67,20 @@ function RenderScaleSection({
             <strong>{renderScale.value}</strong>
             <span>{renderScale.note}</span>
           </div>
+          <label className="quality-toggle">
+            <span>
+              <strong>后处理抗锯齿</strong>
+              <small>{renderScale.antiAliasSummary} · {renderScale.antiAliasNote}</small>
+            </span>
+            <input
+              type="checkbox"
+              checked={renderScale.antiAliasEnabled}
+              disabled={!renderScale.antiAliasAvailable}
+              onChange={(event) => {
+                requestAntiAliasChange(event.currentTarget.checked);
+              }}
+            />
+          </label>
         </div>
       </div>
     </section>

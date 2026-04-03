@@ -11,6 +11,11 @@ import {
   updateRuntimeEnvironment
 } from './environment';
 import { createOrbitController } from './orbit';
+import {
+  applyRuntimePostProcessing,
+  destroyRuntimePostProcessing,
+  sanitizePostProcessingSettings
+} from './postprocessing';
 import { applyRuntimeSceneLook } from './scene-look';
 import {
   applyUnifiedGsplatProfile,
@@ -24,6 +29,7 @@ import type {
   ViewerVariant
 } from '../content/types';
 import type { VariantBenchmark } from '../benchmark/types';
+import type { PostProcessingSettings } from './postprocessing';
 import type { SceneLookSettings } from './scene-look';
 
 interface CreateViewerRuntimeArgs {
@@ -35,6 +41,7 @@ interface CreateViewerRuntimeArgs {
   runtimeDocument: Document;
   renderScalePercent: number;
   sceneLook: SceneLookSettings;
+  postProcessing: PostProcessingSettings;
   firstPreset: CameraPreset;
   gpuDiagnostics?: any;
   createBenchmark: (variantId: string) => VariantBenchmark;
@@ -58,6 +65,7 @@ async function createViewerRuntime({
   runtimeDocument,
   renderScalePercent,
   sceneLook,
+  postProcessing,
   firstPreset,
   gpuDiagnostics = null,
   createBenchmark,
@@ -105,6 +113,10 @@ async function createViewerRuntime({
     performanceMode
   );
   const environment = await createRuntimeEnvironment(pc, app);
+  const activePostProcessing = sanitizePostProcessingSettings(
+    postProcessing,
+    graphicsBackend
+  );
 
   const runtimeState = {
     variantId: variant.id,
@@ -113,6 +125,8 @@ async function createViewerRuntime({
     canvasElement,
     orbit,
     environment,
+    activePostProcessing,
+    postProcessing: null,
     benchmark: timings.benchmark ?? createBenchmark(variant.id),
     graphicsBackend,
     gpuDiagnostics,
@@ -138,6 +152,7 @@ async function createViewerRuntime({
     },
     destroy: () => {
       loopController.wake();
+      destroyRuntimePostProcessing(runtimeState);
       detachVariantFromRuntime(runtimeState);
       viewportBinding.destroy();
       orbit.destroy();
@@ -148,6 +163,7 @@ async function createViewerRuntime({
 
   updateRuntimeEnvironment(runtimeState);
   applyRuntimeSceneLook(runtimeState, sceneLook);
+  applyRuntimePostProcessing(pc, runtimeState, activePostProcessing);
 
   orbit.onManualInput = () => {
     if (getActiveRouteId()) {

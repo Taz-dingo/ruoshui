@@ -19,6 +19,14 @@ import {
   persistRenderScalePercent
 } from '../performance/render-scale';
 import {
+  applyRuntimePostProcessing,
+  isAntiAliasSupported,
+  loadPostProcessingSettings,
+  normalizePostProcessingSettings,
+  sanitizePostProcessingSettings,
+  persistPostProcessingSettings
+} from '../runtime/postprocessing';
+import {
   applyRuntimeSceneLook,
   loadSceneLookSettings,
   normalizeSceneLookSettings,
@@ -65,11 +73,13 @@ async function initializeViewer({
   const pc = await playCanvasPromise;
   const gpuDiagnostics = await collectGraphicsBackendDiagnostics(pc, window);
   const initialSceneLook = loadSceneLookSettings(window);
+  const initialPostProcessing = loadPostProcessingSettings(window);
   const session = createViewerSessionState({
     defaultVariantId: viewerConfig.defaultVariant.id,
     firstPresetId: viewerConfig.firstPreset.id,
     initialRenderScalePercent: viewerConfig.activeRenderScalePercent,
     initialSceneLook,
+    initialPostProcessing,
     initialSelectedRouteId: viewerConfig.benchmarkRoutes[0]?.id ?? null
   });
 
@@ -124,6 +134,8 @@ async function initializeViewer({
     showPerfHud: viewerConfig.showPerfHud,
     publishVariantPanel,
     getVariantBenchmark,
+    getActivePostProcessing: session.getActivePostProcessing,
+    getGraphicsBackend: () => session.getRuntime()?.graphicsBackend ?? null,
     getActiveVariantId: session.getActiveVariantId,
     getActiveRenderScalePercent: session.getActiveRenderScalePercent
   });
@@ -147,6 +159,7 @@ async function initializeViewer({
     getActiveSuiteRunId: session.getActiveSuiteRunId,
     getActiveRenderScalePercent: session.getActiveRenderScalePercent,
     getActiveSceneLook: session.getActiveSceneLook,
+    getActivePostProcessing: session.getActivePostProcessing,
     getVariantBenchmark,
     publishVariantBenchmark,
     createBenchmark: createVariantBenchmark,
@@ -258,7 +271,16 @@ async function initializeViewer({
     createRuntime,
     moveCamera,
     publishVariantBenchmark,
-    getVariantBenchmark
+    getVariantBenchmark,
+    onRuntimeReady: (runtimeState) => {
+      const sanitizedPostProcessing = sanitizePostProcessingSettings(
+        session.getActivePostProcessing(),
+        runtimeState?.graphicsBackend
+      );
+      session.setActivePostProcessing(sanitizedPostProcessing);
+      persistPostProcessingSettings(window, sanitizedPostProcessing);
+      renderRenderScaleMeta(session.getActiveRenderScalePercent());
+    }
   });
   const { activatePreset } = variantOrchestrationController;
 
@@ -362,6 +384,7 @@ async function initializeViewer({
     downloadLatestRouteAnalysisJson: () =>
       routeDiagnosticsController.downloadLatestRouteAnalysisJson(),
     activateRenderScale,
+    setAntiAliasEnabled,
     applySceneLook,
     setHighlightAuthoringEnabled,
     setHighlightPlaneY
@@ -376,6 +399,7 @@ async function initializeViewer({
     defaultVariant: viewerConfig.defaultVariant,
     renderRenderScaleMeta,
     activeRenderScalePercent: session.getActiveRenderScalePercent(),
+    activePostProcessing: session.getActivePostProcessing(),
     renderSceneLookMeta: syncSceneLookState,
     activeSceneLook: session.getActiveSceneLook(),
     renderCameraMeta,
@@ -419,6 +443,36 @@ async function initializeViewer({
       normalizedPercent,
       viewerConfig.maxRenderScalePercent
     );
+    renderPerfHud(session.getRuntime());
+  }
+
+  function setAntiAliasEnabled(enabled: boolean) {
+    const graphicsBackend = session.getRuntime()?.graphicsBackend ?? null;
+    if (!isAntiAliasSupported(graphicsBackend)) {
+      const sanitizedPostProcessing = sanitizePostProcessingSettings(
+        session.getActivePostProcessing(),
+        graphicsBackend
+      );
+      session.setActivePostProcessing(sanitizedPostProcessing);
+      persistPostProcessingSettings(window, sanitizedPostProcessing);
+      useViewerUiStore.getState().setRenderScale({
+        ...useViewerUiStore.getState().renderScale,
+        antiAliasEnabled: sanitizedPostProcessing.fxaaEnabled,
+        antiAliasAvailable: false,
+        antiAliasSummary: '关闭',
+        antiAliasNote: '当前后端暂不支持'
+      });
+      return;
+    }
+
+    const nextPostProcessing = normalizePostProcessingSettings({
+      ...session.getActivePostProcessing(),
+      fxaaEnabled: enabled
+    });
+    session.setActivePostProcessing(nextPostProcessing);
+    persistPostProcessingSettings(window, nextPostProcessing);
+    renderRenderScaleMeta(session.getActiveRenderScalePercent());
+    applyRuntimePostProcessing(pc, session.getRuntime(), nextPostProcessing);
     renderPerfHud(session.getRuntime());
   }
 

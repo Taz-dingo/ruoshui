@@ -42,6 +42,7 @@ interface CreateVariantOrchestrationControllerArgs {
   moveCamera: (runtimeState: any, preset: CameraPreset, immediate?: boolean) => void;
   publishVariantBenchmark: (variantId: string) => void;
   getVariantBenchmark: (variantId: string) => VariantBenchmark | null;
+  onRuntimeReady?: (runtimeState: any) => void;
 }
 
 function createVariantOrchestrationController({
@@ -74,7 +75,8 @@ function createVariantOrchestrationController({
   createRuntime,
   moveCamera,
   publishVariantBenchmark,
-  getVariantBenchmark
+  getVariantBenchmark,
+  onRuntimeReady
 }: CreateVariantOrchestrationControllerArgs) {
   function clearLoadingAfterPresent(runtimeState: any, loadToken: number) {
     let resolved = false;
@@ -201,10 +203,12 @@ function createVariantOrchestrationController({
       }
 
       setRuntime(nextRuntime);
+      onRuntimeReady?.(nextRuntime);
       const restored = restoreCurrentView(nextRuntime, preservedView);
       if (!restored) {
         activatePreset(getActivePresetId() || 'hover', true);
       }
+
       setStatus('场景已就绪', `${variant.size} · ${variant.retention} 保留`);
       clearLoadingAfterPresent(nextRuntime, loadToken);
     } catch (error) {
