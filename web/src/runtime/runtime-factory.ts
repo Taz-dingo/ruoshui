@@ -174,6 +174,7 @@ async function createViewerRuntime({
 
   const visibilityBinding = bindRuntimeVisibility({
     app,
+    canvasElement,
     loopController,
     runtimeDocument,
     runtimeWindow,

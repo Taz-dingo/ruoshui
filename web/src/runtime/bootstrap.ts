@@ -32,6 +32,7 @@ interface RuntimeLifecycleState {
 
 interface BindRuntimeVisibilityArgs {
   app: any;
+  canvasElement: HTMLCanvasElement;
   loopController: ReturnType<typeof createLoopController>;
   runtimeDocument: Document;
   runtimeWindow: Window;
@@ -162,29 +163,9 @@ function bindRuntimeViewport({
   runtimeWindow
 }: BindRuntimeViewportArgs) {
   const preventContextMenu = (event: Event) => event.preventDefault();
-  const resolveCanvasBounds = () => {
-    const host = canvasElement.parentElement;
-    const rect = host?.getBoundingClientRect();
-
-    return {
-      width: Math.max(1, Math.round(rect?.width || runtimeWindow.innerWidth || 1)),
-      height: Math.max(1, Math.round(rect?.height || runtimeWindow.innerHeight || 1))
-    };
-  };
-
   const handleResize = () => {
-    const { width, height } = resolveCanvasBounds();
-    const deviceRatio = Math.min(
-      app.graphicsDevice.maxPixelRatio || 1,
-      runtimeWindow.devicePixelRatio || 1
-    );
+    syncRuntimeCanvasResolution(app, canvasElement, runtimeWindow);
     loopController.wake();
-    canvasElement.style.width = `${width}px`;
-    canvasElement.style.height = `${height}px`;
-    app.graphicsDevice.setResolution(
-      Math.max(1, Math.floor(width * deviceRatio)),
-      Math.max(1, Math.floor(height * deviceRatio))
-    );
     app.renderNextFrame = true;
   };
 
@@ -213,6 +194,7 @@ function bindRuntimeViewport({
 
 function bindRuntimeVisibility({
   app,
+  canvasElement,
   loopController,
   runtimeDocument,
   runtimeWindow,
@@ -228,6 +210,7 @@ function bindRuntimeVisibility({
   };
 
   const resumeRuntime = () => {
+    syncRuntimeCanvasResolution(app, canvasElement, runtimeWindow);
     runtimeState.requestRender();
     onResume?.();
   };
@@ -262,6 +245,28 @@ function bindRuntimeVisibility({
       runtimeWindow.removeEventListener('focus', handleWindowFocus);
     }
   };
+}
+
+function syncRuntimeCanvasResolution(
+  app: any,
+  canvasElement: HTMLCanvasElement,
+  runtimeWindow: Window
+) {
+  const host = canvasElement.parentElement;
+  const rect = host?.getBoundingClientRect();
+  const width = Math.max(1, Math.round(rect?.width || runtimeWindow.innerWidth || 1));
+  const height = Math.max(1, Math.round(rect?.height || runtimeWindow.innerHeight || 1));
+  const deviceRatio = Math.min(
+    app.graphicsDevice.maxPixelRatio || 1,
+    runtimeWindow.devicePixelRatio || 1
+  );
+
+  canvasElement.style.width = `${width}px`;
+  canvasElement.style.height = `${height}px`;
+  app.graphicsDevice.setResolution(
+    Math.max(1, Math.floor(width * deviceRatio)),
+    Math.max(1, Math.floor(height * deviceRatio))
+  );
 }
 
 export {

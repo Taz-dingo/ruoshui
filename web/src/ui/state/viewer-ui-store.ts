@@ -124,7 +124,7 @@ const emptyRenderScaleState: RenderScaleViewState = {
   antiAliasEnabled: false,
   antiAliasAvailable: false,
   antiAliasSummary: '关闭',
-  antiAliasNote: '后处理抗锯齿'
+  antiAliasNote: '当前暂未开放'
 };
 
 const emptySceneLookState: SceneLookViewState = {

@@ -460,8 +460,14 @@ async function initializeViewer({
         antiAliasEnabled: sanitizedPostProcessing.fxaaEnabled,
         antiAliasAvailable: false,
         antiAliasSummary: '关闭',
-        antiAliasNote: '当前后端暂不支持'
+        antiAliasNote: '当前暂未开放'
       });
+      applyRenderScaleToRuntime(
+        session.getRuntime(),
+        session.getActiveRenderScalePercent(),
+        viewerConfig.maxRenderScalePercent
+      );
+      renderPerfHud(session.getRuntime());
       return;
     }
 
@@ -473,6 +479,11 @@ async function initializeViewer({
     persistPostProcessingSettings(window, nextPostProcessing);
     renderRenderScaleMeta(session.getActiveRenderScalePercent());
     applyRuntimePostProcessing(pc, session.getRuntime(), nextPostProcessing);
+    applyRenderScaleToRuntime(
+      session.getRuntime(),
+      session.getActiveRenderScalePercent(),
+      viewerConfig.maxRenderScalePercent
+    );
     renderPerfHud(session.getRuntime());
   }
 
