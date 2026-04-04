@@ -4,6 +4,7 @@ import { cn } from '../../utils/cn';
 
 interface SliderFieldProps
   extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
+  description?: ReactNode;
   label: ReactNode;
   valueLabel: ReactNode;
   containerClassName?: string;
@@ -12,6 +13,7 @@ interface SliderFieldProps
 function SliderField({
   className,
   containerClassName,
+  description,
   label,
   valueLabel,
   ...props
@@ -25,6 +27,9 @@ function SliderField({
         {...props}
       />
       <strong className="slider-field-value">{valueLabel}</strong>
+      {description ? (
+        <span className="slider-field-description">{description}</span>
+      ) : null}
     </label>
   );
 }

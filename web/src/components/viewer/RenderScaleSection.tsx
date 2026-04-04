@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '../ui/select';
+import { SliderField } from '../ui/slider-field';
 import { Switch } from '../ui/switch';
 
 interface RenderScaleSectionProps {
@@ -59,23 +60,21 @@ function RenderScaleSection({
       title="渲染清晰度"
     >
       <div className="quality-control">
-        <input
-          className="quality-slider"
-          type="range"
+        <SliderField
+          containerClassName="quality-slider-field"
+          description={renderScale.note}
+          label="清晰度"
           min={renderScaleMinPercent}
           max={maxRenderScalePercent}
           step="1"
           value={draftPercent}
+          valueLabel={renderScale.value}
           onChange={(event) => {
             const nextPercent = Number(event.currentTarget.value);
             setDraftPercent(nextPercent);
             requestRenderScaleChange(nextPercent);
           }}
         />
-        <div className="quality-meta">
-          <strong>{renderScale.value}</strong>
-          <span>{renderScale.note}</span>
-        </div>
         {showAdvancedControls ? (
           <>
             <label className="quality-toggle">
