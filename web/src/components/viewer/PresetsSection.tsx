@@ -30,13 +30,13 @@ function PresetsSection({
       summary={presetPanel.summary}
       title="导览镜头"
     >
-        {showDiagnostics ? (
-          <>
-            <RouteControlsPanel initialState={viewerConfig.initialRouteControls} />
-            <RouteDiagnosticsPanel />
-          </>
-        ) : null}
-        <PresetPanel initialState={viewerConfig.initialPresetPanel} />
+      {showDiagnostics ? (
+        <>
+          <RouteControlsPanel initialState={viewerConfig.initialRouteControls} />
+          <RouteDiagnosticsPanel />
+        </>
+      ) : null}
+      <PresetPanel initialState={viewerConfig.initialPresetPanel} />
     </InspectorSection>
   );
 }
