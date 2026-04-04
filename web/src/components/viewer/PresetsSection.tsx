@@ -3,6 +3,7 @@ import { RouteControlsPanel } from './RouteControlsPanel';
 import { RouteDiagnosticsPanel } from './RouteDiagnosticsPanel';
 import { useViewerUiStore } from '../../ui/state/viewer-ui-store';
 import type { ViewerConfig } from '../../app/viewer-config';
+import { InspectorSection } from '../ui/inspector-section';
 
 interface PresetsSectionProps {
   isOpen: boolean;
@@ -22,20 +23,13 @@ function PresetsSection({
   );
 
   return (
-    <section className="inspector-section" data-panel="presets">
-      <button
-        className={`inspector-toggle${isOpen ? ' is-active' : ''}`}
-        type="button"
-        aria-expanded={isOpen}
-        onClick={onToggle}
-      >
-        <span className="section-title">导览镜头</span>
-        <span className="toggle-meta">{presetPanel.summary}</span>
-      </button>
-      <div
-        className={`inspector-body${isOpen ? ' is-open' : ''}`}
-        data-body="presets"
-      >
+    <InspectorSection
+      isOpen={isOpen}
+      onToggle={onToggle}
+      panelId="presets"
+      summary={presetPanel.summary}
+      title="导览镜头"
+    >
         {showDiagnostics ? (
           <>
             <RouteControlsPanel initialState={viewerConfig.initialRouteControls} />
@@ -43,8 +37,7 @@ function PresetsSection({
           </>
         ) : null}
         <PresetPanel initialState={viewerConfig.initialPresetPanel} />
-      </div>
-    </section>
+    </InspectorSection>
   );
 }
 

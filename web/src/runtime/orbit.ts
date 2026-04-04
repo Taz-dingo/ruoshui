@@ -63,6 +63,9 @@ export interface OrbitController {
   pointerMode: OrbitPointerMode;
   lastX: number;
   lastY: number;
+  touchDistance: number;
+  touchCenterX: number;
+  touchCenterY: number;
   transition: OrbitTransition | null;
   onManualInput: (() => void) | null;
   tempRight: OrbitVector;
@@ -105,6 +108,9 @@ export function createOrbitController(
     pointerMode: null,
     lastX: 0,
     lastY: 0,
+    touchDistance: 0,
+    touchCenterX: 0,
+    touchCenterY: 0,
     transition: null,
     onManualInput: null,
     tempRight: new pc.Vec3(),
@@ -130,35 +136,25 @@ export function createOrbitController(
     orbit.cancelInteraction();
   };
 
-  const movePointer = (event: any) => {
-    if (!orbit.pointerMode) {
-      return;
-    }
+  const getViewportSize = () => {
+    return {
+      viewportWidth: Math.max(
+        orbit.canvasElement.clientWidth || orbit.canvasElement.width || 1,
+        1
+      ),
+      viewportHeight: Math.max(
+        orbit.canvasElement.clientHeight || orbit.canvasElement.height || 1,
+        1
+      )
+    };
+  };
 
-    const dx = event.clientX - orbit.lastX;
-    const dy = event.clientY - orbit.lastY;
-    orbit.lastX = event.clientX;
-    orbit.lastY = event.clientY;
-
-    const viewportWidth = Math.max(
-      orbit.canvasElement.clientWidth || orbit.canvasElement.width || 1,
-      1
-    );
-    const viewportHeight = Math.max(
-      orbit.canvasElement.clientHeight || orbit.canvasElement.height || 1,
-      1
-    );
-
-    if (orbit.pointerMode === 'rotate') {
-      orbit.transition = null;
-      orbit.desiredYaw -= (dx / viewportWidth) * Math.PI * orbit.rotateSpeed;
-      orbit.desiredPitch = clampOrbitPitch(
-        orbit.desiredPitch -
-          (dy / viewportHeight) * Math.PI * orbit.rotateSpeed * orbitPitchScreenFactor
-      );
-      return;
-    }
-
+  const panOrbitTarget = (
+    dx: number,
+    dy: number,
+    viewportWidth: number,
+    viewportHeight: number
+  ) => {
     const distanceFactor = Math.max(orbit.currentDistance, 0.55);
     const right = orbit.tempRight.copy(camera.right);
     right.y = 0;
@@ -185,6 +181,31 @@ export function createOrbitController(
     clampOrbitTarget(orbit.desiredTarget);
   };
 
+  const movePointer = (event: any) => {
+    if (!orbit.pointerMode) {
+      return;
+    }
+
+    const dx = event.clientX - orbit.lastX;
+    const dy = event.clientY - orbit.lastY;
+    orbit.lastX = event.clientX;
+    orbit.lastY = event.clientY;
+
+    const { viewportWidth, viewportHeight } = getViewportSize();
+
+    if (orbit.pointerMode === 'rotate') {
+      orbit.transition = null;
+      orbit.desiredYaw -= (dx / viewportWidth) * Math.PI * orbit.rotateSpeed;
+      orbit.desiredPitch = clampOrbitPitch(
+        orbit.desiredPitch -
+          (dy / viewportHeight) * Math.PI * orbit.rotateSpeed * orbitPitchScreenFactor
+      );
+      return;
+    }
+
+    panOrbitTarget(dx, dy, viewportWidth, viewportHeight);
+  };
+
   const onWheel = (event: WheelEvent) => {
     event.preventDefault();
     orbit.onManualInput?.();
@@ -198,20 +219,132 @@ export function createOrbitController(
     );
   };
 
+  const beginTouch = (event: TouchEvent) => {
+    if (event.touches.length === 0) {
+      return;
+    }
+
+    orbit.onManualInput?.();
+    orbit.transition = null;
+    if (performanceMode) {
+      performanceMode.isInteracting = true;
+    }
+
+    if (event.touches.length === 1) {
+      orbit.pointerMode = 'rotate';
+      orbit.lastX = event.touches[0].clientX;
+      orbit.lastY = event.touches[0].clientY;
+      orbit.touchDistance = 0;
+      return;
+    }
+
+    const firstTouch = event.touches[0];
+    const secondTouch = event.touches[1];
+    orbit.pointerMode = 'pan';
+    orbit.touchCenterX = (firstTouch.clientX + secondTouch.clientX) * 0.5;
+    orbit.touchCenterY = (firstTouch.clientY + secondTouch.clientY) * 0.5;
+    orbit.touchDistance = getTouchDistance(firstTouch, secondTouch);
+  };
+
+  const moveTouch = (event: TouchEvent) => {
+    if (event.touches.length === 0 || !orbit.pointerMode) {
+      return;
+    }
+
+    event.preventDefault();
+    orbit.onManualInput?.();
+
+    if (event.touches.length === 1) {
+      const touch = event.touches[0];
+      const { viewportWidth, viewportHeight } = getViewportSize();
+      const dx = touch.clientX - orbit.lastX;
+      const dy = touch.clientY - orbit.lastY;
+      orbit.pointerMode = 'rotate';
+      orbit.lastX = touch.clientX;
+      orbit.lastY = touch.clientY;
+      orbit.transition = null;
+      orbit.desiredYaw -= (dx / viewportWidth) * Math.PI * orbit.rotateSpeed;
+      orbit.desiredPitch = clampOrbitPitch(
+        orbit.desiredPitch -
+          (dy / viewportHeight) * Math.PI * orbit.rotateSpeed * orbitPitchScreenFactor
+      );
+      return;
+    }
+
+    const firstTouch = event.touches[0];
+    const secondTouch = event.touches[1];
+    const nextCenterX = (firstTouch.clientX + secondTouch.clientX) * 0.5;
+    const nextCenterY = (firstTouch.clientY + secondTouch.clientY) * 0.5;
+    const nextDistance = getTouchDistance(firstTouch, secondTouch);
+    const { viewportWidth, viewportHeight } = getViewportSize();
+
+    orbit.pointerMode = 'pan';
+    panOrbitTarget(
+      nextCenterX - orbit.touchCenterX,
+      nextCenterY - orbit.touchCenterY,
+      viewportWidth,
+      viewportHeight
+    );
+
+    if (orbit.touchDistance > 0 && nextDistance > 0) {
+      const pinchRatio = orbit.touchDistance / nextDistance;
+      orbit.desiredDistance = clamp(
+        orbit.desiredDistance * pinchRatio,
+        orbit.minDistance,
+        orbit.maxDistance
+      );
+    }
+
+    orbit.touchCenterX = nextCenterX;
+    orbit.touchCenterY = nextCenterY;
+    orbit.touchDistance = nextDistance;
+  };
+
+  const endTouch = (event: TouchEvent) => {
+    if (event.touches.length === 1) {
+      orbit.pointerMode = 'rotate';
+      orbit.lastX = event.touches[0].clientX;
+      orbit.lastY = event.touches[0].clientY;
+      orbit.touchDistance = 0;
+      return;
+    }
+
+    if (event.touches.length >= 2) {
+      const firstTouch = event.touches[0];
+      const secondTouch = event.touches[1];
+      orbit.pointerMode = 'pan';
+      orbit.touchCenterX = (firstTouch.clientX + secondTouch.clientX) * 0.5;
+      orbit.touchCenterY = (firstTouch.clientY + secondTouch.clientY) * 0.5;
+      orbit.touchDistance = getTouchDistance(firstTouch, secondTouch);
+      return;
+    }
+
+    orbit.cancelInteraction();
+  };
+
   canvasElement.addEventListener('mousedown', beginPointer);
   window.addEventListener('mousemove', movePointer);
   window.addEventListener('mouseup', endPointer);
   canvasElement.addEventListener('wheel', onWheel, { passive: false });
+  canvasElement.addEventListener('touchstart', beginTouch, { passive: true });
+  canvasElement.addEventListener('touchmove', moveTouch, { passive: false });
+  canvasElement.addEventListener('touchend', endTouch);
+  canvasElement.addEventListener('touchcancel', endTouch);
 
   orbit.destroy = () => {
     canvasElement.removeEventListener('mousedown', beginPointer);
     window.removeEventListener('mousemove', movePointer);
     window.removeEventListener('mouseup', endPointer);
     canvasElement.removeEventListener('wheel', onWheel);
+    canvasElement.removeEventListener('touchstart', beginTouch);
+    canvasElement.removeEventListener('touchmove', moveTouch);
+    canvasElement.removeEventListener('touchend', endTouch);
+    canvasElement.removeEventListener('touchcancel', endTouch);
   };
 
   orbit.cancelInteraction = () => {
     orbit.pointerMode = null;
+    orbit.touchDistance = 0;
     if (performanceMode) {
       performanceMode.isInteracting = false;
     }
@@ -381,6 +514,12 @@ function normalizeWheelDelta(event: WheelEvent) {
         : 1;
 
   return clamp(event.deltaY * deltaScale, -orbitWheelDeltaClamp, orbitWheelDeltaClamp);
+}
+
+function getTouchDistance(firstTouch: Touch, secondTouch: Touch) {
+  const dx = firstTouch.clientX - secondTouch.clientX;
+  const dy = firstTouch.clientY - secondTouch.clientY;
+  return Math.hypot(dx, dy);
 }
 
 function positionToOrbit(position: OrbitVector, target: OrbitVector) {

@@ -7,6 +7,7 @@ import {
   requestRenderScaleChange
 } from '../../ui/commands/viewer-command-bus';
 import type { GraphicsBackendPreference } from '../../runtime/bootstrap';
+import { InspectorSection } from '../ui/inspector-section';
 
 interface RenderScaleSectionProps {
   activeRenderScalePercent: number;
@@ -42,20 +43,13 @@ function RenderScaleSection({
   }, [activeRenderScalePercent, renderScale.summary]);
 
   return (
-    <section className="inspector-section" data-panel="quality">
-      <button
-        className={`inspector-toggle${isOpen ? ' is-active' : ''}`}
-        type="button"
-        aria-expanded={isOpen}
-        onClick={onToggle}
-      >
-        <span className="section-title">渲染清晰度</span>
-        <span className="toggle-meta">{renderScale.summary}</span>
-      </button>
-      <div
-        className={`inspector-body${isOpen ? ' is-open' : ''}`}
-        data-body="quality"
-      >
+    <InspectorSection
+      isOpen={isOpen}
+      onToggle={onToggle}
+      panelId="quality"
+      summary={renderScale.summary}
+      title="渲染清晰度"
+    >
         <div className="quality-control">
           <input
             className="quality-slider"
@@ -112,8 +106,7 @@ function RenderScaleSection({
             </>
           ) : null}
         </div>
-      </div>
-    </section>
+    </InspectorSection>
   );
 }
 
