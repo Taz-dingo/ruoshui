@@ -560,8 +560,7 @@
   .route-log,
   .scene-look-controls,
   .slider-field,
-  .quality-control,
-  .quality-meta {
+  .quality-control {
     @apply grid gap-2;
   }
 
@@ -620,7 +619,7 @@
   .route-log-meta,
   .route-log-metrics,
   .route-analysis-meta,
-  .quality-meta span {
+  .slider-field-description {
     @apply text-[10px] leading-[1.45];
     color: var(--muted);
   }
@@ -737,10 +736,6 @@
   .quality-slider {
     @apply m-0 w-full cursor-ew-resize;
     accent-color: var(--accent);
-  }
-
-  .quality-meta strong {
-    @apply text-[13px];
   }
 
   .quality-toggle {
