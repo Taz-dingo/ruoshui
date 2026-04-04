@@ -12,6 +12,12 @@ const SheetTrigger = DialogPrimitive.Trigger;
 const SheetClose = DialogPrimitive.Close;
 const SheetPortal = DialogPrimitive.Portal;
 
+interface SheetContentProps
+  extends ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
+  description?: string;
+  title?: string;
+}
+
 const SheetOverlay = forwardRef<
   ElementRef<typeof DialogPrimitive.Overlay>,
   ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
@@ -30,16 +36,43 @@ const SheetOverlay = forwardRef<
 
 const SheetContent = forwardRef<
   ElementRef<typeof DialogPrimitive.Content>,
-  ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(function SheetContent({ children, className, ...props }, ref) {
+  SheetContentProps
+>(function SheetContent(
+  {
+    children,
+    className,
+    description,
+    title,
+    'aria-describedby': ariaDescribedBy,
+    ...props
+  },
+  ref
+) {
+  const resolvedTitle =
+    title ?? (typeof props['aria-label'] === 'string' ? props['aria-label'] : '面板');
+  const contentProps = description
+    ? props
+    : {
+        ...props,
+        'aria-describedby': ariaDescribedBy ?? undefined
+      };
+
   return (
     <SheetPortal>
       <SheetOverlay />
       <DialogPrimitive.Content
         ref={ref}
         className={cn(className)}
-        {...props}
+        {...contentProps}
       >
+        <DialogPrimitive.Title className="sr-only">
+          {resolvedTitle}
+        </DialogPrimitive.Title>
+        {description ? (
+          <DialogPrimitive.Description className="sr-only">
+            {description}
+          </DialogPrimitive.Description>
+        ) : null}
         {children}
       </DialogPrimitive.Content>
     </SheetPortal>
