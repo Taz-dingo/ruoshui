@@ -1,16 +1,11 @@
 import type { RefObject } from 'react';
 import { useEffect, useState } from 'react';
 
-import { CameraPanel } from '../components/viewer/CameraPanel';
 import { CameraMiniMap } from '../components/viewer/CameraMiniMap';
 import { HeroPanel } from '../components/viewer/HeroPanel';
-import { HighlightAuthoringSection } from '../components/viewer/HighlightAuthoringSection';
 import { HighlightLayer } from '../components/viewer/HighlightLayer';
 import { LoadingOverlay } from '../components/viewer/LoadingOverlay';
-import { PresetsSection } from '../components/viewer/PresetsSection';
-import { RenderScaleSection } from '../components/viewer/RenderScaleSection';
-import { SceneLookSection } from '../components/viewer/SceneLookSection';
-import { VariantPanel } from '../components/viewer/VariantPanel';
+import { ViewerInspectorPanels } from '../components/viewer/ViewerInspectorPanels';
 import { Button } from '../components/ui/button';
 import { Sheet, SheetContent } from '../components/ui/sheet';
 import { useViewerUiStore } from '../ui/state/viewer-ui-store';
@@ -111,44 +106,11 @@ function App({
           <div
             className={`panel panel-reveal inspector sidebar-panel${isMobileViewport ? ' is-mobile-hidden' : ''}`}
           >
-            <VariantPanel
-              initialState={viewerConfig.initialVariantPanel}
-              isOpen={activeInspectorPanel === 'variants'}
-              onToggle={() => toggleInspectorPanel('variants')}
-            />
-            <PresetsSection
-              isOpen={activeInspectorPanel === 'presets'}
-              onToggle={() => toggleInspectorPanel('presets')}
-              showDiagnostics={viewerConfig.showExperimentalControls}
+            <ViewerInspectorPanels
+              activeInspectorPanel={activeInspectorPanel}
+              onTogglePanel={toggleInspectorPanel}
               viewerConfig={viewerConfig}
             />
-            {viewerConfig.showExperimentalControls ? (
-              <>
-                <RenderScaleSection
-                  activeRenderScalePercent={viewerConfig.activeRenderScalePercent}
-                  graphicsBackendPreference={viewerConfig.graphicsBackendPreference}
-                  isOpen={activeInspectorPanel === 'quality'}
-                  maxRenderScalePercent={viewerConfig.maxRenderScalePercent}
-                  onToggle={() => toggleInspectorPanel('quality')}
-                  renderScaleMinPercent={viewerConfig.renderScaleMinPercent}
-                  showAdvancedControls={viewerConfig.showExperimentalControls}
-                />
-                <SceneLookSection
-                  isOpen={activeInspectorPanel === 'scene-look'}
-                  onToggle={() => toggleInspectorPanel('scene-look')}
-                />
-                <CameraPanel
-                  isOpen={activeInspectorPanel === 'camera'}
-                  onToggle={() => toggleInspectorPanel('camera')}
-                />
-              </>
-            ) : null}
-            {viewerConfig.showExperimentalControls ? (
-              <HighlightAuthoringSection
-                isOpen={activeInspectorPanel === 'highlight-authoring'}
-                onToggle={() => toggleInspectorPanel('highlight-authoring')}
-              />
-            ) : null}
           </div>
         </aside>
 
@@ -198,44 +160,11 @@ function App({
             onTouchMove={stopInteractionPropagation}
             onWheel={stopInteractionPropagation}
           >
-            <VariantPanel
-              initialState={viewerConfig.initialVariantPanel}
-              isOpen={activeInspectorPanel === 'variants'}
-              onToggle={() => toggleInspectorPanel('variants')}
-            />
-            <PresetsSection
-              isOpen={activeInspectorPanel === 'presets'}
-              onToggle={() => toggleInspectorPanel('presets')}
-              showDiagnostics={viewerConfig.showExperimentalControls}
+            <ViewerInspectorPanels
+              activeInspectorPanel={activeInspectorPanel}
+              onTogglePanel={toggleInspectorPanel}
               viewerConfig={viewerConfig}
             />
-            {viewerConfig.showExperimentalControls ? (
-              <>
-                <RenderScaleSection
-                  activeRenderScalePercent={viewerConfig.activeRenderScalePercent}
-                  graphicsBackendPreference={viewerConfig.graphicsBackendPreference}
-                  isOpen={activeInspectorPanel === 'quality'}
-                  maxRenderScalePercent={viewerConfig.maxRenderScalePercent}
-                  onToggle={() => toggleInspectorPanel('quality')}
-                  renderScaleMinPercent={viewerConfig.renderScaleMinPercent}
-                  showAdvancedControls={viewerConfig.showExperimentalControls}
-                />
-                <SceneLookSection
-                  isOpen={activeInspectorPanel === 'scene-look'}
-                  onToggle={() => toggleInspectorPanel('scene-look')}
-                />
-                <CameraPanel
-                  isOpen={activeInspectorPanel === 'camera'}
-                  onToggle={() => toggleInspectorPanel('camera')}
-                />
-              </>
-            ) : null}
-            {viewerConfig.showExperimentalControls ? (
-              <HighlightAuthoringSection
-                isOpen={activeInspectorPanel === 'highlight-authoring'}
-                onToggle={() => toggleInspectorPanel('highlight-authoring')}
-              />
-            ) : null}
           </SheetContent>
         </Sheet>
       ) : null}

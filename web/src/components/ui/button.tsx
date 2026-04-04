@@ -13,6 +13,8 @@ const buttonVariants = cva(
           'border-[var(--line)] bg-[rgba(244,236,222,0.04)] px-[13px] py-[9px] text-[var(--text)]',
         tertiary:
           'border-[rgba(168,201,125,0.22)] bg-[rgba(168,201,125,0.08)] px-[13px] py-[9px] text-[var(--accent-strong)]',
+        ghost:
+          'border-transparent bg-transparent px-[13px] py-[9px] text-[rgba(231,218,198,0.72)]',
         floating:
           'border-[rgba(207,184,151,0.18)] bg-[rgba(47,36,29,0.84)] px-4 py-3 text-[var(--text)] shadow-[var(--shadow)] backdrop-blur-[16px]'
       }
@@ -24,7 +26,7 @@ const buttonVariants = cva(
 );
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'tertiary' | 'floating';
+  variant?: 'primary' | 'secondary' | 'tertiary' | 'ghost' | 'floating';
 }
 
 function Button({

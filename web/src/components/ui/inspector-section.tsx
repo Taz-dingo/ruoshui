@@ -31,7 +31,7 @@ function InspectorSection({
     <Accordion
       collapsible
       type="single"
-      value={isOpen ? panelId : undefined}
+      value={isOpen ? panelId : ''}
       onValueChange={(value) => {
         const nextIsOpen = value === panelId;
         if (nextIsOpen !== isOpen) {

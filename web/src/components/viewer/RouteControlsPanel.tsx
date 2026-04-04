@@ -5,6 +5,8 @@ import {
   requestRunCurrentRouteBenchmark,
   requestRunRouteSuite
 } from '../../ui/commands/viewer-command-bus';
+import { Button } from '../ui/button';
+import { ItemCardButton } from '../ui/item-card-button';
 
 interface RouteControlsPanelProps {
   initialState: RouteControlsViewState;
@@ -21,36 +23,35 @@ function RouteControlsPanel({ initialState }: RouteControlsPanelProps) {
       </div>
       <div className="route-list">
         {state.items.map((item) => (
-          <button
+          <ItemCardButton
             key={item.id}
-            className={`route${item.isActive ? ' is-active' : ''}${item.isRunning ? ' is-running' : ''}`}
-            type="button"
+            body={item.summary}
             disabled={item.disabled}
+            isActive={item.isActive}
+            isRunning={item.isRunning}
             onClick={() => requestRouteSelection(item.id)}
-          >
-            <strong>{item.name}</strong>
-            <span>{item.summary}</span>
-          </button>
+            title={item.name}
+          />
         ))}
       </div>
       <div className="route-batch">
         <div className="route-batch-actions">
-          <button
-            className="button tertiary route-batch-button"
-            type="button"
+          <Button
+            className="route-batch-button"
             disabled={state.runCurrentDisabled}
             onClick={() => requestRunCurrentRouteBenchmark()}
+            variant="tertiary"
           >
             {state.runCurrentLabel}
-          </button>
-          <button
-            className="button tertiary route-batch-button"
-            type="button"
+          </Button>
+          <Button
+            className="route-batch-button"
             disabled={state.runSuiteDisabled}
             onClick={() => requestRunRouteSuite()}
+            variant="tertiary"
           >
             {state.runSuiteLabel}
-          </button>
+          </Button>
         </div>
         <span className="route-batch-note">{state.batchNote}</span>
       </div>
