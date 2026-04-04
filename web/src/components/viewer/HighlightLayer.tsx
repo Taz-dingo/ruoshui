@@ -6,6 +6,8 @@ import {
   requestPresetSelection
 } from '../../ui/commands/viewer-command-bus';
 import { useViewerUiStore } from '../../ui/state/viewer-ui-store';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
+import { Button } from '../ui/button';
 
 interface HighlightLayerProps {
   highlights: ViewerHighlight[];
@@ -89,7 +91,10 @@ function HighlightLayer({ highlights }: HighlightLayerProps) {
       ))}
 
       {activeHighlight && !highlightAuthoring.isEnabled ? (
-        <aside className="highlight-card panel panel-reveal" aria-live="polite">
+        <aside
+          aria-live="polite"
+          className="highlight-card panel panel-reveal"
+        >
           {activeHighlight.imageUrl ? (
             <img
               className="highlight-card-image"
@@ -97,32 +102,33 @@ function HighlightLayer({ highlights }: HighlightLayerProps) {
               alt={activeHighlight.imageAlt ?? activeHighlight.title}
             />
           ) : null}
-          <div className="highlight-card-body">
-            <div className="highlight-card-head">
-              <div>
-                <span className="highlight-card-kicker">场景点位</span>
-                <h2>{activeHighlight.title}</h2>
-              </div>
-              <button
-                className="highlight-card-close"
-                type="button"
-                onClick={() => setActiveHighlightId(null)}
-                aria-label="关闭点位卡片"
-              >
-                ×
-              </button>
-            </div>
-            <p>{activeHighlight.body}</p>
-            <div className="highlight-card-actions">
-              <button
-                className="button tertiary"
-                type="button"
-                onClick={() => requestPresetSelection(activeHighlight.presetId)}
-              >
-                飞到这里
-              </button>
-            </div>
-          </div>
+          <Card className="h-full">
+            <CardContent className="highlight-card-body">
+              <CardHeader className="highlight-card-head">
+                <div>
+                  <span className="highlight-card-kicker">场景点位</span>
+                  <CardTitle>{activeHighlight.title}</CardTitle>
+                </div>
+                <Button
+                  className="highlight-card-close"
+                  onClick={() => setActiveHighlightId(null)}
+                  aria-label="关闭点位卡片"
+                  variant="ghost"
+                >
+                  ×
+                </Button>
+              </CardHeader>
+              <CardDescription>{activeHighlight.body}</CardDescription>
+              <CardFooter className="highlight-card-actions">
+                <Button
+                  onClick={() => requestPresetSelection(activeHighlight.presetId)}
+                  variant="tertiary"
+                >
+                  飞到这里
+                </Button>
+              </CardFooter>
+            </CardContent>
+          </Card>
         </aside>
       ) : null}
     </div>

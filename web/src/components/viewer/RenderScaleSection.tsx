@@ -8,6 +8,14 @@ import {
 } from '../../ui/commands/viewer-command-bus';
 import type { GraphicsBackendPreference } from '../../runtime/bootstrap';
 import { InspectorSection } from '../ui/inspector-section';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '../ui/select';
+import { Switch } from '../ui/switch';
 
 interface RenderScaleSectionProps {
   activeRenderScalePercent: number;
@@ -50,62 +58,65 @@ function RenderScaleSection({
       summary={renderScale.summary}
       title="渲染清晰度"
     >
-        <div className="quality-control">
-          <input
-            className="quality-slider"
-            type="range"
-            min={renderScaleMinPercent}
-            max={maxRenderScalePercent}
-            step="1"
-            value={draftPercent}
-            onChange={(event) => {
-              const nextPercent = Number(event.currentTarget.value);
-              setDraftPercent(nextPercent);
-              requestRenderScaleChange(nextPercent);
-            }}
-          />
-          <div className="quality-meta">
-            <strong>{renderScale.value}</strong>
-            <span>{renderScale.note}</span>
-          </div>
-          {showAdvancedControls ? (
-            <>
-              <label className="quality-toggle">
-                <span>
-                  <strong>图形后端</strong>
-                  <small>当前 {perfHud.backend} · 切换后自动重载</small>
-                </span>
-                <select
-                  className="quality-select"
-                  value={graphicsBackendPreference}
-                  onChange={(event) =>
-                    requestGraphicsBackendPreferenceChange(
-                      event.currentTarget.value as GraphicsBackendPreference
-                    )
-                  }
-                >
-                  <option value="auto">自动</option>
-                  <option value="webgpu">WebGPU</option>
-                  <option value="webgl2">WebGL2</option>
-                </select>
-              </label>
-              <label className="quality-toggle">
-                <span>
-                  <strong>后处理抗锯齿</strong>
-                  <small>{renderScale.antiAliasSummary} · {renderScale.antiAliasNote}</small>
-                </span>
-                <input
-                  type="checkbox"
-                  checked={renderScale.antiAliasEnabled}
-                  disabled={!renderScale.antiAliasAvailable}
-                  onChange={(event) => {
-                    requestAntiAliasChange(event.currentTarget.checked);
-                  }}
-                />
-              </label>
-            </>
-          ) : null}
+      <div className="quality-control">
+        <input
+          className="quality-slider"
+          type="range"
+          min={renderScaleMinPercent}
+          max={maxRenderScalePercent}
+          step="1"
+          value={draftPercent}
+          onChange={(event) => {
+            const nextPercent = Number(event.currentTarget.value);
+            setDraftPercent(nextPercent);
+            requestRenderScaleChange(nextPercent);
+          }}
+        />
+        <div className="quality-meta">
+          <strong>{renderScale.value}</strong>
+          <span>{renderScale.note}</span>
         </div>
+        {showAdvancedControls ? (
+          <>
+            <label className="quality-toggle">
+              <span>
+                <strong>图形后端</strong>
+                <small>当前 {perfHud.backend} · 切换后自动重载</small>
+              </span>
+              <Select
+                value={graphicsBackendPreference}
+                onValueChange={(value) =>
+                  requestGraphicsBackendPreferenceChange(
+                    value as GraphicsBackendPreference
+                  )
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="auto">自动</SelectItem>
+                  <SelectItem value="webgpu">WebGPU</SelectItem>
+                  <SelectItem value="webgl2">WebGL2</SelectItem>
+                </SelectContent>
+              </Select>
+            </label>
+            <label className="quality-toggle">
+              <span>
+                <strong>后处理抗锯齿</strong>
+                <small>{renderScale.antiAliasSummary} · {renderScale.antiAliasNote}</small>
+              </span>
+              <Switch
+                checked={renderScale.antiAliasEnabled}
+                disabled={!renderScale.antiAliasAvailable}
+                onCheckedChange={(checked) => {
+                  requestAntiAliasChange(checked);
+                }}
+              />
+            </label>
+          </>
+        ) : null}
+      </div>
     </InspectorSection>
   );
 }

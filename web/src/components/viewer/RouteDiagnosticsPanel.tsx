@@ -7,6 +7,20 @@ import {
   requestCopyRouteAnalysisSummary,
   requestDownloadRouteAnalysisJson
 } from '../../ui/commands/viewer-command-bus';
+import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
+
+function resolveStatusVariant(status: string) {
+  if (status === 'completed') {
+    return 'success';
+  }
+
+  if (status === 'manual' || status === 'switch' || status === 'aborted') {
+    return 'muted';
+  }
+
+  return 'default';
+}
 
 function RouteDiagnosticsPanel() {
   const state = useViewerUiStore((store) => store.routeDiagnostics ?? emptyRouteDiagnosticsState);
@@ -28,7 +42,9 @@ function RouteDiagnosticsPanel() {
               <article className="route-log-item" key={item.id}>
                 <div className="route-log-line">
                   <strong>{item.routeName}</strong>
-                  <span className={`route-log-status is-${item.status}`}>{item.statusLabel}</span>
+                  <Badge variant={resolveStatusVariant(item.status)}>
+                    {item.statusLabel}
+                  </Badge>
                 </div>
                 <div className="route-log-meta">{item.meta}</div>
                 <div className="route-log-metrics">
@@ -47,27 +63,27 @@ function RouteDiagnosticsPanel() {
           <strong>{state.analysisSummary}</strong>
         </div>
         <div className="route-analysis-actions">
-          <button
-            className="button tertiary route-analysis-button"
-            type="button"
+          <Button
+            className="route-analysis-button"
             onClick={() => requestCopyRouteAnalysisSummary()}
+            variant="tertiary"
           >
             复制摘要
-          </button>
-          <button
-            className="button tertiary route-analysis-button"
-            type="button"
+          </Button>
+          <Button
+            className="route-analysis-button"
             onClick={() => requestCopyRouteAnalysisJson()}
+            variant="tertiary"
           >
             复制 JSON
-          </button>
-          <button
-            className="button tertiary route-analysis-button"
-            type="button"
+          </Button>
+          <Button
+            className="route-analysis-button"
             onClick={() => requestDownloadRouteAnalysisJson()}
+            variant="tertiary"
           >
             下载 JSON
-          </button>
+          </Button>
         </div>
         <div className="route-analysis-copy-note">{state.copyNote}</div>
 

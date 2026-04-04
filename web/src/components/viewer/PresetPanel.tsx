@@ -1,6 +1,7 @@
 import type { PresetPanelViewState } from '../../ui/state/types';
 import { useViewerUiStore } from '../../ui/state/viewer-ui-store';
 import { requestPresetSelection } from '../../ui/commands/viewer-command-bus';
+import { ItemCardButton } from '../ui/item-card-button';
 
 interface PresetPanelProps {
   initialState: PresetPanelViewState;
@@ -12,15 +13,13 @@ function PresetPanel({ initialState }: PresetPanelProps) {
   return (
     <div className="preset-list">
       {state.items.map((item) => (
-        <button
+        <ItemCardButton
           key={item.id}
-          className={`preset${item.isActive ? ' is-active' : ''}`}
-          type="button"
+          body={item.summary}
+          isActive={item.isActive}
           onClick={() => requestPresetSelection(item.id)}
-        >
-          <strong>{item.name}</strong>
-          <span>{item.summary}</span>
-        </button>
+          title={item.name}
+        />
       ))}
     </div>
   );
