@@ -4,6 +4,8 @@ import {
   requestSetHighlightAuthoringEnabled,
   requestSetHighlightPlaneY
 } from '../../ui/commands/viewer-command-bus';
+import { Button } from '../ui/button';
+import { InspectorSection } from '../ui/inspector-section';
 
 interface HighlightAuthoringSectionProps {
   isOpen: boolean;
@@ -17,37 +19,28 @@ function HighlightAuthoringSection({
   const state = useViewerUiStore((store) => store.highlightAuthoring);
 
   return (
-    <section className="inspector-section" data-panel="highlight-authoring">
-      <button
-        className={`inspector-toggle${isOpen ? ' is-active' : ''}`}
-        type="button"
-        aria-expanded={isOpen}
-        onClick={onToggle}
-      >
-        <span className="section-title">三维打点</span>
-        <span className="toggle-meta">{state.summary}</span>
-      </button>
-      <div
-        className={`inspector-body${isOpen ? ' is-open' : ''}`}
-        data-body="highlight-authoring"
-      >
+    <InspectorSection
+      isOpen={isOpen}
+      onToggle={onToggle}
+      panelId="highlight-authoring"
+      summary={state.summary}
+      title="三维打点"
+    >
         <div className="highlight-authoring-panel">
           <div className="highlight-authoring-actions">
-            <button
-              className={`button ${state.isEnabled ? 'secondary' : 'tertiary'}`}
-              type="button"
+            <Button
+              variant={state.isEnabled ? 'secondary' : 'tertiary'}
               onClick={() => requestSetHighlightAuthoringEnabled(!state.isEnabled)}
             >
               {state.isEnabled ? '退出打点模式' : '进入打点模式'}
-            </button>
-            <button
-              className="button tertiary"
-              type="button"
+            </Button>
+            <Button
+              variant="tertiary"
               disabled={!state.jsonSnippet}
               onClick={() => requestCopyHighlightDraft()}
             >
               复制 JSON
-            </button>
+            </Button>
           </div>
 
           <label className="scene-look-control">
@@ -76,8 +69,7 @@ function HighlightAuthoringSection({
           </pre>
           <div className="highlight-authoring-copy-note">{state.copyNote}</div>
         </div>
-      </div>
-    </section>
+    </InspectorSection>
   );
 }
 

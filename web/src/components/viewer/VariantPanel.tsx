@@ -1,6 +1,7 @@
 import type { VariantPanelViewState } from '../../ui/state/types';
 import { useViewerUiStore } from '../../ui/state/viewer-ui-store';
 import { requestVariantSelection } from '../../ui/commands/viewer-command-bus';
+import { InspectorSection } from '../ui/inspector-section';
 
 interface VariantPanelProps {
   initialState: VariantPanelViewState;
@@ -12,17 +13,14 @@ function VariantPanel({ initialState, isOpen, onToggle }: VariantPanelProps) {
   const state = useViewerUiStore((store) => store.variantPanel ?? initialState);
 
   return (
-    <section className="inspector-section variant-section" data-panel="variants">
-      <button
-        className={`inspector-toggle${isOpen ? ' is-active' : ''}`}
-        type="button"
-        aria-expanded={isOpen}
-        onClick={onToggle}
-      >
-        <span className="section-title">模型版本</span>
-        <span className="toggle-meta">{state.summary}</span>
-      </button>
-      <div className={`inspector-body${isOpen ? ' is-open' : ''}`} data-body="variants">
+    <InspectorSection
+      className="variant-section"
+      isOpen={isOpen}
+      onToggle={onToggle}
+      panelId="variants"
+      summary={state.summary}
+      title="模型版本"
+    >
         <div className="variant-list">
           {state.items.map((item) => (
             <button
@@ -39,8 +37,7 @@ function VariantPanel({ initialState, isOpen, onToggle }: VariantPanelProps) {
             </button>
           ))}
         </div>
-      </div>
-    </section>
+    </InspectorSection>
   );
 }
 

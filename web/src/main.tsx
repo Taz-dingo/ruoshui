@@ -6,10 +6,60 @@ import { App } from './app/App';
 import { createViewerConfig } from './app/viewer-config';
 import type { ViewerContent } from './content/types';
 
+const viewerUiModeStorageKey = 'ruoshui-viewer-ui-mode-v1';
 const appElement = document.getElementById('app');
 
 if (!appElement) {
   throw new Error('Missing #app root');
+}
+
+type ViewerUiMode = 'auto' | 'dev' | 'prod';
+
+function parseViewerUiMode(value: string | null): ViewerUiMode | null {
+  if (value === 'auto' || value === 'dev' || value === 'prod') {
+    return value;
+  }
+
+  return null;
+}
+
+function readStoredViewerUiMode(runtimeWindow: Window) {
+  try {
+    return parseViewerUiMode(
+      runtimeWindow.localStorage.getItem(viewerUiModeStorageKey)
+    );
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredViewerUiMode(
+  runtimeWindow: Window,
+  mode: ViewerUiMode
+) {
+  try {
+    runtimeWindow.localStorage.setItem(viewerUiModeStorageKey, mode);
+  } catch {
+    // ignore storage write failures
+  }
+}
+
+function resolveViewerUiFlags(runtimeWindow: Window, isDev: boolean) {
+  const searchParams = new URL(runtimeWindow.location.href).searchParams;
+  const queryMode = parseViewerUiMode(searchParams.get('ui'));
+
+  if (queryMode) {
+    writeStoredViewerUiMode(runtimeWindow, queryMode);
+  }
+
+  const storedMode = readStoredViewerUiMode(runtimeWindow);
+  const mode = queryMode ?? storedMode ?? 'auto';
+  const showDevUi = mode === 'dev' || (mode === 'auto' && isDev);
+
+  return {
+    showExperimentalControls: showDevUi,
+    showPerfHud: showDevUi
+  };
 }
 
 const data = await fetch('/content/mvp.json').then(async (response): Promise<ViewerContent> => {
@@ -21,11 +71,12 @@ const data = await fetch('/content/mvp.json').then(async (response): Promise<Vie
 });
 
 const sceneContainerRef = createRef<HTMLDivElement>();
+const viewerUiFlags = resolveViewerUiFlags(window, import.meta.env.DEV);
 const viewerConfig = createViewerConfig({
   data,
   runtimeWindow: window,
-  showExperimentalControls: import.meta.env.DEV,
-  showPerfHud: import.meta.env.DEV
+  showExperimentalControls: viewerUiFlags.showExperimentalControls,
+  showPerfHud: viewerUiFlags.showPerfHud
 });
 
 const root = ReactDOM.createRoot(appElement);

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 import { useViewerUiStore } from '../../ui/state/viewer-ui-store';
 import { requestSceneLookChange } from '../../ui/commands/viewer-command-bus';
+import { InspectorSection } from '../ui/inspector-section';
 
 interface SceneLookSectionProps {
   isOpen: boolean;
@@ -29,20 +30,13 @@ function SceneLookSection({ isOpen, onToggle }: SceneLookSectionProps) {
   ]);
 
   return (
-    <section className="inspector-section" data-panel="scene-look">
-      <button
-        className={`inspector-toggle${isOpen ? ' is-active' : ''}`}
-        type="button"
-        aria-expanded={isOpen}
-        onClick={onToggle}
-      >
-        <span className="section-title">画面表现</span>
-        <span className="toggle-meta">{sceneLook.summary}</span>
-      </button>
-      <div
-        className={`inspector-body${isOpen ? ' is-open' : ''}`}
-        data-body="scene-look"
-      >
+    <InspectorSection
+      isOpen={isOpen}
+      onToggle={onToggle}
+      panelId="scene-look"
+      summary={sceneLook.summary}
+      title="画面表现"
+    >
         <div className="scene-look-controls">
           <label className="scene-look-control">
             <span>亮度</span>
@@ -108,8 +102,7 @@ function SceneLookSection({ isOpen, onToggle }: SceneLookSectionProps) {
             <strong>{sceneLook.saturationValue}</strong>
           </label>
         </div>
-      </div>
-    </section>
+    </InspectorSection>
   );
 }
 
