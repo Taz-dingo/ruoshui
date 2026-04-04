@@ -469,83 +469,7 @@
     color: var(--muted);
   }
 
-  .button {
-    @apply cursor-pointer appearance-none rounded-full border border-transparent px-[13px] py-[9px] text-[12px] transition-[transform,border-color,background-color,color] duration-180 ease-out;
-  }
-
-  .button.primary {
-    background: var(--accent);
-    color: #2a221a;
-  }
-
-  .button.secondary {
-    border-color: var(--line);
-    background: rgba(244, 236, 222, 0.04);
-    color: var(--text);
-  }
-
-  .button.tertiary {
-    border-color: rgba(168, 201, 125, 0.22);
-    background: rgba(168, 201, 125, 0.08);
-    color: var(--accent-strong);
-  }
-
-  .button:hover {
-    @apply -translate-y-px;
-  }
-
-  .button:disabled {
-    @apply cursor-wait opacity-60;
-    transform: none;
-  }
-
-  .meta-panel {
-    @apply rounded-[18px] p-3.5 opacity-95;
-  }
-
-  .status-strip {
-    @apply flex w-full items-center gap-3 border-b border-transparent pb-3;
-  }
-
-  .meta-panel:hover .status-strip,
-  .meta-panel:focus-within .status-strip {
-    border-bottom-color: rgba(231, 218, 198, 0.1);
-  }
-
-  .status-dot {
-    @apply h-2.5 w-2.5 rounded-full;
-    background: var(--accent);
-    box-shadow: 0 0 0 10px rgba(168, 201, 125, 0.1);
-  }
-
-  .status-copy {
-    @apply flex-1;
-  }
-
-  .status-copy strong {
-    @apply block text-[14px];
-  }
-
-  .status-copy span {
-    @apply mt-0.5 block text-[13px];
-    color: var(--muted);
-  }
-
-  .stats {
-    @apply grid w-full gap-2 pt-3;
-  }
-
-  .compact-stats {
-    @apply grid-cols-2 gap-2.5;
-  }
-
-  .stat-card {
-    @apply grid min-w-0 gap-1;
-  }
-
-  .stat-card span,
-  .metric-card span,
-  .camera-card span,
+  .info-field-label,
   .route-head span,
   .route-log-head span,
   .route-analysis-head span {
@@ -553,9 +477,8 @@
     color: rgba(231, 218, 198, 0.58);
   }
 
-  .stat-card strong,
-  .metric-card strong {
-    @apply text-[13px] font-semibold;
+  .info-field-value {
+    @apply text-[11px] leading-[1.45] font-semibold;
     color: var(--text);
   }
 
@@ -697,22 +620,16 @@
   .route-log-meta,
   .route-log-metrics,
   .route-analysis-meta,
-  .memory-body,
   .quality-meta span {
     @apply text-[10px] leading-[1.45];
     color: var(--muted);
-  }
-
-  .memory-body {
-    @apply mt-3 text-[12px];
   }
 
   .route-log-empty,
   .route-log-item,
   .route-analysis-empty,
   .route-analysis-item,
-  .route-hotspot-item,
-  .camera-card {
+  .route-hotspot-item {
     @apply rounded-[14px] border px-3 py-2.5;
     border-color: rgba(231, 218, 198, 0.08);
     background: rgba(244, 236, 222, 0.03);
@@ -739,24 +656,6 @@
     @apply text-[11px];
   }
 
-  .route-log-status {
-    @apply rounded-full px-[7px] py-[2px] text-[9px] uppercase tracking-[0.04em];
-    color: rgba(231, 218, 198, 0.74);
-    background: rgba(244, 236, 222, 0.06);
-  }
-
-  .route-log-status.is-completed {
-    background: rgba(168, 201, 125, 0.88);
-    color: #243019;
-  }
-
-  .route-log-status.is-manual,
-  .route-log-status.is-switch,
-  .route-log-status.is-aborted {
-    background: rgba(122, 88, 61, 0.42);
-    color: rgba(231, 218, 198, 0.82);
-  }
-
   .route-analysis-line span {
     @apply text-right text-[10px] leading-[1.4];
   }
@@ -780,8 +679,7 @@
     color: var(--muted);
   }
 
-  .camera-grid,
-  .metrics-grid {
+  .camera-grid {
     @apply grid grid-cols-2 gap-2.5;
   }
 
@@ -834,19 +732,6 @@
   .minimap-target-dot,
   .minimap-landmark-dot {
     fill: rgba(168, 201, 125, 0.95);
-  }
-
-  .metrics-grid {
-    @apply mt-3 grid-cols-3;
-  }
-
-  .camera-card {
-    @apply grid gap-[5px] rounded-[14px];
-  }
-
-  .camera-card strong {
-    @apply text-[11px] leading-[1.45] font-semibold;
-    color: var(--text);
   }
 
   .quality-slider {
@@ -908,10 +793,6 @@
   .scene-look-control strong {
     @apply text-[12px] font-semibold;
     color: var(--accent-strong);
-  }
-
-  .metric-card {
-    @apply grid min-w-0 gap-[5px];
   }
 
   @keyframes ruoshui-loading-spin {
@@ -1026,7 +907,6 @@
 
     .variant-list,
     .camera-grid,
-    .metrics-grid,
     .route-analysis-actions,
     .route-batch-actions {
       @apply grid-cols-1;
