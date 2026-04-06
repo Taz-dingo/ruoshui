@@ -18,4 +18,12 @@ interface Window {
     runVariantRoute: (options?: any) => Promise<any>;
     waitForIdle: () => Promise<any>;
   };
+  __ruoshuiViewCapture?: {
+    latest: () => unknown;
+    clear: () => void;
+    captureCurrent: () => Promise<unknown>;
+    capturePresets: () => Promise<unknown>;
+    captureSweep: () => Promise<unknown>;
+    downloadJson: () => void;
+  };
 }

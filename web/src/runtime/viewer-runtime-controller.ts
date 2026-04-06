@@ -12,6 +12,7 @@ import type { GraphicsBackendPreference } from "./bootstrap";
 
 interface CreateViewerRuntimeControllerArgs {
   pc: any;
+  enableCanvasCapture?: boolean;
   firstPreset: any;
   runtimeWindow: Window;
   runtimeDocument: Document;
@@ -40,6 +41,7 @@ interface CreateViewerRuntimeControllerArgs {
 
 function createViewerRuntimeController({
   pc,
+  enableCanvasCapture = false,
   firstPreset,
   runtimeWindow,
   runtimeDocument,
@@ -116,6 +118,7 @@ function createViewerRuntimeController({
     return createViewerRuntime({
       pc,
       canvasElement,
+      enableCanvasCapture,
       variant,
       timings,
       runtimeWindow,

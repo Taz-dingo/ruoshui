@@ -24,6 +24,7 @@ interface ViewerConfig {
   benchmarkRoutes: BenchmarkRoute[];
   benchmarkRoutesById: Map<string, BenchmarkRoute>;
   defaultVariant: ViewerVariant;
+  enableCanvasCapture: boolean;
   firstPreset: CameraPreset;
   graphicsBackendPreference: GraphicsBackendPreference;
   initialPresetPanel: PresetPanelViewState;
@@ -138,6 +139,7 @@ function createViewerConfig({
       benchmarkRoutes.map((route) => [route.id, route])
     ),
     defaultVariant,
+    enableCanvasCapture: showExperimentalControls,
     firstPreset,
     graphicsBackendPreference: loadGraphicsBackendPreference(runtimeWindow),
     initialPresetPanel: buildInitialPresetPanel(data, firstPreset),

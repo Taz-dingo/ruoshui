@@ -20,6 +20,22 @@ interface DownloadRouteAnalysisJsonCommand {
   type: 'download-route-analysis-json';
 }
 
+interface CaptureCurrentViewSampleCommand {
+  type: 'capture-current-view-sample';
+}
+
+interface CapturePresetViewSamplesCommand {
+  type: 'capture-preset-view-samples';
+}
+
+interface DownloadViewCaptureJsonCommand {
+  type: 'download-view-capture-json';
+}
+
+interface ClearViewCaptureCommand {
+  type: 'clear-view-capture';
+}
+
 interface GraphicsBackendPreferenceChangeCommand {
   type: 'set-graphics-backend-preference';
   preference: 'auto' | 'webgl2' | 'webgpu';
@@ -81,7 +97,11 @@ type ViewerCommand =
   | CopyRouteAnalysisSummaryCommand
   | CopyHighlightDraftCommand
   | CaptureHighlightPointCommand
+  | CaptureCurrentViewSampleCommand
+  | CapturePresetViewSamplesCommand
+  | ClearViewCaptureCommand
   | DownloadRouteAnalysisJsonCommand
+  | DownloadViewCaptureJsonCommand
   | GraphicsBackendPreferenceChangeCommand
   | RenderScaleChangeCommand
   | RunCurrentRouteBenchmarkCommand
@@ -131,8 +151,24 @@ function requestCaptureHighlightPoint(clientX: number, clientY: number) {
   });
 }
 
+function requestCaptureCurrentViewSample() {
+  emitViewerCommand({ type: 'capture-current-view-sample' });
+}
+
+function requestCapturePresetViewSamples() {
+  emitViewerCommand({ type: 'capture-preset-view-samples' });
+}
+
+function requestClearViewCapture() {
+  emitViewerCommand({ type: 'clear-view-capture' });
+}
+
 function requestDownloadRouteAnalysisJson() {
   emitViewerCommand({ type: 'download-route-analysis-json' });
+}
+
+function requestDownloadViewCaptureJson() {
+  emitViewerCommand({ type: 'download-view-capture-json' });
 }
 
 function requestGraphicsBackendPreferenceChange(
@@ -210,11 +246,15 @@ function requestVariantSelection(variantId: string) {
 
 export {
   requestAntiAliasChange,
+  requestCaptureCurrentViewSample,
   requestCaptureHighlightPoint,
+  requestCapturePresetViewSamples,
+  requestClearViewCapture,
   requestCopyHighlightDraft,
   requestCopyRouteAnalysisJson,
   requestCopyRouteAnalysisSummary,
   requestDownloadRouteAnalysisJson,
+  requestDownloadViewCaptureJson,
   requestGraphicsBackendPreferenceChange,
   requestPresetSelection,
   requestRenderScaleChange,

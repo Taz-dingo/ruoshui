@@ -43,6 +43,7 @@ import {
   installViewerStartupBindings
 } from '../ui/controllers/viewer-startup-controller';
 import { createViewerShellController } from '../ui/controllers/viewer-shell-controller';
+import { createViewCaptureController } from '../capture/view-capture-controller';
 import {
   clearViewerLoading,
   setPresetPanelSummary,
@@ -153,6 +154,7 @@ async function initializeViewer({
 
   const viewerRuntimeController = createViewerRuntimeController({
     pc,
+    enableCanvasCapture: viewerConfig.enableCanvasCapture,
     firstPreset: viewerConfig.firstPreset,
     graphicsBackendPreference: viewerConfig.graphicsBackendPreference,
     runtimeWindow: window,
@@ -244,6 +246,19 @@ async function initializeViewer({
     runCurrentVariantRouteBenchmark,
     runRouteBenchmarkSuite
   } = routeBenchmarkController;
+
+  const viewCaptureController = createViewCaptureController({
+    highlights: data.highlights ?? [],
+    presets: data.presets,
+    sceneMiniMap: data.scene.miniMap,
+    variantsById: viewerConfig.variantsById,
+    getRuntime: session.getRuntime,
+    getActiveVariantId: session.getActiveVariantId,
+    moveCamera,
+    captureCurrentView,
+    restoreCurrentView,
+    setStatus: setViewerStatus
+  });
 
   const variantOrchestrationController = createVariantOrchestrationController({
     pc,
@@ -377,9 +392,12 @@ async function initializeViewer({
     activatePreset,
     activateVariant,
     activateBenchmarkRoute,
+    captureCurrentViewSample: () => viewCaptureController.captureCurrentSample(),
+    capturePresetViewSamples: () => viewCaptureController.capturePresetSamples(),
     runCurrentVariantRouteBenchmark,
     runRouteBenchmarkSuite,
     captureHighlightPoint,
+    clearViewCapture: () => viewCaptureController.clearRecords(),
     copyHighlightDraft,
     copyLatestRouteAnalysisSummary: () =>
       routeDiagnosticsController.copyLatestRouteAnalysis('summary'),
@@ -387,6 +405,7 @@ async function initializeViewer({
       routeDiagnosticsController.copyLatestRouteAnalysis('json'),
     downloadLatestRouteAnalysisJson: () =>
       routeDiagnosticsController.downloadLatestRouteAnalysisJson(),
+    downloadViewCaptureJson: () => viewCaptureController.downloadJson(),
     activateRenderScale,
     setGraphicsBackendPreference,
     setAntiAliasEnabled,
@@ -415,6 +434,8 @@ async function initializeViewer({
     setLoading: setViewerLoading,
     setStatus: setViewerStatus
   });
+  viewCaptureController.installBridge();
+  viewCaptureController.publishState();
   publishHighlightAuthoringState();
 
   await activateVariant(viewerConfig.defaultVariant.id, true);

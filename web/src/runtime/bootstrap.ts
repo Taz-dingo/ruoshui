@@ -4,6 +4,7 @@ import { createLoopController } from './lifecycle';
 interface CreateRuntimeAppArgs {
   pc: any;
   canvasElement: HTMLCanvasElement;
+  enableCanvasCapture?: boolean;
   graphicsBackendPreference: GraphicsBackendPreference;
   runtimeWindow: Window;
   renderScalePercent: number;
@@ -46,6 +47,7 @@ interface BindRuntimeVisibilityArgs {
 async function createRuntimeApp({
   pc,
   canvasElement,
+  enableCanvasCapture = false,
   graphicsBackendPreference,
   runtimeWindow,
   renderScalePercent,
@@ -59,6 +61,7 @@ async function createRuntimeApp({
   const graphicsDeviceOptions = {
     alpha: false,
     antialias: false,
+    preserveDrawingBuffer: enableCanvasCapture,
     powerPreference: 'high-performance',
     deviceTypes
   };

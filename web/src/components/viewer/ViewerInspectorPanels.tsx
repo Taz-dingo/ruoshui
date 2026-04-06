@@ -4,6 +4,7 @@ import { RenderScaleSection } from './RenderScaleSection';
 import { SceneLookSection } from './SceneLookSection';
 import { VariantPanel } from './VariantPanel';
 import { CameraPanel } from './CameraPanel';
+import { ViewCaptureSection } from './ViewCaptureSection';
 import type { ViewerConfig } from '../../app/viewer-config';
 
 interface ViewerInspectorPanelsProps {
@@ -48,6 +49,10 @@ function ViewerInspectorPanels({
           <CameraPanel
             isOpen={activeInspectorPanel === 'camera'}
             onToggle={() => onTogglePanel('camera')}
+          />
+          <ViewCaptureSection
+            isOpen={activeInspectorPanel === 'view-capture'}
+            onToggle={() => onTogglePanel('view-capture')}
           />
         </>
       ) : null}

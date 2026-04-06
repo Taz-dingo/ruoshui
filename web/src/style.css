@@ -308,11 +308,13 @@
   }
 
   .highlight-authoring-panel,
-  .highlight-authoring-meta {
+  .highlight-authoring-meta,
+  .view-capture-panel {
     @apply grid gap-2;
   }
 
-  .highlight-authoring-actions {
+  .highlight-authoring-actions,
+  .view-capture-actions {
     @apply grid grid-cols-2 gap-2;
   }
 
@@ -323,8 +325,29 @@
 
   .highlight-authoring-meta span,
   .highlight-authoring-note,
-  .highlight-authoring-copy-note {
+  .highlight-authoring-copy-note,
+  .view-capture-note {
     @apply text-[11px] leading-[1.5];
+    color: var(--muted);
+  }
+
+  .view-capture-list {
+    @apply grid gap-2;
+  }
+
+  .view-capture-item {
+    @apply grid gap-1 rounded-[14px] border px-3 py-2.5;
+    border-color: rgba(231, 218, 198, 0.08);
+    background: rgba(244, 236, 222, 0.03);
+  }
+
+  .view-capture-item strong {
+    @apply text-[11px] font-semibold;
+    color: var(--text);
+  }
+
+  .view-capture-item span {
+    @apply text-[10px] leading-[1.45];
     color: var(--muted);
   }
 

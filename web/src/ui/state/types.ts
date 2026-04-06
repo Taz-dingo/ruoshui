@@ -187,6 +187,21 @@ interface RouteControlsViewState {
   items: RouteControlItemView[];
 }
 
+interface ViewCaptureItemView {
+  id: string;
+  label: string;
+  variantName: string;
+  presetId: string | null;
+}
+
+interface ViewCaptureViewState {
+  summary: string;
+  note: string;
+  isRunning: boolean;
+  itemCount: number;
+  items: ViewCaptureItemView[];
+}
+
 export type {
   HighlightAuthoringViewState,
   CameraViewState,
@@ -207,6 +222,8 @@ export type {
   SceneMetaViewState,
   SceneMetricsViewState,
   StatusViewState,
+  ViewCaptureItemView,
+  ViewCaptureViewState,
   VariantPanelItemView,
   VariantPanelViewState
 };
