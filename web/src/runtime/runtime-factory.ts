@@ -36,6 +36,7 @@ import type { SceneLookSettings } from './scene-look';
 interface CreateViewerRuntimeArgs {
   pc: any;
   canvasElement: HTMLCanvasElement;
+  enableCanvasCapture?: boolean;
   variant: ViewerVariant;
   timings?: any;
   runtimeWindow: Window;
@@ -61,6 +62,7 @@ interface CreateViewerRuntimeArgs {
 async function createViewerRuntime({
   pc,
   canvasElement,
+  enableCanvasCapture = false,
   variant,
   timings = {},
   runtimeWindow,
@@ -85,6 +87,7 @@ async function createViewerRuntime({
   const { app, graphicsBackend, performanceMode, loopController } = await createRuntimeApp({
     pc,
     canvasElement,
+    enableCanvasCapture,
     graphicsBackendPreference,
     runtimeWindow,
     renderScalePercent,

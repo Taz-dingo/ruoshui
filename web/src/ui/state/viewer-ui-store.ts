@@ -14,6 +14,7 @@ import type {
   SceneMetaViewState,
   SceneMetricsViewState,
   StatusViewState,
+  ViewCaptureViewState,
   VariantPanelViewState
 } from './types';
 
@@ -29,6 +30,7 @@ interface ViewerUiStoreState {
   sceneMeta: SceneMetaViewState;
   sceneMetrics: SceneMetricsViewState;
   status: StatusViewState;
+  viewCapture: ViewCaptureViewState;
   variantPanel: VariantPanelViewState | null;
   presetPanel: PresetPanelViewState | null;
   routeControls: RouteControlsViewState | null;
@@ -43,6 +45,7 @@ interface ViewerUiStoreState {
   setSceneMeta: (sceneMeta: SceneMetaViewState) => void;
   setSceneMetrics: (sceneMetrics: SceneMetricsViewState) => void;
   setStatus: (status: StatusViewState) => void;
+  setViewCapture: (viewCapture: ViewCaptureViewState) => void;
   setVariantPanel: (variantPanel: VariantPanelViewState) => void;
   setPresetPanel: (presetPanel: PresetPanelViewState) => void;
   setRouteControls: (routeControls: RouteControlsViewState) => void;
@@ -146,6 +149,14 @@ const emptyPerfHudState: PerfHudViewState = {
   gpu: '检测中'
 };
 
+const emptyViewCaptureState: ViewCaptureViewState = {
+  summary: '未采集',
+  note: '移动到想看的位置后，可采当前视角；也可以自动跑完整个预设序列。',
+  isRunning: false,
+  itemCount: 0,
+  items: []
+};
+
 const useViewerUiStore = create<ViewerUiStoreState>((set) => ({
   camera: emptyCameraState,
   highlightAuthoring: emptyHighlightAuthoringState,
@@ -158,6 +169,7 @@ const useViewerUiStore = create<ViewerUiStoreState>((set) => ({
   sceneMeta: emptySceneMetaState,
   sceneMetrics: emptySceneMetricsState,
   status: emptyStatusState,
+  viewCapture: emptyViewCaptureState,
   variantPanel: null,
   presetPanel: null,
   routeControls: null,
@@ -172,6 +184,7 @@ const useViewerUiStore = create<ViewerUiStoreState>((set) => ({
   setSceneMeta: (sceneMeta) => set({ sceneMeta }),
   setSceneMetrics: (sceneMetrics) => set({ sceneMetrics }),
   setStatus: (status) => set({ status }),
+  setViewCapture: (viewCapture) => set({ viewCapture }),
   setVariantPanel: (variantPanel) => set({ variantPanel }),
   setPresetPanel: (presetPanel) => set({ presetPanel }),
   setRouteControls: (routeControls) => set({ routeControls })
@@ -189,5 +202,6 @@ export {
   emptySceneMetaState,
   emptySceneMetricsState,
   emptyStatusState,
+  emptyViewCaptureState,
   useViewerUiStore
 };

@@ -11,13 +11,17 @@ interface InstallViewerStartupBindingsArgs {
   activatePreset: (presetId: string) => void;
   activateVariant: (variantId: string) => void | Promise<unknown>;
   activateBenchmarkRoute: (routeId: string) => void;
+  captureCurrentViewSample: () => void | Promise<unknown>;
+  capturePresetViewSamples: () => void | Promise<unknown>;
   runCurrentVariantRouteBenchmark: () => void | Promise<unknown>;
   runRouteBenchmarkSuite: () => void | Promise<unknown>;
   captureHighlightPoint: (clientX: number, clientY: number) => void;
+  clearViewCapture: () => void;
   copyHighlightDraft: () => void | Promise<unknown>;
   copyLatestRouteAnalysisSummary: () => void | Promise<unknown>;
   copyLatestRouteAnalysisJson: () => void | Promise<unknown>;
   downloadLatestRouteAnalysisJson: () => void;
+  downloadViewCaptureJson: () => void;
   activateRenderScale: (nextPercent: number) => void;
   setGraphicsBackendPreference: (preference: GraphicsBackendPreference) => void;
   setAntiAliasEnabled: (enabled: boolean) => void;
@@ -51,13 +55,17 @@ function installViewerStartupBindings({
   activatePreset,
   activateVariant,
   activateBenchmarkRoute,
+  captureCurrentViewSample,
+  capturePresetViewSamples,
   runCurrentVariantRouteBenchmark,
   runRouteBenchmarkSuite,
   captureHighlightPoint,
+  clearViewCapture,
   copyHighlightDraft,
   copyLatestRouteAnalysisSummary,
   copyLatestRouteAnalysisJson,
   downloadLatestRouteAnalysisJson,
+  downloadViewCaptureJson,
   activateRenderScale,
   setGraphicsBackendPreference,
   setAntiAliasEnabled,
@@ -88,8 +96,20 @@ function installViewerStartupBindings({
       case 'capture-highlight-point':
         captureHighlightPoint(command.clientX, command.clientY);
         return;
+      case 'capture-current-view-sample':
+        void captureCurrentViewSample();
+        return;
+      case 'capture-preset-view-samples':
+        void capturePresetViewSamples();
+        return;
+      case 'clear-view-capture':
+        clearViewCapture();
+        return;
       case 'download-route-analysis-json':
         downloadLatestRouteAnalysisJson();
+        return;
+      case 'download-view-capture-json':
+        downloadViewCaptureJson();
         return;
       case 'set-render-scale':
         activateRenderScale(command.value);
