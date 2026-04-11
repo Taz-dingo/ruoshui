@@ -15,14 +15,17 @@ function HeroPanel({
 
   return (
     <div className={`hero${compact ? ' is-compact' : ''}`}>
-      {!compact ? (
-        <div className="hero-topline">
-          <span className="hero-status">{status.title}</span>
-        </div>
-      ) : null}
-      <h1>{title}</h1>
-      <p className="hero-subtitle">{subtitle}</p>
-      {compact ? null : <p className="hero-note">{status.detail}</p>}
+      <div className="hero-inner">
+        {!compact ? (
+          <div className="hero-topline">
+            <span className="hero-status">{status.title}</span>
+            <span className="hero-rule" aria-hidden="true" />
+          </div>
+        ) : null}
+        <h1>{title}</h1>
+        <p className="hero-subtitle">{subtitle}</p>
+        {compact ? null : <p className="hero-note">{status.detail}</p>}
+      </div>
     </div>
   );
 }

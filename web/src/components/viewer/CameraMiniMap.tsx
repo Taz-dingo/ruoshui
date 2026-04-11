@@ -1,7 +1,11 @@
-import type { MiniMapConfig } from '../../content/types';
+import type {
+  MiniMapConfig,
+  MiniMapImageTransform
+} from '../../content/types';
 
 interface CameraMiniMapProps {
   map: MiniMapConfig;
+  imageTransform?: MiniMapImageTransform;
   position: [number, number, number] | null;
   target: [number, number, number] | null;
   visibleGroundPolygon: [number, number, number][];
@@ -15,13 +19,14 @@ const radius = 84;
 
 function CameraMiniMap({
   map,
+  imageTransform,
   position,
   target,
   visibleGroundPolygon,
   yawDeg,
   distance
 }: CameraMiniMapProps) {
-  const bounds = normalizeBounds(map);
+  const bounds = resolveDisplayBounds(map);
   const fallbackAnchor: [number, number, number] = [
     (bounds.minX + bounds.maxX) * 0.5,
     0,
@@ -32,14 +37,44 @@ function CameraMiniMap({
   const safeYawDeg = Number.isFinite(yawDeg) ? yawDeg : 0;
   const safeDistance = Number.isFinite(distance) ? distance : null;
   const safePolygon = visibleGroundPolygon.filter(isFiniteVec3);
-  const scale = resolveMapScale(anchor, safeTarget, safePolygon, bounds, safeDistance);
-  const mapFrame = resolveMapFrame(bounds, anchor, scale);
-  const targetPoint = safeTarget
-    ? projectPointAroundAnchor(safeTarget, anchor, scale)
-    : projectPointAroundAnchor(resolveFallbackTarget(anchor, safeYawDeg), anchor, scale);
-  const visibleGroundPath = buildPolygonPath(
-    safePolygon.map((point) => projectPointAroundAnchor(point, anchor, scale))
+  const resolvedImageTransform = normalizeImageTransform(
+    map.imageTransform,
+    imageTransform,
+    map.northAngleDeg
   );
+  const projectionOptions = {
+    invertWorldX: resolvedImageTransform.invertWorldX,
+    invertWorldZ: resolvedImageTransform.invertWorldZ
+  };
+  const scale = resolveMapScale(anchor, safeTarget, safePolygon, bounds, safeDistance);
+  const mapFrame = resolveMapFrame(map, bounds, anchor, scale, projectionOptions);
+  const mapFrameCenterX = mapFrame.x + mapFrame.width * 0.5;
+  const mapFrameCenterY = mapFrame.y + mapFrame.height * 0.5;
+  const targetPoint = safeTarget
+    ? projectPointAroundAnchor(safeTarget, anchor, scale, projectionOptions)
+    : projectPointAroundAnchor(
+        resolveFallbackTarget(anchor, safeYawDeg),
+        anchor,
+        scale,
+        projectionOptions
+      );
+  const visibleGroundPath = buildPolygonPath(
+    safePolygon.map((point) =>
+      projectPointAroundAnchor(point, anchor, scale, projectionOptions)
+    )
+  );
+  const projectedLandmarks = (map.landmarks ?? [])
+    .map((landmark) => ({
+      id: landmark.id,
+      name: landmark.name,
+      point: projectPointAroundAnchor(
+        [landmark.x, 0, landmark.z],
+        anchor,
+        scale,
+        projectionOptions
+      )
+    }))
+    .filter(({ point }) => isPointInsideCircle(point));
 
   return (
     <div className="minimap-card" aria-label="若水广场当前相机顶视图">
@@ -58,16 +93,52 @@ function CameraMiniMap({
         <g clipPath="url(#ruoshui-minimap-circle)">
           <circle className="minimap-bg" cx={center} cy={center} r={radius} />
           {map.imageUrl ? (
-            <image
-              href={map.imageUrl}
-              x={mapFrame.x}
-              y={mapFrame.y}
-              width={mapFrame.width}
-              height={mapFrame.height}
-              preserveAspectRatio="none"
-            />
+            <g
+              transform={`translate(${resolvedImageTransform.translateX} ${resolvedImageTransform.translateY})`}
+            >
+              <g
+                transform={[
+                  `translate(${mapFrameCenterX} ${mapFrameCenterY})`,
+                  `rotate(${resolvedImageTransform.rotationDeg})`,
+                  `scale(${resolvedImageTransform.scaleX} ${resolvedImageTransform.scaleY})`,
+                  `translate(${-mapFrameCenterX} ${-mapFrameCenterY})`
+                ].join(' ')}
+              >
+                <image
+                  className="minimap-image"
+                  href={map.imageUrl}
+                  x={mapFrame.x}
+                  y={mapFrame.y}
+                  width={mapFrame.width}
+                  height={mapFrame.height}
+                  preserveAspectRatio="xMidYMid meet"
+                />
+              </g>
+            </g>
           ) : null}
-          <circle className="minimap-image-tint" cx={center} cy={center} r={radius} />
+          {projectedLandmarks.map((landmark) => (
+            <g className="minimap-landmark" key={landmark.id}>
+              <circle
+                className="minimap-landmark-ring"
+                cx={landmark.point.x}
+                cy={landmark.point.y}
+                r="5.5"
+              />
+              <circle
+                className="minimap-landmark-dot"
+                cx={landmark.point.x}
+                cy={landmark.point.y}
+                r="2.5"
+              />
+              <text
+                className="minimap-landmark-label"
+                x={landmark.point.x + 7}
+                y={landmark.point.y - 7}
+              >
+                {landmark.name}
+              </text>
+            </g>
+          ))}
           {visibleGroundPath ? (
             <path className="minimap-footprint" d={visibleGroundPath} />
           ) : null}
@@ -87,7 +158,7 @@ function CameraMiniMap({
           <circle className="minimap-camera-ring" cx={center} cy={center} r="10" />
           <circle className="minimap-camera-dot" cx={center} cy={center} r="4.5" />
         </g>
-
+        <circle className="minimap-frame" cx={center} cy={center} r={radius} />
       </svg>
     </div>
   );
@@ -126,18 +197,29 @@ function resolveMapScale(
 }
 
 function resolveMapFrame(
+  map: MiniMapConfig,
   bounds: ReturnType<typeof normalizeBounds>,
   anchor: [number, number, number],
-  scale: number
+  scale: number,
+  options?: ProjectionOptions
 ) {
-  const width = (bounds.maxX - bounds.minX) * scale;
-  const height = (bounds.maxZ - bounds.minZ) * scale;
+  const contentRect = normalizeContentRect(map.contentRect);
+  const projectedMinX = projectMapX(bounds.minX, anchor[0], scale, options);
+  const projectedMaxX = projectMapX(bounds.maxX, anchor[0], scale, options);
+  const projectedMinY = projectMapY(bounds.minZ, anchor[2], scale, options);
+  const projectedMaxY = projectMapY(bounds.maxZ, anchor[2], scale, options);
+  const contentLeft = Math.min(projectedMinX, projectedMaxX);
+  const contentTop = Math.min(projectedMinY, projectedMaxY);
+  const contentWidth = Math.abs(projectedMaxX - projectedMinX);
+  const contentHeight = Math.abs(projectedMaxY - projectedMinY);
+  const imageWidth = contentWidth / contentRect.width;
+  const imageHeight = contentHeight / contentRect.height;
 
   return {
-    x: safeNumber(center + (bounds.minX - anchor[0]) * scale, center - radius),
-    y: safeNumber(center - (bounds.maxZ - anchor[2]) * scale, center - radius),
-    width: safeNumber(width, radius * 2),
-    height: safeNumber(height, radius * 2)
+    x: safeNumber(contentLeft - imageWidth * contentRect.x, center - radius),
+    y: safeNumber(contentTop - imageHeight * contentRect.y, center - radius),
+    width: safeNumber(imageWidth, radius * 2),
+    height: safeNumber(imageHeight, radius * 2)
   };
 }
 
@@ -156,12 +238,38 @@ function resolveFallbackTarget(
 function projectPointAroundAnchor(
   point: [number, number, number],
   anchor: [number, number, number],
-  scale: number
+  scale: number,
+  options?: ProjectionOptions
 ) {
   return {
-    x: safeNumber(center + (point[0] - anchor[0]) * scale, center),
-    y: safeNumber(center - (point[2] - anchor[2]) * scale, center)
+    x: safeNumber(projectMapX(point[0], anchor[0], scale, options), center),
+    y: safeNumber(projectMapY(point[2], anchor[2], scale, options), center)
   };
+}
+
+interface ProjectionOptions {
+  invertWorldX?: boolean;
+  invertWorldZ?: boolean;
+}
+
+function projectMapX(
+  worldX: number,
+  anchorX: number,
+  scale: number,
+  options?: ProjectionOptions
+) {
+  const directionX = options?.invertWorldX ? -1 : 1;
+  return center + (worldX - anchorX) * scale * directionX;
+}
+
+function projectMapY(
+  worldZ: number,
+  anchorZ: number,
+  scale: number,
+  options?: ProjectionOptions
+) {
+  const directionZ = options?.invertWorldZ ? 1 : -1;
+  return center + (worldZ - anchorZ) * scale * directionZ;
 }
 
 function buildPolygonPath(points: Array<{ x: number; y: number }>) {
@@ -181,9 +289,9 @@ function buildPolygonPath(points: Array<{ x: number; y: number }>) {
     .join(' ');
 }
 
-export {
-  CameraMiniMap
-};
+function isPointInsideCircle(point: { x: number; y: number }) {
+  return Math.hypot(point.x - center, point.y - center) <= radius - 6;
+}
 
 function normalizeBounds(map: MiniMapConfig) {
   const minX = safeNumber(map.bounds.minX, -1);
@@ -196,6 +304,99 @@ function normalizeBounds(map: MiniMapConfig) {
     maxX: Math.max(minX, maxX),
     minZ: Math.min(minZ, maxZ),
     maxZ: Math.max(minZ, maxZ)
+  };
+}
+
+function resolveDisplayBounds(map: MiniMapConfig) {
+  const bounds = normalizeBounds(map);
+  const contentRect = normalizeContentRect(map.contentRect);
+  const imageAspectRatio = safeNumber(map.imageAspectRatio ?? 1, 1);
+  const imageContentAspectRatio =
+    (imageAspectRatio * contentRect.width) / Math.max(contentRect.height, 0.001);
+  const worldWidth = bounds.maxX - bounds.minX;
+  const worldHeight = bounds.maxZ - bounds.minZ;
+  const worldAspectRatio = worldWidth / Math.max(worldHeight, 0.001);
+
+  if (!Number.isFinite(imageContentAspectRatio) || imageContentAspectRatio <= 0) {
+    return bounds;
+  }
+
+  if (Math.abs(worldAspectRatio - imageContentAspectRatio) < 0.001) {
+    return bounds;
+  }
+
+  const centerX = (bounds.minX + bounds.maxX) * 0.5;
+  const centerZ = (bounds.minZ + bounds.maxZ) * 0.5;
+
+  if (worldAspectRatio < imageContentAspectRatio) {
+    const expandedWidth = worldHeight * imageContentAspectRatio;
+    return {
+      minX: centerX - expandedWidth * 0.5,
+      maxX: centerX + expandedWidth * 0.5,
+      minZ: bounds.minZ,
+      maxZ: bounds.maxZ
+    };
+  }
+
+  const expandedHeight = worldWidth / imageContentAspectRatio;
+  return {
+    minX: bounds.minX,
+    maxX: bounds.maxX,
+    minZ: centerZ - expandedHeight * 0.5,
+    maxZ: centerZ + expandedHeight * 0.5
+  };
+}
+
+function normalizeImageTransform(
+  baseTransform: MiniMapImageTransform | undefined,
+  overrideTransform: MiniMapImageTransform | undefined,
+  northAngleDeg: number | undefined
+) {
+  const mergedTransform = {
+    ...baseTransform,
+    ...overrideTransform
+  };
+  const scale = clamp(safeNumber(mergedTransform.scale ?? 1, 1), 0.1, 4);
+  const flipX = Boolean(mergedTransform.flipX);
+  const flipY = Boolean(mergedTransform.flipY);
+
+  return {
+    rotationDeg: safeNumber(
+      mergedTransform.rotationDeg ?? northAngleDeg ?? 0,
+      0
+    ),
+    translateX: safeNumber(mergedTransform.translateX ?? 0, 0),
+    translateY: safeNumber(mergedTransform.translateY ?? 0, 0),
+    invertWorldX: Boolean(
+      mergedTransform.invertWorldX ?? mergedTransform.invertHeadingX
+    ),
+    invertWorldZ: Boolean(mergedTransform.invertWorldZ),
+    invertHeadingX: Boolean(mergedTransform.invertHeadingX),
+    scaleX: scale * (flipX ? -1 : 1),
+    scaleY: scale * (flipY ? -1 : 1)
+  };
+}
+
+function normalizeContentRect(contentRect: MiniMapConfig['contentRect']) {
+  if (!contentRect) {
+    return {
+      x: 0,
+      y: 0,
+      width: 1,
+      height: 1
+    };
+  }
+
+  const x = clamp(safeNumber(contentRect.x, 0), 0, 0.95);
+  const y = clamp(safeNumber(contentRect.y, 0), 0, 0.95);
+  const width = clamp(safeNumber(contentRect.width, 1), 0.05, 1 - x);
+  const height = clamp(safeNumber(contentRect.height, 1), 0.05, 1 - y);
+
+  return {
+    x,
+    y,
+    width,
+    height
   };
 }
 
@@ -217,3 +418,7 @@ function safeNumber(value: number, fallback: number) {
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
+
+export {
+  CameraMiniMap
+};
