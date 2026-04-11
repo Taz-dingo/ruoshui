@@ -111,39 +111,152 @@ function getContentType(sourceFile) {
 }
 
 const rootDir = path.resolve(__dirname, '..');
-const assetEntries = [
-  {
-    routePath: '/models/hhuc-original.sog',
-    sourceFile: path.join(rootDir, 'assets', 'hhuc.sog')
-  },
-  {
-    routePath: '/models/hhuc-edited.sog',
-    sourceFile: path.join(rootDir, 'assets', 'hhuc-edited.sog')
-  },
-  {
-    routePath: '/models/hhuc-h0.sog',
-    sourceFile: path.join(rootDir, 'outputs', 'iteration-004-sog-opt', 'hhuc-h0.sog')
-  },
-  {
-    routePath: '/models/hhuc-h0-opacity01.sog',
-    sourceFile: path.join(rootDir, 'outputs', 'iteration-004-sog-opt', 'hhuc-h0-opacity01.sog')
-  },
-  {
-    routePath: '/models/hhuc-h0-dec75.sog',
-    sourceFile: path.join(rootDir, 'outputs', 'iteration-004-sog-opt', 'hhuc-h0-dec75.sog')
-  },
-  {
-    routePath: '/models/hhuc-h0-dec50.sog',
-    sourceFile: path.join(rootDir, 'outputs', 'iteration-004-sog-opt', 'hhuc-h0-dec50.sog')
-  },
-  {
-    routePrefix: '/models/hhuc-lod/',
-    sourceDir: path.join(rootDir, 'outputs', 'iteration-004-sog-opt', 'lod')
+const contentSourceFile = path.join(__dirname, 'public', 'content', 'mvp.json');
+const productionModelFile = path.join(__dirname, 'public', 'models', 'hhuc-original.sog');
+const isSingleModelProduction =
+  process.env.RUOSHUI_BUILD_PROFILE === 'single-model' ||
+  process.env.VERCEL_ENV === 'production';
+
+function filterContentForProfile(content, singleModelProduction) {
+  if (!singleModelProduction) {
+    return content;
   }
-];
+
+  const defaultVariant =
+    content.variants.find((variant) => variant.id === content.scene.defaultVariantId) ??
+    content.variants[0] ??
+    null;
+
+  return {
+    ...content,
+    variants: defaultVariant ? [defaultVariant] : []
+  };
+}
+
+function createAssetEntries(singleModelProduction) {
+  if (singleModelProduction) {
+    return [];
+  }
+
+  return [
+    {
+      routePath: '/models/hhuc-edited.sog',
+      sourceFile: path.join(rootDir, 'assets', 'hhuc-edited.sog')
+    },
+    {
+      routePath: '/models/hhuc-h0.sog',
+      sourceFile: path.join(rootDir, 'outputs', 'iteration-004-sog-opt', 'hhuc-h0.sog')
+    },
+    {
+      routePath: '/models/hhuc-h0-opacity01.sog',
+      sourceFile: path.join(rootDir, 'outputs', 'iteration-004-sog-opt', 'hhuc-h0-opacity01.sog')
+    },
+    {
+      routePath: '/models/hhuc-h0-dec75.sog',
+      sourceFile: path.join(rootDir, 'outputs', 'iteration-004-sog-opt', 'hhuc-h0-dec75.sog')
+    },
+    {
+      routePath: '/models/hhuc-h0-dec50.sog',
+      sourceFile: path.join(rootDir, 'outputs', 'iteration-004-sog-opt', 'hhuc-h0-dec50.sog')
+    },
+    {
+      routePrefix: '/models/hhuc-lod/',
+      sourceDir: path.join(rootDir, 'outputs', 'iteration-004-sog-opt', 'lod')
+    }
+  ];
+}
+
+function contentProfilePlugin(options) {
+  const {
+    singleModelProduction,
+    sourceFile
+  } = options;
+  let resolvedConfig = null;
+
+  function readContent() {
+    return JSON.parse(fs.readFileSync(sourceFile, 'utf8'));
+  }
+
+  function getTransformedContent() {
+    return JSON.stringify(
+      filterContentForProfile(readContent(), singleModelProduction),
+      null,
+      2
+    );
+  }
+
+  return {
+    name: 'ruoshui-content-profile',
+    configResolved(config) {
+      resolvedConfig = config;
+    },
+    configureServer(server) {
+      if (!singleModelProduction) {
+        return;
+      }
+
+      server.middlewares.use((req, res, next) => {
+        const requestPath = req.url?.split('?')[0];
+        if (requestPath !== '/content/mvp.json') {
+          next();
+          return;
+        }
+
+        res.setHeader('Content-Type', 'application/json; charset=utf-8');
+        res.end(getTransformedContent());
+      });
+    },
+    buildStart() {
+      this.addWatchFile(sourceFile);
+    },
+    writeBundle() {
+      if (!resolvedConfig) {
+        return;
+      }
+
+      const outputFile = path.resolve(
+        resolvedConfig.root,
+        resolvedConfig.build.outDir,
+        'content',
+        'mvp.json'
+      );
+
+      fs.mkdirSync(path.dirname(outputFile), { recursive: true });
+      fs.writeFileSync(outputFile, getTransformedContent());
+    }
+  };
+}
+
+function requiredProductionModelPlugin(options) {
+  const {
+    sourceFile
+  } = options;
+
+  return {
+    name: 'ruoshui-required-production-model',
+    buildStart() {
+      if (!fs.existsSync(sourceFile)) {
+        this.error(`Missing production model required by Web MVP: ${sourceFile}`);
+      }
+    }
+  };
+}
+
+const assetEntries = createAssetEntries(isSingleModelProduction);
 
 export default defineConfig({
-  plugins: [tailwindcss(), react(), externalAssetsPlugin(assetEntries)],
+  plugins: [
+    tailwindcss(),
+    react(),
+    requiredProductionModelPlugin({
+      sourceFile: productionModelFile
+    }),
+    contentProfilePlugin({
+      singleModelProduction: isSingleModelProduction,
+      sourceFile: contentSourceFile
+    }),
+    externalAssetsPlugin(assetEntries)
+  ],
   server: {
     host: '0.0.0.0'
   },

@@ -65,10 +65,10 @@
 
 ### P2
 
-- [ ] 明确第一期静态站部署方式
+- [x] 明确第一期静态站部署方式
 - [ ] 收集第一批故事点位内容
 - [ ] 选择首批热点地点
-- [ ] 评估是否需要基础移动端兼容
+- [x] 评估是否需要基础移动端兼容
 - [ ] 评估 `WebGPU + Worker/WASM` 作为后续极致性能分支的可行性
 - [x] 初始化 `forum-api` 服务、帖子 / 媒体 / 点位关联 schema 与最小上传签名接口
 - [ ] 记录阿里云最低成本上线方案：静态站优先，数据库后置
@@ -83,6 +83,7 @@
 - 当前论坛底座方案已收口为：`Hono + Drizzle + PostgreSQL + 对象存储抽象 + shared zod schema`
 - 当前论坛底座已从“纯骨架”推进到“可对接前端”的第一步：已补 `scene bootstrap / scene upsert / post create / pin create` 四个真实接口，并生成首个 `Drizzle` migration
 - 当前第一期范围已再次收紧：先完成一个可上线的静态纪念展示站，后端与数据库不再作为本阶段阻塞项
+- 当前第一期静态站部署方式已明确为：`Vercel` 静态部署，生产只携带 `web/public/models/hhuc-original.sog`
 - 当前最低成本部署方向已收口：优先静态站点方案，数据库与论坛底座放到下一阶段接入
 - 当前最关键风险已经切到“场景能否以 `Web MVP` 可接受的体积被交付、加载和体验”
 - 关于“渐进式加载”的阶段性判断已收口：这条线已完成必要验证，但当前不再作为主线目标继续投入；`Web MVP` 继续以 `PlayCanvas/SOG` 为正式交付链
@@ -222,7 +223,8 @@
 - 已新增首个正式 `Web MVP` 前端项目：`web/`
 - 当前 `Web MVP` 已切换为 `PlayCanvas Engine + SOG` 直接加载路线，不再先走 `PLY` 试页验证
 - 已通过 `web/public/content/mvp.json` 固定首版首页文案、导览镜头和记忆锚点结构
-- 已通过 `web/vite.config.mjs` 把根目录 `assets/hhuc.sog` 映射为前端可访问的 `/models/hhuc.sog`，避免复制模型文件
+- 已将 `Web MVP` 的资源策略拆成“生产一份正式模型 + 开发态多版本对照”：生产只携带 `web/public/models/hhuc-original.sog`，开发态继续通过 `web/vite.config.mjs` 暴露根目录 `SOG` 派生资产与 `LOD`
+- 已确认此前 `Vercel` 上传接近 `200 MiB` 的主因是把原始版、派生版与整包 `LOD` 资源一并打进了生产构建，而不是前端代码本身过大
 - 已完成首轮 `SOG` 交付侧派生实验，并产出 `hhuc-h0 / hhuc-h0-opacity01 / hhuc-h0-dec75 / hhuc-h0-dec50`
 - 当前 `Web MVP` 已支持同页切换原始版与 `4` 个派生版本做主观对比，默认落在 `dec75`
 - 已将前端主要交互面板逐步迁移到 `React + Zustand`，并开始把运行时辅助逻辑从 `viewer.ts` 拆出

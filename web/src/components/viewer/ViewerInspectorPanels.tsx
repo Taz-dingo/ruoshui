@@ -1,3 +1,4 @@
+import { DisplaySettingsSection } from './DisplaySettingsSection';
 import { HighlightAuthoringSection } from './HighlightAuthoringSection';
 import { PresetsSection } from './PresetsSection';
 import { RenderScaleSection } from './RenderScaleSection';
@@ -12,8 +13,13 @@ import type { MiniMapImageTransform } from '../../content/types';
 interface ViewerInspectorPanelsProps {
   activeInspectorPanel: string | null;
   copyMiniMapTransform: () => void;
+  hasMiniMap: boolean;
+  isMapVisible: boolean;
+  isMobile?: boolean;
   miniMapCopyNote: string;
   miniMapTransform: MiniMapImageTransform | null;
+  onMapVisibilityChange: (isVisible: boolean) => void;
+  onPrimaryAction?: () => void;
   onTogglePanel: (panelId: string) => void;
   onMiniMapTransformChange: (nextTransform: MiniMapImageTransform) => void;
   resetMiniMapTransform: () => void;
@@ -23,8 +29,13 @@ interface ViewerInspectorPanelsProps {
 function ViewerInspectorPanels({
   activeInspectorPanel,
   copyMiniMapTransform,
+  hasMiniMap,
+  isMapVisible,
+  isMobile = false,
   miniMapCopyNote,
   miniMapTransform,
+  onMapVisibilityChange,
+  onPrimaryAction,
   onTogglePanel,
   onMiniMapTransformChange,
   resetMiniMapTransform,
@@ -35,15 +46,25 @@ function ViewerInspectorPanels({
       <VariantPanel
         initialState={viewerConfig.initialVariantPanel}
         isOpen={activeInspectorPanel === 'variants'}
+        onVariantSelect={onPrimaryAction}
         onToggle={() => onTogglePanel('variants')}
       />
       <PresetsSection
         isOpen={activeInspectorPanel === 'presets'}
+        onPresetSelect={onPrimaryAction}
         onToggle={() => onTogglePanel('presets')}
-        showDiagnostics={viewerConfig.showExperimentalControls}
+        showDiagnostics={viewerConfig.showExperimentalControls && !isMobile}
         viewerConfig={viewerConfig}
       />
-      {viewerConfig.showExperimentalControls ? (
+      {hasMiniMap ? (
+        <DisplaySettingsSection
+          isMapVisible={isMapVisible}
+          isOpen={activeInspectorPanel === 'display-settings'}
+          onMapVisibilityChange={onMapVisibilityChange}
+          onToggle={() => onTogglePanel('display-settings')}
+        />
+      ) : null}
+      {viewerConfig.showExperimentalControls && !isMobile ? (
         <>
           <RenderScaleSection
             activeRenderScalePercent={viewerConfig.activeRenderScalePercent}
@@ -79,7 +100,7 @@ function ViewerInspectorPanels({
           />
         </>
       ) : null}
-      {viewerConfig.showExperimentalControls ? (
+      {viewerConfig.showExperimentalControls && !isMobile ? (
         <HighlightAuthoringSection
           isOpen={activeInspectorPanel === 'highlight-authoring'}
           onToggle={() => onTogglePanel('highlight-authoring')}

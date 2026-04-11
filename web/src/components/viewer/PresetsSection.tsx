@@ -8,6 +8,7 @@ import { InspectorSection } from '../ui/inspector-section';
 interface PresetsSectionProps {
   isOpen: boolean;
   onToggle: () => void;
+  onPresetSelect?: () => void;
   showDiagnostics: boolean;
   viewerConfig: ViewerConfig;
 }
@@ -15,6 +16,7 @@ interface PresetsSectionProps {
 function PresetsSection({
   isOpen,
   onToggle,
+  onPresetSelect,
   showDiagnostics,
   viewerConfig
 }: PresetsSectionProps) {
@@ -32,11 +34,17 @@ function PresetsSection({
     >
       {showDiagnostics ? (
         <>
-          <RouteControlsPanel initialState={viewerConfig.initialRouteControls} />
+          <RouteControlsPanel
+            initialState={viewerConfig.initialRouteControls}
+            onRouteAction={onPresetSelect}
+          />
           <RouteDiagnosticsPanel />
         </>
       ) : null}
-      <PresetPanel initialState={viewerConfig.initialPresetPanel} />
+      <PresetPanel
+        initialState={viewerConfig.initialPresetPanel}
+        onPresetSelect={onPresetSelect}
+      />
     </InspectorSection>
   );
 }

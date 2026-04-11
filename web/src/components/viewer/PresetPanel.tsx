@@ -5,9 +5,10 @@ import { ItemCardButton } from '../ui/item-card-button';
 
 interface PresetPanelProps {
   initialState: PresetPanelViewState;
+  onPresetSelect?: () => void;
 }
 
-function PresetPanel({ initialState }: PresetPanelProps) {
+function PresetPanel({ initialState, onPresetSelect }: PresetPanelProps) {
   const state = useViewerUiStore((store) => store.presetPanel ?? initialState);
 
   return (
@@ -17,7 +18,10 @@ function PresetPanel({ initialState }: PresetPanelProps) {
           key={item.id}
           body={item.summary}
           isActive={item.isActive}
-          onClick={() => requestPresetSelection(item.id)}
+          onClick={() => {
+            requestPresetSelection(item.id);
+            onPresetSelect?.();
+          }}
           title={item.name}
         />
       ))}
