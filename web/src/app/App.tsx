@@ -10,7 +10,10 @@ import { Button } from '../components/ui/button';
 import { Sheet, SheetContent } from '../components/ui/sheet';
 import { useViewerUiStore } from '../ui/state/viewer-ui-store';
 import type { ViewerConfig } from './viewer-config';
-import type { ViewerContent } from '../content/types';
+import type {
+  MiniMapImageTransform,
+  ViewerContent
+} from '../content/types';
 
 interface AppProps {
   data: ViewerContent;
@@ -25,6 +28,42 @@ function stopInteractionPropagation(event: {
   event.stopPropagation();
 }
 
+function createDefaultMiniMapTransform(
+  transform: MiniMapImageTransform | undefined
+): MiniMapImageTransform {
+  return {
+    rotationDeg: transform?.rotationDeg ?? 0,
+    scale: transform?.scale ?? 1,
+    translateX: transform?.translateX ?? 0,
+    translateY: transform?.translateY ?? 0,
+    flipX: transform?.flipX ?? false,
+    flipY: transform?.flipY ?? false,
+    invertWorldX: transform?.invertWorldX ?? false,
+    invertWorldZ: transform?.invertWorldZ ?? false,
+    invertHeadingX: transform?.invertHeadingX ?? false
+  };
+}
+
+function serializeMiniMapTransform(transform: MiniMapImageTransform) {
+  return JSON.stringify(
+    {
+      imageTransform: {
+        rotationDeg: Number((transform.rotationDeg ?? 0).toFixed(1)),
+        scale: Number((transform.scale ?? 1).toFixed(3)),
+        translateX: Math.round(transform.translateX ?? 0),
+        translateY: Math.round(transform.translateY ?? 0),
+        flipX: Boolean(transform.flipX),
+        flipY: Boolean(transform.flipY),
+        invertWorldX: Boolean(transform.invertWorldX),
+        invertWorldZ: Boolean(transform.invertWorldZ),
+        invertHeadingX: Boolean(transform.invertHeadingX)
+      }
+    },
+    null,
+    2
+  );
+}
+
 function App({
   data,
   sceneContainerRef,
@@ -34,6 +73,12 @@ function App({
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
   const [activeInspectorPanel, setActiveInspectorPanel] = useState<string | null>(null);
+  const [miniMapTransform, setMiniMapTransform] = useState<MiniMapImageTransform | null>(
+    data.scene.miniMap
+      ? createDefaultMiniMapTransform(data.scene.miniMap.imageTransform)
+      : null
+  );
+  const [miniMapCopyNote, setMiniMapCopyNote] = useState('调到对齐后，点“复制参数”。');
   const setVariantPanel = useViewerUiStore((store) => store.setVariantPanel);
   const setPresetPanel = useViewerUiStore((store) => store.setPresetPanel);
   const setRouteControls = useViewerUiStore((store) => store.setRouteControls);
@@ -60,11 +105,44 @@ function App({
     });
   };
 
+  const resetMiniMapTransform = () => {
+    if (!data.scene.miniMap) {
+      return;
+    }
+
+    setMiniMapTransform(createDefaultMiniMapTransform(data.scene.miniMap.imageTransform));
+    setMiniMapCopyNote('已重置为当前配置。');
+  };
+
+  const copyMiniMapTransform = async () => {
+    if (!miniMapTransform) {
+      return;
+    }
+
+    try {
+      await window.navigator.clipboard.writeText(
+        serializeMiniMapTransform(miniMapTransform)
+      );
+      setMiniMapCopyNote('已复制，可直接贴给我。');
+    } catch {
+      setMiniMapCopyNote('复制失败了，但面板参数就是当前值。');
+    }
+  };
+
   useEffect(() => {
     setVariantPanel(viewerConfig.initialVariantPanel);
     setPresetPanel(viewerConfig.initialPresetPanel);
     setRouteControls(viewerConfig.initialRouteControls);
   }, [setPresetPanel, setRouteControls, setVariantPanel, viewerConfig]);
+
+  useEffect(() => {
+    setMiniMapTransform(
+      data.scene.miniMap
+        ? createDefaultMiniMapTransform(data.scene.miniMap.imageTransform)
+        : null
+    );
+    setMiniMapCopyNote('调到对齐后，点“复制参数”。');
+  }, [data.scene.miniMap]);
 
   useEffect(() => {
     const compactViewportQuery = window.matchMedia('(max-width: 760px)');
@@ -108,7 +186,12 @@ function App({
           >
             <ViewerInspectorPanels
               activeInspectorPanel={activeInspectorPanel}
+              copyMiniMapTransform={copyMiniMapTransform}
+              miniMapCopyNote={miniMapCopyNote}
+              miniMapTransform={viewerConfig.showExperimentalControls ? miniMapTransform : null}
               onTogglePanel={toggleInspectorPanel}
+              onMiniMapTransformChange={setMiniMapTransform}
+              resetMiniMapTransform={resetMiniMapTransform}
               viewerConfig={viewerConfig}
             />
           </div>
@@ -121,6 +204,7 @@ function App({
             <div className="detail-map">
               <CameraMiniMap
                 map={data.scene.miniMap}
+                imageTransform={miniMapTransform ?? undefined}
                 position={camera.positionValue}
                 target={camera.targetValue}
                 visibleGroundPolygon={camera.visibleGroundPolygonValue}
@@ -162,7 +246,12 @@ function App({
           >
             <ViewerInspectorPanels
               activeInspectorPanel={activeInspectorPanel}
+              copyMiniMapTransform={copyMiniMapTransform}
+              miniMapCopyNote={miniMapCopyNote}
+              miniMapTransform={viewerConfig.showExperimentalControls ? miniMapTransform : null}
               onTogglePanel={toggleInspectorPanel}
+              onMiniMapTransformChange={setMiniMapTransform}
+              resetMiniMapTransform={resetMiniMapTransform}
               viewerConfig={viewerConfig}
             />
           </SheetContent>

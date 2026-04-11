@@ -9,32 +9,50 @@
     "miniMap": {
       "label": "常州老校区",
       "subtitle": "若水广场 · 顶视示意",
-      "imageUrl": "/images/minimap/ruoshui-topdown.svg",
+      "imageUrl": "/images/minimap/hhuc-map-processed.png",
+      "imageAspectRatio": 1.399825,
       "bounds": {
-        "minX": -2.6,
-        "maxX": 2.35,
-        "minZ": -0.6,
-        "maxZ": 2.9
+        "minX": -3.52,
+        "maxX": 3.52,
+        "minZ": -3.45,
+        "maxZ": 3.59
+      },
+      "contentRect": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "imageTransform": {
+        "rotationDeg": 178,
+        "scale": 0.73,
+        "translateX": -5,
+        "translateY": 1,
+        "flipX": false,
+        "flipY": false,
+        "invertWorldX": false,
+        "invertWorldZ": true,
+        "invertHeadingX": false
       },
       "northAngleDeg": 0,
       "landmarks": [
         {
           "id": "ruoshui-square",
           "name": "若水广场",
-          "x": 0.08,
-          "z": 0.08
+          "x": 0.12,
+          "z": 0.12
         },
         {
           "id": "main-axis",
           "name": "主楼中轴",
           "x": 0.0,
-          "z": 0.02
+          "z": 0.08
         },
         {
           "id": "stadium",
           "name": "操场",
-          "x": -0.16,
-          "z": 0.1
+          "x": 1.92,
+          "z": -1.18
         }
       ]
     }

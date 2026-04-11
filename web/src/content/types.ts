@@ -22,11 +22,33 @@ interface MiniMapLandmark {
   z: number;
 }
 
+interface MiniMapContentRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+interface MiniMapImageTransform {
+  rotationDeg?: number;
+  scale?: number;
+  translateX?: number;
+  translateY?: number;
+  flipX?: boolean;
+  flipY?: boolean;
+  invertWorldX?: boolean;
+  invertWorldZ?: boolean;
+  invertHeadingX?: boolean;
+}
+
 interface MiniMapConfig {
   label: string;
   subtitle: string;
   imageUrl?: string;
+  imageAspectRatio?: number;
   bounds: MiniMapBounds;
+  contentRect?: MiniMapContentRect;
+  imageTransform?: MiniMapImageTransform;
   northAngleDeg?: number;
   landmarks?: MiniMapLandmark[];
 }
@@ -102,7 +124,9 @@ export type {
   BenchmarkRouteStep,
   CameraPreset,
   MiniMapBounds,
+  MiniMapContentRect,
   MiniMapConfig,
+  MiniMapImageTransform,
   MiniMapLandmark,
   UnifiedGsplatProfile,
   ViewerContent,
