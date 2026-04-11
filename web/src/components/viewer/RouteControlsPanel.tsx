@@ -10,9 +10,13 @@ import { ItemCardButton } from '../ui/item-card-button';
 
 interface RouteControlsPanelProps {
   initialState: RouteControlsViewState;
+  onRouteAction?: () => void;
 }
 
-function RouteControlsPanel({ initialState }: RouteControlsPanelProps) {
+function RouteControlsPanel({
+  initialState,
+  onRouteAction
+}: RouteControlsPanelProps) {
   const state = useViewerUiStore((store) => store.routeControls ?? initialState);
 
   return (
@@ -29,7 +33,10 @@ function RouteControlsPanel({ initialState }: RouteControlsPanelProps) {
             disabled={item.disabled}
             isActive={item.isActive}
             isRunning={item.isRunning}
-            onClick={() => requestRouteSelection(item.id)}
+            onClick={() => {
+              requestRouteSelection(item.id);
+              onRouteAction?.();
+            }}
             title={item.name}
           />
         ))}
@@ -39,7 +46,10 @@ function RouteControlsPanel({ initialState }: RouteControlsPanelProps) {
           <Button
             className="route-batch-button"
             disabled={state.runCurrentDisabled}
-            onClick={() => requestRunCurrentRouteBenchmark()}
+            onClick={() => {
+              requestRunCurrentRouteBenchmark();
+              onRouteAction?.();
+            }}
             variant="tertiary"
           >
             {state.runCurrentLabel}
@@ -47,7 +57,10 @@ function RouteControlsPanel({ initialState }: RouteControlsPanelProps) {
           <Button
             className="route-batch-button"
             disabled={state.runSuiteDisabled}
-            onClick={() => requestRunRouteSuite()}
+            onClick={() => {
+              requestRunRouteSuite();
+              onRouteAction?.();
+            }}
             variant="tertiary"
           >
             {state.runSuiteLabel}

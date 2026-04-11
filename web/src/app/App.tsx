@@ -5,8 +5,8 @@ import { CameraMiniMap } from '../components/viewer/CameraMiniMap';
 import { HeroPanel } from '../components/viewer/HeroPanel';
 import { HighlightLayer } from '../components/viewer/HighlightLayer';
 import { LoadingOverlay } from '../components/viewer/LoadingOverlay';
+import { MobileControlPanel } from '../components/viewer/MobileControlPanel';
 import { ViewerInspectorPanels } from '../components/viewer/ViewerInspectorPanels';
-import { Button } from '../components/ui/button';
 import { Sheet, SheetContent } from '../components/ui/sheet';
 import { useViewerUiStore } from '../ui/state/viewer-ui-store';
 import type { ViewerConfig } from './viewer-config';
@@ -72,6 +72,7 @@ function App({
   const isProductionUi = !viewerConfig.showExperimentalControls;
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
+  const [isMiniMapVisible, setIsMiniMapVisible] = useState(true);
   const [activeInspectorPanel, setActiveInspectorPanel] = useState<string | null>(null);
   const [miniMapTransform, setMiniMapTransform] = useState<MiniMapImageTransform | null>(
     data.scene.miniMap
@@ -103,6 +104,10 @@ function App({
       }
       return nextOpen;
     });
+  };
+
+  const dismissMobilePanel = () => {
+    setIsMobilePanelOpen(false);
   };
 
   const resetMiniMapTransform = () => {
@@ -174,7 +179,7 @@ function App({
       <LoadingOverlay />
       <div className={`hud${isMobileViewport ? ' is-mobile-mode' : ''}`}>
         <aside className="rail rail-primary">
-          <div className="rail-hero">
+          <div className={`rail-hero${isMobileViewport ? ' is-mobile-hero' : ''}`}>
             <HeroPanel
               compact={isProductionUi || isMobileViewport}
               subtitle={data.scene.subtitle}
@@ -187,8 +192,13 @@ function App({
             <ViewerInspectorPanels
               activeInspectorPanel={activeInspectorPanel}
               copyMiniMapTransform={copyMiniMapTransform}
+              hasMiniMap={data.scene.miniMap !== undefined}
+              isMapVisible={isMiniMapVisible}
+              isMobile={false}
               miniMapCopyNote={miniMapCopyNote}
               miniMapTransform={viewerConfig.showExperimentalControls ? miniMapTransform : null}
+              onMapVisibilityChange={setIsMiniMapVisible}
+              onPrimaryAction={undefined}
               onTogglePanel={toggleInspectorPanel}
               onMiniMapTransformChange={setMiniMapTransform}
               resetMiniMapTransform={resetMiniMapTransform}
@@ -200,17 +210,19 @@ function App({
         <div />
 
         <aside className="detail detail-map-only">
-          {data.scene.miniMap ? (
-            <div className="detail-map">
-              <CameraMiniMap
-                map={data.scene.miniMap}
-                imageTransform={miniMapTransform ?? undefined}
-                position={camera.positionValue}
-                target={camera.targetValue}
-                visibleGroundPolygon={camera.visibleGroundPolygonValue}
-                yawDeg={camera.yawValue}
-                distance={camera.distanceValue}
-              />
+          {data.scene.miniMap && isMiniMapVisible ? (
+            <div className="detail-map-stack">
+              <div className="detail-map">
+                <CameraMiniMap
+                  map={data.scene.miniMap}
+                  imageTransform={miniMapTransform ?? undefined}
+                  position={camera.positionValue}
+                  target={camera.targetValue}
+                  visibleGroundPolygon={camera.visibleGroundPolygonValue}
+                  yawDeg={camera.yawValue}
+                  distance={camera.distanceValue}
+                />
+              </div>
             </div>
           ) : null}
         </aside>
@@ -221,36 +233,37 @@ function App({
           open={isMobilePanelOpen}
           onOpenChange={setIsMobilePanelOpen}
         >
-          <Button
-            aria-expanded={isMobilePanelOpen}
-            className={`mobile-panel-toggle${isMobilePanelOpen ? ' is-open' : ''}`}
-            onClick={toggleMobilePanel}
-            onMouseDown={stopInteractionPropagation}
-            onPointerDown={stopInteractionPropagation}
-            onTouchStart={stopInteractionPropagation}
-            variant="floating"
-          >
-            <span className="mobile-panel-toggle-label">场景控制</span>
-            <strong className="mobile-panel-toggle-value">
-              {activeInspectorPanel === 'presets' ? '导览镜头' : '模型版本'}
-            </strong>
-          </Button>
+          <div className={`mobile-control-dock${isMobilePanelOpen ? ' is-open' : ''}`}>
+            <button
+              aria-expanded={isMobilePanelOpen}
+              className="mobile-dock-status"
+              onClick={toggleMobilePanel}
+              onMouseDown={stopInteractionPropagation}
+              onPointerDown={stopInteractionPropagation}
+              onTouchStart={stopInteractionPropagation}
+              type="button"
+            >
+              <span className="mobile-dock-icon mobile-dock-icon-menu" aria-hidden="true" />
+              <span className="sr-only">打开场景控制面板</span>
+            </button>
+          </div>
           <SheetContent
             aria-label="移动端场景控制面板"
-            className="sidebar-panel is-mobile-panel is-mobile-open"
-            onMouseDown={stopInteractionPropagation}
-            onPointerDown={stopInteractionPropagation}
-            onTouchStart={stopInteractionPropagation}
-            onTouchMove={stopInteractionPropagation}
-            onWheel={stopInteractionPropagation}
+            className="sidebar-panel is-mobile-panel"
+            side="bottom"
           >
-            <ViewerInspectorPanels
+            <MobileControlPanel
               activeInspectorPanel={activeInspectorPanel}
               copyMiniMapTransform={copyMiniMapTransform}
+              hasMiniMap={data.scene.miniMap !== undefined}
+              isMapVisible={isMiniMapVisible}
+              isOpen={isMobilePanelOpen}
               miniMapCopyNote={miniMapCopyNote}
               miniMapTransform={viewerConfig.showExperimentalControls ? miniMapTransform : null}
-              onTogglePanel={toggleInspectorPanel}
+              onMapVisibilityChange={setIsMiniMapVisible}
+              onActionComplete={dismissMobilePanel}
               onMiniMapTransformChange={setMiniMapTransform}
+              onToggleInspectorPanel={toggleInspectorPanel}
               resetMiniMapTransform={resetMiniMapTransform}
               viewerConfig={viewerConfig}
             />

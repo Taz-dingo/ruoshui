@@ -8,9 +8,15 @@ interface VariantPanelProps {
   initialState: VariantPanelViewState;
   isOpen: boolean;
   onToggle: () => void;
+  onVariantSelect?: () => void;
 }
 
-function VariantPanel({ initialState, isOpen, onToggle }: VariantPanelProps) {
+function VariantPanel({
+  initialState,
+  isOpen,
+  onToggle,
+  onVariantSelect
+}: VariantPanelProps) {
   const state = useViewerUiStore((store) => store.variantPanel ?? initialState);
 
   return (
@@ -30,7 +36,10 @@ function VariantPanel({ initialState, isOpen, onToggle }: VariantPanelProps) {
             disabled={item.disabled}
             isActive={item.isActive}
             meta={item.meta}
-            onClick={() => requestVariantSelection(item.id)}
+            onClick={() => {
+              requestVariantSelection(item.id);
+              onVariantSelect?.();
+            }}
             title={item.name}
           />
         ))}

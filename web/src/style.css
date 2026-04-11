@@ -22,6 +22,10 @@
     --rail-left-width: 352px;
     --rail-right-width: 212px;
     --rail-content-pad: 1.25rem;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
   }
 
   * {
@@ -100,6 +104,30 @@
       radial-gradient(circle at 78% 78%, rgba(145, 103, 74, 0.12), transparent 26%),
       linear-gradient(135deg, rgba(23, 18, 15, 0.72) 0%, rgba(23, 18, 15, 0.42) 48%, rgba(23, 18, 15, 0.64) 100%);
     backdrop-filter: blur(10px);
+  }
+
+  .sheet-overlay {
+    background: rgba(9, 11, 15, 0.24);
+    backdrop-filter: blur(3px);
+  }
+
+  .sheet-overlay[data-state='closed'] {
+    pointer-events: none;
+    animation: ruoshui-sheet-overlay-out 180ms ease forwards;
+  }
+
+  .sheet-overlay[data-state='open'] {
+    animation: ruoshui-sheet-overlay-in 240ms ease forwards;
+  }
+
+  .sheet-content {
+    position: fixed;
+    outline: none;
+    will-change: transform, opacity;
+  }
+
+  .sheet-content[data-side='bottom'] {
+    transform-origin: bottom center;
   }
 
   .loading-overlay-copy {
@@ -381,6 +409,12 @@
     display: none;
   }
 
+  .mobile-control-dock,
+  .mobile-dock-status,
+  .mobile-sheet-header {
+    display: none;
+  }
+
   .hud {
     @apply pointer-events-none relative z-[4] grid h-full min-h-screen gap-4 overflow-hidden p-4;
     grid-template-columns: var(--rail-left-width) minmax(0, 1fr) var(--rail-right-width);
@@ -421,6 +455,11 @@
     justify-content: flex-end;
   }
 
+  .detail-map-stack {
+    @apply grid gap-2.5;
+    justify-items: end;
+  }
+
   .rail::-webkit-scrollbar,
   .detail::-webkit-scrollbar {
     width: 8px;
@@ -455,6 +494,10 @@
 
   .hero {
     @apply pointer-events-auto w-full max-w-none;
+  }
+
+  .rail-hero.is-mobile-hero {
+    @apply grid gap-2.5;
   }
 
   .hero-inner {
@@ -923,6 +966,54 @@
       transform: scale(1);
     }
   }
+
+  @keyframes ruoshui-sheet-overlay-in {
+    from {
+      opacity: 0;
+      backdrop-filter: blur(0);
+    }
+
+    to {
+      opacity: 1;
+      backdrop-filter: blur(3px);
+    }
+  }
+
+  @keyframes ruoshui-sheet-overlay-out {
+    from {
+      opacity: 1;
+      backdrop-filter: blur(3px);
+    }
+
+    to {
+      opacity: 0;
+      backdrop-filter: blur(0);
+    }
+  }
+
+  @keyframes ruoshui-sheet-bottom-in {
+    from {
+      opacity: 0;
+      transform: translateY(2rem) scale(0.965);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes ruoshui-sheet-bottom-out {
+    from {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    to {
+      opacity: 0;
+      transform: translateY(1.35rem) scale(0.975);
+    }
+  }
 }
 
 @layer utilities {
@@ -956,13 +1047,18 @@
     }
 
     .hud {
-      @apply block h-full min-h-screen overflow-hidden p-3;
+      @apply block h-full min-h-screen overflow-hidden;
       position: relative;
+      padding:
+        calc(0.9rem + var(--safe-top))
+        calc(0.9rem + var(--safe-right))
+        calc(6.4rem + var(--safe-bottom))
+        calc(0.9rem + var(--safe-left));
     }
 
     .rail {
       @apply gap-3 overflow-visible pr-0;
-      width: min(calc(100vw - 1.5rem), 320px);
+      width: min(calc(100vw - 9.25rem), 320px);
     }
 
     .rail-primary {
@@ -970,11 +1066,11 @@
     }
 
     .rail-hero {
-      @apply px-4;
+      @apply px-0;
     }
 
     .hero-inner::before {
-      left: -12px;
+      left: -10px;
     }
 
     .hero,
@@ -983,15 +1079,18 @@
     }
 
     .hero h1 {
-      font-size: clamp(20px, 7vw, 28px);
+      font-size: clamp(18px, 6.2vw, 24px);
     }
 
     .hero-subtitle {
-      @apply max-w-[12rem] text-[11px];
+      @apply max-w-[10.5rem] text-[10px];
+      line-height: 1.45;
     }
 
     .detail {
-      @apply absolute top-3 right-3 z-[1] w-auto items-end overflow-visible pr-0;
+      @apply absolute z-[1] w-auto items-end overflow-visible pr-0;
+      top: calc(0.9rem + var(--safe-top));
+      right: calc(0.9rem + var(--safe-right));
     }
 
     .variant-list,
@@ -1015,25 +1114,31 @@
     }
 
     .sidebar-panel.is-mobile-panel {
-      @apply fixed left-3 right-3 bottom-3 z-[7] max-h-[min(58dvh,460px)] w-auto overflow-y-auto rounded-[22px] border px-0 py-2;
+      @apply fixed z-[7] w-auto overflow-hidden rounded-[28px] border px-0 py-0;
+      left: calc(0.75rem + var(--safe-left));
+      right: calc(0.75rem + var(--safe-right));
+      top: auto;
+      bottom: calc(0.75rem + var(--safe-bottom));
+      height: min(74dvh, 640px);
+      max-height: none;
       border-color: var(--line);
-      background: var(--panel-strong);
+      background:
+        linear-gradient(180deg, rgba(57, 43, 35, 0.97) 0%, rgba(31, 25, 21, 0.95) 100%);
       box-shadow: var(--shadow);
-      backdrop-filter: blur(18px);
+      backdrop-filter: blur(22px);
       touch-action: pan-y;
-      overscroll-behavior: contain;
-      opacity: 0;
-      pointer-events: none;
-      transform: translateY(calc(100% + 1rem));
-      transition:
-        opacity 180ms ease-out,
-        transform 220ms ease-out;
+      overscroll-behavior: none;
     }
 
-    .sidebar-panel.is-mobile-panel.is-mobile-open {
-      opacity: 1;
+    .sidebar-panel.is-mobile-panel[data-state='closed'] {
+      pointer-events: none;
+      animation: ruoshui-sheet-bottom-out 220ms cubic-bezier(0.4, 0, 1, 1) forwards;
+    }
+
+    .sidebar-panel.is-mobile-panel[data-state='open'] {
       pointer-events: auto;
-      transform: translateY(0);
+      border-color: rgba(207, 184, 151, 0.22);
+      animation: ruoshui-sheet-bottom-in 340ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
     .detail-map {
@@ -1041,43 +1146,180 @@
     }
 
     .minimap-card {
-      @apply h-[112px] w-[112px];
+      @apply h-[118px] w-[118px];
     }
 
     .perf-hud {
-      @apply right-3 bottom-3 max-w-[220px];
+      display: none;
     }
 
     .highlight-card {
-      @apply bottom-3 w-[calc(100vw-1.5rem)];
+      @apply w-[calc(100vw-1.5rem)];
+      bottom: calc(6.1rem + var(--safe-bottom));
     }
 
-    .mobile-panel-toggle {
-      @apply pointer-events-auto fixed left-3 bottom-3 z-[6] inline-flex items-center gap-3 rounded-full border px-4 py-3 text-left;
-      display: inline-flex;
-      border-color: rgba(207, 184, 151, 0.18);
-      background: rgba(47, 36, 29, 0.84);
+    .mobile-sheet-header {
+      display: block;
+    }
+
+    .mobile-control-dock {
+      @apply pointer-events-auto fixed z-[6];
+      display: block;
+      left: auto;
+      right: calc(0.75rem + var(--safe-right));
+      bottom: calc(0.75rem + var(--safe-bottom));
+      opacity: 0.82;
+    }
+
+    .mobile-control-dock.is-open {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(0.35rem) scale(0.96);
+      border-color: rgba(168, 201, 125, 0.18);
+      background: rgba(33, 27, 23, 0.72);
+    }
+
+    .mobile-control-dock,
+    .mobile-dock-status {
+      transition:
+        opacity 180ms ease,
+        transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+        background-color 180ms ease,
+        border-color 180ms ease;
+    }
+
+    .mobile-dock-status {
+      @apply flex h-11 w-11 items-center justify-center rounded-full border border-[rgba(231,218,198,0.08)] p-0 text-center;
+      display: flex;
+      background: rgba(33, 27, 23, 0.42);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 246, 232, 0.03),
+        0 10px 22px rgba(10, 8, 7, 0.16);
+      backdrop-filter: blur(14px);
       color: var(--text);
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(16px);
       touch-action: manipulation;
     }
 
-    .mobile-panel-toggle.is-open {
-      opacity: 0;
-      pointer-events: none;
+    .mobile-dock-icon {
+      @apply relative block h-4 w-4 shrink-0;
+      color: rgba(231, 218, 198, 0.72);
     }
 
-    .mobile-panel-toggle-label {
-      @apply text-[10px] uppercase tracking-[0.12em];
-      color: rgba(231, 218, 198, 0.58);
+    .mobile-control-dock.is-open .mobile-dock-status .mobile-dock-icon {
+      color: rgba(214, 235, 182, 0.96);
     }
 
-    .mobile-panel-toggle-value {
-      @apply text-[12px] font-semibold;
-      color: var(--accent-strong);
+    .mobile-dock-icon-menu::before,
+    .mobile-dock-icon-menu::after {
+      content: "";
+      @apply absolute block;
+      background: currentColor;
     }
 
+    .mobile-dock-icon-menu::before {
+      left: 2px;
+      top: 4px;
+      width: 12px;
+      height: 2px;
+      border-radius: 999px;
+      box-shadow: 0 4px 0 currentColor, 0 8px 0 currentColor;
+    }
+
+    .mobile-sheet-header {
+      @apply relative z-[1] border-b px-5 pt-3 pb-4;
+      display: block;
+      border-bottom-color: rgba(231, 218, 198, 0.06);
+      background:
+        linear-gradient(180deg, rgba(54, 40, 32, 0.98) 0%, rgba(54, 40, 32, 0.94) 100%);
+      box-shadow: inset 0 -1px 0 rgba(255, 246, 232, 0.03);
+    }
+
+    .mobile-sheet-handle {
+      @apply mx-auto mb-3 h-1.5 w-10 rounded-full;
+      background: rgba(231, 218, 198, 0.14);
+    }
+
+    .mobile-sheet-copy {
+      @apply min-w-0;
+    }
+
+    .mobile-sheet-kicker {
+      @apply block text-[10px] uppercase tracking-[0.18em];
+      color: rgba(199, 227, 158, 0.86);
+    }
+
+    .mobile-sheet-copy strong {
+      @apply mt-1 block text-[20px] leading-[1.02];
+      color: rgba(244, 236, 222, 0.96);
+    }
+
+    .mobile-sheet-copy p {
+      @apply mt-1.5 mb-0 max-w-[16rem] text-[11px] leading-[1.5];
+      color: rgba(231, 218, 198, 0.62);
+    }
+
+    .mobile-sheet-scroll {
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
+    }
+
+    .mobile-sheet-scroll::-webkit-scrollbar {
+      display: none;
+    }
+
+    .mobile-sheet-shell {
+      height: 100%;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+    }
+
+    .mobile-sheet-panel {
+      @apply px-5 pt-4;
+      padding-bottom: calc(1.25rem + var(--safe-bottom));
+    }
+
+    .mobile-dev-sheet-scroll {
+      height: auto;
+    }
+
+    .mobile-sheet-panel-head {
+      @apply mb-4 flex items-end justify-between gap-3;
+    }
+
+    .mobile-sheet-panel-head span {
+      @apply text-[10px] uppercase tracking-[0.18em];
+      color: rgba(199, 227, 158, 0.86);
+    }
+
+    .mobile-sheet-panel-head strong {
+      @apply text-[11px] font-medium;
+      color: rgba(231, 218, 198, 0.56);
+    }
+
+    .mobile-sheet-list {
+      @apply grid gap-3;
+    }
+
+    .mobile-sheet-list .item-card-title {
+      font-size: 13px;
+    }
+
+    .mobile-sheet-list .item-card-body {
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .mobile-sheet-list .item-card-meta {
+      font-size: 9.5px;
+    }
+
+    .mobile-sheet-list button {
+      min-height: 84px;
+    }
   }
 
   @media (hover: none) and (pointer: coarse) {

@@ -15,6 +15,7 @@ const SheetPortal = DialogPrimitive.Portal;
 interface SheetContentProps
   extends ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
   description?: string;
+  side?: 'bottom' | 'left' | 'right' | 'top';
   title?: string;
 }
 
@@ -26,7 +27,7 @@ const SheetOverlay = forwardRef<
     <DialogPrimitive.Overlay
       ref={ref}
       className={cn(
-        'fixed inset-0 z-[5] bg-[rgba(11,12,15,0.18)]',
+        'sheet-overlay fixed inset-0 z-[7]',
         className
       )}
       {...props}
@@ -42,6 +43,7 @@ const SheetContent = forwardRef<
     children,
     className,
     description,
+    side = 'right',
     title,
     'aria-describedby': ariaDescribedBy,
     ...props
@@ -62,7 +64,8 @@ const SheetContent = forwardRef<
       <SheetOverlay />
       <DialogPrimitive.Content
         ref={ref}
-        className={cn(className)}
+        className={cn('sheet-content', className)}
+        data-side={side}
         {...contentProps}
       >
         <DialogPrimitive.Title className="sr-only">
