@@ -1,39 +1,7 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
-import { cva } from 'class-variance-authority';
 
+import { itemCardButtonVariants } from '../../styles/system';
 import { cn } from '../../utils/cn';
-
-const itemCardButtonVariants = cva(
-  'w-full rounded-[14px] border text-left transition-[background-color,border-color,transform,box-shadow] duration-180 ease-out disabled:cursor-not-allowed disabled:opacity-55',
-  {
-    variants: {
-      density: {
-        regular: 'px-3 py-2.5',
-        compact: 'px-2.5 py-2'
-      },
-      active: {
-        true: 'border-[rgba(168,201,125,0.36)] bg-[rgba(168,201,125,0.12)]',
-        false: 'border-[rgba(231,218,198,0.08)] bg-[rgba(244,236,222,0.03)]'
-      },
-      running: {
-        true: 'border-[rgba(199,227,158,0.42)] shadow-[inset_0_0_0_1px_rgba(199,227,158,0.18)]',
-        false: ''
-      }
-    },
-    compoundVariants: [
-      {
-        active: false,
-        running: false,
-        className: 'hover:-translate-y-px hover:border-[rgba(168,201,125,0.36)] hover:bg-[rgba(168,201,125,0.12)]'
-      }
-    ],
-    defaultVariants: {
-      density: 'regular',
-      active: false,
-      running: false
-    }
-  }
-);
 
 interface ItemCardButtonProps
   extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'title'> {
@@ -59,6 +27,7 @@ function ItemCardButton({
   return (
     <button
       className={cn(
+        'item-card-button',
         itemCardButtonVariants({
           active: isActive,
           density,

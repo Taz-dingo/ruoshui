@@ -1,5 +1,9 @@
 import type { HTMLAttributes } from 'react';
 
+import {
+  surfaceClassNames,
+  textClassNames
+} from '../../styles/system';
 import { cn } from '../../utils/cn';
 
 function Card({
@@ -9,7 +13,7 @@ function Card({
   return (
     <div
       className={cn(
-        'rounded-[22px] border border-[rgba(207,184,151,0.16)] bg-[rgba(47,36,29,0.76)] shadow-[var(--shadow)] backdrop-blur-[14px]',
+        surfaceClassNames.panel,
         className
       )}
       {...props}
@@ -59,7 +63,7 @@ function CardTitle({
 }: HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h2
-      className={cn('mt-1 mb-0 text-[18px] leading-[1.1] tracking-[-0.04em]', className)}
+      className={cn('mt-1 mb-0', textClassNames.title, className)}
       {...props}
     />
   );
@@ -71,7 +75,7 @@ function CardDescription({
 }: HTMLAttributes<HTMLParagraphElement>) {
   return (
     <p
-      className={cn('m-0 text-[12px] leading-[1.6] text-[var(--muted)]', className)}
+      className={cn('m-0', textClassNames.mutedBody, className)}
       {...props}
     />
   );

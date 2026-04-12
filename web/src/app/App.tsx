@@ -1,4 +1,3 @@
-import type { RefObject } from 'react';
 import { useEffect, useState } from 'react';
 
 import { CameraMiniMap } from '../components/viewer/CameraMiniMap';
@@ -9,6 +8,7 @@ import { MobileControlPanel } from '../components/viewer/MobileControlPanel';
 import { ViewerInspectorPanels } from '../components/viewer/ViewerInspectorPanels';
 import { Sheet, SheetContent } from '../components/ui/sheet';
 import { useViewerUiStore } from '../ui/state/viewer-ui-store';
+import { appShellClassNames } from '../styles/system';
 import type { ViewerConfig } from './viewer-config';
 import type {
   MiniMapImageTransform,
@@ -17,7 +17,6 @@ import type {
 
 interface AppProps {
   data: ViewerContent;
-  sceneContainerRef: RefObject<HTMLDivElement | null>;
   viewerConfig: ViewerConfig;
 }
 
@@ -66,7 +65,6 @@ function serializeMiniMapTransform(transform: MiniMapImageTransform) {
 
 function App({
   data,
-  sceneContainerRef,
   viewerConfig
 }: AppProps) {
   const isProductionUi = !viewerConfig.showExperimentalControls;
@@ -173,126 +171,144 @@ function App({
   }, []);
 
   return (
-    <main className="shell">
-      <div className="scene" ref={sceneContainerRef} />
-      <HighlightLayer highlights={data.highlights ?? []} />
-      <LoadingOverlay />
-      <div className={`hud${isMobileViewport ? ' is-mobile-mode' : ''}`}>
-        <aside className="rail rail-primary">
-          <div className={`rail-hero${isMobileViewport ? ' is-mobile-hero' : ''}`}>
-            <HeroPanel
-              compact={isProductionUi || isMobileViewport}
-              subtitle={data.scene.subtitle}
-              title={data.scene.title}
-            />
-          </div>
-          <div
-            className={`panel panel-reveal inspector sidebar-panel${isMobileViewport ? ' is-mobile-hidden' : ''}`}
-          >
-            <ViewerInspectorPanels
-              activeInspectorPanel={activeInspectorPanel}
-              copyMiniMapTransform={copyMiniMapTransform}
-              hasMiniMap={data.scene.miniMap !== undefined}
-              isMapVisible={isMiniMapVisible}
-              isMobile={false}
-              miniMapCopyNote={miniMapCopyNote}
-              miniMapTransform={viewerConfig.showExperimentalControls ? miniMapTransform : null}
-              onMapVisibilityChange={setIsMiniMapVisible}
-              onPrimaryAction={undefined}
-              onTogglePanel={toggleInspectorPanel}
-              onMiniMapTransformChange={setMiniMapTransform}
-              resetMiniMapTransform={resetMiniMapTransform}
-              viewerConfig={viewerConfig}
-            />
-          </div>
-        </aside>
+    <main className={appShellClassNames.main}>
+      <div
+        id="scene-shell"
+        className={appShellClassNames.sceneShell}
+      >
+        <div
+          id="scene-root"
+          aria-hidden="true"
+          className={appShellClassNames.sceneRoot}
+        />
 
-        <div />
+        <div
+          id="hud-root"
+          className={appShellClassNames.hudRoot}
+        >
+          <HighlightLayer highlights={data.highlights ?? []} />
+          <LoadingOverlay />
 
-        <aside className="detail detail-map-only">
-          {data.scene.miniMap && isMiniMapVisible ? (
-            <div className="detail-map-stack">
-              <div className="detail-map">
-                <CameraMiniMap
-                  map={data.scene.miniMap}
-                  imageTransform={miniMapTransform ?? undefined}
-                  position={camera.positionValue}
-                  target={camera.targetValue}
-                  visibleGroundPolygon={camera.visibleGroundPolygonValue}
-                  yawDeg={camera.yawValue}
-                  distance={camera.distanceValue}
+          <div className={`hud${isMobileViewport ? ' is-mobile-mode' : ''}`}>
+            <aside className="rail rail-primary">
+              <div className={`rail-hero${isMobileViewport ? ' is-mobile-hero' : ''}`}>
+                <HeroPanel
+                  compact={isProductionUi || isMobileViewport}
+                  subtitle={data.scene.subtitle}
+                  title={data.scene.title}
                 />
               </div>
-            </div>
-          ) : null}
-        </aside>
-      </div>
 
-      {isMobileViewport ? (
-        <Sheet
-          open={isMobilePanelOpen}
-          onOpenChange={setIsMobilePanelOpen}
-        >
-          <div className={`mobile-control-dock${isMobilePanelOpen ? ' is-open' : ''}`}>
-            <button
-              aria-expanded={isMobilePanelOpen}
-              className="mobile-dock-status"
-              onClick={toggleMobilePanel}
-              onMouseDown={stopInteractionPropagation}
-              onPointerDown={stopInteractionPropagation}
-              onTouchStart={stopInteractionPropagation}
-              type="button"
-            >
-              <span className="mobile-dock-icon mobile-dock-icon-menu" aria-hidden="true" />
-              <span className="sr-only">打开场景控制面板</span>
-            </button>
+              <div
+                className={`panel panel-reveal inspector sidebar-panel${isMobileViewport ? ' is-mobile-hidden' : ''}`}
+              >
+                <ViewerInspectorPanels
+                  activeInspectorPanel={activeInspectorPanel}
+                  copyMiniMapTransform={copyMiniMapTransform}
+                  hasMiniMap={data.scene.miniMap !== undefined}
+                  isMapVisible={isMiniMapVisible}
+                  isMobile={false}
+                  miniMapCopyNote={miniMapCopyNote}
+                  miniMapTransform={viewerConfig.showExperimentalControls ? miniMapTransform : null}
+                  onMapVisibilityChange={setIsMiniMapVisible}
+                  onPrimaryAction={undefined}
+                  onTogglePanel={toggleInspectorPanel}
+                  onMiniMapTransformChange={setMiniMapTransform}
+                  resetMiniMapTransform={resetMiniMapTransform}
+                  viewerConfig={viewerConfig}
+                />
+              </div>
+            </aside>
+
+            <div />
+
+            <aside className="detail detail-map-only">
+              {data.scene.miniMap && isMiniMapVisible ? (
+                <div className="detail-map-stack">
+                  <div className="detail-map">
+                    <CameraMiniMap
+                      map={data.scene.miniMap}
+                      imageTransform={miniMapTransform ?? undefined}
+                      position={camera.positionValue}
+                      target={camera.targetValue}
+                      visibleGroundPolygon={camera.visibleGroundPolygonValue}
+                      yawDeg={camera.yawValue}
+                      distance={camera.distanceValue}
+                    />
+                  </div>
+                </div>
+              ) : null}
+            </aside>
           </div>
-          <SheetContent
-            aria-label="移动端场景控制面板"
-            className="sidebar-panel is-mobile-panel"
-            side="bottom"
-          >
-            <MobileControlPanel
-              activeInspectorPanel={activeInspectorPanel}
-              copyMiniMapTransform={copyMiniMapTransform}
-              hasMiniMap={data.scene.miniMap !== undefined}
-              isMapVisible={isMiniMapVisible}
-              isOpen={isMobilePanelOpen}
-              miniMapCopyNote={miniMapCopyNote}
-              miniMapTransform={viewerConfig.showExperimentalControls ? miniMapTransform : null}
-              onMapVisibilityChange={setIsMiniMapVisible}
-              onActionComplete={dismissMobilePanel}
-              onMiniMapTransformChange={setMiniMapTransform}
-              onToggleInspectorPanel={toggleInspectorPanel}
-              resetMiniMapTransform={resetMiniMapTransform}
-              viewerConfig={viewerConfig}
-            />
-          </SheetContent>
-        </Sheet>
-      ) : null}
+        </div>
 
-      {viewerConfig.showPerfHud ? (
-        <aside className="perf-hud" aria-live="polite">
-          <span className="perf-chip">
-            FPS <strong>{perfHud.fps}</strong>
-          </span>
-          <span className="perf-chip">
-            帧时 <strong>{perfHud.ms}</strong>
-          </span>
-          <span className="perf-chip">
-            渲染 <strong>{perfHud.render}</strong>
-          </span>
-          <span className="perf-chip">
-            比例 <strong>{perfHud.scale}</strong>
-          </span>
-          <span className="perf-chip">
-            图形 <strong>{perfHud.backend}</strong>
-          </span>
-          <span className="perf-chip">
-            GPU <strong>{perfHud.gpu}</strong>
-          </span>
-        </aside>
-      ) : null}
+        {isMobileViewport ? (
+          <Sheet
+            open={isMobilePanelOpen}
+            onOpenChange={setIsMobilePanelOpen}
+          >
+            <div className={`mobile-control-dock${isMobilePanelOpen ? ' is-open' : ''}`}>
+              <button
+                aria-expanded={isMobilePanelOpen}
+                className="mobile-dock-status"
+                onClick={toggleMobilePanel}
+                onMouseDown={stopInteractionPropagation}
+                onPointerDown={stopInteractionPropagation}
+                onTouchStart={stopInteractionPropagation}
+                type="button"
+              >
+                <span className="mobile-dock-icon mobile-dock-icon-menu" aria-hidden="true" />
+                <span className="sr-only">打开场景控制面板</span>
+              </button>
+            </div>
+
+            <SheetContent
+              aria-label="移动端场景控制面板"
+              className="sidebar-panel is-mobile-panel"
+              side="bottom"
+            >
+              <MobileControlPanel
+                activeInspectorPanel={activeInspectorPanel}
+                copyMiniMapTransform={copyMiniMapTransform}
+                hasMiniMap={data.scene.miniMap !== undefined}
+                isMapVisible={isMiniMapVisible}
+                isOpen={isMobilePanelOpen}
+                miniMapCopyNote={miniMapCopyNote}
+                miniMapTransform={viewerConfig.showExperimentalControls ? miniMapTransform : null}
+                onMapVisibilityChange={setIsMiniMapVisible}
+                onActionComplete={dismissMobilePanel}
+                onMiniMapTransformChange={setMiniMapTransform}
+                onToggleInspectorPanel={toggleInspectorPanel}
+                resetMiniMapTransform={resetMiniMapTransform}
+                viewerConfig={viewerConfig}
+              />
+            </SheetContent>
+          </Sheet>
+        ) : null}
+
+        {viewerConfig.showPerfHud ? (
+          <aside className="perf-hud" aria-live="polite">
+            <span className="perf-chip">
+              FPS <strong>{perfHud.fps}</strong>
+            </span>
+            <span className="perf-chip">
+              帧时 <strong>{perfHud.ms}</strong>
+            </span>
+            <span className="perf-chip">
+              渲染 <strong>{perfHud.render}</strong>
+            </span>
+            <span className="perf-chip">
+              比例 <strong>{perfHud.scale}</strong>
+            </span>
+            <span className="perf-chip">
+              图形 <strong>{perfHud.backend}</strong>
+            </span>
+            <span className="perf-chip">
+              GPU <strong>{perfHud.gpu}</strong>
+            </span>
+          </aside>
+        ) : null}
+      </div>
     </main>
   );
 }

@@ -219,9 +219,21 @@ function bindRuntimeViewport({
     loopController.wake();
     app.renderNextFrame = true;
   };
+  const handlePageShow = () => {
+    runtimeWindow.requestAnimationFrame(() => {
+      handleResize();
+      runtimeWindow.requestAnimationFrame(() => {
+        handleResize();
+      });
+    });
+  };
 
   canvasElement.addEventListener('contextmenu', preventContextMenu);
   runtimeWindow.addEventListener('resize', handleResize);
+  runtimeWindow.addEventListener('load', handlePageShow);
+  runtimeWindow.addEventListener('pageshow', handlePageShow);
+  runtimeWindow.visualViewport?.addEventListener('resize', handleResize);
+  runtimeWindow.visualViewport?.addEventListener('scroll', handleResize);
   const resizeObserver =
     typeof ResizeObserver !== 'undefined' && canvasElement.parentElement
       ? new ResizeObserver(() => {
@@ -237,6 +249,10 @@ function bindRuntimeViewport({
   return {
     destroy() {
       runtimeWindow.removeEventListener('resize', handleResize);
+      runtimeWindow.removeEventListener('load', handlePageShow);
+      runtimeWindow.removeEventListener('pageshow', handlePageShow);
+      runtimeWindow.visualViewport?.removeEventListener('resize', handleResize);
+      runtimeWindow.visualViewport?.removeEventListener('scroll', handleResize);
       resizeObserver?.disconnect();
       canvasElement.removeEventListener('contextmenu', preventContextMenu);
     }
