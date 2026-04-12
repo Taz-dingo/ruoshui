@@ -19,6 +19,7 @@
 位置：
 
 - `web/src/style.css`
+ - `web/src/globals.css`
 
 职责：
 
@@ -69,7 +70,7 @@
 
 位置：
 
-- `web/src/style.css`
+- `web/src/globals.css`
 
 当前保留原因：
 
