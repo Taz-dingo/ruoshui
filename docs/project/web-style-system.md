@@ -8,7 +8,7 @@
 
 - `Tailwind v4 @theme` 负责主题 token
 - `TS + cva` 负责 semantic primitive
-- 原始 `CSS` 只保留运行时视口变量、复杂动画、`PlayCanvas` 容器耦合和尚未迁移的 legacy selector
+- 全局 `CSS` 只保留运行时视口变量、reset 和 keyframes
 
 这次重构的重点不是“把所有样式都塞进一个文件”，而是建立之后能持续迁移的边界。
 
@@ -18,8 +18,7 @@
 
 位置：
 
-- `web/src/style.css`
- - `web/src/globals.css`
+- `web/src/globals.css`
 
 职责：
 
@@ -66,7 +65,7 @@
 - 基础件优先从这里取语义类
 - 业务组件尽量只做组合，不重新发明自己的面板 / 按钮 / 输入样式
 
-### 3. Legacy CSS Layer
+### 3. Global CSS Layer
 
 位置：
 
@@ -75,13 +74,13 @@
 当前保留原因：
 
 - `safe-area` 和 `viewport` 运行时变量依然要靠 CSS 承载
-- `scene / hud / highlight / loading` 有较多 `PlayCanvas` 容器耦合
-- 现有移动端抽屉、inspector 和动画类还没完全迁出
+- `Tailwind` 入口和全局 reset 仍应集中在一个文件
+- 动画 `keyframes` 继续放在 CSS 更清晰
 
 规则：
 
-- 这里只允许继续承载“结构耦合强、动画复杂、临时未迁移”的样式
-- 新增普通 UI 视觉时，不再优先往这里加新类
+- 这里只允许继续承载全局变量、reset 和 keyframes
+- 不再新增组件级 selector
 
 ## 已完成迁移
 
@@ -104,7 +103,7 @@
 
 ## 当前结构
 
-- `web/src/style.css`
+- `web/src/globals.css`
   现在只保留：
   - `Tailwind @theme` token
   - 运行时 viewport / safe-area 变量
@@ -124,7 +123,7 @@
 
 ## 剩余约束
 
-这个重构完成后，仍然保留的原始 CSS 能力只有：
+这个重构完成后，仍然保留的全局 CSS 能力只有：
 
 - 浏览器 / 运行时需要的全局 reset
 - `Mobile Safari` 相关的 viewport 变量
@@ -133,8 +132,9 @@
 不再保留：
 
 - 依赖全局 `.panel / .hero / .route-log / .quality-toggle / .mobile-sheet` 之类 class selector 的样式组织方式
-- 把视觉细节继续堆回 `style.css` 的旧路径
+- 把视觉细节继续堆回 `globals.css`
 
 ## 已知未解决项
 
 - `Mobile Safari` 安全区里场景本身未完全填满的问题，仍是独立布局 / viewport 问题，不属于本次样式系统重构范围
+- commit 前应额外跑一次 repo cleanup，确认文档、旧引用和死代码没有被样式改动带脏
