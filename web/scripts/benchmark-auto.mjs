@@ -23,7 +23,7 @@ async function main() {
   await fs.mkdir(outputDir, { recursive: true });
 
   if (!args.skipBuild) {
-    await runCommand('pnpm', ['build'], { cwd: webDir });
+    await runCommand('pnpm', ['build:compare'], { cwd: webDir });
   }
 
   const server = startPreviewServer({

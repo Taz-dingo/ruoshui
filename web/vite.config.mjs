@@ -113,9 +113,15 @@ function getContentType(sourceFile) {
 const rootDir = path.resolve(__dirname, '..');
 const contentSourceFile = path.join(__dirname, 'public', 'content', 'mvp.json');
 const productionModelFile = path.join(__dirname, 'public', 'models', 'hhuc-original.sog');
-const isSingleModelProduction =
-  process.env.RUOSHUI_BUILD_PROFILE === 'single-model' ||
-  process.env.VERCEL_ENV === 'production';
+
+function resolveBuildProfile() {
+  const explicitProfile = process.env.RUOSHUI_BUILD_PROFILE;
+  if (explicitProfile === 'compare' || explicitProfile === 'single-model') {
+    return explicitProfile;
+  }
+
+  return 'single-model';
+}
 
 function filterContentForProfile(content, singleModelProduction) {
   if (!singleModelProduction) {
@@ -242,25 +248,33 @@ function requiredProductionModelPlugin(options) {
   };
 }
 
-const assetEntries = createAssetEntries(isSingleModelProduction);
+export default defineConfig(({ command }) => {
+  const buildProfile = resolveBuildProfile();
+  const singleModelProduction =
+    command === 'build' &&
+    (buildProfile === 'single-model' || process.env.VERCEL_ENV === 'production');
+  const assetEntries = command === 'serve'
+    ? createAssetEntries(false)
+    : createAssetEntries(singleModelProduction);
 
-export default defineConfig({
-  plugins: [
-    tailwindcss(),
-    react(),
-    requiredProductionModelPlugin({
-      sourceFile: productionModelFile
-    }),
-    contentProfilePlugin({
-      singleModelProduction: isSingleModelProduction,
-      sourceFile: contentSourceFile
-    }),
-    externalAssetsPlugin(assetEntries)
-  ],
-  server: {
-    host: '0.0.0.0'
-  },
-  preview: {
-    host: '0.0.0.0'
-  }
+  return {
+    plugins: [
+      tailwindcss(),
+      react(),
+      requiredProductionModelPlugin({
+        sourceFile: productionModelFile
+      }),
+      contentProfilePlugin({
+        singleModelProduction,
+        sourceFile: contentSourceFile
+      }),
+      externalAssetsPlugin(assetEntries)
+    ],
+    server: {
+      host: '0.0.0.0'
+    },
+    preview: {
+      host: '0.0.0.0'
+    }
+  };
 });
