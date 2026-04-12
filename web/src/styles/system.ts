@@ -25,8 +25,6 @@ const scrollAreaClassNames = {
 
 const textClassNames = {
   badge: 'text-[9px] uppercase tracking-[0.04em]',
-  body: 'text-ui-sm leading-[1.6]',
-  meta: 'text-ui-xs leading-[1.45] text-ink-muted/74',
   mutedBody: 'text-ui-sm leading-[1.6] text-ink-muted/72',
   title: 'text-ui-title leading-[1.1] tracking-[-0.04em]'
 } as const;

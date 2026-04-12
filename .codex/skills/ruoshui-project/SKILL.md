@@ -27,9 +27,10 @@ When this skill is active:
 1. Start from existing project docs before inventing new scope
 2. Keep each iteration focused on one small, verifiable step
 3. Update the relevant doc when a decision changes
-4. Commit after each meaningful step when the result is coherent
-5. Prefer clarifying risk early over building speculative features
-6. If the user asks to save progress, record current status, or prepare a handoff, sync `docs/project/state.md`, `docs/project/tasks.md`, and the iteration doc before stopping
+4. Before each commit-sized delivery, also use `$ruoshui-cleanup`
+5. Commit after each meaningful step when the result is coherent
+6. Prefer clarifying risk early over building speculative features
+7. If the user asks to save progress, record current status, or prepare a handoff, sync `docs/project/state.md`, `docs/project/tasks.md`, and the iteration doc before stopping
 
 ## Source of Truth
 
@@ -61,6 +62,7 @@ A step is in good shape when it has all of the following:
 - one clear purpose
 - one visible output
 - one minimal validation result
+- one cleanup pass
 - one small commit
 
 ## Trigger Hints

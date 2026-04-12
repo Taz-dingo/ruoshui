@@ -22,7 +22,7 @@
 做过：
 
 - `meta` 侧加入过 `apple-mobile-web-app-capable`、`apple-mobile-web-app-status-bar-style`
-- 在 `web/src/style.css` 中使用过 `env(safe-area-inset-*)`
+- 在 `web/src/globals.css` 中使用过 `env(safe-area-inset-*)`
 - 在 `web/src/main.tsx` 中同步 `visualViewport.height` 到 `--app-height`
 - 对 `100vh / 100dvh / 100lvh` 做过切换和组合
 
@@ -142,7 +142,7 @@
 
 - `web/src/main.tsx`
 - `web/src/app/App.tsx`
-- `web/src/style.css`
+- `web/src/globals.css`
 
 当前保留的调试能力：
 
