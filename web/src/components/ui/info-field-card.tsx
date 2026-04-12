@@ -1,5 +1,9 @@
 import type { HTMLAttributes, ReactNode } from 'react';
 
+import {
+  surfaceClassNames,
+  textClassNames
+} from '../../styles/system';
 import { cn } from '../../utils/cn';
 
 interface InfoFieldCardProps extends HTMLAttributes<HTMLDivElement> {
@@ -16,12 +20,13 @@ function InfoFieldCard({
   return (
     <div
       className={cn(
-        'grid min-w-0 gap-[5px] rounded-[14px] border border-[rgba(231,218,198,0.08)] bg-[rgba(244,236,222,0.03)] px-3 py-2.5',
+        surfaceClassNames.infoField,
+        'grid min-w-0 gap-[5px] px-3 py-2.5',
         className
       )}
       {...props}
     >
-      <span className="info-field-label">{label}</span>
+      <span className={cn('info-field-label', textClassNames.meta)}>{label}</span>
       <strong className="info-field-value">{value}</strong>
     </div>
   );

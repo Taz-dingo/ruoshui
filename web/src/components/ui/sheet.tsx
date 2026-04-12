@@ -5,6 +5,7 @@ import {
   type ElementRef
 } from 'react';
 
+import { surfaceClassNames } from '../../styles/system';
 import { cn } from '../../utils/cn';
 
 const Sheet = DialogPrimitive.Root;
@@ -64,7 +65,7 @@ const SheetContent = forwardRef<
       <SheetOverlay />
       <DialogPrimitive.Content
         ref={ref}
-        className={cn('sheet-content', className)}
+        className={cn('sheet-content', surfaceClassNames.panel, className)}
         data-side={side}
         {...contentProps}
       >

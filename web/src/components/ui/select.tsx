@@ -6,6 +6,7 @@ import {
   type ReactNode
 } from 'react';
 
+import { selectClassNames } from '../../styles/system';
 import { cn } from '../../utils/cn';
 
 const Select = SelectPrimitive.Root;
@@ -35,7 +36,7 @@ const SelectContent = forwardRef<
       <SelectPrimitive.Content
         ref={ref}
         className={cn(
-          'z-[20] min-w-[140px] overflow-hidden rounded-[14px] border border-[rgba(231,218,198,0.12)] bg-[rgba(47,36,29,0.96)] p-1 text-[11px] text-[var(--text)] shadow-[var(--shadow)] backdrop-blur-[18px]',
+          selectClassNames.content,
           className
         )}
         {...props}
@@ -59,7 +60,7 @@ const SelectItem = forwardRef<
     <SelectPrimitive.Item
       ref={ref}
       className={cn(
-        'relative flex w-full cursor-pointer select-none items-center rounded-[10px] px-3 py-2 text-[11px] outline-none data-[highlighted]:bg-[rgba(168,201,125,0.12)] data-[highlighted]:text-[var(--accent-strong)]',
+        selectClassNames.item,
         className
       )}
       {...props}
