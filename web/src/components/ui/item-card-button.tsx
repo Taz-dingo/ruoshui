@@ -1,6 +1,9 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 
-import { itemCardButtonVariants } from '../../styles/system';
+import {
+  itemCardButtonVariants,
+  itemCardTextClassNames
+} from '../../styles/system';
 import { cn } from '../../utils/cn';
 
 interface ItemCardButtonProps
@@ -27,7 +30,6 @@ function ItemCardButton({
   return (
     <button
       className={cn(
-        'item-card-button',
         itemCardButtonVariants({
           active: isActive,
           density,
@@ -38,11 +40,11 @@ function ItemCardButton({
       type={type}
       {...props}
     >
-      <span className="item-card-line">
-        <strong className="item-card-title">{title}</strong>
-        {meta ? <small className="item-card-meta">{meta}</small> : null}
+      <span className={itemCardTextClassNames.line}>
+        <strong className={itemCardTextClassNames.title}>{title}</strong>
+        {meta ? <small className={itemCardTextClassNames.meta}>{meta}</small> : null}
       </span>
-      {body ? <span className="item-card-body">{body}</span> : null}
+      {body ? <span className={itemCardTextClassNames.body}>{body}</span> : null}
     </button>
   );
 }

@@ -38,6 +38,7 @@
 - [x] 完成 `SOG` 派生版本的同页对比入口
 - [x] 将前端样式体系开始迁移到 `Tailwind CSS`
 - [x] 建立首轮 `Tailwind v4 @theme + TS/cva primitive` 样式系统入口，减少新增样式继续堆到原始 `CSS`
+- [x] 完成 `web/` 样式系统重构收口：移除大部分 legacy 全局 selector，把组件视觉迁到 `TSX + Tailwind + style system primitive`
 - [x] 将前端主要面板迁移到 `React + Zustand`
 - [x] 将轨迹播放与基准测试 helper 从 `viewer.ts` 拆到独立模块
 - [x] 固定 `web/` 模块的统一尾部导出风格
@@ -52,7 +53,6 @@
 - [x] 落地首版场景内三维点位图文功能：用 `React` 覆盖层渲染点位，用 `PlayCanvas` 相机投影驱动屏幕定位，点击点位联动镜头并展开图文卡片
 - [x] 增加开发态视角采集 / 自动扫场景工具，支持导出截图与相机样本用于轨道和小地图分析
 - [ ] 收口内部三维打点 authoring 工具：支持点击打点、预览定位、草稿复制，并为后续内容入库保留字段
-- [ ] 继续把 `web/src/style.css` 中的 legacy 面板 / inspector / mobile drawer 样式迁到新的样式系统层
 - [x] 明确后端结构：同仓库 `monorepo` + 独立 `forum-api` 服务
 - [x] 选定论坛底座：数据库、对象存储抽象与共享类型方案
 - [x] 接入首版数据库访问层：`Drizzle/PostgreSQL` client、repository 与首个 migration

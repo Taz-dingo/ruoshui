@@ -1,8 +1,8 @@
 import type { HTMLAttributes, ReactNode } from 'react';
 
 import {
+  itemCardTextClassNames,
   surfaceClassNames,
-  textClassNames
 } from '../../styles/system';
 import { cn } from '../../utils/cn';
 
@@ -26,8 +26,8 @@ function InfoFieldCard({
       )}
       {...props}
     >
-      <span className={cn('info-field-label', textClassNames.meta)}>{label}</span>
-      <strong className="info-field-value">{value}</strong>
+      <span className="text-ui-xs leading-[1.45] text-ink-muted/74">{label}</span>
+      <strong className={cn(itemCardTextClassNames.title, 'text-[11px] leading-[1.45]')}>{value}</strong>
     </div>
   );
 }

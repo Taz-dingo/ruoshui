@@ -1,5 +1,6 @@
 import { InspectorSection } from '../ui/inspector-section';
 import { Switch } from '../ui/switch';
+import { settingToggleClassNames } from '../../styles/system';
 
 interface DisplaySettingsSectionProps {
   isMapVisible: boolean;
@@ -22,11 +23,11 @@ function DisplaySettingsSection({
       summary={isMapVisible ? '地图已显示' : '地图已隐藏'}
       title="界面元素"
     >
-      <div className="quality-control">
-        <label className="quality-toggle">
-          <span>
-            <strong>显示地图</strong>
-            <small>右上角保留当前视角对应的顶视图。</small>
+      <div className="grid gap-2 max-[760px]:gap-[0.6rem]">
+        <label className={settingToggleClassNames.root}>
+          <span className={settingToggleClassNames.body}>
+            <strong className={settingToggleClassNames.label}>显示地图</strong>
+            <small className={settingToggleClassNames.description}>右上角保留当前视角对应的顶视图。</small>
           </span>
           <Switch
             checked={isMapVisible}

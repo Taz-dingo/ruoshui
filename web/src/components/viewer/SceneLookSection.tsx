@@ -92,7 +92,7 @@ function SceneLookSection({ isOpen, onToggle }: SceneLookSectionProps) {
       summary={sceneLook.summary}
       title="画面表现"
     >
-      <div className="scene-look-controls">
+      <div className="grid gap-2.5">
         {controls.map((control) => (
           <SliderField
             key={control.id}

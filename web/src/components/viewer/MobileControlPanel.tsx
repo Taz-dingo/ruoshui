@@ -49,13 +49,16 @@ function MobileControlPanel({
   }, [activeInspectorPanel, isOpen]);
 
   return (
-    <div className="mobile-sheet-shell">
-      <div className="mobile-sheet-topbar">
-        <div className="mobile-sheet-handle" />
+    <div className="grid h-full grid-rows-[auto_minmax(0,1fr)]">
+      <div className="relative z-[1] border-b border-ink-muted/6 bg-[linear-gradient(180deg,rgba(54,40,32,0.96)_0%,rgba(54,40,32,0.92)_100%)] px-0 pb-2 pt-2 shadow-[inset_0_-1px_0_rgba(255,246,232,0.03)]">
+        <div className="mx-auto h-1.5 w-10 rounded-full bg-ink-muted/18" />
       </div>
 
-      <div className="mobile-sheet-scroll" ref={scrollRef}>
-        <section className="mobile-sheet-panel">
+      <div
+        className="min-h-0 overflow-y-auto overscroll-contain [scrollbar-width:none] [-webkit-overflow-scrolling:touch] [touch-action:pan-y] [&::-webkit-scrollbar]:hidden"
+        ref={scrollRef}
+      >
+        <section className="px-0 pt-1.5 [padding-bottom:calc(0.9rem+var(--safe-bottom))]">
           <ViewerInspectorPanels
             activeInspectorPanel={activeInspectorPanel}
             copyMiniMapTransform={copyMiniMapTransform}

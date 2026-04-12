@@ -17,6 +17,7 @@ import {
 } from '../ui/select';
 import { SliderField } from '../ui/slider-field';
 import { Switch } from '../ui/switch';
+import { settingToggleClassNames } from '../../styles/system';
 
 interface RenderScaleSectionProps {
   activeRenderScalePercent: number;
@@ -59,9 +60,8 @@ function RenderScaleSection({
       summary={renderScale.summary}
       title="渲染清晰度"
     >
-      <div className="quality-control">
+      <div className="grid gap-2 max-[760px]:gap-[0.6rem]">
         <SliderField
-          containerClassName="quality-slider-field"
           description={renderScale.note}
           label="清晰度"
           min={renderScaleMinPercent}
@@ -77,10 +77,10 @@ function RenderScaleSection({
         />
         {showAdvancedControls ? (
           <>
-            <label className="quality-toggle">
-              <span>
-                <strong>图形后端</strong>
-                <small>当前 {perfHud.backend} · 切换后自动重载</small>
+            <label className={settingToggleClassNames.root}>
+              <span className={settingToggleClassNames.body}>
+                <strong className={settingToggleClassNames.label}>图形后端</strong>
+                <small className={settingToggleClassNames.description}>当前 {perfHud.backend} · 切换后自动重载</small>
               </span>
               <Select
                 value={graphicsBackendPreference}
@@ -100,10 +100,10 @@ function RenderScaleSection({
                 </SelectContent>
               </Select>
             </label>
-            <label className="quality-toggle">
-              <span>
-                <strong>后处理抗锯齿</strong>
-                <small>{renderScale.antiAliasSummary} · {renderScale.antiAliasNote}</small>
+            <label className={settingToggleClassNames.root}>
+              <span className={settingToggleClassNames.body}>
+                <strong className={settingToggleClassNames.label}>后处理抗锯齿</strong>
+                <small className={settingToggleClassNames.description}>{renderScale.antiAliasSummary} · {renderScale.antiAliasNote}</small>
               </span>
               <Switch
                 checked={renderScale.antiAliasEnabled}

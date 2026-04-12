@@ -4,7 +4,7 @@
 
 ## 目标
 
-`web/` 的样式系统从这一步开始收口为：
+`web/` 的样式系统现在已经收口为：
 
 - `Tailwind v4 @theme` 负责主题 token
 - `TS + cva` 负责 semantic primitive
@@ -82,7 +82,7 @@
 - 这里只允许继续承载“结构耦合强、动画复杂、临时未迁移”的样式
 - 新增普通 UI 视觉时，不再优先往这里加新类
 
-## 本轮已完成的首批迁移
+## 已完成迁移
 
 已从散落硬编码样式改为走 style system 的文件：
 
@@ -96,24 +96,44 @@
 - `web/src/components/ui/select.tsx`
 - `web/src/components/ui/sheet.tsx`
 - `web/src/components/ui/switch.tsx`
+- `web/src/components/ui/inspector-section.tsx`
+- `web/src/components/ui/slider-field.tsx`
+- `web/src/components/viewer/*`
+- `web/src/runtime/canvas-host.ts`
 
-## 后续迁移顺序
+## 当前结构
 
-建议按下面顺序继续：
+- `web/src/style.css`
+  现在只保留：
+  - `Tailwind @theme` token
+  - 运行时 viewport / safe-area 变量
+  - reset / base
+  - keyframes
 
-1. `inspector-section / slider-field / accordion` 这组结构件
-2. `viewer` 侧的 panel 内部 typography 和 spacing
-3. 移动端抽屉相关的 legacy class
-4. 最后再收 `style.css` 里残余的大块视觉 selector
+- `web/src/styles/system.ts`
+  现在承载：
+  - `app shell`
+  - `surface`
+  - `button / badge / select / switch`
+  - `inspector / slider / item-card / toggle-card`
+  - 共享文字、滚动区域和响应式 primitive
 
-## 当前边界
+- 组件文件
+  现在直接在 `TSX` 内组合 `Tailwind` 类，不再依赖一大批全局 class selector
 
-这一步没有解决：
+## 剩余约束
 
-- `Mobile Safari` 安全区中场景不完全填满的问题
-- 旧的复杂布局类仍然大量存在于 `style.css`
+这个重构完成后，仍然保留的原始 CSS 能力只有：
 
-这一步解决的是：
+- 浏览器 / 运行时需要的全局 reset
+- `Mobile Safari` 相关的 viewport 变量
+- 动画 keyframes
 
-- 后续 UI 改动不必继续依赖原始 CSS 里散落的颜色 / 面板 / 控件定义
-- 样式系统有了明确入口，后续可以分批迁移而不是整仓推翻
+不再保留：
+
+- 依赖全局 `.panel / .hero / .route-log / .quality-toggle / .mobile-sheet` 之类 class selector 的样式组织方式
+- 把视觉细节继续堆回 `style.css` 的旧路径
+
+## 已知未解决项
+
+- `Mobile Safari` 安全区里场景本身未完全填满的问题，仍是独立布局 / viewport 问题，不属于本次样式系统重构范围

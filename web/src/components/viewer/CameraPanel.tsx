@@ -40,7 +40,7 @@ function CameraPanel({ isOpen, onToggle }: CameraPanelProps) {
       summary={state.summary}
       title="相机信息"
     >
-      <div className="camera-grid">
+      <div className="grid grid-cols-2 gap-2.5 max-[760px]:grid-cols-1">
         {fields.map((field) => (
           <InfoFieldCard
             key={field.id}

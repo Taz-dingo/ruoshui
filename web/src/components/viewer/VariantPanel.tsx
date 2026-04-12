@@ -21,14 +21,14 @@ function VariantPanel({
 
   return (
     <InspectorSection
-      className="variant-section"
+      className="pt-1 pb-1"
       isOpen={isOpen}
       onToggle={onToggle}
       panelId="variants"
       summary={state.summary}
       title="模型版本"
     >
-      <div className="variant-list">
+      <div className="grid grid-cols-2 gap-2 max-[760px]:grid-cols-1 max-[760px]:gap-[0.6rem]">
         {state.items.map((item) => (
           <ItemCardButton
             key={item.id}

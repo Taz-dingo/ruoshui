@@ -231,13 +231,13 @@
 - 已完成一轮 UI 收口：当前左侧标题区、模型版本 / 导览镜头面板与右上角小地图重新统一到同一套排版与质感基线上，正式界面继续保留克制的信息密度
 - 已补 `Mobile Safari` 视口问题交接文档：当前已把安全区填充问题的尝试路径、关键调试值、无效方向和下一步建议沉淀到 `docs/project/mobile-safari-viewport-handoff.md`
 - 已启动前端样式系统重构：当前不再把 `web/src/style.css` 作为默认新增样式入口，而是开始收口为“`Tailwind v4 @theme` token + `TS/cva` primitive + 少量 legacy CSS”的三层结构，并已补文档 `docs/project/web-style-system.md`
+- 已完成这轮前端样式系统重构收口：`web/src/style.css` 已从 `1400+` 行 legacy selector 收缩为只保留 theme token、viewport 变量、reset 与 keyframes；组件视觉已迁到 `web/src/styles/system.ts` 和各 `TSX` 文件内组合的 `Tailwind` 类
 
 ## 当前一期上线缺口
 
 - 需要继续收敛 UI 文案与信息密度，强化纪念感并去掉剩余工具型描述
 - 需要继续把小地图、天空环境与加载体验做最后一轮稳定性检查
 - 需要继续解决 `Mobile Safari` 上场景未真正填满上巴 / 下巴区域的问题
-- 需要继续把 `style.css` 里的 legacy 组件样式逐步迁到新的样式系统层
 
 ## 当前优先级判断
 

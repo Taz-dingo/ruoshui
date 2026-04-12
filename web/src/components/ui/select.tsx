@@ -19,7 +19,7 @@ const SelectTrigger = forwardRef<
   return (
     <SelectPrimitive.Trigger
       ref={ref}
-      className={cn('quality-select', className)}
+      className={cn(selectClassNames.trigger, className)}
       {...props}
     >
       {children}
