@@ -1,5 +1,6 @@
 import type { InputHTMLAttributes, ReactNode } from 'react';
 
+import { sliderFieldClassNames } from '../../styles/system';
 import { cn } from '../../utils/cn';
 
 interface SliderFieldProps
@@ -19,16 +20,16 @@ function SliderField({
   ...props
 }: SliderFieldProps) {
   return (
-    <label className={cn('slider-field', containerClassName)}>
-      <span className="slider-field-label">{label}</span>
+    <label className={cn(sliderFieldClassNames.root, containerClassName)}>
+      <span className={sliderFieldClassNames.label}>{label}</span>
       <input
-        className={cn('quality-slider', className)}
+        className={cn(sliderFieldClassNames.input, className)}
         type="range"
         {...props}
       />
-      <strong className="slider-field-value">{valueLabel}</strong>
+      <strong className={sliderFieldClassNames.value}>{valueLabel}</strong>
       {description ? (
-        <span className="slider-field-description">{description}</span>
+        <span className={sliderFieldClassNames.description}>{description}</span>
       ) : null}
     </label>
   );

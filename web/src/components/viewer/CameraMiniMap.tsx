@@ -77,12 +77,16 @@ function CameraMiniMap({
     .filter(({ point }) => isPointInsideCircle(point));
 
   return (
-    <div className="minimap-card" aria-label="若水广场当前相机顶视图">
+    <div
+      className="relative h-[186px] w-[186px] overflow-hidden rounded-full border border-ink/10 bg-[rgba(27,23,19,0.42)] opacity-100 shadow-[inset_0_1px_0_rgba(255,246,232,0.04),0_10px_22px_rgba(11,10,8,0.14)] max-[760px]:h-[118px] max-[760px]:w-[118px]"
+      aria-label="若水广场当前相机顶视图"
+    >
       <svg
-        className="minimap-svg"
+        className="block h-full w-full overflow-hidden rounded-full"
         viewBox={`0 0 ${viewBoxSize} ${viewBoxSize}`}
         role="img"
         aria-label="若水广场当前相机顶视图"
+        style={{ clipPath: 'circle(50% at 50% 50%)' }}
       >
         <defs>
           <clipPath id="ruoshui-minimap-circle">
@@ -91,7 +95,7 @@ function CameraMiniMap({
         </defs>
 
         <g clipPath="url(#ruoshui-minimap-circle)">
-          <circle className="minimap-bg" cx={center} cy={center} r={radius} />
+          <circle cx={center} cy={center} r={radius} fill="rgba(27, 23, 19, 0.54)" />
           {map.imageUrl ? (
             <g
               transform={`translate(${resolvedImageTransform.translateX} ${resolvedImageTransform.translateY})`}
@@ -105,60 +109,78 @@ function CameraMiniMap({
                 ].join(' ')}
               >
                 <image
-                  className="minimap-image"
                   href={map.imageUrl}
                   x={mapFrame.x}
                   y={mapFrame.y}
                   width={mapFrame.width}
                   height={mapFrame.height}
                   preserveAspectRatio="xMidYMid meet"
+                  opacity="1"
                 />
               </g>
             </g>
           ) : null}
           {projectedLandmarks.map((landmark) => (
-            <g className="minimap-landmark" key={landmark.id}>
+            <g key={landmark.id}>
               <circle
-                className="minimap-landmark-ring"
                 cx={landmark.point.x}
                 cy={landmark.point.y}
                 r="5.5"
+                fill="rgba(28, 24, 18, 0.24)"
+                stroke="rgba(214, 231, 184, 0.34)"
+                strokeWidth="1.1"
               />
               <circle
-                className="minimap-landmark-dot"
                 cx={landmark.point.x}
                 cy={landmark.point.y}
                 r="2.5"
+                fill="rgba(168, 201, 125, 0.95)"
               />
               <text
-                className="minimap-landmark-label"
                 x={landmark.point.x + 7}
                 y={landmark.point.y - 7}
+                style={{
+                  fill: 'rgba(244, 236, 222, 0.64)',
+                  fontSize: '8px',
+                  fontWeight: 600,
+                  letterSpacing: '0.02em',
+                  paintOrder: 'stroke',
+                  stroke: 'rgba(28, 24, 18, 0.4)',
+                  strokeWidth: '2px',
+                  strokeLinejoin: 'round'
+                }}
               >
                 {landmark.name}
               </text>
             </g>
           ))}
           {visibleGroundPath ? (
-            <path className="minimap-footprint" d={visibleGroundPath} />
+            <path
+              d={visibleGroundPath}
+              fill="rgba(168, 201, 125, 0.2)"
+              stroke="rgba(220, 242, 184, 0.58)"
+              strokeWidth="1.2"
+            />
           ) : null}
           {targetPoint ? (
             <>
               <line
-                className="minimap-track"
                 x1={center}
                 y1={center}
                 x2={targetPoint.x}
                 y2={targetPoint.y}
+                stroke="rgba(244, 236, 222, 0.34)"
+                strokeWidth="1.2"
+                strokeDasharray="3 4"
               />
-              <circle className="minimap-target-ring" cx={targetPoint.x} cy={targetPoint.y} r="7" />
-              <circle className="minimap-target-dot" cx={targetPoint.x} cy={targetPoint.y} r="3.5" />
+              <circle cx={targetPoint.x} cy={targetPoint.y} r="7" fill="none" stroke="rgba(168, 201, 125, 0.42)" strokeWidth="1.5" />
+              <circle cx={targetPoint.x} cy={targetPoint.y} r="3.5" fill="rgba(168, 201, 125, 0.95)" />
             </>
           ) : null}
-          <circle className="minimap-camera-ring" cx={center} cy={center} r="10" />
-          <circle className="minimap-camera-dot" cx={center} cy={center} r="4.5" />
+          <circle cx={center} cy={center} r="10" fill="none" stroke="rgba(255, 231, 200, 0.48)" strokeWidth="1.5" />
+          <circle cx={center} cy={center} r="4.5" fill="rgba(244, 220, 190, 0.96)" />
         </g>
-        <circle className="minimap-frame" cx={center} cy={center} r={radius} />
+        <circle cx={center} cy={center} r={radius} fill="none" stroke="rgba(244, 236, 222, 0.18)" strokeWidth="1.1" />
       </svg>
     </div>
   );

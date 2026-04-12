@@ -3,6 +3,7 @@ import { InspectorSection } from '../ui/inspector-section';
 import { SliderField } from '../ui/slider-field';
 import { Switch } from '../ui/switch';
 import type { MiniMapImageTransform } from '../../content/types';
+import { settingToggleClassNames } from '../../styles/system';
 
 interface MiniMapAlignSectionProps {
   copyNote: string;
@@ -70,7 +71,7 @@ function MiniMapAlignSection({
       summary="开发态校准"
       title="地图对齐"
     >
-      <div className="scene-look-controls">
+      <div className="grid gap-2.5">
         {controls.map((control) => (
           <SliderField
             key={control.id}
@@ -90,10 +91,10 @@ function MiniMapAlignSection({
           />
         ))}
 
-        <label className="quality-toggle">
-          <span>
-            <strong>水平镜像</strong>
-            <small>方向如果左右反了，先试这个。</small>
+        <label className={settingToggleClassNames.root}>
+          <span className={settingToggleClassNames.body}>
+            <strong className={settingToggleClassNames.label}>水平镜像</strong>
+            <small className={settingToggleClassNames.description}>方向如果左右反了，先试这个。</small>
           </span>
           <Switch
             checked={transform.flipX ?? false}
@@ -106,10 +107,10 @@ function MiniMapAlignSection({
           />
         </label>
 
-        <label className="quality-toggle">
-          <span>
-            <strong>垂直镜像</strong>
-            <small>方向如果上下反了，再试这个。</small>
+        <label className={settingToggleClassNames.root}>
+          <span className={settingToggleClassNames.body}>
+            <strong className={settingToggleClassNames.label}>垂直镜像</strong>
+            <small className={settingToggleClassNames.description}>方向如果上下反了，再试这个。</small>
           </span>
           <Switch
             checked={transform.flipY ?? false}
@@ -122,10 +123,10 @@ function MiniMapAlignSection({
           />
         </label>
 
-        <label className="quality-toggle">
-          <span>
-            <strong>坐标 X 反向</strong>
-            <small>解决左右方向、左转右转感受不一致的问题。</small>
+        <label className={settingToggleClassNames.root}>
+          <span className={settingToggleClassNames.body}>
+            <strong className={settingToggleClassNames.label}>坐标 X 反向</strong>
+            <small className={settingToggleClassNames.description}>解决左右方向、左转右转感受不一致的问题。</small>
           </span>
           <Switch
             checked={transform.invertWorldX ?? false}
@@ -138,10 +139,10 @@ function MiniMapAlignSection({
           />
         </label>
 
-        <label className="quality-toggle">
-          <span>
-            <strong>坐标 Z 反向</strong>
-            <small>解决前后/上下漂移方向不一致的问题。</small>
+        <label className={settingToggleClassNames.root}>
+          <span className={settingToggleClassNames.body}>
+            <strong className={settingToggleClassNames.label}>坐标 Z 反向</strong>
+            <small className={settingToggleClassNames.description}>解决前后/上下漂移方向不一致的问题。</small>
           </span>
           <Switch
             checked={transform.invertWorldZ ?? false}
@@ -154,7 +155,7 @@ function MiniMapAlignSection({
           />
         </label>
 
-        <div className="minimap-align-actions">
+        <div className="grid grid-cols-2 gap-2">
           <Button onClick={onCopy} variant="secondary">
             复制参数
           </Button>
@@ -162,7 +163,9 @@ function MiniMapAlignSection({
             重置
           </Button>
         </div>
-        <p className="minimap-align-note">{copyNote}</p>
+        <p className="text-[10px] leading-[1.45] text-ink-muted/72 max-[760px]:text-[var(--type-mobile-body)] max-[760px]:leading-[1.55]">
+          {copyNote}
+        </p>
       </div>
     </InspectorSection>
   );

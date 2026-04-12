@@ -5,7 +5,10 @@ import {
   type ElementRef
 } from 'react';
 
-import { surfaceClassNames } from '../../styles/system';
+import {
+  scrollAreaClassNames,
+  surfaceClassNames
+} from '../../styles/system';
 import { cn } from '../../utils/cn';
 
 const Sheet = DialogPrimitive.Root;
@@ -28,7 +31,7 @@ const SheetOverlay = forwardRef<
     <DialogPrimitive.Overlay
       ref={ref}
       className={cn(
-        'sheet-overlay fixed inset-0 z-[7]',
+        'fixed inset-0 z-[7] bg-[rgba(9,11,15,0.24)] backdrop-blur-[3px] data-[state=closed]:pointer-events-none data-[state=closed]:animate-[ruoshui-sheet-overlay-out_180ms_ease_forwards] data-[state=open]:animate-[ruoshui-sheet-overlay-in_240ms_ease_forwards]',
         className
       )}
       {...props}
@@ -65,7 +68,12 @@ const SheetContent = forwardRef<
       <SheetOverlay />
       <DialogPrimitive.Content
         ref={ref}
-        className={cn('sheet-content', surfaceClassNames.panel, className)}
+        className={cn(
+          'fixed outline-none will-change-[transform,opacity] data-[side=bottom]:origin-bottom',
+          scrollAreaClassNames.thin,
+          surfaceClassNames.panel,
+          className
+        )}
         data-side={side}
         {...contentProps}
       >

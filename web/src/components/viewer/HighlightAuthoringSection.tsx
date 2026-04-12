@@ -27,8 +27,8 @@ function HighlightAuthoringSection({
       summary={state.summary}
       title="三维打点"
     >
-      <div className="highlight-authoring-panel">
-        <div className="highlight-authoring-actions">
+      <div className="grid gap-2">
+        <div className="grid grid-cols-2 gap-2 max-[760px]:grid-cols-1">
           <Button
             variant={state.isEnabled ? 'secondary' : 'tertiary'}
             onClick={() => requestSetHighlightAuthoringEnabled(!state.isEnabled)}
@@ -56,15 +56,15 @@ function HighlightAuthoringSection({
           }
         />
 
-        <div className="highlight-authoring-meta">
-          <strong>最近落点</strong>
-          <span>{state.point}</span>
+        <div className="grid gap-2">
+          <strong className="text-[10px] uppercase tracking-[0.04em] text-ink-muted/58">最近落点</strong>
+          <span className="text-[11px] leading-[1.5] text-ink-muted/72">{state.point}</span>
         </div>
-        <div className="highlight-authoring-note">{state.note}</div>
-        <pre className="highlight-authoring-code">
+        <div className="text-[11px] leading-[1.5] text-ink-muted/72">{state.note}</div>
+        <pre className="m-0 max-h-52 overflow-auto rounded-control border border-ink-muted/8 bg-ink/3 px-3 py-2.5 text-[11px] leading-[1.5] whitespace-pre-wrap break-words text-ink/90">
           {state.jsonSnippet || '{\n  "id": "new-highlight"\n}'}
         </pre>
-        <div className="highlight-authoring-copy-note">{state.copyNote}</div>
+        <div className="text-[11px] leading-[1.5] text-ink-muted/72">{state.copyNote}</div>
       </div>
     </InspectorSection>
   );

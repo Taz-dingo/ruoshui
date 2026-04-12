@@ -12,7 +12,7 @@ function PresetPanel({ initialState, onPresetSelect }: PresetPanelProps) {
   const state = useViewerUiStore((store) => store.presetPanel ?? initialState);
 
   return (
-    <div className="preset-list">
+    <div className="grid gap-2 max-[760px]:gap-[0.6rem]">
       {state.items.map((item) => (
         <ItemCardButton
           key={item.id}

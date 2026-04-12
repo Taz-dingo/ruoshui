@@ -19,8 +19,8 @@ function ViewCaptureSection({ isOpen, onToggle }: ViewCaptureSectionProps) {
       summary={state.summary}
       title="视角采集"
     >
-      <div className="view-capture-panel">
-        <div className="view-capture-actions">
+      <div className="grid gap-2">
+        <div className="grid grid-cols-2 gap-2 max-[760px]:grid-cols-1">
           <Button
             disabled={state.isRunning}
             onClick={() => requestCaptureCurrentViewSample()}
@@ -36,7 +36,7 @@ function ViewCaptureSection({ isOpen, onToggle }: ViewCaptureSectionProps) {
             自动扫场景
           </Button>
         </div>
-        <div className="view-capture-actions">
+        <div className="grid grid-cols-2 gap-2 max-[760px]:grid-cols-1">
           <Button
             disabled={state.itemCount === 0 || state.isRunning}
             onClick={() => requestDownloadViewCaptureJson()}
@@ -52,13 +52,13 @@ function ViewCaptureSection({ isOpen, onToggle }: ViewCaptureSectionProps) {
             清空
           </Button>
         </div>
-        <div className="view-capture-note">{state.note}</div>
+        <div className="text-[11px] leading-[1.5] text-ink-muted/72">{state.note}</div>
         {state.items.length > 0 ? (
-          <div className="view-capture-list">
+          <div className="grid gap-2">
             {state.items.map((item) => (
-              <article className="view-capture-item" key={item.id}>
-                <strong>{item.label}</strong>
-                <span>{item.variantName}</span>
+              <article className="grid gap-1 rounded-control border border-ink-muted/8 bg-ink/3 px-3 py-2.5" key={item.id}>
+                <strong className="text-[11px] font-semibold text-ink">{item.label}</strong>
+                <span className="text-[10px] leading-[1.45] text-ink-muted/72">{item.variantName}</span>
               </article>
             ))}
           </div>

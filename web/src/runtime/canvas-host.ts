@@ -5,6 +5,7 @@ function createSceneCanvas(sceneContainer: HTMLElement) {
   const rect = sceneContainer.getBoundingClientRect();
   canvas.width = Math.max(1, Math.round(rect.width));
   canvas.height = Math.max(1, Math.round(rect.height));
+  canvas.className = 'block h-full w-full touch-none';
   canvas.style.width = '100%';
   canvas.style.height = '100%';
 

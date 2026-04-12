@@ -6,6 +6,7 @@ import {
   AccordionItem,
   AccordionTrigger
 } from './accordion';
+import { inspectorSectionClassNames } from '../../styles/system';
 import { cn } from '../../utils/cn';
 
 interface InspectorSectionProps {
@@ -40,18 +41,30 @@ function InspectorSection({
       }}
     >
       <AccordionItem
-        className={cn('inspector-section', className)}
+        className={cn(inspectorSectionClassNames.root, className)}
         data-panel={panelId}
         value={panelId}
       >
         <AccordionTrigger
-          className={cn('inspector-toggle', isOpen && 'is-active')}
+          className={inspectorSectionClassNames.trigger}
         >
-          <span className="section-title">{title}</span>
-          <span className="toggle-meta">{summary}</span>
+          <span className={inspectorSectionClassNames.title}>{title}</span>
+          <span className={inspectorSectionClassNames.summary}>{summary}</span>
+          <span
+            aria-hidden="true"
+            className={cn(
+              inspectorSectionClassNames.triggerIcon,
+              isOpen && 'text-brand/88'
+            )}
+          >
+            {isOpen ? '−' : '+'}
+          </span>
         </AccordionTrigger>
         <AccordionContent
-          className={cn('inspector-body', isOpen && 'is-open')}
+          className={cn(
+            inspectorSectionClassNames.body,
+            isOpen ? 'block' : 'hidden'
+          )}
           data-body={panelId}
         >
           {children}
