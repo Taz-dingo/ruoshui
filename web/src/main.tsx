@@ -1,6 +1,6 @@
 import ReactDOM from 'react-dom/client';
 import { flushSync } from 'react-dom';
-import './style.css';
+import './globals.css';
 import { App } from './app/App';
 import { createViewerConfig } from './app/viewer-config';
 import type { ViewerContent } from './content/types';
