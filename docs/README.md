@@ -6,6 +6,7 @@
 - `docs/project/plan.md`：阶段计划与里程碑
 - `docs/project/tasks.md`：当前任务池与迭代模板
 - `docs/project/state.md`：项目状态快照与恢复入口
+- `docs/project/cloudflare-community-plan.md`：Cloudflare 图文社区与点位联动方案（草案）
 
 ## assets
 
