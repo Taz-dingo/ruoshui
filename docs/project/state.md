@@ -182,6 +182,10 @@
 - 已新增 `Cloudflare Workers` 入口、`wrangler.toml`、本地 `.dev.vars` 模板与首个 `D1` migration，当前默认开发入口已切到 `wrangler dev --local`
 - 已新增 `D1` 版 forum repository，并保留旧的 `PostgreSQL` repository 作为本地 fallback 与迁移对照
 - 已将上传 ticket contract 扩展到 `r2`，并落地 `Worker -> R2` 的最小直传代理接口：`PUT /api/storage/objects/:objectKey`
+- 已创建 `Cloudflare Pages` 项目 `ruoshui-web`，当前生产静态站入口已切到 `https://ruoshui-web.pages.dev`
+- 已把生产主模型 `hhuc-original.sog` 外置到 `R2` 公网地址：`https://pub-5fbf37dd49b94b859c13e343effd0430.r2.dev/models/hhuc-original.sog`，用于绕开 `Pages` 单文件 `25 MiB` 限制
+- 已给 `web/` 补上 `build:pages` 与 `prepare-cloudflare-pages.mjs`：当前 `Pages` 构建会重写 `content/mvp.json` 中的生产主模型地址，并从 `dist` 中移除超限模型文件
+- 已把 `forum-api` 的线上 `Worker settings` 切到新的 Cloudflare 主路径：`CORS_ORIGIN=https://ruoshui-web.pages.dev`，`MEDIA_PUBLIC_BASE_URL=https://pub-5fbf37dd49b94b859c13e343effd0430.r2.dev`
 - 已新增三类仓库内专业 skill：`ruoshui-react-vercel`、`ruoshui-node-mcollina`、`ruoshui-cloudflare-workers`
 - 已新增第四类仓库内专业 skill：`ruoshui-web-3d`
 - 已新增第五类仓库内专业 skill：`ruoshui-supersplat`
