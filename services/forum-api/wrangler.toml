@@ -1,0 +1,21 @@
+name = "ruoshui-forum-api"
+main = "src/worker.ts"
+compatibility_date = "2026-04-18"
+
+[vars]
+CORS_ORIGIN = "http://localhost:5173"
+MEDIA_BUCKET_NAME = "ruoshui-media"
+MEDIA_PUBLIC_BASE_URL = "http://127.0.0.1:8787/media/"
+PUBLIC_API_BASE_URL = "http://127.0.0.1:8787"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ruoshui-forum"
+database_id = "00000000-0000-0000-0000-000000000000"
+preview_database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"
+
+[[r2_buckets]]
+binding = "MEDIA_BUCKET"
+bucket_name = "ruoshui-media"
+preview_bucket_name = "ruoshui-media-preview"

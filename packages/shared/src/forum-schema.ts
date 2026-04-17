@@ -90,7 +90,7 @@ const uploadRequestSchema = z.object({
 });
 
 const uploadTicketSchema = z.object({
-  provider: z.enum(["none", "alioss"]),
+  provider: z.enum(["none", "alioss", "r2"]),
   method: z.enum(["PUT", "POST"]),
   uploadUrl: z.string().url().optional(),
   objectKey: z.string().min(1),

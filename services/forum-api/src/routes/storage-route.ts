@@ -1,24 +1,58 @@
 import { Hono } from "hono";
 
-import { createUploadTicket, getStorageProviderName } from "../lib/storage.js";
+import type { StorageProvider } from "../lib/storage.js";
 
-const storageRoute = new Hono();
+interface CreateStorageRouteOptions {
+  storageProvider: StorageProvider;
+}
 
-storageRoute.get("/status", (context) =>
-  context.json({
-    ok: true,
-    provider: getStorageProviderName(),
-  }),
-);
+function createStorageRoute(options: CreateStorageRouteOptions): Hono {
+  const storageRoute = new Hono();
 
-storageRoute.post("/upload-requests", async (context) => {
-  const payload = await context.req.json();
-  const ticket = await createUploadTicket(payload);
+  storageRoute.get("/status", (context) =>
+    context.json({
+      ok: true,
+      provider: options.storageProvider.name,
+    }),
+  );
 
-  return context.json({
-    ok: true,
-    data: ticket,
+  storageRoute.post("/upload-requests", async (context) => {
+    const payload = await context.req.json();
+    const ticket = await options.storageProvider.createUploadTicket(payload);
+
+    return context.json({
+      ok: true,
+      data: ticket,
+    });
   });
-});
 
-export { storageRoute };
+  storageRoute.put("/objects/:objectKey", async (context) => {
+    if (!options.storageProvider.uploadObject) {
+      return context.json(
+        {
+          ok: false,
+          error: "Direct upload is not available for the current storage provider.",
+        },
+        501,
+      );
+    }
+
+    const objectKey = decodeURIComponent(context.req.param("objectKey"));
+    const result = await options.storageProvider.uploadObject({
+      objectKey,
+      request: context.req.raw,
+    });
+
+    return context.json(
+      {
+        ok: true,
+        data: result,
+      },
+      201,
+    );
+  });
+
+  return storageRoute;
+}
+
+export { createStorageRoute };
