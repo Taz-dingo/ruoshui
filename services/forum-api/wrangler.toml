@@ -1,18 +1,18 @@
 name = "ruoshui-forum-api"
 main = "src/worker.ts"
-compatibility_date = "2026-04-18"
+compatibility_date = "2026-04-17"
 
 [vars]
-CORS_ORIGIN = "http://localhost:5173"
+CORS_ORIGIN = "https://ruoshui-web.pages.dev"
 MEDIA_BUCKET_NAME = "ruoshui-media"
-MEDIA_PUBLIC_BASE_URL = "http://127.0.0.1:8787/media/"
-PUBLIC_API_BASE_URL = "http://127.0.0.1:8787"
+MEDIA_PUBLIC_BASE_URL = "https://pub-5fbf37dd49b94b859c13e343effd0430.r2.dev"
+PUBLIC_API_BASE_URL = "https://ruoshui-forum-api.tazdingo-ruoshui.workers.dev"
 
 [[d1_databases]]
 binding = "DB"
 database_name = "ruoshui-forum"
-database_id = "00000000-0000-0000-0000-000000000000"
-preview_database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "77f54654-bb08-41b4-afb4-cfd1c3669a26"
+preview_database_id = "77f54654-bb08-41b4-afb4-cfd1c3669a26"
 migrations_dir = "migrations"
 
 [[r2_buckets]]
