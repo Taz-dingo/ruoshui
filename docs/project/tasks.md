@@ -80,6 +80,7 @@
 - [x] 补 Web3D 专业 skill，并把“缺 skill 先更新 skill”纳入项目规范
 - [x] 将 `Web3D viewer/runtime` 与 `SuperSplat 资产编辑` 拆成两条专业 skill，并补官方链接入口
 - [x] 打通 `Cloudflare Pages` 静态部署，并将超限生产主模型外置到 `R2`
+- [x] 给 `Cloudflare Pages` 补上 `/api/*` 代理入口，并把前端部署脚本固化到仓库
 - [ ] 将对象存储主路径迁移到 `Cloudflare R2`，补上传确认、媒体入库与孤儿文件清理策略
 - [ ] 将论坛数据主路径迁移到 `Cloudflare D1`，补列表/详情查询、分页与索引基线
 - [ ] 记录阿里云最低成本上线方案：静态站优先，数据库后置

@@ -1,18 +1,32 @@
 import { cn } from '../../utils/cn';
 import { useViewerUiStore } from '../../ui/state/viewer-ui-store';
 
+interface CommunityStatus {
+  detail: string;
+  label: string;
+  state: 'checking' | 'offline' | 'online';
+}
+
 interface HeroPanelProps {
   compact?: boolean;
+  communityStatus?: CommunityStatus;
   subtitle: string;
   title: string;
 }
 
 function HeroPanel({
   compact = false,
+  communityStatus,
   subtitle,
   title
 }: HeroPanelProps) {
   const status = useViewerUiStore((store) => store.status);
+  const communityStatusToneClassName =
+    communityStatus?.state === 'online'
+      ? 'border-[rgba(199,227,158,0.28)] bg-[rgba(43,58,33,0.28)] text-[#dceec1]'
+      : communityStatus?.state === 'offline'
+        ? 'border-[rgba(227,158,158,0.22)] bg-[rgba(64,36,32,0.38)] text-[#f1c9c1]'
+        : 'border-[rgba(207,184,151,0.18)] bg-[rgba(52,42,35,0.34)] text-ink-muted/78';
 
   return (
     <div className="pointer-events-auto w-full max-w-none">
@@ -48,6 +62,24 @@ function HeroPanel({
         >
           {subtitle}
         </p>
+        {communityStatus ? (
+          <div
+            className={cn(
+              'mt-3 max-w-[16.5rem] rounded-[18px] border px-3 py-2.5 backdrop-blur-[10px] max-[760px]:mt-2 max-[760px]:max-w-[10.5rem] max-[760px]:rounded-[16px] max-[760px]:px-2.5 max-[760px]:py-2',
+              communityStatusToneClassName
+            )}
+          >
+            <p className="m-0 text-[10px] uppercase tracking-[0.18em] opacity-82">
+              社区底座
+            </p>
+            <p className="mt-1 text-ui-sm leading-[1.45]">
+              {communityStatus.label}
+            </p>
+            <p className="mt-1 text-ui-xs leading-[1.5] opacity-80">
+              {communityStatus.detail}
+            </p>
+          </div>
+        ) : null}
         {compact ? null : (
           <p className="mt-3 max-w-[16.5rem] text-ui-xs leading-[1.55] text-ink-muted/72">
             {status.detail}

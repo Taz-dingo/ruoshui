@@ -24,6 +24,16 @@ interface AppProps {
   viewerConfig: ViewerConfig;
 }
 
+interface CommunityStatusState {
+  detail: string;
+  label: string;
+  state: 'checking' | 'offline' | 'online';
+}
+
+const communityBootstrapUrl = import.meta.env.DEV
+  ? 'http://127.0.0.1:8787/api/forum/bootstrap'
+  : '/api/forum/bootstrap';
+
 const hudClassName = cn(
   'pointer-events-none relative z-[4] grid h-full min-h-0 grid-cols-[var(--rail-left-width)_minmax(0,1fr)_var(--rail-right-width)] gap-4 overflow-hidden p-4',
   'max-[1180px]:grid-cols-[minmax(320px,var(--rail-left-width))_minmax(0,1fr)] max-[1180px]:overflow-visible',
@@ -104,6 +114,11 @@ function App({
       ? createDefaultMiniMapTransform(data.scene.miniMap.imageTransform)
       : null
   );
+  const [communityStatus, setCommunityStatus] = useState<CommunityStatusState>({
+    state: 'checking',
+    label: '正在连 Cloudflare 社区底座',
+    detail: '站点先起 3D 展示，社区接口在后台做一次轻量握手。'
+  });
   const [miniMapCopyNote, setMiniMapCopyNote] = useState('调到对齐后，点“复制参数”。');
   const setVariantPanel = useViewerUiStore((store) => store.setVariantPanel);
   const setPresetPanel = useViewerUiStore((store) => store.setPresetPanel);
@@ -197,6 +212,51 @@ function App({
     };
   }, []);
 
+  useEffect(() => {
+    const abortController = new AbortController();
+
+    void fetch(communityBootstrapUrl, {
+      signal: abortController.signal
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        return response.json() as Promise<{ message?: string }>;
+      })
+      .then((payload) => {
+        setCommunityStatus({
+          state: 'online',
+          label: 'Cloudflare 社区底座已连通',
+          detail:
+            payload.message ??
+            '当前页面和 forum-api 已走同一条 Cloudflare 发布链，可继续接帖子、点位和图片能力。'
+        });
+      })
+      .catch((error: unknown) => {
+        if (
+          error instanceof DOMException &&
+          error.name === 'AbortError'
+        ) {
+          return;
+        }
+
+        setCommunityStatus({
+          state: 'offline',
+          label: '社区底座暂未连通',
+          detail:
+            error instanceof Error && error.message
+              ? `握手失败：${error.message}`
+              : '页面已上线，但社区接口还没握上。'
+        });
+      });
+
+    return () => {
+      abortController.abort();
+    };
+  }, []);
+
   return (
     <main className={appShellClassNames.main}>
       <div
@@ -225,6 +285,7 @@ function App({
               <div className="w-full px-[var(--rail-content-pad)] max-[760px]:grid max-[760px]:gap-2.5 max-[760px]:px-0">
                 <HeroPanel
                   compact={isProductionUi || isMobileViewport}
+                  communityStatus={communityStatus}
                   subtitle={data.scene.subtitle}
                   title={data.scene.title}
                 />
