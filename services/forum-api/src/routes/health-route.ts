@@ -1,34 +1,45 @@
 import { Hono } from "hono";
 
-import { checkDatabaseConnection } from "../db/client.js";
+import type { ForumRepository } from "../lib/forum-repository.js";
 
-const healthRoute = new Hono();
+interface CreateHealthRouteOptions {
+  forumRepository: ForumRepository;
+  runtime: "node" | "cloudflare";
+}
 
-healthRoute.get("/", async (context) => {
-  try {
-    await checkDatabaseConnection();
+function createHealthRoute(options: CreateHealthRouteOptions): Hono {
+  const healthRoute = new Hono();
 
-    return context.json({
-      ok: true,
-      database: "connected",
-      service: "forum-api",
-      timestamp: new Date().toISOString(),
-    });
-  } catch (error) {
-    return context.json(
-      {
-        ok: false,
-        database: "unavailable",
+  healthRoute.get("/", async (context) => {
+    try {
+      await options.forumRepository.checkConnection();
+
+      return context.json({
+        ok: true,
+        database: "connected",
+        runtime: options.runtime,
         service: "forum-api",
         timestamp: new Date().toISOString(),
-        error:
-          error instanceof Error && error.message
-            ? error.message
-            : String(error),
-      },
-      503,
-    );
-  }
-});
+      });
+    } catch (error) {
+      return context.json(
+        {
+          ok: false,
+          database: "unavailable",
+          runtime: options.runtime,
+          service: "forum-api",
+          timestamp: new Date().toISOString(),
+          error:
+            error instanceof Error && error.message
+              ? error.message
+              : String(error),
+        },
+        503,
+      );
+    }
+  });
 
-export { healthRoute };
+  return healthRoute;
+}
+
+export { createHealthRoute };
