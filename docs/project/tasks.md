@@ -57,7 +57,7 @@
 - [x] 选定论坛底座：数据库、对象存储抽象与共享类型方案
 - [x] 接入首版数据库访问层：`Drizzle/PostgreSQL` client、repository 与首个 migration
 - [x] 落地首批论坛接口：场景 bootstrap、场景 upsert、帖子创建、点位创建
-- [ ] 将 `forum-api` 运行时从当前 Node 本地开发链路迁移到 `Cloudflare Workers`
+- [x] 将 `forum-api` 运行时从当前 Node 本地开发链路迁移到 `Cloudflare Workers`
 - [ ] 补图文社区最小闭环：帖子列表、帖子详情、图文发布（含多图）
 - [ ] 补帖子与场景点位联动：`pin -> posts` 与 `post -> pins` 双向查询
 - [x] 为场景补天空盒或等价环境背景
@@ -76,8 +76,11 @@
 - [x] 评估是否需要基础移动端兼容
 - [ ] 评估 `WebGPU + Worker/WASM` 作为后续极致性能分支的可行性
 - [x] 初始化 `forum-api` 服务、帖子 / 媒体 / 点位关联 schema 与最小上传签名接口
-- [ ] 将对象存储主路径迁移到 `Cloudflare R2`，补上传确认与孤儿文件清理策略
-- [ ] 将论坛数据主路径迁移到 `Cloudflare D1`，补分页与索引基线
+- [x] 收口开发专业 skill：补前端 / Node / Cloudflare 三类 skill 与项目级映射规范
+- [x] 补 Web3D 专业 skill，并把“缺 skill 先更新 skill”纳入项目规范
+- [x] 将 `Web3D viewer/runtime` 与 `SuperSplat 资产编辑` 拆成两条专业 skill，并补官方链接入口
+- [ ] 将对象存储主路径迁移到 `Cloudflare R2`，补上传确认、媒体入库与孤儿文件清理策略
+- [ ] 将论坛数据主路径迁移到 `Cloudflare D1`，补列表/详情查询、分页与索引基线
 - [ ] 记录阿里云最低成本上线方案：静态站优先，数据库后置
 - [ ] 继续定位 `Mobile Safari` 上场景未填满安全区的问题，并基于 `docs/project/mobile-safari-viewport-handoff.md` 小步验证
 
@@ -88,8 +91,12 @@
 - 大方向使用 `Web` 是正确的，因为它最容易被打开、传播和体验
 - 当前不先做完整登录、审核和开放式社区系统，但已开始为数据库、媒体存储与论坛雏形铺底
 - 后端当前已收口为：同仓库 `monorepo`、保留现有 `web/`，新增独立 `services/forum-api/` 服务，而不是整体迁到 `Next.js`
-- 当前论坛底座方案已收口为：`Hono + Drizzle + PostgreSQL + 对象存储抽象 + shared zod schema`
-- 当前论坛底座已从“纯骨架”推进到“可对接前端”的第一步：已补 `scene bootstrap / scene upsert / post create / pin create` 四个真实接口，并生成首个 `Drizzle` migration
+- 当前论坛底座方案已进入双轨阶段：`Cloudflare Workers + D1 + R2` 作为新主线，`Node + PostgreSQL` 保留为本地 fallback 与旧链路对照
+- 当前论坛底座已从“纯骨架”推进到“Cloudflare 可启动的第一步”：已补 `scene bootstrap / scene upsert / post create / pin create` 四个真实接口，并落地 Worker 入口、`D1` repository、`R2` upload ticket 与本地 migration 骨架
+- 当前开发规范也已新增一条硬规则：实现阶段不再只依赖通用 coding 能力，而是按改动域强制叠加前端 / Node / Cloudflare 专业 skill
+- 当前这条规则已进一步补全：若命中的专业域缺少已装 skill，或现有 wrapper 覆盖不够，就先更新 skill，再继续开发
+- 当前 `3D` 规范也已进一步拆细：viewer/runtime 与 `SuperSplat` 资产编辑不再混用同一 skill
+- 当前提交节奏也已明确收口：默认按“小步快跑、勤快 commit、避免混入过多不相关 changes”的方式推进
 - 当前第一期范围已再次收紧：先完成一个可上线的静态纪念展示站，后端与数据库不再作为本阶段阻塞项
 - 当前第一期静态站部署方式已明确为：`Vercel` 静态部署，生产只携带 `web/public/models/hhuc-original.sog`
 - 当前最低成本部署方向已收口：优先静态站点方案，数据库与论坛底座放到下一阶段接入
