@@ -31,6 +31,8 @@ When this skill is active:
 5. Commit after each meaningful step when the result is coherent
 6. Prefer clarifying risk early over building speculative features
 7. If the user asks to save progress, record current status, or prepare a handoff, sync `docs/project/state.md`, `docs/project/tasks.md`, and the iteration doc before stopping
+8. Prefer small, frequent, coherent commits over large mixed changes
+9. Avoid bundling unrelated frontend, backend, asset, and infra edits into one oversized iteration unless the user explicitly asks for a combined step
 
 ## Source of Truth
 
@@ -64,6 +66,7 @@ A step is in good shape when it has all of the following:
 - one minimal validation result
 - one cleanup pass
 - one small commit
+- no unnecessary unrelated changes mixed into the same delivery
 
 ## Trigger Hints
 
