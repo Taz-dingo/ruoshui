@@ -57,6 +57,9 @@
 - [x] 选定论坛底座：数据库、对象存储抽象与共享类型方案
 - [x] 接入首版数据库访问层：`Drizzle/PostgreSQL` client、repository 与首个 migration
 - [x] 落地首批论坛接口：场景 bootstrap、场景 upsert、帖子创建、点位创建
+- [ ] 将 `forum-api` 运行时从当前 Node 本地开发链路迁移到 `Cloudflare Workers`
+- [ ] 补图文社区最小闭环：帖子列表、帖子详情、图文发布（含多图）
+- [ ] 补帖子与场景点位联动：`pin -> posts` 与 `post -> pins` 双向查询
 - [x] 为场景补天空盒或等价环境背景
 - [x] 优化相机控制手感与限制策略
 - [x] 为首屏进入和模型切换补更自然的 loading / parsing 体验
@@ -73,6 +76,8 @@
 - [x] 评估是否需要基础移动端兼容
 - [ ] 评估 `WebGPU + Worker/WASM` 作为后续极致性能分支的可行性
 - [x] 初始化 `forum-api` 服务、帖子 / 媒体 / 点位关联 schema 与最小上传签名接口
+- [ ] 将对象存储主路径迁移到 `Cloudflare R2`，补上传确认与孤儿文件清理策略
+- [ ] 将论坛数据主路径迁移到 `Cloudflare D1`，补分页与索引基线
 - [ ] 记录阿里云最低成本上线方案：静态站优先，数据库后置
 - [ ] 继续定位 `Mobile Safari` 上场景未填满安全区的问题，并基于 `docs/project/mobile-safari-viewport-handoff.md` 小步验证
 
