@@ -33,6 +33,9 @@ When this skill is active:
 7. If the user asks to save progress, record current status, or prepare a handoff, sync `docs/project/state.md`, `docs/project/tasks.md`, and the iteration doc before stopping
 8. Prefer small, frequent, coherent commits over large mixed changes
 9. Avoid bundling unrelated frontend, backend, asset, and infra edits into one oversized iteration unless the user explicitly asks for a combined step
+10. Start new feature work on a dedicated branch instead of stacking it directly on shared branches
+11. After a coherent step is complete, prefer opening a PR to update others rather than letting the branch drift silently
+12. Before opening a PR, do one overall review and validation pass for the full branch to catch cross-file risk, regressions, and missing verification
 
 ## Source of Truth
 

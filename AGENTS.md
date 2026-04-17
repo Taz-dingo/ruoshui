@@ -29,6 +29,9 @@
 - 小步快跑，尽量把每次改动收口成一个清晰目的的小迭代，并勤快提交。
 - 避免把过多不相关 changes 杂糅在一起；除非用户明确要求，否则不要把前端、后端、资产、基础设施的大改混成一个超大变更。
 - 避免单次 changes 过大；如果任务天然偏大，优先先拆步骤、先落一块、先提交一块。
+- 新 feature 默认新建分支来做，不要直接在共享分支上持续堆叠。
+- 一轮 coherent 改动完成后，优先通过 PR 对外更新，而不是长期只停留在本地分支。
+- 提 PR 前要做一次总体 review 和验证，检查跨文件影响、风险点、遗漏测试与明显回归。
 - Update the relevant docs when a project decision or experiment assumption changes.
 - 如果为了本地验证临时拉起 `vite dev` / `vite preview`，结束后要主动清理对应进程，避免连续占用新端口。
 - 在 `web/` 的 `TS/JS` 模块里，优先使用“文件末尾统一导出”的风格；不要在每个声明前单独写 `export`，改为在文件底部集中写 `export { ... }`。
