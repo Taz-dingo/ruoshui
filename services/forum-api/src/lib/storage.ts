@@ -16,8 +16,17 @@ interface UploadObjectResult {
   sizeBytes: number;
 }
 
+interface ReadObjectResult {
+  body: unknown;
+  contentLength?: number;
+  contentType?: string;
+  etag?: string;
+  uploadedAt?: Date;
+}
+
 interface StorageProvider {
   createUploadTicket(input: unknown): Promise<UploadTicket>;
+  readObject?(objectKey: string): Promise<ReadObjectResult | null>;
   readonly name: StorageProviderName;
   uploadObject?(input: UploadObjectInput): Promise<UploadObjectResult>;
 }
@@ -199,6 +208,21 @@ class R2StorageProvider implements StorageProvider {
       sizeBytes: body.byteLength,
     };
   }
+
+  async readObject(objectKey: string): Promise<ReadObjectResult | null> {
+    const object = await this.bucket.get(objectKey);
+    if (!object) {
+      return null;
+    }
+
+    return {
+      body: object.body,
+      contentLength: object.size,
+      contentType: object.httpMetadata?.contentType,
+      etag: object.httpEtag,
+      uploadedAt: object.uploaded,
+    };
+  }
 }
 
 function sanitizeFileName(fileName: string): string {
@@ -294,6 +318,7 @@ export {
 };
 
 export type {
+  ReadObjectResult,
   StorageProvider,
   StorageProviderName,
   StorageProviderStatusCode,

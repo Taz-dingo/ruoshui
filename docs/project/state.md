@@ -27,6 +27,7 @@
 - `forum-api` 当前开始以 `Cloudflare Workers + D1 + R2` 为默认新链路推进，`Node + PostgreSQL` 仅保留为本地 fallback 与旧 contract 对照
 - 上传链路的最小实现策略先收口为“Worker 签发短时 ticket，再由 Worker 代理写入 `R2`”，避免第一步就引入额外 `S3 API` 签名复杂度
 - 项目新增“开发专业 skill”规范：前端默认收口到 `Vercel React best practices`，Node 默认收口到 `Matteo Collina + Node 官方最佳实践`，Cloudflare 服务默认收口到 `Cloudflare 官方文档`
+- 项目进一步新增独立的文档管理 skill：`ruoshui-doc-sync`，用于 `state/tasks/engineering-memory` 同步、handoff 与“这轮要不要更新 doc”判断
 - 项目进一步新增 `Web3D` 专业 skill，并明确“技能不够用时先更新 skill，再继续开发”
 - 项目进一步将 `Web3D viewer/runtime` 与 `SuperSplat 资产编辑` 拆成两条专业 skill，而不是继续混成同一类
 - 项目提交节奏进一步明确：默认采用“小步快跑 + 勤快 commit”，避免把过多不相关 changes 或过大改动揉进同一次交付
@@ -182,6 +183,9 @@
 - 已新增 `Cloudflare Workers` 入口、`wrangler.toml`、本地 `.dev.vars` 模板与首个 `D1` migration，当前默认开发入口已切到 `wrangler dev --local`
 - 已新增 `D1` 版 forum repository，并保留旧的 `PostgreSQL` repository 作为本地 fallback 与迁移对照
 - 已将上传 ticket contract 扩展到 `r2`，并落地 `Worker -> R2` 的最小直传代理接口：`PUT /api/storage/objects/:objectKey`
+- 已把共享论坛 contract 继续扩到“可读 + 可发”级别：当前 `packages/shared` 已补 `post detail`、`list posts`、`media confirm` 等 schema，并把帖子明细收口为“正文 + 图片 + 关联点位”
+- 已把 `forum-api` 继续推进到最小闭环：当前已补 `posts list/detail`、`media confirm`、`pin -> posts`、`post -> pins` 查询，并让帖子创建可同时绑定多图媒体与单个场景点位
+- 已把 `web/` 主站继续推进到首个社区前端入口：当前已补同壳社区抽屉，可直接完成帖子列表、帖子详情、多图发布、点位筛帖，以及从帖子详情“回到场景点位”
 - 已创建 `Cloudflare Pages` 项目 `ruoshui-web`，当前生产静态站入口已切到 `https://ruoshui-web.pages.dev`
 - 已把生产主模型 `hhuc-original.sog` 外置到 `R2` 公网地址：`https://pub-5fbf37dd49b94b859c13e343effd0430.r2.dev/models/hhuc-original.sog`，用于绕开 `Pages` 单文件 `25 MiB` 限制
 - 已给 `web/` 补上 `build:pages` 与 `prepare-cloudflare-pages.mjs`：当前 `Pages` 构建会重写 `content/mvp.json` 中的生产主模型地址，并从 `dist` 中移除超限模型文件
@@ -214,7 +218,8 @@
 当前最重要的任务是：
 
 - 保留当前 `CityGaussian V1-original` 训练入口准备成果，但产品主线继续聚焦 `PlayCanvas/SOG` 的 `Web MVP`、三维点位能力，以及后续论坛 / 内容服务底座，不再继续把“渐进式加载”当作当前迭代目标
-- 在现有 `forum-api` 的 `Workers + D1 + R2` 骨架之上，继续补图文社区最小闭环：帖子列表、详情、多图发布与点位双向查询
+- 在现有社区最小闭环已经打通的基础上，继续把真实故事内容、稳定点位数据和内部打点 authoring 工具接起来，避免前端入口有了但内容仍过空
+- 继续把 `R2` 媒体确认、`D1` 查询与前端交互的细节做实，尤其是首批真实帖子、真实点位和后续清理策略
 
 当前已确认的最近阻塞：
 
@@ -223,6 +228,7 @@
 - 当前首轮导出基线已经拿到，但默认 `sh_coeffs` 导出约 `1.10 GiB`，即使切到 `rgb` 导出也仍有约 `267 MiB`，离 `Web MVP` 直接加载仍有距离
 - 当前还已确认：对 `rgb` 二进制 `PLY` 做传输压缩，`gzip` / `zstd` 只能再压到约 `200 MiB` 出头，仍不足以把问题变成“可直接上线”
 - 当前 viewer 主线已重新收口：继续以 `PlayCanvas/SOG` 为正式交付链；`GaussianSplats3D progressive` 相关验证保留为归档研究，不作为当前产品分支继续推进
+- 当前论坛前端入口虽然已补出来，但真实内容仍接近空白；下一步的产品价值更依赖首批故事点位、帖子素材和点位 authoring 的接续，而不是继续只加壳
 - 现有结果的主观质量已经达到可接受范围，因此下一步不是继续证明“能不能重建”，而是证明“能不能被部署、加载和体验”
 - 当前下一步已从“文档层兼容性核查”推进到“最小浏览器入口已准备好，等待真实加载观察”
 - 当前浏览器观察与空间分析已经进一步收敛出优先方向：应优先处理底部大尺度离群高斯，而不是先追求格式转换

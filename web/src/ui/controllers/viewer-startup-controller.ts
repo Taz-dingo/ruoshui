@@ -26,6 +26,12 @@ interface InstallViewerStartupBindingsArgs {
   setGraphicsBackendPreference: (preference: GraphicsBackendPreference) => void;
   setAntiAliasEnabled: (enabled: boolean) => void;
   applySceneLook: (sceneLook: SceneLookSettings) => void;
+  focusScenePin: (command: {
+    pinId: string;
+    position: [number, number, number];
+    target?: [number, number, number];
+    title: string;
+  }) => void;
   setHighlightAuthoringEnabled: (enabled: boolean) => void;
   setHighlightPlaneY: (value: number) => void;
 }
@@ -70,6 +76,7 @@ function installViewerStartupBindings({
   setGraphicsBackendPreference,
   setAntiAliasEnabled,
   applySceneLook,
+  focusScenePin,
   setHighlightAuthoringEnabled,
   setHighlightPlaneY
 }: InstallViewerStartupBindingsArgs) {
@@ -126,6 +133,9 @@ function installViewerStartupBindings({
           contrastPercent: command.contrastPercent,
           saturationPercent: command.saturationPercent
         });
+        return;
+      case 'focus-scene-pin':
+        focusScenePin(command);
         return;
       case 'set-highlight-authoring-enabled':
         setHighlightAuthoringEnabled(command.enabled);
