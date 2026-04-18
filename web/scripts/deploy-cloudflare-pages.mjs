@@ -11,8 +11,6 @@ const webDir = path.resolve(__dirname, '..');
 const repoRoot = path.resolve(webDir, '..');
 const pagesProjectName = 'ruoshui-web';
 const cloudflareAccountId = '926a58d9093ea18df7879ec6ed0e39a9';
-const defaultOriginalModelPublicUrl =
-  'https://pub-5fbf37dd49b94b859c13e343effd0430.r2.dev/models/hhuc-original.sog';
 const wranglerConfigPath = path.join(webDir, 'wrangler.jsonc');
 const wranglerAuthPath = path.join(
   os.homedir(),
@@ -76,6 +74,42 @@ function makePagesAssetHash(content, relativePath) {
     .slice(0, 32);
 }
 
+function getContentType(filePath) {
+  if (filePath.endsWith('.html')) {
+    return 'text/html; charset=utf-8';
+  }
+
+  if (filePath.endsWith('.json')) {
+    return 'application/json';
+  }
+
+  if (filePath.endsWith('.svg')) {
+    return 'image/svg+xml';
+  }
+
+  if (filePath.endsWith('.webp')) {
+    return 'image/webp';
+  }
+
+  if (filePath.endsWith('.jpg')) {
+    return 'image/jpeg';
+  }
+
+  if (filePath.endsWith('.css')) {
+    return 'text/css; charset=utf-8';
+  }
+
+  if (filePath.endsWith('.js')) {
+    return 'application/javascript; charset=utf-8';
+  }
+
+  if (filePath.endsWith('.png')) {
+    return 'image/png';
+  }
+
+  return 'application/octet-stream';
+}
+
 async function fetchJson(url, options = {}) {
   const response = await fetch(url, options);
   const text = await response.text();
@@ -122,8 +156,6 @@ async function createWorkerBundleBlob(wranglerConfig) {
 async function uploadPagesDeployment() {
   const oauthToken = readOAuthToken(wranglerAuthPath);
   const wranglerConfig = readJson(wranglerConfigPath);
-  const originalModelPublicUrl =
-    process.env.RUOSHUI_ORIGINAL_MODEL_PUBLIC_URL ?? defaultOriginalModelPublicUrl;
   const branch = process.env.RUOSHUI_PAGES_BRANCH;
   const distDir = path.join(webDir, 'dist');
 
@@ -132,10 +164,7 @@ async function uploadPagesDeployment() {
     ['run', 'build:pages'],
     {
       cwd: webDir,
-      env: {
-        ...process.env,
-        RUOSHUI_ORIGINAL_MODEL_PUBLIC_URL: originalModelPublicUrl
-      },
+      env: process.env,
       stdio: 'inherit'
     }
   );
@@ -171,25 +200,10 @@ async function uploadPagesDeployment() {
   const files = listFiles(distDir).map((filePath) => {
     const relativePath = path.relative(distDir, filePath).split(path.sep).join('/');
     const content = fs.readFileSync(filePath);
-    const contentType = filePath.endsWith('.json')
-      ? 'application/json'
-      : filePath.endsWith('.svg')
-        ? 'image/svg+xml'
-        : filePath.endsWith('.webp')
-          ? 'image/webp'
-          : filePath.endsWith('.jpg')
-            ? 'image/jpeg'
-            : filePath.endsWith('.css')
-              ? 'text/css'
-              : filePath.endsWith('.js')
-                ? 'application/javascript'
-                : filePath.endsWith('.png')
-                  ? 'image/png'
-                  : 'application/octet-stream';
 
     return {
       content,
-      contentType,
+      contentType: getContentType(filePath),
       hash: makePagesAssetHash(content, relativePath),
       relativePath
     };

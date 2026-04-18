@@ -19,6 +19,11 @@ import type {
 } from './types';
 
 interface ViewerUiStoreState {
+  blockingError: {
+    detail: string;
+    recoveryHint: string;
+    title: string;
+  } | null;
   camera: CameraViewState;
   highlightAuthoring: HighlightAuthoringViewState;
   highlightOverlay: HighlightOverlayViewState;
@@ -35,6 +40,13 @@ interface ViewerUiStoreState {
   presetPanel: PresetPanelViewState | null;
   routeControls: RouteControlsViewState | null;
   setCamera: (camera: CameraViewState) => void;
+  setBlockingError: (
+    blockingError: {
+      detail: string;
+      recoveryHint: string;
+      title: string;
+    } | null
+  ) => void;
   setHighlightAuthoring: (highlightAuthoring: HighlightAuthoringViewState) => void;
   setHighlightOverlay: (highlightOverlay: HighlightOverlayViewState) => void;
   setLoading: (loading: LoadingViewState) => void;
@@ -64,6 +76,8 @@ const emptyCameraState: CameraViewState = {
   pitchValue: null,
   yawValue: null
 };
+
+const emptyBlockingErrorState = null;
 
 const emptyRouteDiagnosticsState: RouteDiagnosticsViewState = {
   logSummary: '暂无',
@@ -97,6 +111,7 @@ const emptyHighlightAuthoringState: HighlightAuthoringViewState = {
 };
 
 const emptyStatusState: StatusViewState = {
+  tone: 'info',
   title: '准备加载场景',
   detail: '连接运行时'
 };
@@ -158,6 +173,7 @@ const emptyViewCaptureState: ViewCaptureViewState = {
 };
 
 const useViewerUiStore = create<ViewerUiStoreState>((set) => ({
+  blockingError: emptyBlockingErrorState,
   camera: emptyCameraState,
   highlightAuthoring: emptyHighlightAuthoringState,
   highlightOverlay: emptyHighlightOverlayState,
@@ -174,6 +190,7 @@ const useViewerUiStore = create<ViewerUiStoreState>((set) => ({
   presetPanel: null,
   routeControls: null,
   setCamera: (camera) => set({ camera }),
+  setBlockingError: (blockingError) => set({ blockingError }),
   setHighlightAuthoring: (highlightAuthoring) => set({ highlightAuthoring }),
   setHighlightOverlay: (highlightOverlay) => set({ highlightOverlay }),
   setLoading: (loading) => set({ loading }),
@@ -191,6 +208,7 @@ const useViewerUiStore = create<ViewerUiStoreState>((set) => ({
 }));
 
 export {
+  emptyBlockingErrorState,
   emptyCameraState,
   emptyHighlightAuthoringState,
   emptyHighlightOverlayState,

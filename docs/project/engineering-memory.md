@@ -86,3 +86,11 @@
 - 根因：Worker settings 更新接口对请求格式有明确要求，部分路径需要 `multipart/form-data`，并在表单中带 `settings` 部分。
 - 解决：改用 `multipart/form-data` 请求体发送 settings 更新。
 - 后续默认规则：遇到 Worker settings API 更新失败时，优先检查接口要求的 content type，不要默认 JSON patch 一定可用。
+
+## 2026-04-18 - `R2` 公网地址可访问，不代表浏览器跨域可直接取模型
+
+- 场景：前端页面在 `pages.dev` 域名下直接 `fetch` `r2.dev` 上的 `.sog` 模型。
+- 表象：资源 URL 单独打开似乎可访问，但浏览器内实际请求被 `CORS policy` 拦下，Viewer 报 `Failed to fetch`。
+- 根因：`R2` bucket 开了公网域名，不等于已经配置了浏览器跨域头；对象“公开可下载”和“允许跨域脚本读取”是两回事。
+- 解决：先给 bucket 补 `CORS` 规则恢复线上可用性；随后把生产主模型改成同源 `Pages Functions` 代理路径，避免把核心加载链路继续绑在跨域配置上。
+- 后续默认规则：若 `web/` 前端要直接读取 `R2` 资源，先验证 CORS；对于超大模型等核心启动资源，优先走同源代理而不是直接跨域拉取。

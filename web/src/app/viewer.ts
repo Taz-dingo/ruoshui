@@ -47,6 +47,7 @@ import { createViewCaptureController } from '../capture/view-capture-controller'
 import {
   clearViewerLoading,
   setPresetPanelSummary,
+  setViewerBlockingError,
   setViewerLoading,
   setViewerStatus,
   syncSceneLookState
@@ -535,6 +536,20 @@ async function initializeViewer({
   }
 }
 
+function presentViewerStartupFailure(error: unknown) {
+  const detail =
+    error instanceof Error && error.message
+      ? error.message
+      : '场景资源暂时不可用。';
+
+  setViewerBlockingError(
+    '场景加载失败',
+    detail,
+    '请稍后刷新重试；如果反复出现，优先检查模型资源发布、跨域配置或 Pages 代理是否正常。'
+  );
+}
+
 export {
-  initializeViewer
+  initializeViewer,
+  presentViewerStartupFailure
 };

@@ -21,6 +21,12 @@ function HeroPanel({
   title
 }: HeroPanelProps) {
   const status = useViewerUiStore((store) => store.status);
+  const statusToneClassName =
+    status.tone === 'error'
+      ? 'before:bg-[#e8a8a0] before:shadow-[0_0_12px_rgba(232,168,160,0.28)] text-[#f1c9c1]'
+      : status.tone === 'success'
+        ? 'before:bg-brand/84 before:shadow-[0_0_12px_rgba(199,227,158,0.28)]'
+        : 'before:bg-brand/84 before:shadow-[0_0_12px_rgba(199,227,158,0.28)]';
   const communityStatusToneClassName =
     communityStatus?.state === 'online'
       ? 'border-[rgba(199,227,158,0.28)] bg-[rgba(43,58,33,0.28)] text-[#dceec1]'
@@ -37,13 +43,24 @@ function HeroPanel({
         />
         {!compact ? (
           <div className="mb-3 flex items-center gap-3">
-            <span className="text-[10px] uppercase tracking-[0.18em] text-ink-muted/58 before:mr-2 before:inline-block before:h-1.5 before:w-1.5 before:rounded-full before:bg-brand/84 before:align-middle before:shadow-[0_0_12px_rgba(199,227,158,0.28)]">
+            <span
+              className={cn(
+                'text-[10px] uppercase tracking-[0.18em] text-ink-muted/58 before:mr-2 before:inline-block before:h-1.5 before:w-1.5 before:rounded-full before:align-middle',
+                statusToneClassName
+              )}
+            >
               {status.title}
             </span>
             <span
               className="h-px min-w-[3.25rem] flex-1 bg-[linear-gradient(90deg,rgba(207,184,151,0.28)_0%,rgba(207,184,151,0.1)_62%,rgba(207,184,151,0)_100%)]"
               aria-hidden="true"
             />
+          </div>
+        ) : null}
+        {!compact ? (
+          <div className="sr-only" aria-live="polite">
+            {status.title}
+            {status.detail}
           </div>
         ) : null}
         <h1
@@ -81,7 +98,12 @@ function HeroPanel({
           </div>
         ) : null}
         {compact ? null : (
-          <p className="mt-3 max-w-[16.5rem] text-ui-xs leading-[1.55] text-ink-muted/72">
+          <p
+            className={cn(
+              'mt-3 max-w-[16.5rem] text-ui-xs leading-[1.55]',
+              status.tone === 'error' ? 'text-[#f0d9d4]' : 'text-ink-muted/72'
+            )}
+          >
             {status.detail}
           </p>
         )}

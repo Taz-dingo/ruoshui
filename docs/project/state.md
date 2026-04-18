@@ -187,6 +187,7 @@
 - 已给 `web/` 补上 `build:pages` 与 `prepare-cloudflare-pages.mjs`：当前 `Pages` 构建会重写 `content/mvp.json` 中的生产主模型地址，并从 `dist` 中移除超限模型文件
 - 已给 `web/` 补上 `deploy-cloudflare-pages.mjs`：当前 `Cloudflare Pages` 生产部署可在本地完成“静态资源上传 + Pages Functions bundle 上传”，不再依赖 `wrangler pages deploy` 的网络握手稳定性
 - 已给 `Cloudflare Pages` 补上 `/api/*` Functions 代理，当前 `ruoshui-web.pages.dev` 已不只是静态壳子，而是能从同域名入口转发到 `forum-api`
+- 已把生产主模型入口进一步收口到同源 `Pages Functions` 代理 `/edge-models/hhuc-original.sog`，避免前端运行时继续依赖 `r2.dev` 跨域读取
 - 已把 `forum-api` 的线上 `Worker settings` 切到新的 Cloudflare 主路径：`CORS_ORIGIN=https://ruoshui-web.pages.dev`，`MEDIA_PUBLIC_BASE_URL=https://pub-5fbf37dd49b94b859c13e343effd0430.r2.dev`
 - 已新增三类仓库内专业 skill：`ruoshui-react-vercel`、`ruoshui-node-mcollina`、`ruoshui-cloudflare-workers`
 - 已新增第四类仓库内专业 skill：`ruoshui-web-3d`

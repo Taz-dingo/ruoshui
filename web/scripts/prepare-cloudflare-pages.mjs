@@ -8,8 +8,10 @@ const webDir = path.resolve(__dirname, '..');
 const distDir = path.join(webDir, 'dist');
 const contentFile = path.join(distDir, 'content', 'mvp.json');
 const bundledOriginalModelFile = path.join(distDir, 'models', 'hhuc-original.sog');
-const originalModelPublicUrl = process.env.RUOSHUI_ORIGINAL_MODEL_PUBLIC_URL;
+const indexFile = path.join(distDir, 'index.html');
+const originalModelProxyUrl = '/edge-models/hhuc-original.sog';
 const pagesSingleFileLimitBytes = 25 * 1024 * 1024;
+const cloudflareMarker = '<!-- ruoshui-cloudflare-pages -->';
 
 function assertFileExists(filePath) {
   if (!fs.existsSync(filePath)) {
@@ -75,14 +77,14 @@ function ensureNoOversizedPagesFiles(rootDir) {
 
 assertFileExists(distDir);
 assertFileExists(contentFile);
+assertFileExists(indexFile);
 
-if (!originalModelPublicUrl) {
-  throw new Error(
-    'Missing RUOSHUI_ORIGINAL_MODEL_PUBLIC_URL. Point it at the public R2 URL before preparing a Pages deploy.'
-  );
+rewriteOriginalVariantAssetUrl(contentFile, originalModelProxyUrl);
+
+const indexHtml = fs.readFileSync(indexFile, 'utf8');
+if (!indexHtml.includes(cloudflareMarker)) {
+  fs.writeFileSync(indexFile, `${indexHtml.trimEnd()}\n${cloudflareMarker}\n`);
 }
-
-rewriteOriginalVariantAssetUrl(contentFile, originalModelPublicUrl);
 
 if (fs.existsSync(bundledOriginalModelFile)) {
   fs.rmSync(bundledOriginalModelFile);
@@ -90,4 +92,4 @@ if (fs.existsSync(bundledOriginalModelFile)) {
 }
 
 ensureNoOversizedPagesFiles(distDir);
-console.log(`Prepared Cloudflare Pages dist with external original model: ${originalModelPublicUrl}`);
+console.log(`Prepared Cloudflare Pages dist with proxied original model: ${originalModelProxyUrl}`);

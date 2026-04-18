@@ -243,10 +243,15 @@ await new Promise<void>((resolve) => {
 
 await waitForStableSceneContainer(sceneContainer, window);
 
-const { initializeViewer } = await import('./app/viewer');
+const { initializeViewer, presentViewerStartupFailure } = await import('./app/viewer');
 
-await initializeViewer({
-  data,
-  sceneContainer,
-  viewerConfig
-});
+try {
+  await initializeViewer({
+    data,
+    sceneContainer,
+    viewerConfig
+  });
+} catch (error) {
+  presentViewerStartupFailure(error);
+  console.error(error);
+}
