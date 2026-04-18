@@ -41,6 +41,7 @@ pnpm dev:forum-api
 - `GET /api/storage/status`
 - `POST /api/storage/upload-requests`
 - `PUT /api/storage/objects/:objectKey`
+- `GET /media/*`
 
 ## 数据库
 
