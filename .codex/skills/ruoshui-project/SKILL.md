@@ -27,6 +27,7 @@ When this skill is active:
 1. Start from existing project docs before inventing new scope
 2. Keep each iteration focused on one small, verifiable step
 3. Update the relevant doc when a decision changes
+   - if the work is primarily about doc destinations, handoff structure, or `state/tasks/engineering-memory` sync, also use `$ruoshui-doc-sync`
 4. Before each commit-sized delivery, also use `$ruoshui-cleanup`
 5. Commit after each meaningful step when the result is coherent
 6. Prefer clarifying risk early over building speculative features

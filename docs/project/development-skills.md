@@ -125,6 +125,29 @@
 
 - `Cloudflare` 官方 `Workers / D1 / R2` 文档
 
+### Documentation / Handoff / Status Sync
+
+适用范围：
+
+- `docs/project/**`
+- `docs/assets/**`
+- `docs/iterations/**`
+- `state.md / tasks.md / engineering-memory.md` 的同步取舍
+- handoff、progress save、决策沉淀、文档归档与“这轮要不要改 doc”判断
+
+必须使用：
+
+- `ruoshui-doc-sync`
+
+建议同时使用：
+
+- `ruoshui-project`
+- `ruoshui-cleanup`，如果已经进入 commit 前收口
+
+来源收口：
+
+- 若水当前项目文档结构与交接规则
+
 ## 组合规则
 
 1. 只改前端：至少带 `ruoshui-react-vercel`
@@ -132,16 +155,21 @@
 3. 只改 SuperSplat/gaussian 资产编辑链：至少带 `ruoshui-supersplat`
 4. 只改 Node 后端：至少带 `ruoshui-node-mcollina`
 5. 只改 Cloudflare 运行时或基建：至少带 `ruoshui-cloudflare-workers`
-6. 改社区功能且同时动前端与 Cloudflare API：
+6. 只改文档、状态同步或 handoff：至少带 `ruoshui-doc-sync`
+7. 改社区功能且同时动前端与 Cloudflare API：
    - 带 `ruoshui-react-vercel`
    - 带 `ruoshui-cloudflare-workers`
    - 共享 contract 或服务层调整时再加 `ruoshui-node-mcollina`
-7. 改 viewer 且同时动 React 面板：
+8. 改 viewer 且同时动 React 面板：
    - 带 `ruoshui-web-3d`
    - 带 `ruoshui-react-vercel`
-8. 改 SuperSplat 导出链且同时影响 viewer 交付判断：
+9. 改 SuperSplat 导出链且同时影响 viewer 交付判断：
    - 带 `ruoshui-supersplat`
    - 带 `ruoshui-web-3d`
+10. 改代码后需要判断 `state/tasks/engineering-memory` 是否要同步：
+   - 带 `ruoshui-cleanup`
+   - 带 `ruoshui-doc-sync`
+   - 需要时再叠加对应实现域 skill
 
 ## 执行要求
 

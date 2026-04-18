@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ruoshui Doc Sync"
+  short_description: "Project docs, handoffs, and durable status sync"
+  default_prompt: "Use $ruoshui-doc-sync to update docs or choose the right doc destination in the 若水广场 repo."

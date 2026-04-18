@@ -27,6 +27,7 @@
 - `forum-api` 当前开始以 `Cloudflare Workers + D1 + R2` 为默认新链路推进，`Node + PostgreSQL` 仅保留为本地 fallback 与旧 contract 对照
 - 上传链路的最小实现策略先收口为“Worker 签发短时 ticket，再由 Worker 代理写入 `R2`”，避免第一步就引入额外 `S3 API` 签名复杂度
 - 项目新增“开发专业 skill”规范：前端默认收口到 `Vercel React best practices`，Node 默认收口到 `Matteo Collina + Node 官方最佳实践`，Cloudflare 服务默认收口到 `Cloudflare 官方文档`
+- 项目进一步新增独立的文档管理 skill：`ruoshui-doc-sync`，用于 `state/tasks/engineering-memory` 同步、handoff 与“这轮要不要更新 doc”判断
 - 项目进一步新增 `Web3D` 专业 skill，并明确“技能不够用时先更新 skill，再继续开发”
 - 项目进一步将 `Web3D viewer/runtime` 与 `SuperSplat 资产编辑` 拆成两条专业 skill，而不是继续混成同一类
 - 项目提交节奏进一步明确：默认采用“小步快跑 + 勤快 commit”，避免把过多不相关 changes 或过大改动揉进同一次交付
