@@ -64,6 +64,8 @@ These are project-specific Cloudflare lessons that should be treated as part of 
 - Do not assume bucket objects are immediately public
 - If the release path depends on direct browser access, verify or enable the `R2` managed public domain for the bucket
 - Record the public base URL explicitly in config after the domain is enabled
+- Do not assume a managed public domain will also satisfy browser CORS requirements
+- If frontend code fetches the object directly from `r2.dev`, configure bucket CORS explicitly or the browser may still block the request
 
 ### 5. Pages asset MIME types must be explicit
 
@@ -94,6 +96,7 @@ These are project-specific Cloudflare lessons that should be treated as part of 
 
 - Keep same-origin `/api/*` proxying available when the frontend is on Pages and the backend is on Workers
 - Use that bridge both for user-facing API access and for visible production health signals
+- For oversized viewer models, prefer a same-origin Pages proxy path over direct browser fetches to `r2.dev`; this avoids coupling the MVP viewer to cross-origin behavior
 
 ### 9. Worker settings patching may require multipart form-data
 

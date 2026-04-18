@@ -1,5 +1,8 @@
 {
   "name": "ruoshui-web",
   "pages_build_output_dir": "./dist",
-  "compatibility_date": "2026-04-17"
+  "compatibility_date": "2026-04-17",
+  "vars": {
+    "RUOSHUI_MEDIA_PUBLIC_BASE_URL": "https://pub-5fbf37dd49b94b859c13e343effd0430.r2.dev"
+  }
 }
