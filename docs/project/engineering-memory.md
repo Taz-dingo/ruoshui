@@ -39,6 +39,14 @@
 
 ## 已沉淀经验
 
+## 2026-04-18 - `forum-api` 本地启动前要先同步 `@ruoshui/shared` 产物
+
+- 场景：在 workspace 里给 `packages/shared/src/forum-schema.ts` 增加 schema 后，直接启动 `services/forum-api` 的 `wrangler dev --local`。
+- 表象：Worker 构建时报 `No matching export in "../../packages/shared/dist/index.js"`，前端随后出现 `127.0.0.1:8787` 连接拒绝和一串 `500`。
+- 根因：`@ruoshui/shared` 的运行时导出指向被忽略提交的 `dist/`，而 `forum-api` 启动前没有自动重建它，导致源码与运行时产物漂移。
+- 解决：把 `services/forum-api` 的 `dev`、`dev:node`、`build` 统一改成先执行 `pnpm --filter @ruoshui/shared build`，再启动或编译自身。
+- 后续默认规则：只要 Node/Worker 侧消费 `@ruoshui/shared` 这类依赖 `dist/` 的 workspace 包，启动和构建脚本都要先同步依赖包产物，避免把构建报错误判成 Cloudflare 或前端问题。
+
 ## 2026-04-18 - Cloudflare Pages 不适合直接带大体积 `.sog`
 
 - 场景：将 `web/` 前端直接部署到 Cloudflare Pages，并尝试把 viewer 所需的 `.sog` 模型一并打进产物。

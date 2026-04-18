@@ -5,9 +5,10 @@
   "type": "module",
   "main": "./dist/index.js",
   "scripts": {
-    "build": "tsc -p tsconfig.json --noEmit false",
-    "dev": "wrangler dev --local",
-    "dev:node": "tsx watch src/index.ts",
+    "build:shared": "pnpm --filter @ruoshui/shared build",
+    "build": "pnpm run build:shared && tsc -p tsconfig.json --noEmit false",
+    "dev": "pnpm run build:shared && wrangler dev --local",
+    "dev:node": "pnpm run build:shared && tsx watch src/index.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:migrate:local": "wrangler d1 migrations apply ruoshui-forum --local",
