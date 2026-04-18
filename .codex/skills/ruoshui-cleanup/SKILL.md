@@ -22,6 +22,8 @@ When this skill is active, do these steps in order before committing:
 3. Sync docs if the implementation or workflow changed:
    - update `docs/project/state.md` when project status or rules changed
    - update focused docs when file names, architecture boundaries, or workflows changed
+   - if this iteration uncovered a reusable pitfall, append it to `docs/project/engineering-memory.md`
+   - if that pitfall changes a stable domain workflow, also update the corresponding repo skill or reference file
 4. Keep cleanup bounded:
    - fix concrete inconsistencies you can see now
    - do not start a speculative large refactor just because cleanup found a rough edge
@@ -39,6 +41,7 @@ When this skill is active, do these steps in order before committing:
 - If a helper is no longer referenced, remove it in the same cleanup pass
 - If a rename happened, search for old references before committing
 - If a dirty note is historically valuable, move it to the right handoff doc instead of leaving it in the wrong file
+- Prefer adding one short durable lesson to the engineering memory over leaving the same pitfall buried in a long thread
 
 ## Good Outcome
 

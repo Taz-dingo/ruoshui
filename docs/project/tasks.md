@@ -81,6 +81,7 @@
 - [x] 将 `Web3D viewer/runtime` 与 `SuperSplat 资产编辑` 拆成两条专业 skill，并补官方链接入口
 - [x] 打通 `Cloudflare Pages` 静态部署，并将超限生产主模型外置到 `R2`
 - [x] 给 `Cloudflare Pages` 补上 `/api/*` 代理入口，并把前端部署脚本固化到仓库
+- [x] 将 `Cloudflare` 部署踩坑沉淀到 skill，并新增项目级工程记忆与经验回流规则
 - [ ] 将对象存储主路径迁移到 `Cloudflare R2`，补上传确认、媒体入库与孤儿文件清理策略
 - [ ] 将论坛数据主路径迁移到 `Cloudflare D1`，补列表/详情查询、分页与索引基线
 - [ ] 记录阿里云最低成本上线方案：静态站优先，数据库后置
@@ -97,6 +98,7 @@
 - 当前论坛底座已从“纯骨架”推进到“Cloudflare 可启动的第一步”：已补 `scene bootstrap / scene upsert / post create / pin create` 四个真实接口，并落地 Worker 入口、`D1` repository、`R2` upload ticket 与本地 migration 骨架
 - 当前开发规范也已新增一条硬规则：实现阶段不再只依赖通用 coding 能力，而是按改动域强制叠加前端 / Node / Cloudflare 专业 skill
 - 当前这条规则已进一步补全：若命中的专业域缺少已装 skill，或现有 wrapper 覆盖不够，就先更新 skill，再继续开发
+- 当前这条规则已进一步补全：若本轮出现可复用踩坑，先沉淀到 `docs/project/engineering-memory.md`，稳定后再同步回流对应 skill
 - 当前 `3D` 规范也已进一步拆细：viewer/runtime 与 `SuperSplat` 资产编辑不再混用同一 skill
 - 当前提交节奏也已明确收口：默认按“小步快跑、勤快 commit、避免混入过多不相关 changes”的方式推进
 - 当前协作流也已明确收口：新 feature 默认开新分支，改动完成后走 PR，同步前先做一次总体 review 与验证
