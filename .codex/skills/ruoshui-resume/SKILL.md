@@ -16,20 +16,21 @@ When this skill is active, do these steps in order before implementing anything 
 1. Read `AGENTS.md`
 2. Read `docs/project/state.md` first if it exists
 3. Read `README.md`, `docs/project/spec.md`, `docs/project/plan.md`, and `docs/project/tasks.md`
-4. If asset work is involved, also use `$ruoshui-asset-poc` and read:
+4. Read `docs/project/engineering-memory.md` if it exists, especially before repeating deploy/debug work
+5. If asset work is involved, also use `$ruoshui-asset-poc` and read:
    - `docs/assets/asset-inventory.md`
    - `docs/assets/poc-001.md`
    - `docs/assets/3dgs-experiment-path.md`
    - `docs/assets/asset-validation-template.md`
-5. Check repo freshness with:
+6. Check repo freshness with:
    - `git status --short`
    - `git log --oneline --decorate -5`
-6. Summarize the project in four parts:
+7. Summarize the project in four parts:
    - background and product goal
    - current implementation/doc status
    - current top task
    - next smallest executable step
-7. Create or update a short plan before continuing implementation
+8. Create or update a short plan before continuing implementation
 
 ## What Good Recovery Looks Like
 
@@ -39,6 +40,7 @@ After the resume flow, the agent should be able to state clearly:
 - what the first version includes and excludes
 - what has already been implemented or documented
 - what the latest decisions changed
+- what recent reusable lessons or pitfalls must not be repeated
 - what single step should happen next
 
 ## Execution Rules After Resume

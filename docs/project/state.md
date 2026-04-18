@@ -192,8 +192,10 @@
 - 已新增第四类仓库内专业 skill：`ruoshui-web-3d`
 - 已新增第五类仓库内专业 skill：`ruoshui-supersplat`
 - 已新增项目级 skill 映射规范：`docs/project/development-skills.md`
+- 已新增项目级工程记忆：`docs/project/engineering-memory.md`
 - 已把“按改动域必须带对应专业 skill”写入 `AGENTS.md`
 - 已把“命中专业域但 skill 缺失或覆盖不够时，先补/更新 skill 再继续实现”写入项目规范
+- 已把“新踩坑先写工程记忆，再按稳定专业域回流 skill”写入项目规范与相关 skill
 - 已把“小步快跑、勤快提交、避免大杂烩 diff”写入仓库级规则
 - 已把“新 feature 新分支、完成后提 PR、提 PR 前先做总体 review 和验证”写入仓库级规则
 

@@ -36,6 +36,8 @@ When this skill is active:
 10. Start new feature work on a dedicated branch instead of stacking it directly on shared branches
 11. After a coherent step is complete, prefer opening a PR to update others rather than letting the branch drift silently
 12. Before opening a PR, do one overall review and validation pass for the full branch to catch cross-file risk, regressions, and missing verification
+13. When a nontrivial pitfall changes the team’s default workflow, append it to `docs/project/engineering-memory.md` in the same iteration
+14. If that lesson belongs to a stable domain such as React, Node, Web3D, or Cloudflare, also update the corresponding repo skill instead of only updating the memory doc
 
 ## Source of Truth
 
@@ -45,6 +47,7 @@ Read these files first when they are relevant:
 - `docs/project/spec.md`
 - `docs/project/plan.md`
 - `docs/project/tasks.md`
+- `docs/project/engineering-memory.md`
 
 Use these files to keep status grounded:
 
