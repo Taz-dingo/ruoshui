@@ -20,6 +20,7 @@ When this skill is active, do these steps in order before committing:
    - temporary debug text, placeholder wording, or abandoned notes
    - obvious unused helpers, imports, and dead branches introduced by the current work
 3. Sync docs if the implementation or workflow changed:
+   - if you need to decide which doc should absorb the change, also use `$ruoshui-doc-sync`
    - update `docs/project/state.md` when project status or rules changed
    - update focused docs when file names, architecture boundaries, or workflows changed
    - if this iteration uncovered a reusable pitfall, append it to `docs/project/engineering-memory.md`
