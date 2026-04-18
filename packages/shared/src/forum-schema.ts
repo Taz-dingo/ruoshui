@@ -2,6 +2,8 @@ import { z } from "zod";
 
 const sceneIdSchema = z.string().min(1).max(120);
 const entityIdSchema = z.string().min(1).max(120);
+const postStatusSchema = z.enum(["draft", "published", "archived"]);
+const mediaStatusSchema = z.enum(["pending", "ready", "failed"]);
 
 const vector3Schema = z.object({
   x: z.number(),
@@ -35,6 +37,8 @@ const mediaAssetSchema = z.object({
   sizeBytes: z.number().int().nonnegative(),
   width: z.number().int().positive().optional(),
   height: z.number().int().positive().optional(),
+  publicUrl: z.string().url().optional(),
+  status: mediaStatusSchema,
 });
 
 const forumPostSchema = z.object({
@@ -45,7 +49,7 @@ const forumPostSchema = z.object({
   excerpt: z.string().max(280).optional(),
   body: z.string().min(1),
   coverAssetId: entityIdSchema.optional(),
-  status: z.enum(["draft", "published", "archived"]),
+  status: postStatusSchema,
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
@@ -63,7 +67,8 @@ const createForumPostInputSchema = z.object({
   excerpt: z.string().max(280).optional(),
   body: z.string().min(1),
   coverAssetId: entityIdSchema.optional(),
-  status: z.enum(["draft", "published", "archived"]).default("draft"),
+  mediaAssetIds: z.array(entityIdSchema).max(12).optional(),
+  status: postStatusSchema.default("draft"),
 });
 
 const createScenePinInputSchema = z.object({
@@ -80,6 +85,18 @@ const sceneBootstrapSchema = z.object({
   scene: sceneSchema.nullable(),
   pins: z.array(scenePinSchema),
   posts: z.array(forumPostSchema),
+});
+
+const forumPostDetailSchema = forumPostSchema.extend({
+  mediaAssets: z.array(mediaAssetSchema),
+  pins: z.array(scenePinSchema),
+});
+
+const listForumPostsInputSchema = z.object({
+  sceneId: sceneIdSchema.optional(),
+  pinId: entityIdSchema.optional(),
+  status: postStatusSchema.optional(),
+  limit: z.coerce.number().int().positive().max(50).default(12),
 });
 
 const uploadRequestSchema = z.object({
@@ -101,24 +118,45 @@ const uploadTicketSchema = z.object({
   note: z.string().optional(),
 });
 
+const confirmMediaAssetInputSchema = z.object({
+  bucket: z.string().min(1).max(120),
+  objectKey: z.string().min(1).max(512),
+  mimeType: z.string().min(1).max(120),
+  sizeBytes: z.number().int().positive().max(50 * 1024 * 1024),
+  width: z.number().int().positive().optional(),
+  height: z.number().int().positive().optional(),
+  sceneId: sceneIdSchema.optional(),
+  postId: entityIdSchema.optional(),
+  status: mediaStatusSchema.default("ready"),
+});
+
 type ScenePin = z.infer<typeof scenePinSchema>;
 type MediaAsset = z.infer<typeof mediaAssetSchema>;
 type ForumPost = z.infer<typeof forumPostSchema>;
+type ForumPostDetail = z.infer<typeof forumPostDetailSchema>;
 type Scene = z.infer<typeof sceneSchema>;
+type ConfirmMediaAssetInput = z.infer<typeof confirmMediaAssetInputSchema>;
 type CreateForumPostInput = z.infer<typeof createForumPostInputSchema>;
 type CreateSceneInput = z.infer<typeof createSceneInputSchema>;
 type CreateScenePinInput = z.infer<typeof createScenePinInputSchema>;
+type ListForumPostsInput = z.infer<typeof listForumPostsInputSchema>;
 type SceneBootstrap = z.infer<typeof sceneBootstrapSchema>;
 type UpsertSceneInput = z.infer<typeof upsertSceneInputSchema>;
 type UploadRequest = z.infer<typeof uploadRequestSchema>;
 type UploadTicket = z.infer<typeof uploadTicketSchema>;
 
 export {
+  confirmMediaAssetInputSchema,
   createForumPostInputSchema,
   createSceneInputSchema,
   createScenePinInputSchema,
+  entityIdSchema,
   forumPostSchema,
+  forumPostDetailSchema,
+  listForumPostsInputSchema,
   mediaAssetSchema,
+  mediaStatusSchema,
+  postStatusSchema,
   sceneBootstrapSchema,
   sceneIdSchema,
   sceneSchema,
@@ -130,10 +168,13 @@ export {
 };
 
 export type {
+  ConfirmMediaAssetInput,
   CreateForumPostInput,
   CreateSceneInput,
   CreateScenePinInput,
   ForumPost,
+  ForumPostDetail,
+  ListForumPostsInput,
   MediaAsset,
   Scene,
   SceneBootstrap,

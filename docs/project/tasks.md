@@ -58,8 +58,8 @@
 - [x] 接入首版数据库访问层：`Drizzle/PostgreSQL` client、repository 与首个 migration
 - [x] 落地首批论坛接口：场景 bootstrap、场景 upsert、帖子创建、点位创建
 - [x] 将 `forum-api` 运行时从当前 Node 本地开发链路迁移到 `Cloudflare Workers`
-- [ ] 补图文社区最小闭环：帖子列表、帖子详情、图文发布（含多图）
-- [ ] 补帖子与场景点位联动：`pin -> posts` 与 `post -> pins` 双向查询
+- [x] 补图文社区最小闭环：帖子列表、帖子详情、图文发布（含多图）
+- [x] 补帖子与场景点位联动：`pin -> posts` 与 `post -> pins` 双向查询
 - [x] 为场景补天空盒或等价环境背景
 - [x] 优化相机控制手感与限制策略
 - [x] 为首屏进入和模型切换补更自然的 loading / parsing 体验
@@ -96,6 +96,7 @@
 - 后端当前已收口为：同仓库 `monorepo`、保留现有 `web/`，新增独立 `services/forum-api/` 服务，而不是整体迁到 `Next.js`
 - 当前论坛底座方案已进入双轨阶段：`Cloudflare Workers + D1 + R2` 作为新主线，`Node + PostgreSQL` 保留为本地 fallback 与旧链路对照
 - 当前论坛底座已从“纯骨架”推进到“Cloudflare 可启动的第一步”：已补 `scene bootstrap / scene upsert / post create / pin create` 四个真实接口，并落地 Worker 入口、`D1` repository、`R2` upload ticket 与本地 migration 骨架
+- 当前论坛最小闭环已继续向前收口：`forum-api` 已补 `posts list/detail`、`media confirm`、`pin -> posts`、`post -> pins` 查询；前端已补同壳社区抽屉，可直接完成帖子列表、详情、多图发布与回到点位
 - 当前开发规范也已新增一条硬规则：实现阶段不再只依赖通用 coding 能力，而是按改动域强制叠加前端 / Node / Cloudflare 专业 skill
 - 当前这条规则已进一步补全：若命中的专业域缺少已装 skill，或现有 wrapper 覆盖不够，就先更新 skill，再继续开发
 - 当前这条规则已进一步补全：若本轮出现可复用踩坑，先沉淀到 `docs/project/engineering-memory.md`，稳定后再同步回流对应 skill

@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 
 import { CameraMiniMap } from '../components/viewer/CameraMiniMap';
+import { CommunitySheet } from '../components/community/CommunitySheet';
 import { HeroPanel } from '../components/viewer/HeroPanel';
 import { HighlightLayer } from '../components/viewer/HighlightLayer';
 import { LoadingOverlay } from '../components/viewer/LoadingOverlay';
 import { MobileControlPanel } from '../components/viewer/MobileControlPanel';
 import { ViewerInspectorPanels } from '../components/viewer/ViewerInspectorPanels';
+import { Button } from '../components/ui/button';
 import { Sheet, SheetContent } from '../components/ui/sheet';
 import {
   appShellClassNames,
@@ -24,15 +26,10 @@ interface AppProps {
   viewerConfig: ViewerConfig;
 }
 
-interface CommunityStatusState {
-  detail: string;
-  label: string;
-  state: 'checking' | 'offline' | 'online';
-}
-
 const communityBootstrapUrl = import.meta.env.DEV
   ? 'http://127.0.0.1:8787/api/forum/bootstrap'
   : '/api/forum/bootstrap';
+const communitySceneId = 'ruoshui-main';
 
 const hudClassName = cn(
   'pointer-events-none relative z-[4] grid h-full min-h-0 grid-cols-[var(--rail-left-width)_minmax(0,1fr)_var(--rail-right-width)] gap-4 overflow-hidden p-4',
@@ -109,16 +106,12 @@ function App({
   const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
   const [isMiniMapVisible, setIsMiniMapVisible] = useState(true);
   const [activeInspectorPanel, setActiveInspectorPanel] = useState<string | null>(null);
+  const [isCommunityOpen, setIsCommunityOpen] = useState(false);
   const [miniMapTransform, setMiniMapTransform] = useState<MiniMapImageTransform | null>(
     data.scene.miniMap
       ? createDefaultMiniMapTransform(data.scene.miniMap.imageTransform)
       : null
   );
-  const [communityStatus, setCommunityStatus] = useState<CommunityStatusState>({
-    state: 'checking',
-    label: '正在连 Cloudflare 社区底座',
-    detail: '站点先起 3D 展示，社区接口在后台做一次轻量握手。'
-  });
   const [miniMapCopyNote, setMiniMapCopyNote] = useState('调到对齐后，点“复制参数”。');
   const setVariantPanel = useViewerUiStore((store) => store.setVariantPanel);
   const setPresetPanel = useViewerUiStore((store) => store.setPresetPanel);
@@ -223,16 +216,12 @@ function App({
           throw new Error(`HTTP ${response.status}`);
         }
 
-        return response.json() as Promise<{ message?: string }>;
-      })
-      .then((payload) => {
-        setCommunityStatus({
-          state: 'online',
-          label: 'Cloudflare 社区底座已连通',
-          detail:
-            payload.message ??
-            '当前页面和 forum-api 已走同一条 Cloudflare 发布链，可继续接帖子、点位和图片能力。'
-        });
+        const payload = (await response.json()) as { message?: string };
+        console.info(
+          '[ruoshui] forum-api connected',
+          payload.message ??
+            'Current page and forum-api are ready for community requests.'
+        );
       })
       .catch((error: unknown) => {
         if (
@@ -242,14 +231,10 @@ function App({
           return;
         }
 
-        setCommunityStatus({
-          state: 'offline',
-          label: '社区底座暂未连通',
-          detail:
-            error instanceof Error && error.message
-              ? `握手失败：${error.message}`
-              : '页面已上线，但社区接口还没握上。'
-        });
+        console.warn(
+          '[ruoshui] forum-api handshake failed',
+          error instanceof Error ? error.message : error
+        );
       });
 
     return () => {
@@ -285,10 +270,18 @@ function App({
               <div className="w-full px-[var(--rail-content-pad)] max-[760px]:grid max-[760px]:gap-2.5 max-[760px]:px-0">
                 <HeroPanel
                   compact={isProductionUi || isMobileViewport}
-                  communityStatus={communityStatus}
                   subtitle={data.scene.subtitle}
                   title={data.scene.title}
                 />
+                <div className="mt-3 flex flex-wrap gap-2 max-[760px]:mt-0">
+                  <Button
+                    className="pointer-events-auto"
+                    onClick={() => setIsCommunityOpen(true)}
+                    variant="tertiary"
+                  >
+                    打开社区
+                  </Button>
+                </div>
               </div>
 
               <div
@@ -420,6 +413,17 @@ function App({
           </aside>
         ) : null}
       </div>
+
+      <CommunitySheet
+        isMobile={isMobileViewport}
+        open={isCommunityOpen}
+        onOpenChange={setIsCommunityOpen}
+        sceneAssetUrl={viewerConfig.defaultVariant.assetUrl}
+        sceneId={communitySceneId}
+        scenePreviewImage={data.scene.miniMap?.imageUrl}
+        sceneSummary={data.scene.summary}
+        sceneTitle={data.scene.title}
+      />
     </main>
   );
 }
