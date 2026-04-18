@@ -5,8 +5,8 @@
 当前职责：
 
 - 提供论坛与点位内容的 API 落点
-- 承接数据库 schema 与后续迁移
-- 抽象对象存储上传签名接口，便于后续接 `OSS`
+- 承接 `D1` schema 与后续迁移
+- 抽象对象存储上传签名接口，并优先对接 `Cloudflare R2`
 
 当前不做：
 
@@ -18,11 +18,12 @@
 
 ```bash
 pnpm install
-cp services/forum-api/.env.example services/forum-api/.env
+cp services/forum-api/.dev.vars.example services/forum-api/.dev.vars
+pnpm --filter @ruoshui/forum-api db:migrate:local
 pnpm dev:forum-api
 ```
 
-默认端口：`8787`
+默认本地地址：`http://127.0.0.1:8787`
 
 已提供的最小接口：
 
@@ -34,17 +35,21 @@ pnpm dev:forum-api
 - `POST /api/forum/pins`
 - `GET /api/storage/status`
 - `POST /api/storage/upload-requests`
+- `PUT /api/storage/objects/:objectKey`
 
 ## 数据库
 
 已提供：
 
-- `drizzle.config.ts`
-- 首个 migration：`services/forum-api/drizzle/`
+- `wrangler.toml`
+- 首个 `D1` migration：`services/forum-api/migrations/`
+- 保留原 `drizzle.config.ts` 与 `PostgreSQL` schema，便于本地 Node fallback 和旧链路对照
 
 常用命令：
 
 ```bash
 pnpm --filter @ruoshui/forum-api db:generate
 pnpm --filter @ruoshui/forum-api db:migrate
+pnpm --filter @ruoshui/forum-api db:migrate:local
+pnpm --filter @ruoshui/forum-api dev:node
 ```

@@ -6,9 +6,12 @@
   "main": "./dist/index.js",
   "scripts": {
     "build": "tsc -p tsconfig.json --noEmit false",
-    "dev": "tsx watch src/index.ts",
+    "dev": "wrangler dev --local",
+    "dev:node": "tsx watch src/index.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "db:migrate:local": "wrangler d1 migrations apply ruoshui-forum --local",
+    "deploy": "wrangler deploy",
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
@@ -21,9 +24,11 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260404.0",
     "@types/node": "^24.7.2",
     "drizzle-kit": "^0.31.5",
     "tsx": "^4.20.6",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "wrangler": "^4.12.0"
   }
 }

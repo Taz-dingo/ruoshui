@@ -96,6 +96,7 @@ interface LoadingViewState {
 }
 
 interface StatusViewState {
+  tone: 'info' | 'error' | 'success';
   title: string;
   detail: string;
 }

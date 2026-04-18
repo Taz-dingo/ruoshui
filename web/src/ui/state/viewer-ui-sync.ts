@@ -409,12 +409,14 @@ function setPresetPanelSummary(summary: string) {
 
 function setViewerStatus(title: string, detail: string) {
   useViewerUiStore.getState().setStatus({
+    tone: title === '加载失败' ? 'error' : title === '场景已就绪' ? 'success' : 'info',
     title,
     detail
   });
 }
 
 function setViewerLoading(mode: 'boot' | 'switch' = 'switch') {
+  useViewerUiStore.getState().setBlockingError(null);
   useViewerUiStore.getState().setLoading({
     visible: true,
     mode
@@ -426,6 +428,20 @@ function clearViewerLoading() {
     visible: false,
     mode: 'switch'
   });
+}
+
+function setViewerBlockingError(title: string, detail: string, recoveryHint: string) {
+  useViewerUiStore.getState().setStatus({
+    tone: 'error',
+    title,
+    detail
+  });
+  useViewerUiStore.getState().setBlockingError({
+    title,
+    detail,
+    recoveryHint
+  });
+  clearViewerLoading();
 }
 
 function syncSceneLookState(sceneLook: SceneLookSettings) {
@@ -445,6 +461,7 @@ export {
   buildRouteDiagnosticsState,
   clearViewerLoading,
   setPresetPanelSummary,
+  setViewerBlockingError,
   setViewerLoading,
   setViewerStatus,
   syncCameraState,

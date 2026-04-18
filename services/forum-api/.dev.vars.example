@@ -1,0 +1,4 @@
+CORS_ORIGIN=http://localhost:5173
+MEDIA_PUBLIC_BASE_URL=http://127.0.0.1:8787/media/
+PUBLIC_API_BASE_URL=http://127.0.0.1:8787
+UPLOAD_SIGNING_SECRET=replace-this-before-sharing
