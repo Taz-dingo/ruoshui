@@ -23,6 +23,7 @@ Use this skill for Node-side implementation and review, especially when backend 
 5. For stream or large-payload code, prefer backpressure-aware patterns instead of ad hoc buffering
 6. Keep shutdown, cleanup, and connection lifecycle explicit in Node-only entrypoints
 7. When writing shared backend code, do not accidentally rely on Node-only globals or modules unless the file is clearly Node-specific
+8. If a workspace dependency exports runtime code from ignored `dist/` output, make dependent `dev` and `build` scripts refresh that package before boot so local runtime code does not drift behind shared source
 
 ## What Good Output Looks Like
 

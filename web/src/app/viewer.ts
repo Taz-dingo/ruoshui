@@ -411,6 +411,30 @@ async function initializeViewer({
     setGraphicsBackendPreference,
     setAntiAliasEnabled,
     applySceneLook,
+    focusScenePin: (command) => {
+      const runtimeState = session.getRuntime();
+      if (!runtimeState) {
+        setViewerStatus('社区点位未就绪', '当前运行时还没完成初始化，暂时无法跳回点位。');
+        return;
+      }
+
+      const target = command.target ?? command.position;
+      const cameraPosition: [number, number, number] = [
+        target[0] + 0.72,
+        Math.max(target[1] + 0.56, 0.56),
+        target[2] + 0.78
+      ];
+
+      moveCamera(
+        runtimeState,
+        {
+          position: cameraPosition,
+          target
+        },
+        false
+      );
+      setViewerStatus('回到社区点位', `正在飞向 ${command.title}。`);
+    },
     setHighlightAuthoringEnabled,
     setHighlightPlaneY
   });

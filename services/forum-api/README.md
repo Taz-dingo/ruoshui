@@ -30,12 +30,18 @@ pnpm dev:forum-api
 - `GET /health`
 - `GET /api/forum/bootstrap`
 - `GET /api/forum/scenes/:sceneId/bootstrap`
+- `GET /api/forum/posts`
+- `GET /api/forum/posts/:postId`
 - `PUT /api/forum/scenes/:sceneId`
 - `POST /api/forum/posts`
+- `POST /api/forum/media/confirm`
 - `POST /api/forum/pins`
+- `GET /api/forum/scenes/:sceneId/pins/:pinId/posts`
+- `GET /api/forum/posts/:postId/pins`
 - `GET /api/storage/status`
 - `POST /api/storage/upload-requests`
 - `PUT /api/storage/objects/:objectKey`
+- `GET /media/*`
 
 ## 数据库
 

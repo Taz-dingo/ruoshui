@@ -3,9 +3,14 @@ import { serve } from "@hono/node-server";
 import { createApp } from "./app.js";
 import { checkDatabaseConnection } from "./db/client.js";
 import {
+  confirmMediaAsset,
   createForumPost,
   createScenePin,
+  getForumPostDetail,
   getSceneBootstrap,
+  listForumPosts,
+  listPinsForPost,
+  listPostsForScenePin,
   upsertScene,
 } from "./db/forum-repository.js";
 import { env } from "./env.js";
@@ -18,9 +23,14 @@ const app = createApp({
   corsOrigin: env.CORS_ORIGIN,
   forumRepository: {
     checkConnection: checkDatabaseConnection,
+    confirmMediaAsset,
     createForumPost,
     createScenePin,
+    getForumPostDetail,
     getSceneBootstrap,
+    listForumPosts,
+    listPinsForPost,
+    listPostsForScenePin,
     upsertScene,
   },
   runtime: "node",

@@ -9,7 +9,9 @@ export default {
   fetch(request: Request, env: CloudflareForumApiBindings, executionContext: ExecutionContext) {
     const app = createApp({
       corsOrigin: env.CORS_ORIGIN ?? "http://localhost:5173",
-      forumRepository: createD1ForumRepository(env.DB),
+      forumRepository: createD1ForumRepository(env.DB, {
+        mediaPublicBaseUrl: env.MEDIA_PUBLIC_BASE_URL,
+      }),
       runtime: "cloudflare",
       storageProvider: createR2StorageProvider({
         bucket: env.MEDIA_BUCKET,
