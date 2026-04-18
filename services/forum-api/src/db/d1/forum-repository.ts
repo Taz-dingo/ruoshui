@@ -1,7 +1,11 @@
 import type {
+  ConfirmMediaAssetInput,
   CreateForumPostInput,
   CreateScenePinInput,
   ForumPost,
+  ForumPostDetail,
+  ListForumPostsInput,
+  MediaAsset,
   Scene,
   SceneBootstrap,
   ScenePin,
@@ -13,11 +17,16 @@ import { drizzle } from "drizzle-orm/d1";
 
 import { createEntityId } from "../../lib/id.js";
 import type { ForumRepository } from "../../lib/forum-repository.js";
-import { forumPosts, scenePins, scenes } from "./schema.js";
+import { forumPosts, mediaAssets, scenePins, scenes } from "./schema.js";
 
 type SceneRow = typeof scenes.$inferSelect;
 type ForumPostRow = typeof forumPosts.$inferSelect;
+type MediaAssetRow = typeof mediaAssets.$inferSelect;
 type ScenePinRow = typeof scenePins.$inferSelect;
+
+interface CreateD1ForumRepositoryOptions {
+  mediaPublicBaseUrl?: string;
+}
 
 function mapScene(row: SceneRow | undefined): Scene | null {
   if (!row) {
@@ -48,6 +57,34 @@ function mapForumPost(row: ForumPostRow): ForumPost {
   };
 }
 
+function buildPublicUrl(mediaPublicBaseUrl: string | undefined, objectKey: string): string | undefined {
+  if (!mediaPublicBaseUrl) {
+    return undefined;
+  }
+
+  const normalizedBaseUrl = mediaPublicBaseUrl.endsWith("/")
+    ? mediaPublicBaseUrl
+    : `${mediaPublicBaseUrl}/`;
+  return new URL(objectKey, normalizedBaseUrl).toString();
+}
+
+function mapMediaAsset(
+  row: MediaAssetRow,
+  mediaPublicBaseUrl: string | undefined,
+): MediaAsset {
+  return {
+    id: row.id,
+    bucket: row.bucket,
+    objectKey: row.objectKey,
+    mimeType: row.mimeType,
+    sizeBytes: row.sizeBytes,
+    width: row.width ?? undefined,
+    height: row.height ?? undefined,
+    publicUrl: buildPublicUrl(mediaPublicBaseUrl, row.objectKey),
+    status: row.status,
+  };
+}
+
 function mapScenePin(row: ScenePinRow): ScenePin {
   return {
     id: row.id,
@@ -71,8 +108,56 @@ function mapScenePin(row: ScenePinRow): ScenePin {
   };
 }
 
-function createD1ForumRepository(database: D1Database): ForumRepository {
+function getPrimaryPinId(pinRows: ScenePinRow[]): string | undefined {
+  return pinRows[0]?.id;
+}
+
+function buildPostDetail(
+  row: ForumPostRow,
+  pinRows: ScenePinRow[],
+  mediaRows: MediaAssetRow[],
+  mediaPublicBaseUrl: string | undefined,
+): ForumPostDetail {
+  return {
+    ...mapForumPost(row),
+    pinId: getPrimaryPinId(pinRows),
+    mediaAssets: mediaRows.map((mediaRow) => mapMediaAsset(mediaRow, mediaPublicBaseUrl)),
+    pins: pinRows.map(mapScenePin),
+  };
+}
+
+function createD1ForumRepository(
+  database: D1Database,
+  options: CreateD1ForumRepositoryOptions = {},
+): ForumRepository {
   const db = drizzle(database);
+  const mediaPublicBaseUrl = options.mediaPublicBaseUrl;
+
+  async function listPinsByPostIds(postIds: string[]): Promise<ScenePinRow[]> {
+    if (postIds.length === 0) {
+      return [];
+    }
+
+    return db
+      .select()
+      .from(scenePins)
+      .where(inArray(scenePins.postId, postIds))
+      .orderBy(scenePins.createdAt)
+      .all();
+  }
+
+  async function listReadyMediaByPostIds(postIds: string[]): Promise<MediaAssetRow[]> {
+    if (postIds.length === 0) {
+      return [];
+    }
+
+    return db
+      .select()
+      .from(mediaAssets)
+      .where(and(inArray(mediaAssets.postId, postIds), eq(mediaAssets.status, "ready")))
+      .orderBy(mediaAssets.createdAt)
+      .all();
+  }
 
   return {
     async checkConnection(): Promise<void> {
@@ -117,6 +202,7 @@ function createD1ForumRepository(database: D1Database): ForumRepository {
     async createForumPost(input: CreateForumPostInput): Promise<ForumPost> {
       const now = new Date();
       const id = createEntityId("post");
+      const coverAssetId = input.coverAssetId ?? input.mediaAssetIds?.[0];
 
       await db
         .insert(forumPosts)
@@ -126,21 +212,44 @@ function createD1ForumRepository(database: D1Database): ForumRepository {
           title: input.title,
           excerpt: input.excerpt ?? null,
           body: input.body,
-          coverAssetId: input.coverAssetId ?? null,
+          coverAssetId: coverAssetId ?? null,
           status: input.status,
           createdAt: now,
           updatedAt: now,
         })
         .run();
 
+      if (input.mediaAssetIds?.length) {
+        await db
+          .update(mediaAssets)
+          .set({
+            postId: id,
+            sceneId: input.sceneId ?? null,
+            updatedAt: now,
+          })
+          .where(inArray(mediaAssets.id, input.mediaAssetIds))
+          .run();
+      }
+
+      if (input.pinId) {
+        await db
+          .update(scenePins)
+          .set({
+            postId: id,
+            updatedAt: now,
+          })
+          .where(eq(scenePins.id, input.pinId))
+          .run();
+      }
+
       return {
         id,
         sceneId: input.sceneId,
-        pinId: undefined,
+        pinId: input.pinId,
         title: input.title,
         excerpt: input.excerpt,
         body: input.body,
-        coverAssetId: input.coverAssetId,
+        coverAssetId,
         status: input.status,
         createdAt: now.toISOString(),
         updatedAt: now.toISOString(),
@@ -180,6 +289,67 @@ function createD1ForumRepository(database: D1Database): ForumRepository {
         position: input.position,
         target: input.target,
       };
+    },
+
+    async confirmMediaAsset(input: ConfirmMediaAssetInput): Promise<MediaAsset> {
+      const now = new Date();
+      const existing = await db
+        .select()
+        .from(mediaAssets)
+        .where(eq(mediaAssets.objectKey, input.objectKey))
+        .limit(1)
+        .get();
+
+      const mediaId = existing?.id ?? createEntityId("media");
+
+      if (existing) {
+        await db
+          .update(mediaAssets)
+          .set({
+            bucket: input.bucket,
+            height: input.height ?? null,
+            mimeType: input.mimeType,
+            postId: input.postId ?? null,
+            sceneId: input.sceneId ?? null,
+            sizeBytes: input.sizeBytes,
+            status: input.status,
+            updatedAt: now,
+            width: input.width ?? null,
+          })
+          .where(eq(mediaAssets.id, existing.id))
+          .run();
+      } else {
+        await db
+          .insert(mediaAssets)
+          .values({
+            id: mediaId,
+            bucket: input.bucket,
+            objectKey: input.objectKey,
+            mimeType: input.mimeType,
+            sizeBytes: input.sizeBytes,
+            width: input.width ?? null,
+            height: input.height ?? null,
+            status: input.status,
+            sceneId: input.sceneId ?? null,
+            postId: input.postId ?? null,
+            createdAt: now,
+            updatedAt: now,
+          })
+          .run();
+      }
+
+      const row = await db
+        .select()
+        .from(mediaAssets)
+        .where(eq(mediaAssets.id, mediaId))
+        .limit(1)
+        .get();
+
+      if (!row) {
+        throw new Error("Failed to confirm media asset");
+      }
+
+      return mapMediaAsset(row, mediaPublicBaseUrl);
     },
 
     async getSceneBootstrap(sceneId: string): Promise<SceneBootstrap> {
@@ -223,6 +393,97 @@ function createD1ForumRepository(database: D1Database): ForumRepository {
         pins: pinRows.map(mapScenePin),
         posts: postRows.map(mapForumPost),
       };
+    },
+
+    async listForumPosts(input: ListForumPostsInput): Promise<ForumPostDetail[]> {
+      if (input.pinId && input.sceneId) {
+        return this.listPostsForScenePin(input.sceneId, input.pinId);
+      }
+
+      let query = db.select().from(forumPosts).orderBy(desc(forumPosts.createdAt)).$dynamic();
+
+      if (input.sceneId && input.status) {
+        query = query.where(
+          and(eq(forumPosts.sceneId, input.sceneId), eq(forumPosts.status, input.status)),
+        );
+      } else if (input.sceneId) {
+        query = query.where(eq(forumPosts.sceneId, input.sceneId));
+      } else if (input.status) {
+        query = query.where(eq(forumPosts.status, input.status));
+      }
+
+      const postRows = await query.limit(input.limit).all();
+      const postIds = postRows.map((row) => row.id);
+      const [pinRows, mediaRows] = await Promise.all([
+        listPinsByPostIds(postIds),
+        listReadyMediaByPostIds(postIds),
+      ]);
+
+      return postRows.map((postRow) =>
+        buildPostDetail(
+          postRow,
+          pinRows.filter((pinRow) => pinRow.postId === postRow.id),
+          mediaRows.filter((mediaRow) => mediaRow.postId === postRow.id),
+          mediaPublicBaseUrl,
+        ),
+      );
+    },
+
+    async getForumPostDetail(postId: string): Promise<ForumPostDetail | null> {
+      const postRow = await db
+        .select()
+        .from(forumPosts)
+        .where(eq(forumPosts.id, postId))
+        .limit(1)
+        .get();
+
+      if (!postRow) {
+        return null;
+      }
+
+      const [pinRows, mediaRows] = await Promise.all([
+        db
+          .select()
+          .from(scenePins)
+          .where(eq(scenePins.postId, postId))
+          .orderBy(scenePins.createdAt)
+          .all(),
+        db
+          .select()
+          .from(mediaAssets)
+          .where(and(eq(mediaAssets.postId, postId), eq(mediaAssets.status, "ready")))
+          .orderBy(mediaAssets.createdAt)
+          .all(),
+      ]);
+
+      return buildPostDetail(postRow, pinRows, mediaRows, mediaPublicBaseUrl);
+    },
+
+    async listPostsForScenePin(sceneId: string, pinId: string): Promise<ForumPostDetail[]> {
+      const pinRow = await db
+        .select()
+        .from(scenePins)
+        .where(and(eq(scenePins.sceneId, sceneId), eq(scenePins.id, pinId)))
+        .limit(1)
+        .get();
+
+      if (!pinRow?.postId) {
+        return [];
+      }
+
+      const postDetail = await this.getForumPostDetail(pinRow.postId);
+      return postDetail ? [postDetail] : [];
+    },
+
+    async listPinsForPost(postId: string): Promise<ScenePin[]> {
+      const pinRows = await db
+        .select()
+        .from(scenePins)
+        .where(eq(scenePins.postId, postId))
+        .orderBy(scenePins.createdAt)
+        .all();
+
+      return pinRows.map(mapScenePin);
     },
   };
 }

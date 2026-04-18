@@ -12,6 +12,7 @@ const envSchema = z.object({
   OSS_BUCKET: z.string().default(""),
   OSS_REGION: z.string().default(""),
   OSS_PUBLIC_BASE_URL: z.string().default(""),
+  MEDIA_PUBLIC_BASE_URL: z.string().default(""),
 });
 
 const env = envSchema.parse(process.env);

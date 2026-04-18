@@ -76,6 +76,14 @@ interface SetHighlightPlaneYCommand {
   value: number;
 }
 
+interface FocusScenePinCommand {
+  type: 'focus-scene-pin';
+  pinId: string;
+  position: [number, number, number];
+  target?: [number, number, number];
+  title: string;
+}
+
 interface SelectPresetCommand {
   type: 'select-preset';
   presetId: string;
@@ -102,6 +110,7 @@ type ViewerCommand =
   | ClearViewCaptureCommand
   | DownloadRouteAnalysisJsonCommand
   | DownloadViewCaptureJsonCommand
+  | FocusScenePinCommand
   | GraphicsBackendPreferenceChangeCommand
   | RenderScaleChangeCommand
   | RunCurrentRouteBenchmarkCommand
@@ -169,6 +178,13 @@ function requestDownloadRouteAnalysisJson() {
 
 function requestDownloadViewCaptureJson() {
   emitViewerCommand({ type: 'download-view-capture-json' });
+}
+
+function requestFocusScenePin(command: Omit<FocusScenePinCommand, 'type'>) {
+  emitViewerCommand({
+    type: 'focus-scene-pin',
+    ...command
+  });
 }
 
 function requestGraphicsBackendPreferenceChange(
@@ -255,6 +271,7 @@ export {
   requestCopyRouteAnalysisSummary,
   requestDownloadRouteAnalysisJson,
   requestDownloadViewCaptureJson,
+  requestFocusScenePin,
   requestGraphicsBackendPreferenceChange,
   requestPresetSelection,
   requestRenderScaleChange,
