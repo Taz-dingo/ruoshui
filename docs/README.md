@@ -7,6 +7,7 @@
 - `docs/project/tasks.md`：当前任务池与迭代模板
 - `docs/project/state.md`：项目状态快照与恢复入口
 - `docs/project/cloudflare-community-plan.md`：Cloudflare 图文社区与点位联动方案（草案）
+- `docs/project/development-skills.md`：开发域与专业 skill 的项目规范
 
 ## assets
 

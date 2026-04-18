@@ -31,6 +31,13 @@ When this skill is active:
 5. Commit after each meaningful step when the result is coherent
 6. Prefer clarifying risk early over building speculative features
 7. If the user asks to save progress, record current status, or prepare a handoff, sync `docs/project/state.md`, `docs/project/tasks.md`, and the iteration doc before stopping
+8. Prefer small, frequent, coherent commits over large mixed changes
+9. Avoid bundling unrelated frontend, backend, asset, and infra edits into one oversized iteration unless the user explicitly asks for a combined step
+10. Start new feature work on a dedicated branch instead of stacking it directly on shared branches
+11. After a coherent step is complete, prefer opening a PR to update others rather than letting the branch drift silently
+12. Before opening a PR, do one overall review and validation pass for the full branch to catch cross-file risk, regressions, and missing verification
+13. When a nontrivial pitfall changes the team’s default workflow, append it to `docs/project/engineering-memory.md` in the same iteration
+14. If that lesson belongs to a stable domain such as React, Node, Web3D, or Cloudflare, also update the corresponding repo skill instead of only updating the memory doc
 
 ## Source of Truth
 
@@ -40,6 +47,7 @@ Read these files first when they are relevant:
 - `docs/project/spec.md`
 - `docs/project/plan.md`
 - `docs/project/tasks.md`
+- `docs/project/engineering-memory.md`
 
 Use these files to keep status grounded:
 
@@ -64,6 +72,7 @@ A step is in good shape when it has all of the following:
 - one minimal validation result
 - one cleanup pass
 - one small commit
+- no unnecessary unrelated changes mixed into the same delivery
 
 ## Trigger Hints
 

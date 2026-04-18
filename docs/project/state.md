@@ -1,6 +1,6 @@
 # 项目状态快照
 
-最后更新：`2026-04-17`
+最后更新：`2026-04-18`
 
 ## 项目背景
 
@@ -21,6 +21,16 @@
 - 部署主路径新增迁移目标：从当前 `Vercel` 静态站优先，逐步切到 `Cloudflare` 生态
 - 后端目标从“论坛雏形底座”升级为“图文社区最小闭环 + 场景点位联动”
 - 已新增规划文档：`docs/project/cloudflare-community-plan.md`
+
+## 最新决策（2026-04-18）
+
+- `forum-api` 当前开始以 `Cloudflare Workers + D1 + R2` 为默认新链路推进，`Node + PostgreSQL` 仅保留为本地 fallback 与旧 contract 对照
+- 上传链路的最小实现策略先收口为“Worker 签发短时 ticket，再由 Worker 代理写入 `R2`”，避免第一步就引入额外 `S3 API` 签名复杂度
+- 项目新增“开发专业 skill”规范：前端默认收口到 `Vercel React best practices`，Node 默认收口到 `Matteo Collina + Node 官方最佳实践`，Cloudflare 服务默认收口到 `Cloudflare 官方文档`
+- 项目进一步新增 `Web3D` 专业 skill，并明确“技能不够用时先更新 skill，再继续开发”
+- 项目进一步将 `Web3D viewer/runtime` 与 `SuperSplat 资产编辑` 拆成两条专业 skill，而不是继续混成同一类
+- 项目提交节奏进一步明确：默认采用“小步快跑 + 勤快 commit”，避免把过多不相关 changes 或过大改动揉进同一次交付
+- 项目协作流进一步明确：新 feature 走独立分支、完成后提 PR、提 PR 前先做总体 review 与验证
 
 ## 当前实现情况
 
@@ -168,6 +178,27 @@
 - 已初始化 `services/forum-api`：当前已落地 `Hono` 服务入口、`Drizzle` schema、对象存储 upload ticket 抽象，以及面向论坛 / 点位 / 媒体的最小 API 路由
 - 已初始化 `packages/shared`：当前已补论坛帖子、点位、媒体、上传 ticket 的 `zod schema` 与共享类型，作为前后端 contract 起点
 - 已将后端进一步推进到首个可用阶段：当前已接入 `Drizzle + postgres` 数据访问层、生成首个 migration，并落地 `scene bootstrap / scene upsert / post create / pin create` 四个接口
+- 已完成 `forum-api` 的首轮运行时解耦：当前 `Hono` app 已改为依赖注入结构，可分别挂载 `Node/PostgreSQL` 与 `Cloudflare Workers/D1`
+- 已新增 `Cloudflare Workers` 入口、`wrangler.toml`、本地 `.dev.vars` 模板与首个 `D1` migration，当前默认开发入口已切到 `wrangler dev --local`
+- 已新增 `D1` 版 forum repository，并保留旧的 `PostgreSQL` repository 作为本地 fallback 与迁移对照
+- 已将上传 ticket contract 扩展到 `r2`，并落地 `Worker -> R2` 的最小直传代理接口：`PUT /api/storage/objects/:objectKey`
+- 已创建 `Cloudflare Pages` 项目 `ruoshui-web`，当前生产静态站入口已切到 `https://ruoshui-web.pages.dev`
+- 已把生产主模型 `hhuc-original.sog` 外置到 `R2` 公网地址：`https://pub-5fbf37dd49b94b859c13e343effd0430.r2.dev/models/hhuc-original.sog`，用于绕开 `Pages` 单文件 `25 MiB` 限制
+- 已给 `web/` 补上 `build:pages` 与 `prepare-cloudflare-pages.mjs`：当前 `Pages` 构建会重写 `content/mvp.json` 中的生产主模型地址，并从 `dist` 中移除超限模型文件
+- 已给 `web/` 补上 `deploy-cloudflare-pages.mjs`：当前 `Cloudflare Pages` 生产部署可在本地完成“静态资源上传 + Pages Functions bundle 上传”，不再依赖 `wrangler pages deploy` 的网络握手稳定性
+- 已给 `Cloudflare Pages` 补上 `/api/*` Functions 代理，当前 `ruoshui-web.pages.dev` 已不只是静态壳子，而是能从同域名入口转发到 `forum-api`
+- 已把生产主模型入口进一步收口到同源 `Pages Functions` 代理 `/edge-models/hhuc-original.sog`，避免前端运行时继续依赖 `r2.dev` 跨域读取
+- 已把 `forum-api` 的线上 `Worker settings` 切到新的 Cloudflare 主路径：`CORS_ORIGIN=https://ruoshui-web.pages.dev`，`MEDIA_PUBLIC_BASE_URL=https://pub-5fbf37dd49b94b859c13e343effd0430.r2.dev`
+- 已新增三类仓库内专业 skill：`ruoshui-react-vercel`、`ruoshui-node-mcollina`、`ruoshui-cloudflare-workers`
+- 已新增第四类仓库内专业 skill：`ruoshui-web-3d`
+- 已新增第五类仓库内专业 skill：`ruoshui-supersplat`
+- 已新增项目级 skill 映射规范：`docs/project/development-skills.md`
+- 已新增项目级工程记忆：`docs/project/engineering-memory.md`
+- 已把“按改动域必须带对应专业 skill”写入 `AGENTS.md`
+- 已把“命中专业域但 skill 缺失或覆盖不够时，先补/更新 skill 再继续实现”写入项目规范
+- 已把“新踩坑先写工程记忆，再按稳定专业域回流 skill”写入项目规范与相关 skill
+- 已把“小步快跑、勤快提交、避免大杂烩 diff”写入仓库级规则
+- 已把“新 feature 新分支、完成后提 PR、提 PR 前先做总体 review 和验证”写入仓库级规则
 
 ## 当前已知素材状态
 
@@ -183,7 +214,7 @@
 当前最重要的任务是：
 
 - 保留当前 `CityGaussian V1-original` 训练入口准备成果，但产品主线继续聚焦 `PlayCanvas/SOG` 的 `Web MVP`、三维点位能力，以及后续论坛 / 内容服务底座，不再继续把“渐进式加载”当作当前迭代目标
-- 在现有 `forum-api` 底座之上，推进 `Cloudflare Workers + D1 + R2` 的图文社区与点位联动闭环
+- 在现有 `forum-api` 的 `Workers + D1 + R2` 骨架之上，继续补图文社区最小闭环：帖子列表、详情、多图发布与点位双向查询
 
 当前已确认的最近阻塞：
 

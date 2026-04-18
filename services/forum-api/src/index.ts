@@ -1,7 +1,36 @@
 import { serve } from "@hono/node-server";
 
-import { app } from "./app.js";
+import { createApp } from "./app.js";
+import { checkDatabaseConnection } from "./db/client.js";
+import {
+  createForumPost,
+  createScenePin,
+  getSceneBootstrap,
+  upsertScene,
+} from "./db/forum-repository.js";
 import { env } from "./env.js";
+import {
+  createAliOssStorageProvider,
+  createNoopStorageProvider,
+} from "./lib/storage.js";
+
+const app = createApp({
+  corsOrigin: env.CORS_ORIGIN,
+  forumRepository: {
+    checkConnection: checkDatabaseConnection,
+    createForumPost,
+    createScenePin,
+    getSceneBootstrap,
+    upsertScene,
+  },
+  runtime: "node",
+  storageProvider:
+    env.OSS_PROVIDER === "alioss"
+      ? createAliOssStorageProvider({
+          publicBaseUrl: env.OSS_PUBLIC_BASE_URL,
+        })
+      : createNoopStorageProvider(),
+});
 
 const server = serve(
   {
