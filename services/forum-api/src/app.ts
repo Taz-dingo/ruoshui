@@ -75,6 +75,51 @@ function createApp(options: CreateAppOptions): Hono {
       storageProvider: options.storageProvider,
     }),
   );
+  app.get("/media/*", async (context) => {
+    if (!options.storageProvider.readObject) {
+      return context.json(
+        {
+          ok: false,
+          error: "Media reads are not available for the current storage provider.",
+        },
+        501,
+      );
+    }
+
+    const requestPath = context.req.path;
+    const objectKey = requestPath.startsWith("/media/")
+      ? requestPath.slice("/media/".length)
+      : "";
+
+    if (!objectKey) {
+      return context.notFound();
+    }
+
+    const object = await options.storageProvider.readObject(objectKey);
+    if (!object) {
+      return context.notFound();
+    }
+
+    const headers = new Headers();
+    if (object.contentType) {
+      headers.set("content-type", object.contentType);
+    }
+    if (object.contentLength !== undefined) {
+      headers.set("content-length", String(object.contentLength));
+    }
+    if (object.etag) {
+      headers.set("etag", object.etag);
+    }
+    if (object.uploadedAt) {
+      headers.set("last-modified", object.uploadedAt.toUTCString());
+    }
+    headers.set("cache-control", "public, max-age=60");
+
+    return new Response(object.body as BodyInit | null, {
+      headers,
+      status: 200,
+    });
+  });
 
   app.onError((error, context) => {
     if (error instanceof ZodError) {
