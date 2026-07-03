@@ -1,6 +1,6 @@
 # Web Style System
 
-最后更新：`2026-04-13`
+最后更新：`2026-04-18`
 
 ## 目标
 
@@ -28,7 +28,8 @@
 当前已建立的 token 类型：
 
 - `color`: `canvas / ink / ink-muted / brand / outline / surface`
-- `shadow`: `panel`
+- `color`: `community-*`，用于图文社区这类浅底、暖色、editorial 风格的局部界面
+- `shadow`: `panel / community`
 - `radius`: `panel / control`
 - `text`: `ui-xs / ui-sm / ui-title`
 
@@ -36,6 +37,9 @@
 
 - 新增视觉 token 时，优先加到 `@theme`
 - 不要继续在组件里散落新的 `rgba(...)` 和硬编码颜色
+- 如果只是某个子域（例如社区 feed）需要一整组独立视觉语言，优先新增成一组语义化 token，而不是把临时色值直接写进业务组件
+- 当 viewer HUD 和社区层需要统一视觉语言时，优先先收敛共享 token（例如 `brand / outline / surface`），再决定哪些区域继续保留 `community-*` 的局部增强
+- 如果 HUD 已经有更合适的主色语义，社区不要抢主色；优先保留 HUD 的品牌色，把社区做成“不同材质的表面，同一套交互色”
 
 ### 2. Primitive Layer
 
@@ -64,6 +68,8 @@
 
 - 基础件优先从这里取语义类
 - 业务组件尽量只做组合，不重新发明自己的面板 / 按钮 / 输入样式
+- 社区和 HUD 默认走克制策略：没有导航、状态、操作价值的标签、徽章、说明块和辅助文案，不要加
+- 如果一个区块去掉后不影响理解、定位或操作，就应该删掉，而不是继续美化
 
 ### 3. Global CSS Layer
 
