@@ -102,3 +102,11 @@
 - 根因：`R2` bucket 开了公网域名，不等于已经配置了浏览器跨域头；对象“公开可下载”和“允许跨域脚本读取”是两回事。
 - 解决：先给 bucket 补 `CORS` 规则恢复线上可用性；随后把生产主模型改成同源 `Pages Functions` 代理路径，避免把核心加载链路继续绑在跨域配置上。
 - 后续默认规则：若 `web/` 前端要直接读取 `R2` 资源，先验证 CORS；对于超大模型等核心启动资源，优先走同源代理而不是直接跨域拉取。
+
+## 2026-07-03 - 不要为静态站打包长期保留仓库内重复大资产副本
+
+- 场景：为了让前端能读到 `/models/hhuc-original.sog`，把 `assets/hhuc.sog` 再复制一份到 `web/public/models/hhuc-original.sog` 并长期提交到仓库。
+- 表象：工作区平白多出一份约 `26 MiB` 的重复模型，repo 体积和后续 diff 噪音一起变大。
+- 根因：把“构建时需要一个公开路径”误做成了“仓库里必须长期并存一份 deploy 副本”。
+- 解决：改为以 `assets/hhuc.sog` 作为唯一仓库源，在 `vite` 开发/构建阶段按需映射 `/models/hhuc-original.sog`；`Cloudflare Pages` 产物再交给 `prepare-cloudflare-pages.mjs` 删除超限文件，并通过 `R2 + Pages Functions` 代理正式提供。
+- 后续默认规则：重量级静态资源在仓库里只保留一份源文件；部署路径、公开 URL 和环境差异通过构建脚本或代理层解决，不要长期 check in 重复副本。

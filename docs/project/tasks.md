@@ -244,7 +244,7 @@
 - 已新增首个正式 `Web MVP` 前端项目：`web/`
 - 当前 `Web MVP` 已切换为 `PlayCanvas Engine + SOG` 直接加载路线，不再先走 `PLY` 试页验证
 - 已通过 `web/public/content/mvp.json` 固定首版首页文案、导览镜头和记忆锚点结构
-- 已将 `Web MVP` 的资源策略拆成“生产一份正式模型 + 开发态多版本对照”：生产只携带 `web/public/models/hhuc-original.sog`，开发态继续通过 `web/vite.config.mjs` 暴露根目录 `SOG` 派生资产与 `LOD`
+- 已将 `Web MVP` 的资源策略拆成“一个仓库模型源 + 开发态多版本对照”：正式原版统一以 `assets/hhuc.sog` 为唯一源，由 `web/vite.config.mjs` 在开发和构建阶段映射为 `/models/hhuc-original.sog`；其余 `SOG` 派生版本与 `LOD` 继续只在开发态或 compare 构建中暴露
 - 已确认此前 `Vercel` 上传接近 `200 MiB` 的主因是把原始版、派生版与整包 `LOD` 资源一并打进了生产构建，而不是前端代码本身过大
 - 已完成首轮 `SOG` 交付侧派生实验，并产出 `hhuc-h0 / hhuc-h0-opacity01 / hhuc-h0-dec75 / hhuc-h0-dec50`
 - 当前 `Web MVP` 已支持同页切换原始版与 `4` 个派生版本做主观对比，默认落在 `dec75`

@@ -6,12 +6,11 @@
   "packageManager": "pnpm@10.28.2",
   "scripts": {
     "dev": "vite",
-    "sync:production-model": "node scripts/sync-production-model.mjs",
     "typecheck": "tsc --noEmit",
-    "build": "pnpm run sync:production-model && vite build",
+    "build": "vite build",
     "build:pages": "pnpm run build && node scripts/prepare-cloudflare-pages.mjs",
     "deploy:pages": "node scripts/deploy-cloudflare-pages.mjs",
-    "build:compare": "pnpm run sync:production-model && RUOSHUI_BUILD_PROFILE=compare vite build",
+    "build:compare": "RUOSHUI_BUILD_PROFILE=compare vite build",
     "preview": "vite preview",
     "benchmark:auto": "node scripts/benchmark-auto.mjs",
     "convert:sog:ply": "node scripts/sog-to-ply.mjs"
