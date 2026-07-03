@@ -26,9 +26,6 @@ interface AppProps {
   viewerConfig: ViewerConfig;
 }
 
-const communityBootstrapUrl = import.meta.env.DEV
-  ? 'http://127.0.0.1:8787/api/forum/bootstrap'
-  : '/api/forum/bootstrap';
 const communitySceneId = 'ruoshui-main';
 
 const hudClassName = cn(
@@ -143,6 +140,10 @@ function App({
     setIsMobilePanelOpen(false);
   };
 
+  const openFullCommunity = () => {
+    setIsCommunityOpen(true);
+  };
+
   const resetMiniMapTransform = () => {
     if (!data.scene.miniMap) {
       return;
@@ -205,43 +206,6 @@ function App({
     };
   }, []);
 
-  useEffect(() => {
-    const abortController = new AbortController();
-
-    void fetch(communityBootstrapUrl, {
-      signal: abortController.signal
-    })
-      .then(async (response) => {
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-
-        const payload = (await response.json()) as { message?: string };
-        console.info(
-          '[ruoshui] forum-api connected',
-          payload.message ??
-            'Current page and forum-api are ready for community requests.'
-        );
-      })
-      .catch((error: unknown) => {
-        if (
-          error instanceof DOMException &&
-          error.name === 'AbortError'
-        ) {
-          return;
-        }
-
-        console.warn(
-          '[ruoshui] forum-api handshake failed',
-          error instanceof Error ? error.message : error
-        );
-      });
-
-    return () => {
-      abortController.abort();
-    };
-  }, []);
-
   return (
     <main className={appShellClassNames.main}>
       <div
@@ -262,7 +226,11 @@ function App({
           id="hud-root"
           className={appShellClassNames.hudRoot}
         >
-          <HighlightLayer highlights={data.highlights ?? []} />
+          <HighlightLayer
+            highlights={data.highlights ?? []}
+            onOpenFullCommunity={openFullCommunity}
+            sceneId={communitySceneId}
+          />
           <LoadingOverlay />
 
           <div className={hudClassName}>
@@ -276,10 +244,10 @@ function App({
                 <div className="mt-3 flex flex-wrap gap-2 max-[760px]:mt-0">
                   <Button
                     className="pointer-events-auto"
-                    onClick={() => setIsCommunityOpen(true)}
+                    onClick={openFullCommunity}
                     variant="tertiary"
                   >
-                    打开社区
+                    社区笔记
                   </Button>
                 </div>
               </div>
