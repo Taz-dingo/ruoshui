@@ -41,10 +41,13 @@
 ## 验证方式
 
 - 在 `web/` 目录运行 `pnpm install`
+- 确认本地已准备 `outputs/iteration-004-sog-opt/` 下的派生 `SOG` 与 `LOD` 产物
 - 运行 `pnpm dev`
 - 确认同页版本切换可在原始版、`h0`、`opacity01`、`dec75`、`dec50` 之间完成重载
 - 运行 `pnpm build`
-- 确认所有 `SOG` 版本都能作为构建产物发出，且页面脚本通过构建
+- 确认默认生产构建只发出正式原版模型，且页面脚本通过构建
+- 运行 `pnpm build:compare`
+- 确认所有对照 `SOG` 与 `LOD` 资源都能作为构建产物发出
 
 ## 当前结果
 
