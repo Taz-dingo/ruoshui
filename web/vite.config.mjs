@@ -112,7 +112,7 @@ function getContentType(sourceFile) {
 
 const rootDir = path.resolve(__dirname, '..');
 const contentSourceFile = path.join(__dirname, 'public', 'content', 'mvp.json');
-const productionModelFile = path.join(__dirname, 'public', 'models', 'hhuc-original.sog');
+const productionModelSourceFile = path.join(rootDir, 'assets', 'hhuc.sog');
 
 function resolveBuildProfile() {
   const explicitProfile = process.env.RUOSHUI_BUILD_PROFILE;
@@ -140,11 +140,18 @@ function filterContentForProfile(content, singleModelProduction) {
 }
 
 function createAssetEntries(singleModelProduction) {
+  const entries = [
+    {
+      routePath: '/models/hhuc-original.sog',
+      sourceFile: productionModelSourceFile
+    }
+  ];
+
   if (singleModelProduction) {
-    return [];
+    return entries;
   }
 
-  return [
+  return entries.concat([
     {
       routePath: '/models/hhuc-edited.sog',
       sourceFile: path.join(rootDir, 'assets', 'hhuc-edited.sog')
@@ -169,7 +176,7 @@ function createAssetEntries(singleModelProduction) {
       routePrefix: '/models/hhuc-lod/',
       sourceDir: path.join(rootDir, 'outputs', 'iteration-004-sog-opt', 'lod')
     }
-  ];
+  ]);
 }
 
 function contentProfilePlugin(options) {
@@ -262,7 +269,7 @@ export default defineConfig(({ command }) => {
       tailwindcss(),
       react(),
       requiredProductionModelPlugin({
-        sourceFile: productionModelFile
+        sourceFile: productionModelSourceFile
       }),
       contentProfilePlugin({
         singleModelProduction,

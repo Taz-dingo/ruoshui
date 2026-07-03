@@ -2,3 +2,7 @@ packages:
   - "web"
   - "services/*"
   - "packages/*"
+onlyBuiltDependencies:
+  - esbuild
+  - sharp
+  - workerd

@@ -192,6 +192,7 @@
 - 已给 `web/` 补上 `deploy-cloudflare-pages.mjs`：当前 `Cloudflare Pages` 生产部署可在本地完成“静态资源上传 + Pages Functions bundle 上传”，不再依赖 `wrangler pages deploy` 的网络握手稳定性
 - 已给 `Cloudflare Pages` 补上 `/api/*` Functions 代理，当前 `ruoshui-web.pages.dev` 已不只是静态壳子，而是能从同域名入口转发到 `forum-api`
 - 已把生产主模型入口进一步收口到同源 `Pages Functions` 代理 `/edge-models/hhuc-original.sog`，避免前端运行时继续依赖 `r2.dev` 跨域读取
+- 已把正式原版模型进一步收口到 `assets/hhuc.sog` 这一份仓库源：开发与构建阶段按需映射为 `/models/hhuc-original.sog`，不再在 `web/public/models/` 长期保留重复副本
 - 已把 `forum-api` 的线上 `Worker settings` 切到新的 Cloudflare 主路径：`CORS_ORIGIN=https://ruoshui-web.pages.dev`，`MEDIA_PUBLIC_BASE_URL=https://pub-5fbf37dd49b94b859c13e343effd0430.r2.dev`
 - 已新增三类仓库内专业 skill：`ruoshui-react-vercel`、`ruoshui-node-mcollina`、`ruoshui-cloudflare-workers`
 - 已新增第四类仓库内专业 skill：`ruoshui-web-3d`
@@ -253,11 +254,11 @@
 - 当前论坛底座的更具体状态也已明确：服务本身可以启动并通过 health / upload 冒烟，但数据库仍需本机或线上 `PostgreSQL` 实例后才能完成真实写入联调
 - 当前部署与基础设施方向也已收口为：若追求最低成本，优先考虑静态站点 + 最小计算资源，而不是把托管数据库作为首期默认配置
 - 已完成首轮 `Vercel` 生产部署验证，当前静态站线上构建已能稳定走“只带 `hhuc-original.sog`”这条生产打包路径
-- 已把静态站生产打包规则进一步收口：生产部署只携带 `web/public/models/hhuc-original.sog`，其余 `SOG` 派生版本与 `LOD` 资源只在本地开发或非生产构建中暴露
+- 已把静态站生产打包规则进一步收口：正式原版模型以 `assets/hhuc.sog` 为唯一仓库源，由构建阶段临时映射到 `/models/hhuc-original.sog`；其余 `SOG` 派生版本与 `LOD` 资源只在本地开发或非生产构建中暴露
 - 已把 `web/` 构建脚本进一步收口为同一套代码下的 profile 切换：默认 `pnpm build` 输出单模型生产包；只有显式 `pnpm build:compare` 才会把派生 `SOG` 与 `LOD` 资源打进构建产物
 - 已确认此前 `Vercel` 上传接近 `200 MiB` 的主因不是前端代码，而是把原始版、派生版与整包 `LOD` 资源一起打进了生产构建
 - 已完成首轮相机交互手感收口：当前 orbit 控制已改为更偏“地图式”的空中浏览，旋转按视口归一、平移固定在水平面、滚轮缩放做了归一化与限幅
-- 已将场景外围环境切到真实天空层方案：当前改为在 `PlayCanvas` 运行时内加载 `Poly Haven` 的 `CC0` 天空资源作为 skydome，而不再用纯 `CSS` 背景图兜底；同时保留原先更暖的加载层氛围与场景轻微暖调
+- 已将场景外围环境切到真实天空层方案：当前改为在 `PlayCanvas` 运行时内加载压缩后的 `Poly Haven` `CC0` 天空资源作为 skydome，而不再用纯 `CSS` 背景图兜底；同时保留原先更暖的加载层氛围与场景轻微暖调
 - 已补上首个 `WebGPU` 尝试链路，并已新增 `Auto / WebGPU / WebGL2` 手动切换；当前实际验证结果已进一步收口：天空环境在 `WebGL2` 下正常、在当前 `WebGPU` 路径下不可见，因此默认后端现已回退为 `WebGL2`，`WebGPU` 暂时只保留为实验开关
 - 已确认“运行时俯视捕获 → 自动描边生成小地图”这条链路在当前 `PlayCanvas + SOG` 方案下不稳定，现已撤回；当前小地图重新收口为“稳定的交互覆盖层 + 预留静态底图资产入口”，后续改为接入人工确认过的独立底图资源
 - 已放开渲染清晰度上限到当前设备原生像素比，且清晰度滑块已改为 `1%` 精度，避免在非整档 `DPR` 设备上超过或达不到原生上限
