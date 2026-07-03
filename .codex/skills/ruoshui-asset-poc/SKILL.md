@@ -1,77 +1,38 @@
 ---
 name: ruoshui-asset-poc
-description: Use when analyzing `assets/raw`, regenerating the asset inventory, selecting or revising PoC subsets, or updating 3DGS feasibility docs for 若水广场. Trigger this skill for image statistics, duplicate-name handling, PoC sampling strategy, and experiment-record preparation.
+description: Use only when the user explicitly asks to inspect historical raw-asset inventory, PoC sampling, duplicate-name rules, or 3DGS feasibility for 若水广场. Training is archived and this is no longer a default development workflow.
 ---
 
 # Ruoshui Asset PoC
 
-## Overview
+## Status
 
-This skill handles the asset-analysis workflow for 若水广场. Use it when the task touches source images, PoC subset selection, feasibility validation, or the first-pass `3DGS` experiment path.
+The asset-feasibility and model-training phase is complete. Historical documentation lives under `docs/archive/model-training/`; old root `scripts/`, `configs/`, and `experiments/` were deliberately removed.
 
-## Current Facts
+Do not activate this workflow for normal Web, community, or Cloudflare work. Do not recreate deleted tooling unless the user explicitly reopens asset validation or training.
 
-Assume these are the current known facts unless the data is regenerated:
+## Preserved Facts
 
-- raw assets live in `assets/raw`
-- file names are not unique across directories
-- relative path is the only reliable asset identifier
-- current inventory output lives in `data/asset_inventory.json`
-- current report lives in `docs/assets/asset-inventory.md`
-- `PoC 001` currently uses a proportional uniform sample written to `data/poc-001-files.txt`
+- Raw inputs remain in `assets/raw/`.
+- Bare filenames are not unique; relative path is the only reliable asset identifier.
+- Historical inventory data remains in `data/asset_inventory.json`.
+- Historical PoC selection remains in `data/poc-001-files.txt`.
+- The accepted product scene is `assets/hhuc.sog`.
 
-## Required Workflow
+## Historical References
 
-### 1. Rebuild inventory before making claims
+Open only what the task needs:
 
-When source images change, rerun:
+- `docs/archive/model-training/assets/asset-inventory.md`
+- `docs/archive/model-training/assets/poc-001.md`
+- `docs/archive/model-training/assets/3dgs-experiment-path.md`
+- `docs/archive/model-training/assets/asset-validation-template.md`
+- `docs/archive/model-training/iterations/`
 
-- `python3 scripts/analyze_assets.py`
+## If Training Is Reopened
 
-This regenerates:
-
-- `data/asset_inventory.json`
-- `docs/assets/asset-inventory.md`
-
-### 2. Treat file identity correctly
-
-Always use relative paths such as `assets/raw/101MEDIA/DJI_0039.JPG` as the asset key.
-
-Never rely on bare filenames like `DJI_0039.JPG`, because cross-directory duplicates exist and may have different content.
-
-### 3. Choose PoC subsets by coverage goal
-
-Use different sampling logic depending on the question:
-
-- For coverage across mixed directions, prefer uniform sampling from the full corpus
-- For continuity along a single flight segment, use a contiguous range only if that is the explicit goal
-- If the user says the data is five-directional and continuous ranges are biased, revise the subset strategy
-
-To regenerate the current sample style, run:
-
-- `python3 scripts/select_poc_subset.py --sample-size 180`
-
-### 4. Keep experiment records reusable
-
-When defining or updating a validation run, keep these docs in sync:
-
-- `docs/assets/poc-001.md`
-- `docs/assets/3dgs-experiment-path.md`
-- `docs/assets/asset-validation-template.md`
-- `docs/project/tasks.md`
-
-## Default First-Pass Heuristics
-
-- Validate feasibility before optimizing for viewer polish
-- Prefer smaller subsets that expose pose-recovery risk quickly
-- If pose recovery is poor, question coverage and grouping before blaming the front end
-- If a subset choice is challenged by better domain knowledge, revise the sample and document why
-
-## Escalation Rules
-
-Move from the current sample strategy to a more structured one when any of these are true:
-
-- the user can identify actual five-direction groupings
-- a directory mixes multiple capture modes unevenly
-- uniform sampling hides important directional structure
-- the first `3DGS` result is too poor to judge
+1. Confirm the new question and success criteria with the user.
+2. Treat archived commands as evidence, not supported automation.
+3. Inspect current assets and environment afresh.
+4. Create a new focused plan, tool directory, and iteration record; do not silently restore the deleted pipeline.
+5. Preserve relative-path asset identity and record why the old accepted SOG is insufficient for the new goal.

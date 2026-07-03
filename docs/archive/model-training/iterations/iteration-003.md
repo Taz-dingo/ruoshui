@@ -17,8 +17,8 @@
 
 - `docs/project/state.md`
 - `docs/project/tasks.md`
-- `docs/iterations/iteration-001-validation.md`
-- `docs/iterations/iteration-002.md`
+- `docs/archive/model-training/iterations/iteration-001-validation.md`
+- `docs/archive/model-training/iterations/iteration-002.md`
 - `outputs/iteration-002/analysis/export-rgb-summary.json`
 - `scripts/gaussian_ply_tools.py`
 - `https://github.com/hbb1/2d-gaussian-splatting`
@@ -97,7 +97,7 @@
 
 输入：
 
-- `docs/iterations/iteration-001-validation.md`
+- `docs/archive/model-training/iterations/iteration-001-validation.md`
 - 当前 `processed` 数据格式与 `transforms.json` 的 `mask_path` 能力
 
 验证方式：

@@ -1,6 +1,6 @@
 # 开发专业 Skill 规范
 
-最后更新：`2026-04-18`
+最后更新：`2026-07-04`
 
 ## 目标
 
@@ -132,6 +132,7 @@
 - `docs/project/**`
 - `docs/assets/**`
 - `docs/iterations/**`
+- `docs/archive/**`
 - `state.md / tasks.md / engineering-memory.md` 的同步取舍
 - handoff、progress save、决策沉淀、文档归档与“这轮要不要改 doc”判断
 
@@ -182,6 +183,14 @@
    - 若不够，先更新仓库内 wrapper skill 的规则和 references
    - 若仍不够，再补充上游来源或新增稳定开发域 skill
 6. 若出现新的稳定开发域，需要把 skill 与映射规则补进本文件和 `AGENTS.md`
+
+## Active / Archive 文档规则
+
+1. 正常恢复项目只读取 `README.md` 与 `docs/project/` 中的 active source of truth，不加载 `docs/archive/**`
+2. 当前决策、实现状态、开放任务和长期工程经验必须写入 active 文档
+3. 已结束且不再执行的实验移动到 `docs/archive/`，同时从 `state.md` 与 `tasks.md` 的当前流水中移除
+4. 归档文件保留历史事实，不代表旧命令仍受支持；只有任务明确涉及历史训练或实验结论时才按需读取
+5. 训练工具若未来重启，应创建新的方案、脚本和迭代记录，不直接复活已删除的根目录 `scripts/`、`configs/` 或 `experiments/`
 
 ## 工程记忆与自改进
 

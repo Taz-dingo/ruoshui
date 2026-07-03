@@ -6,7 +6,7 @@
 
 ## 输入
 
-- `docs/iterations/iteration-003-octreegs-entry.md`
+- `docs/archive/model-training/iterations/iteration-003-octreegs-entry.md`
 - `Octree-GS` README
 - `Octree-GS` `single_train.sh`
 - `Octree-GS` `train.sh`
