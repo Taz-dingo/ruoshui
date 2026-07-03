@@ -105,6 +105,8 @@ interface ViewerHighlight {
   body: string;
   presetId: string;
   position: [number, number, number];
+  communityPinId?: string;
+  communityPinTitle?: string;
   imageUrl?: string;
   imageAlt?: string;
 }
