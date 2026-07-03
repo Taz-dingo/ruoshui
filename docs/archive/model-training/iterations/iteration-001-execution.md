@@ -113,7 +113,7 @@ colmap mapper --image_path assets/staging/poc-001/images --database_path outputs
 最小下一步建议是：
 
 1. 保留 `outputs/iteration-001/processed` 作为可迁移训练输入
-2. 先按 `docs/iterations/iteration-001-cuda-handoff.md` 在新机器恢复环境与输入
+2. 先按 `docs/archive/model-training/iterations/iteration-001-cuda-handoff.md` 在新机器恢复环境与输入
 3. 在具备 NVIDIA CUDA 的机器上运行 `ns-train splatfacto --output-dir outputs/iteration-001/train --vis tensorboard nerfstudio-data --data outputs/iteration-001/processed`
 4. 观察首轮训练是否稳定收敛
 5. 记录训练产物路径、耗时与主观质量

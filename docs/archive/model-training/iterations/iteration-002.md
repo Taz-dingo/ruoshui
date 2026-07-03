@@ -17,7 +17,7 @@
 
 - `docs/project/state.md`
 - `docs/project/tasks.md`
-- `docs/iterations/iteration-001-validation.md`
+- `docs/archive/model-training/iterations/iteration-001-validation.md`
 - 当前训练目录：`outputs/iteration-001/train/unnamed/splatfacto/2026-03-18_230630`
 
 ## 本轮要产出的东西

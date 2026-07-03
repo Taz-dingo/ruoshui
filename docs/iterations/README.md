@@ -1,21 +1,7 @@
-# 迭代记录
+# 活跃迭代记录
 
-后续每一轮小步迭代都放在这里，例如：
+当前只保留仍与业务开发直接相关的迭代：
 
-- `docs/iterations/iteration-001.md`
-- `docs/iterations/iteration-002.md`
-- `docs/iterations/iteration-004-web-mvp.md`
+- [`iteration-004-web-mvp.md`](iteration-004-web-mvp.md)：SOG viewer、Web 体验、性能与发布主线。
 
-建议每次迭代只记录：
-
-- 目标
-- 输入
-- 输出
-- 验证方式
-- 结果
-- 问题
-- 下一步
-
-补充交接文档：
-
-- `docs/iterations/iteration-001-cuda-handoff.md`
+模型训练、算法筛选和已停止的渐进式运行时实验已移到 [`../archive/model-training/`](../archive/model-training/)。新业务迭代应围绕一个可验证目标创建，并在完成后决定保留为活跃文档还是归档。

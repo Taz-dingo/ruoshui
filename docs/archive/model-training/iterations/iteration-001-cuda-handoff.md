@@ -39,9 +39,9 @@
 
 - `docs/project/state.md`
 - `docs/project/tasks.md`
-- `docs/iterations/iteration-001-execution.md`
-- `docs/iterations/iteration-001-validation.md`
-- 本文件 `docs/iterations/iteration-001-cuda-handoff.md`
+- `docs/archive/model-training/iterations/iteration-001-execution.md`
+- `docs/archive/model-training/iterations/iteration-001-validation.md`
+- 本文件 `docs/archive/model-training/iterations/iteration-001-cuda-handoff.md`
 
 关键产物确认：
 
