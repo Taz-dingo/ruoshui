@@ -1,43 +1,34 @@
 # 若水广场
 
-一个以常州老校区为对象的空中版 3DGS 数字纪念项目。
-
-## 项目定位
-
-- 核心目标：用高质量 `3D Gaussian Splatting` 在 `Web` 上重建并展示老校区的空中视角。
-- 产品形态：纪念向、回忆向、展示向的数字纪念馆，而不是第一阶段就做开放式社区。
-- 第一优先级：高保真、低门槛访问、稳定加载、可控叙事。
-- 设备策略：第一版先聚焦桌面端体验，后续再考虑移动端优化。
+若水广场是一个以常州老校区为对象的 Web 数字纪念项目。当前以现成高质量 `SOG` 场景为核心，重点开发 viewer 体验、故事点位、社区笔记和 Cloudflare 业务服务。
 
 ## 当前阶段
 
-当前仓库用于文档驱动开发，接下来按以下顺序推进：
+模型训练与算法路线筛选已经结束。当前主线是：
 
-1. 固定项目 `spec`
-2. 拆分阶段 `plan`
-3. 维护任务清单与迭代记录
-4. 验证 `assets/raw` 中现有素材是否足够支撑空中版 `3DGS`
-5. 再进入原型、资产验证与实现
+1. 收口桌面与移动端场景体验；
+2. 把故事内容绑定到真实场景点位；
+3. 完成“点位图文 ↔ 完整社区 ↔ 返回场景”的业务闭环；
+4. 强化 `Cloudflare Pages + Workers + D1 + R2` 的生产数据与媒体链路。
 
-## 当前已知输入
+第一版仍不开放登录、审核和大规模 UGC。场景资产、内容和服务先以可控方式发布。
 
-- 项目名确定为“若水广场”
-- 现有航拍素材已放入 `assets/raw`
-- 第一发布端确定为 `Web`
-- 第一版先只保证桌面端可用
-- 第一目标是做出“可看的高质量纪念展示”，而不是先做发帖系统
+## 仓库结构
 
-## 文档索引
+- `web/`：React、Vite 与 PlayCanvas/SOG viewer。
+- `services/forum-api/`：Cloudflare Workers 社区 API，保留 Node fallback。
+- `packages/shared/`：前后端共享 contract。
+- `assets/hhuc.sog`：正式场景资产的仓库源。
+- `docs/project/`：当前产品、状态、任务和工程记忆。
+- `docs/archive/`：已结束的训练与实验历史，不进入默认恢复上下文。
 
-- `docs/README.md`：文档总索引
-- `docs/project/spec.md`：项目规格说明
-- `docs/project/plan.md`：阶段计划与里程碑
-- `docs/project/tasks.md`：近期任务清单与迭代记录模板
-- `docs/project/state.md`：项目状态快照
+## 开始工作
 
-## 协作方式
+先读：
 
-- 每次只推进一个小目标
-- 每次变更都尽量有可验证结果
-- 优先验证最关键风险：素材可用性、`3DGS` 质量、`Web` 加载性能
-- 能先静态化解决的问题，先不要引入后端
+- [`docs/project/state.md`](docs/project/state.md)
+- [`docs/project/tasks.md`](docs/project/tasks.md)
+- [`docs/project/spec.md`](docs/project/spec.md)
+- [`docs/project/engineering-memory.md`](docs/project/engineering-memory.md)
+
+开发前按 [`AGENTS.md`](AGENTS.md) 启用对应 repo skill；每轮保持小而完整，验证后提交并通过 PR 更新。

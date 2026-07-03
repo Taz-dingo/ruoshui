@@ -1,70 +1,41 @@
 ---
 name: ruoshui-resume
-description: Use when the user says “继续”, “接着做”, “resume”, or asks to continue the 若水广场 project in a new thread. Trigger this skill to recover project background, current implementation status, open tasks, recent decisions, and then produce an execution plan before doing new work.
+description: Use when the user says “继续”, “接着做”, “resume”, or asks to continue the 若水广场 project in a new thread. Recover current business-development context, repo state, open tasks, and the smallest next step.
 ---
 
 # Ruoshui Resume
 
-## Overview
+## Purpose
 
-This skill is the recovery entrypoint for 若水广场. Use it at the start of a new thread or whenever continuity is uncertain. Its job is to rebuild working context fast, summarize the current state, and turn “继续” into a concrete next-step plan.
+Recover the active Web, community, and Cloudflare development context quickly. Model training is archived and must not be loaded during a normal resume.
 
-## Required Resume Workflow
+## Required Workflow
 
-When this skill is active, do these steps in order before implementing anything substantial:
+Before substantial implementation:
 
-1. Read `AGENTS.md`
-2. Read `docs/project/state.md` first if it exists
-3. Read `README.md`, `docs/project/spec.md`, `docs/project/plan.md`, and `docs/project/tasks.md`
-4. Read `docs/project/engineering-memory.md` if it exists, especially before repeating deploy/debug work
-5. If asset work is involved, also use `$ruoshui-asset-poc` and read:
-   - `docs/assets/asset-inventory.md`
-   - `docs/assets/poc-001.md`
-   - `docs/assets/3dgs-experiment-path.md`
-   - `docs/assets/asset-validation-template.md`
-6. Check repo freshness with:
-   - `git status --short`
-   - `git log --oneline --decorate -5`
-7. Summarize the project in four parts:
-   - background and product goal
-   - current implementation/doc status
-   - current top task
-   - next smallest executable step
-8. Create or update a short plan before continuing implementation
+1. Read `AGENTS.md`.
+2. Read `docs/project/state.md`.
+3. Read `README.md`, `docs/project/spec.md`, `docs/project/plan.md`, and `docs/project/tasks.md`.
+4. Read `docs/project/engineering-memory.md`, especially before deploy or debugging work.
+5. Check `git status --short` and `git log --oneline --decorate -5`.
+6. Summarize:
+   - product goal;
+   - current implementation and delivery state;
+   - current top task;
+   - smallest executable next step.
+7. Create or update a short plan before continuing.
 
-## What Good Recovery Looks Like
+## Archive Boundary
 
-After the resume flow, the agent should be able to state clearly:
+- Do not read `docs/archive/**` during normal recovery.
+- Read archived training material only when the user explicitly asks about old assets, training, algorithms, or experiment history.
+- If that happens, also use `$ruoshui-asset-poc` and open only the relevant files under `docs/archive/model-training/`.
+- Never treat archived commands as a currently supported toolchain.
 
-- what 若水广场 is
-- what the first version includes and excludes
-- what has already been implemented or documented
-- what the latest decisions changed
-- what recent reusable lessons or pitfalls must not be repeated
-- what single step should happen next
+## Execution Rules
 
-## Execution Rules After Resume
-
-- Default to the smallest meaningful next step
-- Prefer updating the existing docs and scripts over inventing parallel notes
-- If the previous thread ended mid-decision, restate the decision before coding
-- If the repo state and docs disagree, trust the repo state and then fix the docs
-- Commit after each coherent iteration
-
-## Keep This File Ecosystem Fresh
-
-When a meaningful step lands, keep these files in sync as needed:
-
-- `docs/project/state.md`
-- `docs/project/tasks.md`
-- any focused decision doc created in that iteration
-
-## Trigger Hints
-
-This skill should be used aggressively for prompts like:
-
-- “继续”
-- “接着做”
-- “继续这个项目”
-- “resume the project”
-- “回到若水广场”
+- Trust verified repo state over stale prose, then fix the docs.
+- Default to the smallest meaningful business step.
+- Keep `state.md`, `tasks.md`, focused docs, and engineering memory synchronized when their facts change.
+- Use `$ruoshui-cleanup` before each commit-sized delivery.
+- Commit coherent iterations and prefer PRs over long-lived local drift.

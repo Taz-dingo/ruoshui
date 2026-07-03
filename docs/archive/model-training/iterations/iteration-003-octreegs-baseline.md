@@ -6,8 +6,8 @@
 
 ## 输入
 
-- `docs/iterations/iteration-003-octreegs-entry.md`
-- `docs/iterations/iteration-003-octreegs-parameter-check.md`
+- `docs/archive/model-training/iterations/iteration-003-octreegs-entry.md`
+- `docs/archive/model-training/iterations/iteration-003-octreegs-parameter-check.md`
 - `outputs/iteration-003/scaffoldgs-undistorted`
 - `outputs/iteration-003/octreegs-stage-undistorted/ruoshui/iteration001`
 - `scripts/prepare_octreegs_stage.sh`
