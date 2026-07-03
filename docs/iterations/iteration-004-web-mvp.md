@@ -41,16 +41,19 @@
 ## 验证方式
 
 - 在 `web/` 目录运行 `pnpm install`
+- 确认本地已准备 `outputs/iteration-004-sog-opt/` 下的派生 `SOG` 与 `LOD` 产物
 - 运行 `pnpm dev`
 - 确认同页版本切换可在原始版、`h0`、`opacity01`、`dec75`、`dec50` 之间完成重载
 - 运行 `pnpm build`
-- 确认所有 `SOG` 版本都能作为构建产物发出，且页面脚本通过构建
+- 确认默认生产构建只发出正式原版模型，且页面脚本通过构建
+- 运行 `pnpm build:compare`
+- 确认所有对照 `SOG` 与 `LOD` 资源都能作为构建产物发出
 
 ## 当前结果
 
 - 已将正式 viewer 路线切到 `PlayCanvas Engine API + gsplat + SOG`
 - 已提供全屏场景背景、加载状态、镜头预设和当前相机信息面板
-- 已将生产部署模型收口到 `web/public/models/hhuc-original.sog`：生产构建只带这一份正式 `SOG`，开发态仍通过 `web/vite.config.mjs` 直连仓库根目录派生资产与 `LOD`
+- 已将正式原版模型收口到 `assets/hhuc.sog` 这一份仓库源：`web/vite.config.mjs` 会在开发和构建阶段把它映射成 `/models/hhuc-original.sog`，避免在 `web/public/models/` 长期保留重复副本
 - 已新增同页多版本 compare 交互：版本按钮、版本元数据面板、切换时重挂载运行时
 - 当前默认载入版本已切回 `hhuc-original.sog`，优先把满血原版作为画质与性能基线
 - 已将原先不可见的动态分辨率策略改为前端可调的渲染清晰度滑块，并通过本地存储记住用户选择
