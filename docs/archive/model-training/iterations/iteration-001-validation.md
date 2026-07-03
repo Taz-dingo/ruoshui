@@ -172,4 +172,4 @@ export TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1
 
 ## CUDA 续跑入口
 
-- 继续训练时，优先参考 `docs/iterations/iteration-001-cuda-handoff.md`
+- 继续训练时，优先参考 `docs/archive/model-training/iterations/iteration-001-cuda-handoff.md`

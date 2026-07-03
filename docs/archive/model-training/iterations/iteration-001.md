@@ -16,9 +16,9 @@
 ## 输入
 
 - 素材清单：`data/poc-001-files.txt`
-- `PoC` 说明：`docs/assets/poc-001.md`
-- 实验链路：`docs/assets/3dgs-experiment-path.md`
-- 验证模板：`docs/assets/asset-validation-template.md`
+- `PoC` 说明：`docs/archive/model-training/assets/poc-001.md`
+- 实验链路：`docs/archive/model-training/assets/3dgs-experiment-path.md`
+- 验证模板：`docs/archive/model-training/assets/asset-validation-template.md`
 
 ## 本轮要产出的东西
 
@@ -28,7 +28,7 @@
 
 ## 建议实验记录文件
 
-建议下一步创建：`docs/iterations/iteration-001-validation.md`
+建议下一步创建：`docs/archive/model-training/iterations/iteration-001-validation.md`
 
 该文件应至少包含：
 
@@ -49,8 +49,8 @@
 
 ## 本轮之后的最小下一步
 
-- 创建 `docs/iterations/iteration-001-validation.md`
-- 将 `docs/assets/asset-validation-template.md` 实例化为第一轮真实记录
+- 创建 `docs/archive/model-training/iterations/iteration-001-validation.md`
+- 将 `docs/archive/model-training/assets/asset-validation-template.md` 实例化为第一轮真实记录
 - 开始填入本轮实验实际使用的工具、命令、参数和结果
 
 ## 备注
