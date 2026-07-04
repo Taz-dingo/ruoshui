@@ -18,11 +18,13 @@ description: Use when updating project docs, syncing state/tasks/engineering-mem
    - `docs/archive/**`: completed experiments and retired context.
 3. Update the smallest related set. A status change may require both `state.md` and `tasks.md`; a reusable pitfall may also require a domain skill update.
 4. Prefer editing canonical docs over creating parallel handoff notes.
-5. Scan for stale wording, paths, duplicated conclusions, and links before finishing.
+5. Prefer deleting, compressing, or moving text over adding explanation around it.
+6. Scan for stale wording, paths, duplicated conclusions, and links before finishing.
 
 ## Active vs Archive
 
 - Active docs describe current product decisions, implementation, delivery state, and open work.
+- `docs/project/state.md` should stay rich enough to resume work, while other active docs should stay minimal and on-demand.
 - Archive docs preserve completed experiments without participating in normal resume.
 - When a direction is permanently stopped, move its durable record to `docs/archive/`, add it to the archive index, and remove it from active task/status streams.
 - Historical documents should remain faithful to their time; do not rewrite old results into current policy.
