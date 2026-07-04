@@ -17,13 +17,13 @@
 
 正常任务按最小入口读取，不要把整个 docs 树当默认上下文：
 
-1. 先读 `docs/project/state.md`
+1. `docs/project/state.md` 是唯一默认入口
 2. 只有在需要确认下一步优先级时再读 `docs/project/tasks.md`
-3. 只有在产品边界不清楚时再读 `README.md`、`docs/project/spec.md`、`docs/project/plan.md`
+3. 只有在产品边界或路线不清楚时再读 `README.md`、`docs/project/spec.md`、`docs/project/plan.md`
 4. 只有在 deploy / debug / 验证链路相关任务时再读 `docs/project/engineering-memory.md`
 5. 只有在当前改动域需要时才读对应 `docs/project/**` focused docs
-6. `docs/archive/**` 一律不进默认恢复；只有明确历史/训练任务才按需读取
-7. `docs/project/development-skills.md` 只在 skill 选型不明确或跨域较复杂时再打开
+6. `docs/project/development-skills.md` 只在 skill 选型不明确或跨域较复杂时再打开
+7. `docs/archive/**` 一律不进默认恢复；只有明确历史/训练任务才按需读取
 
 ## How to use skills
 

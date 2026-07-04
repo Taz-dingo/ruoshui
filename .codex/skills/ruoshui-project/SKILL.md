@@ -17,7 +17,7 @@ description: Use when planning, scoping, documenting, saving progress, preparing
 
 Start narrow, then expand only when the task needs it:
 
-1. Read `docs/project/state.md` first.
+1. Read `docs/project/state.md` first. It is the only default entry.
 2. Read `docs/project/tasks.md` only for next-step or priority questions.
 3. Read `README.md`, `docs/project/spec.md`, or `docs/project/plan.md` only when scope or roadmap is unclear.
 4. Read `docs/project/engineering-memory.md` only for deploy/debug/validation pitfalls.

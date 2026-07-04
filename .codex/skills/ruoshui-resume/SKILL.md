@@ -12,7 +12,7 @@ Recover the active Web, community, and Cloudflare development context quickly. T
 Before substantial implementation:
 
 1. Read `AGENTS.md`.
-2. Read `docs/project/state.md`.
+2. Read `docs/project/state.md` as the only default project doc.
 3. Check `git status --short` and `git log --oneline --decorate -5`.
 4. If the current top task is still unclear, read `docs/project/tasks.md`.
 5. If product scope or delivery direction is still unclear, read `README.md`, `docs/project/spec.md`, and `docs/project/plan.md`.
