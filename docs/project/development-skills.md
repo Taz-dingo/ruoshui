@@ -2,6 +2,8 @@
 
 最后更新：`2026-07-04`
 
+默认情况下不要把本文件当恢复项目的必读项。只有在 skill 选型不明确、任务明显跨多个域，或需要补 repo skill 映射时再打开。
+
 ## 目标
 
 若水广场后续不再只依赖通用 coding 能力。开发时要按改动域显式启用对应的专业 skill，让实现风格、性能判断和运行时边界更稳定。
@@ -186,7 +188,7 @@
 
 ## Active / Archive 文档规则
 
-1. 正常恢复项目只读取 `README.md` 与 `docs/project/` 中的 active source of truth，不加载 `docs/archive/**`
+1. 正常恢复项目默认只读取 `docs/project/state.md`；只有前一层回答不了问题时，才按需读取 `tasks.md`、`README.md`、`spec.md`、`plan.md` 与其他 active docs，不加载 `docs/archive/**`
 2. 当前决策、实现状态、开放任务和长期工程经验必须写入 active 文档
 3. 已结束且不再执行的实验移动到 `docs/archive/`，同时从 `state.md` 与 `tasks.md` 的当前流水中移除
 4. 归档文件保留历史事实，不代表旧命令仍受支持；只有任务明确涉及历史训练或实验结论时才按需读取
