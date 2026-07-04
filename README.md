@@ -28,6 +28,9 @@
 
 - [`docs/project/state.md`](docs/project/state.md)
 - [`docs/project/tasks.md`](docs/project/tasks.md)
+
+按需再读：
+
 - [`docs/project/spec.md`](docs/project/spec.md)
 - [`docs/project/engineering-memory.md`](docs/project/engineering-memory.md)
 
