@@ -37,7 +37,8 @@ Start narrow, then expand only when the task needs it:
 
 ## Active Sources of Truth
 
-- `docs/project/state.md` and `docs/project/tasks.md` for default recovery
+- `docs/project/state.md` for default recovery
+- `docs/project/tasks.md` when next-step or priority questions remain
 - `docs/project/spec.md` and `docs/project/plan.md` when boundaries or roadmap matter
 - `docs/project/engineering-memory.md` for durable pitfalls
 - `README.md` for repo orientation
