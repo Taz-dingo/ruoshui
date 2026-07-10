@@ -8,13 +8,7 @@
 - [`project/plan.md`](project/plan.md)：只有在路线不清楚时再读。
 - [`project/engineering-memory.md`](project/engineering-memory.md)：只有在 deploy / debug / 验证链路时再读。
 
-## 领域文档
+## 按需文档
 
-- `project/**` focused docs：只有当前改动域命中时再读。
-- `iterations/**`：只有当前迭代需要历史细节时再读。
-- `assets/**`：只有素材保留或资产策略问题时再读。
-
-## 参考与归档
-
-- [`references/awesome-design.md`](references/awesome-design.md)：设计参考。
-- [`archive/README.md`](archive/README.md)：历史训练与实验记录；默认不要加载。
+- `project/**` focused docs：仅当前改动域命中时再读。
+- [`archive/README.md`](archive/README.md)：已结束的训练和交付记录；默认不要加载。

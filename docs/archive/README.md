@@ -3,5 +3,6 @@
 这里保存已经结束、但仍有追溯价值的阶段资料。归档内容不进入日常项目恢复上下文，也不代表当前执行计划。
 
 - `model-training/`：素材盘点、3DGS 训练路线、算法筛选和已停止的渐进式交付实验。
+- `delivery-history/`：已完成的 Web MVP 交付记录。
 
 当前工作请从 [`../README.md`](../README.md) 和 [`../project/state.md`](../project/state.md) 开始。只有任务明确涉及历史训练结论时，才按需读取归档。
