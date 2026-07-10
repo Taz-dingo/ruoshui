@@ -8,6 +8,7 @@
 - [`assets/poc-001.md`](assets/poc-001.md)：首轮 PoC 抽样方案。
 - [`assets/3dgs-experiment-path.md`](assets/3dgs-experiment-path.md)：首条 3DGS 验证链路。
 - [`assets/asset-validation-template.md`](assets/asset-validation-template.md)：实验记录模板。
+- [`assets/raw-asset-policy.md`](assets/raw-asset-policy.md)：原始素材命名与派生策略。
 
 ## 训练与算法筛选
 
