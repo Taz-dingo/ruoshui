@@ -9,7 +9,7 @@
     "miniMap": {
       "label": "常州老校区",
       "subtitle": "若水广场 · 顶视示意",
-      "imageUrl": "https://pub-5fbf37dd49b94b859c13e343effd0430.r2.dev/images/minimap/hhuc-map-processed.png",
+      "imageUrl": "/edge-media/images/minimap/hhuc-map-processed.png",
       "imageAspectRatio": 1.399825,
       "bounds": {
         "minX": -3.52,
