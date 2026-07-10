@@ -10,19 +10,13 @@
     "build": "vite build",
     "build:pages": "pnpm run build && node scripts/prepare-cloudflare-pages.mjs",
     "deploy:pages": "node scripts/deploy-cloudflare-pages.mjs",
-    "build:compare": "RUOSHUI_BUILD_PROFILE=compare vite build",
-    "preview": "vite preview",
-    "benchmark:auto": "node scripts/benchmark-auto.mjs",
-    "convert:sog:ply": "node scripts/sog-to-ply.mjs"
+    "preview": "vite preview"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.2",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "@vitejs/plugin-react": "^5.1.0",
-    "fflate": "^0.8.2",
-    "playwright": "^1.58.2",
-    "sharp": "^0.34.5",
     "tailwindcss": "^4.2.2",
     "typescript": "^5.9.3",
     "vite": "^7.1.12"

@@ -8,7 +8,7 @@ async function createRuntimeEnvironment(pc: any, app: any) {
   const sourceTexture = await loadEquirectTexture(
     pc,
     app,
-    '/images/sky/qwantani-morning-puresky.jpg'
+    '/edge-media/images/sky/qwantani-morning-puresky.jpg'
   );
   const skyboxTexture = createSkyboxTexture(pc, app, 1024);
 

@@ -34,7 +34,7 @@ export function analyzeRouteRun(
 }
 
 export function isTrackedModelResource(name: string): boolean {
-  return name.includes('/models/');
+  return name.includes('/edge-models/');
 }
 
 export function simplifyResourceName(name: string): string {
