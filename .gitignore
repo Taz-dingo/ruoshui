@@ -2,6 +2,15 @@ assets/raw
 assets/staging
 assets/normalized
 outputs
+
+# Runtime media lives in Cloudflare R2, never in Git.
+*.sog
+*.splat
+*.ply
+*.png
+*.jpg
+*.jpeg
+*.webp
 .venv-iteration001
 node_modules
 dist
