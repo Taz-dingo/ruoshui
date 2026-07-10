@@ -1,4 +1,0 @@
-interface:
-  display_name: "Ruoshui Cleanup"
-  short_description: "Pre-commit cleanup for docs, stale info, and dead code"
-  default_prompt: "Use $ruoshui-cleanup before committing work in the 若水广场 repo."
