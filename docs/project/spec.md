@@ -1,6 +1,6 @@
 # 项目 Spec
 
-最后更新：`2026-07-04`
+最后更新：`2026-07-10`
 
 ## 产品定义
 
@@ -42,7 +42,7 @@
 ## 技术边界
 
 - 前端：React + TypeScript + Vite + Zustand。
-- 场景：PlayCanvas Engine API + SOG；正式仓库源为 `assets/hhuc.sog`。
+- 场景：PlayCanvas Engine API + SOG；正式模型由 R2 经同源 `/edge-models/*` 提供。
 - 服务：Hono app core，通过依赖注入挂载 Workers/D1 主路径与 Node/PostgreSQL fallback。
 - 媒体：R2；上传必须验证大小、类型、有效期和签名，并显式确认入库。
 - 部署：Pages 发布前端壳；重量级模型从 R2 经 Pages Functions 同源代理提供。

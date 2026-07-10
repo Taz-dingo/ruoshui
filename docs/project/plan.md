@@ -1,10 +1,10 @@
 # 项目 Plan
 
-最后更新：`2026-07-04`
+最后更新：`2026-07-10`
 
 ## 已完成基础
 
-- 已验收高质量 `SOG` 场景，并以 `assets/hhuc.sog` 作为仓库唯一正式源。
+- 已验收高质量 `SOG` 场景，并由 R2 经 `/edge-models/*` 提供。
 - 已完成 React/Vite/PlayCanvas viewer、镜头、小地图、热点、加载与性能基础。
 - 已上线 `Cloudflare Pages`，重模型经 `R2 + Pages Functions` 同源提供。
 - 已建立 `Workers + D1 + R2` 社区服务和最小帖子/点位/媒体 contract。
