@@ -5,42 +5,11 @@ description: Use for Cloudflare Workers, D1, R2, bindings, `wrangler.toml`, migr
 
 # Ruoshui Cloudflare Workers
 
-Use this skill whenever the task touches the Cloudflare deployment path or any code that depends on Worker runtime bindings.
+Use the official `cloudflare-deploy` skill for deployment commands and current platform guidance. This skill keeps only project-specific rules:
 
-## Working Rules
-
-1. Treat Worker bindings as typed infrastructure, not loose string config
-2. Keep the app core dependency-injected so the same route contract can mount on both Worker and Node fallback entrypoints
-3. Keep `wrangler.toml`, migration files, repository assumptions, and env/binding types in sync
-4. Prefer Worker-native APIs and assumptions; do not quietly pull Node-only helpers into Worker-shared code
-5. For `D1`:
-   - run migrations before relying on schema changes
-   - keep list/detail queries index-aware
-   - design pagination and read patterns early
-6. For `R2`:
-   - keep upload verification explicit
-   - store enough metadata to confirm uploads and clean orphaned objects later
-7. Prefer small, reversible infra steps; land local migration/dev proof before expanding product scope
-8. When a Cloudflare deploy/debug step reveals a reusable pitfall, append it to `docs/project/engineering-memory.md` before the next commit-sized delivery
-9. If the pitfall changes the default Cloudflare workflow, also update this skill or its references in the same iteration instead of leaving the lesson only in thread history
-
-## Known Pitfalls
-
-Use [references/cloudflare-workers-notes.md](references/cloudflare-workers-notes.md) for the full checklist. The current repo has already learned these concrete lessons:
-
-- `wrangler` CLI transport can fail with generic `fetch failed` errors even when auth is valid; keep Cloudflare API and MCP fallback paths ready before assuming the resource is broken
-- `R2` large model assets should not be shipped inside Pages artifacts; treat `25 MiB` per-file as a hard release gate and move heavy viewer assets to `R2`
-- Pages asset uploads must set explicit MIME types for `.html`, `.css`, `.js`, and other web assets; a wrong `index.html` content type can make the browser download the page instead of rendering it
-- If a bad Pages asset reused the same content hash, force a new hash before redeploying or the wrong metadata may survive
-- In this repo and network environment, do not treat failed local `curl` access to `*.workers.dev` as definitive proof that the deployment itself is down
-
-## What Good Output Looks Like
-
-- Worker entry, bindings, and repositories line up cleanly
-- migrations and code changes are introduced in the same iteration
-- Cloudflare-specific code is explicit, typed, and easy to reason about
-- later deployment and rollback steps stay tractable
-
-## References
-
-- Read [references/cloudflare-workers-notes.md](references/cloudflare-workers-notes.md) when changing Worker runtime, D1, R2, or `wrangler` config
+- Treat Worker bindings, `wrangler.toml`, migrations, and binding types as one change.
+- Keep shared route contracts runtime-neutral; Worker code must not take hidden Node dependencies.
+- D1 changes need migrations and index-aware list/detail queries.
+- R2 uploads need explicit type/size verification, stored metadata, and an orphan-cleanup path.
+- Heavy viewer assets stay in R2 behind the same-origin proxy, not in Pages artifacts.
+- Before deploy/debug work, read `docs/project/engineering-memory.md` for the short, current failure rules.
