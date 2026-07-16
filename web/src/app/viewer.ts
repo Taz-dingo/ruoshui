@@ -66,9 +66,7 @@ interface InitializeViewerArgs {
   viewerConfig: ViewerConfig;
 }
 
-const playCanvasPromise: Promise<any> = import(
-  /* @vite-ignore */ 'https://esm.sh/playcanvas@2.17.2?bundle'
-);
+const playCanvasPromise: Promise<any> = import('playcanvas');
 
 async function initializeViewer({
   data,

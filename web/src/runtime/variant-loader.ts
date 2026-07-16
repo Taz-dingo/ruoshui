@@ -58,7 +58,50 @@ function attachLoadedSplat(
   runtimeState.app.root.addChild(splat);
   runtimeState.splatAsset = loadedSplatAsset.asset;
   runtimeState.splatEntity = splat;
+  configureStreamedSplat(runtimeState, splat, variant);
   runtimeState.unifiedLodState = configureUnifiedGsplat(runtimeState.app, variant);
+}
+
+function configureStreamedSplat(runtimeState: any, splat: any, variant: any) {
+  runtimeState.releaseStreamingBootstrap?.();
+  runtimeState.releaseStreamingBootstrap = null;
+  runtimeState.app.scene.gsplat.splatBudget = variant.splatBudget ?? 0;
+
+  if (!variant.streamed) {
+    return;
+  }
+
+  const gsplat = splat.gsplat;
+  const lodLevels = gsplat.resource?.octree?.lodLevels;
+  if (!Number.isFinite(lodLevels) || lodLevels < 2) {
+    return;
+  }
+
+  if (Number.isFinite(variant.lodBaseDistance)) {
+    gsplat.lodBaseDistance = variant.lodBaseDistance;
+  }
+  if (Number.isFinite(variant.lodMultiplier)) {
+    gsplat.lodMultiplier = variant.lodMultiplier;
+  }
+
+  const coarsestLod = lodLevels - 1;
+  gsplat.lodRangeMin = coarsestLod;
+  gsplat.lodRangeMax = coarsestLod;
+
+  const onFrameReady = (_camera: any, _layer: any, ready: boolean, loadingCount: number) => {
+    if (!ready || loadingCount !== 0) {
+      return;
+    }
+
+    runtimeState.app.systems.gsplat.off('frame:ready', onFrameReady);
+    gsplat.lodRangeMin = 0;
+    gsplat.lodRangeMax = coarsestLod;
+    runtimeState.requestRender?.();
+  };
+
+  runtimeState.app.systems.gsplat.on('frame:ready', onFrameReady);
+  runtimeState.releaseStreamingBootstrap = () =>
+    runtimeState.app.systems.gsplat.off('frame:ready', onFrameReady);
 }
 
 async function loadVariantIntoRuntime({
@@ -113,6 +156,9 @@ function detachVariantFromRuntime(runtimeState: any) {
   if (!runtimeState?.app) {
     return;
   }
+
+  runtimeState.releaseStreamingBootstrap?.();
+  runtimeState.releaseStreamingBootstrap = null;
 
   if (runtimeState.splatEntity) {
     runtimeState.splatEntity.destroy();

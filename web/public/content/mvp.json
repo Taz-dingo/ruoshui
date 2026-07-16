@@ -62,12 +62,14 @@
       "id": "original",
       "name": "原始版",
       "summary": "正式场景模型，优先保真。",
-      "assetUrl": "/edge-models/hhuc-original.sog",
-      "size": "27.13 MiB",
-      "splats": "1,868,855",
-      "retention": "100%",
-      "kind": "Production",
-      "note": "稳定单次加载，避免渐进实验带来的闪烁与跳变。"
+      "assetUrl": "/edge-models/hhuc-streamed-v2/lod-meta.json",
+      "size": "43 MiB（按需加载，首帧 1.8 MiB）",
+      "splats": "1,728,347",
+      "retention": "100% / 25% / 8% / 2.5%",
+      "kind": "Streamed SOG",
+      "note": "先渲染 1.8 MiB 全景 LOD，再按距离加载空间分块。",
+      "streamed": true,
+      "splatBudget": 700000
     }
   ],
   "visualThesis": "夜色、玻璃与纪念感组成一块全屏展陈幕布，场景本身就是首页。",
