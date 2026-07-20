@@ -145,7 +145,7 @@ function normalizeGraphicsBackendPreference(
     return value;
   }
 
-  return 'webgl2';
+  return 'auto';
 }
 
 function loadGraphicsBackendPreference(runtimeWindow: Window): GraphicsBackendPreference {
@@ -154,7 +154,7 @@ function loadGraphicsBackendPreference(runtimeWindow: Window): GraphicsBackendPr
       runtimeWindow.localStorage.getItem(graphicsBackendPreferenceStorageKey)
     );
   } catch {
-    return 'webgl2';
+    return 'auto';
   }
 }
 

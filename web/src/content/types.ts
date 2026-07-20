@@ -71,8 +71,12 @@ interface ViewerVariant {
   retention: string;
   kind: string;
   note: string;
+  lodBaseDistance?: number;
   unified?: boolean;
   lodDistances?: number[];
+  lodMultiplier?: number;
+  splatBudget?: number;
+  streamed?: boolean;
   unifiedTuning?: UnifiedGsplatProfile;
 }
 
