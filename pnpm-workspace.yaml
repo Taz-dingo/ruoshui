@@ -2,6 +2,8 @@ packages:
   - "web"
   - "services/*"
   - "packages/*"
+allowBuilds:
+  canvas: true
 onlyBuiltDependencies:
   - esbuild
   - sharp
