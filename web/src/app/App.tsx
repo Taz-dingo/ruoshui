@@ -1,13 +1,10 @@
 import { useEffect, useState } from 'react';
 
-import { CameraMiniMap } from '../components/viewer/CameraMiniMap';
 import { CommunitySheet } from '../components/community/CommunitySheet';
-import { HeroPanel } from '../components/viewer/HeroPanel';
 import { HighlightLayer } from '../components/viewer/HighlightLayer';
 import { LoadingOverlay } from '../components/viewer/LoadingOverlay';
 import { MobileControlPanel } from '../components/viewer/MobileControlPanel';
 import { ViewerInspectorPanels } from '../components/viewer/ViewerInspectorPanels';
-import { Button } from '../components/ui/button';
 import { Sheet, SheetContent } from '../components/ui/sheet';
 import {
   appShellClassNames,
@@ -16,10 +13,7 @@ import {
 import { useViewerUiStore } from '../ui/state/viewer-ui-store';
 import { cn } from '../utils/cn';
 import type { ViewerConfig } from './viewer-config';
-import type {
-  MiniMapImageTransform,
-  ViewerContent
-} from '../content/types';
+import type { ViewerContent } from '../content/types';
 
 interface AppProps {
   data: ViewerContent;
@@ -29,7 +23,7 @@ interface AppProps {
 const communitySceneId = 'ruoshui-main';
 
 const hudClassName = cn(
-  'pointer-events-none relative z-[4] grid h-full min-h-0 grid-cols-[var(--rail-left-width)_minmax(0,1fr)_var(--rail-right-width)] gap-4 overflow-hidden p-4',
+  'pointer-events-none relative z-[4] grid h-full min-h-0 grid-cols-[var(--rail-left-width)_minmax(0,1fr)] gap-4 overflow-hidden p-4',
   'max-[1180px]:grid-cols-[minmax(320px,var(--rail-left-width))_minmax(0,1fr)] max-[1180px]:overflow-visible',
   'max-[760px]:block max-[760px]:h-full max-[760px]:overflow-hidden',
   'max-[760px]:[padding:calc(0.35rem+var(--safe-top))_calc(0.55rem+var(--safe-right))_calc(5.15rem+var(--safe-bottom))_calc(0.55rem+var(--safe-left))]'
@@ -41,13 +35,13 @@ const railClassName = cn(
   'max-[760px]:gap-3 max-[760px]:overflow-visible max-[760px]:pr-0 max-[760px]:w-[min(calc(100vw-9.25rem),320px)]'
 );
 const sidebarPanelClassName = cn(
-  'pointer-events-auto w-full rounded-[24px] border border-transparent bg-transparent px-0 py-2 opacity-100 shadow-none backdrop-blur-[0px] transition-[opacity,transform,background-color,border-color,box-shadow,backdrop-filter] duration-180 ease-out',
+  'pointer-events-auto w-full rounded-[26px] border border-ink/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.13),rgba(12,13,16,0.32))] px-0 py-2 opacity-100 shadow-none backdrop-blur-[24px] saturate-[1.1] transition-[opacity,transform,background-color,border-color,backdrop-filter] duration-180 ease-out',
   scrollAreaClassNames.thin,
-  'hover:border-outline/20 hover:bg-surface/64 hover:shadow-panel hover:backdrop-blur-[10px] focus-within:border-outline/20 focus-within:bg-surface/64 focus-within:shadow-panel focus-within:backdrop-blur-[10px]',
+  'hover:border-outline/20 hover:bg-surface/64 hover:backdrop-blur-[10px] focus-within:border-outline/20 focus-within:bg-surface/64 focus-within:backdrop-blur-[10px]',
   '[max-height:calc(var(--app-height)-2rem)] max-[760px]:w-[min(calc(100vw-1.5rem),320px)] max-[760px]:max-h-[min(calc(var(--app-height)*0.46),380px)]'
 );
 const mobileSheetClassName = cn(
-  'fixed z-[7] left-[calc(0.45rem+var(--safe-left))] right-[calc(0.45rem+var(--safe-right))] bottom-[calc(0.35rem+var(--safe-bottom))] h-[min(calc(var(--app-height)*0.78),680px)] max-h-none overflow-hidden rounded-[28px] border border-outline/20 bg-[linear-gradient(180deg,rgba(57,43,35,0.97)_0%,rgba(31,25,21,0.95)_100%)] px-0 py-0 shadow-panel backdrop-blur-[22px] [touch-action:pan-y] overscroll-none',
+  'fixed z-[7] left-[calc(0.45rem+var(--safe-left))] right-[calc(0.45rem+var(--safe-right))] bottom-[calc(0.35rem+var(--safe-bottom))] h-[min(calc(var(--app-height)*0.78),680px)] max-h-none overflow-hidden rounded-[28px] border border-ink/20 bg-[linear-gradient(180deg,rgba(255,255,255,0.18),rgba(10,11,14,0.88))] px-0 py-0 shadow-panel backdrop-blur-[28px] saturate-[1.1] [touch-action:pan-y] overscroll-none',
   'data-[state=closed]:pointer-events-none data-[state=closed]:animate-[ruoshui-sheet-bottom-out_220ms_cubic-bezier(0.4,0,1,1)_forwards] data-[state=open]:pointer-events-auto data-[state=open]:animate-[ruoshui-sheet-bottom-in_340ms_cubic-bezier(0.16,1,0.3,1)_forwards]'
 );
 
@@ -58,62 +52,17 @@ function stopInteractionPropagation(event: {
   event.stopPropagation();
 }
 
-function createDefaultMiniMapTransform(
-  transform: MiniMapImageTransform | undefined
-): MiniMapImageTransform {
-  return {
-    rotationDeg: transform?.rotationDeg ?? 0,
-    scale: transform?.scale ?? 1,
-    translateX: transform?.translateX ?? 0,
-    translateY: transform?.translateY ?? 0,
-    flipX: transform?.flipX ?? false,
-    flipY: transform?.flipY ?? false,
-    invertWorldX: transform?.invertWorldX ?? false,
-    invertWorldZ: transform?.invertWorldZ ?? false,
-    invertHeadingX: transform?.invertHeadingX ?? false
-  };
-}
-
-function serializeMiniMapTransform(transform: MiniMapImageTransform) {
-  return JSON.stringify(
-    {
-      imageTransform: {
-        rotationDeg: Number((transform.rotationDeg ?? 0).toFixed(1)),
-        scale: Number((transform.scale ?? 1).toFixed(3)),
-        translateX: Math.round(transform.translateX ?? 0),
-        translateY: Math.round(transform.translateY ?? 0),
-        flipX: Boolean(transform.flipX),
-        flipY: Boolean(transform.flipY),
-        invertWorldX: Boolean(transform.invertWorldX),
-        invertWorldZ: Boolean(transform.invertWorldZ),
-        invertHeadingX: Boolean(transform.invertHeadingX)
-      }
-    },
-    null,
-    2
-  );
-}
-
 function App({
   data,
   viewerConfig
 }: AppProps) {
-  const isProductionUi = !viewerConfig.showExperimentalControls;
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
-  const [isMiniMapVisible, setIsMiniMapVisible] = useState(true);
   const [activeInspectorPanel, setActiveInspectorPanel] = useState<string | null>(null);
   const [isCommunityOpen, setIsCommunityOpen] = useState(false);
-  const [miniMapTransform, setMiniMapTransform] = useState<MiniMapImageTransform | null>(
-    data.scene.miniMap
-      ? createDefaultMiniMapTransform(data.scene.miniMap.imageTransform)
-      : null
-  );
-  const [miniMapCopyNote, setMiniMapCopyNote] = useState('调到对齐后，点“复制参数”。');
   const setVariantPanel = useViewerUiStore((store) => store.setVariantPanel);
   const setPresetPanel = useViewerUiStore((store) => store.setPresetPanel);
   const setRouteControls = useViewerUiStore((store) => store.setRouteControls);
-  const camera = useViewerUiStore((store) => store.camera);
   const perfHud = useViewerUiStore((store) => store.perfHud);
 
   const toggleInspectorPanel = (panelId: string) => {
@@ -144,44 +93,11 @@ function App({
     setIsCommunityOpen(true);
   };
 
-  const resetMiniMapTransform = () => {
-    if (!data.scene.miniMap) {
-      return;
-    }
-
-    setMiniMapTransform(createDefaultMiniMapTransform(data.scene.miniMap.imageTransform));
-    setMiniMapCopyNote('已重置为当前配置。');
-  };
-
-  const copyMiniMapTransform = async () => {
-    if (!miniMapTransform) {
-      return;
-    }
-
-    try {
-      await window.navigator.clipboard.writeText(
-        serializeMiniMapTransform(miniMapTransform)
-      );
-      setMiniMapCopyNote('已复制，可直接贴给我。');
-    } catch {
-      setMiniMapCopyNote('复制失败了，但面板参数就是当前值。');
-    }
-  };
-
   useEffect(() => {
     setVariantPanel(viewerConfig.initialVariantPanel);
     setPresetPanel(viewerConfig.initialPresetPanel);
     setRouteControls(viewerConfig.initialRouteControls);
   }, [setPresetPanel, setRouteControls, setVariantPanel, viewerConfig]);
-
-  useEffect(() => {
-    setMiniMapTransform(
-      data.scene.miniMap
-        ? createDefaultMiniMapTransform(data.scene.miniMap.imageTransform)
-        : null
-    );
-    setMiniMapCopyNote('调到对齐后，点“复制参数”。');
-  }, [data.scene.miniMap]);
 
   useEffect(() => {
     const compactViewportQuery = window.matchMedia('(max-width: 760px)');
@@ -218,11 +134,6 @@ function App({
           className={appShellClassNames.sceneRoot}
         />
         <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 z-0 bg-[linear-gradient(90deg,rgba(23,18,15,0.72)_0%,rgba(23,18,15,0.26)_34%,rgba(23,18,15,0.08)_58%,rgba(23,18,15,0.22)_100%),linear-gradient(180deg,rgba(36,28,22,0.06)_0%,rgba(23,18,15,0.44)_100%)] max-[760px]:bg-[linear-gradient(90deg,rgba(23,18,15,0.32)_0%,rgba(23,18,15,0.1)_24%,rgba(23,18,15,0.03)_52%,rgba(23,18,15,0.1)_100%),linear-gradient(180deg,rgba(36,28,22,0.03)_0%,rgba(23,18,15,0.22)_100%)]"
-        />
-
-        <div
           id="hud-root"
           className={appShellClassNames.hudRoot}
         >
@@ -235,23 +146,6 @@ function App({
 
           <div className={hudClassName}>
             <aside className={cn(railClassName, 'self-start max-[760px]:relative max-[760px]:z-[1]')}>
-              <div className="w-full px-[var(--rail-content-pad)] max-[760px]:grid max-[760px]:gap-2.5 max-[760px]:px-0">
-                <HeroPanel
-                  compact={isProductionUi || isMobileViewport}
-                  subtitle={data.scene.subtitle}
-                  title={data.scene.title}
-                />
-                <div className="mt-3 flex flex-wrap gap-2 max-[760px]:mt-0">
-                  <Button
-                    className="pointer-events-auto"
-                    onClick={openFullCommunity}
-                    variant="tertiary"
-                  >
-                    社区笔记
-                  </Button>
-                </div>
-              </div>
-
               <div
                 className={cn(
                   sidebarPanelClassName,
@@ -260,48 +154,22 @@ function App({
               >
                 <ViewerInspectorPanels
                   activeInspectorPanel={activeInspectorPanel}
-                  copyMiniMapTransform={copyMiniMapTransform}
-                  hasMiniMap={data.scene.miniMap !== undefined}
-                  isMapVisible={isMiniMapVisible}
+                  copyMiniMapTransform={() => undefined}
+                  hasMiniMap={false}
+                  isMapVisible={false}
                   isMobile={false}
-                  miniMapCopyNote={miniMapCopyNote}
-                  miniMapTransform={viewerConfig.showExperimentalControls ? miniMapTransform : null}
-                  onMapVisibilityChange={setIsMiniMapVisible}
+                  miniMapCopyNote="地图已从界面隐藏。"
+                  miniMapTransform={null}
+                  onMapVisibilityChange={() => undefined}
                   onPrimaryAction={undefined}
                   onTogglePanel={toggleInspectorPanel}
-                  onMiniMapTransformChange={setMiniMapTransform}
-                  resetMiniMapTransform={resetMiniMapTransform}
+                  onMiniMapTransformChange={() => undefined}
+                  resetMiniMapTransform={() => undefined}
                   viewerConfig={viewerConfig}
                 />
               </div>
             </aside>
 
-            <div />
-
-            <aside
-              className={cn(
-                'flex min-h-0 w-full flex-col justify-start gap-3.5 self-start justify-self-end items-end pr-1.5',
-                scrollAreaClassNames.thin,
-                'max-[1180px]:col-start-2 max-[1180px]:row-start-1 max-[1180px]:w-full max-[1180px]:items-end max-[1180px]:overflow-visible max-[1180px]:pr-0',
-                'max-[760px]:absolute max-[760px]:right-[calc(0.55rem+var(--safe-right))] max-[760px]:top-[calc(0.35rem+var(--safe-top))] max-[760px]:z-[1] max-[760px]:w-auto max-[760px]:items-end max-[760px]:overflow-visible max-[760px]:pr-0'
-              )}
-            >
-              {data.scene.miniMap && isMiniMapVisible ? (
-                <div className="grid justify-items-end gap-2.5">
-                  <div className="pointer-events-none flex w-full justify-end max-[760px]:w-auto">
-                    <CameraMiniMap
-                      map={data.scene.miniMap}
-                      imageTransform={miniMapTransform ?? undefined}
-                      position={camera.positionValue}
-                      target={camera.targetValue}
-                      visibleGroundPolygon={camera.visibleGroundPolygonValue}
-                      yawDeg={camera.yawValue}
-                      distance={camera.distanceValue}
-                    />
-                  </div>
-                </div>
-              ) : null}
-            </aside>
           </div>
         </div>
 
@@ -318,7 +186,7 @@ function App({
             >
               <button
                 aria-expanded={isMobilePanelOpen}
-                className="flex h-11 w-11 items-center justify-center rounded-full border border-ink-muted/8 bg-[rgba(33,27,23,0.42)] p-0 text-center text-ink shadow-[inset_0_1px_0_rgba(255,246,232,0.03),0_10px_22px_rgba(10,8,7,0.16)] backdrop-blur-[14px] [touch-action:manipulation]"
+                className="flex h-11 w-11 items-center justify-center rounded-full border border-ink/18 bg-[rgba(255,255,255,0.12)] p-0 text-center text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_10px_22px_rgba(0,0,0,0.24)] backdrop-blur-[18px] [touch-action:manipulation]"
                 onClick={toggleMobilePanel}
                 onMouseDown={stopInteractionPropagation}
                 onPointerDown={stopInteractionPropagation}
@@ -341,17 +209,17 @@ function App({
             >
               <MobileControlPanel
                 activeInspectorPanel={activeInspectorPanel}
-                copyMiniMapTransform={copyMiniMapTransform}
-                hasMiniMap={data.scene.miniMap !== undefined}
-                isMapVisible={isMiniMapVisible}
+                copyMiniMapTransform={() => undefined}
+                hasMiniMap={false}
+                isMapVisible={false}
                 isOpen={isMobilePanelOpen}
-                miniMapCopyNote={miniMapCopyNote}
-                miniMapTransform={viewerConfig.showExperimentalControls ? miniMapTransform : null}
-                onMapVisibilityChange={setIsMiniMapVisible}
+                miniMapCopyNote="地图已从界面隐藏。"
+                miniMapTransform={null}
+                onMapVisibilityChange={() => undefined}
                 onActionComplete={dismissMobilePanel}
-                onMiniMapTransformChange={setMiniMapTransform}
+                onMiniMapTransformChange={() => undefined}
                 onToggleInspectorPanel={toggleInspectorPanel}
-                resetMiniMapTransform={resetMiniMapTransform}
+                resetMiniMapTransform={() => undefined}
                 viewerConfig={viewerConfig}
               />
             </SheetContent>
