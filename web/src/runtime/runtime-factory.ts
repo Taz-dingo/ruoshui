@@ -228,6 +228,7 @@ async function createViewerRuntime({
     publishVariantBenchmark,
     configureUnifiedGsplat,
     setStatus,
+    registerCancel: timings.registerCancel,
     trackFirstFrame: (targetApp, variantId, switchStartedAt) =>
       trackBenchmarkFirstFrame(
         targetApp,

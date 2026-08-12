@@ -1,29 +1,23 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "IBM Plex Sans", "Inter", "Noto Sans SC", sans-serif;
-  --color-app-bg: #17120f;
-  --color-canvas: #0b121d;
-  --color-ink: #f4ecde;
-  --color-ink-muted: #e7dac6;
+  --font-sans: "SF Pro Display", "SF Pro Text", "Inter", "Noto Sans SC", sans-serif;
+  --color-app-bg: #080a0e;
+  --color-canvas: #0b0e13;
+  --color-ink: #f5f5f7;
+  --color-ink-muted: #d1d1d6;
   --color-brand: #a8c97d;
   --color-brand-strong: #c7e39e;
-  --color-community-bg: #f4ece4;
-  --color-community-panel: #fff7ef;
-  --color-community-panel-strong: #eedfce;
-  --color-community-ink: #39261d;
-  --color-community-muted: #7d685d;
-  --color-community-accent: #9bb874;
-  --color-community-accent-soft: #d8e7c0;
-  --color-community-outline: #d8c1af;
-  --color-outline: #cfb897;
-  --color-surface: #2f241d;
-  --color-surface-strong: #3b2c23;
-  --color-success-ink: #243019;
-  --shadow-community: 0 24px 64px rgba(53, 74, 37, 0.14);
-  --shadow-panel: 0 18px 44px rgba(25, 16, 11, 0.24);
-  --radius-panel: 22px;
-  --radius-control: 14px;
+  --color-glass-light-ink: #1d1d1f;
+  --color-glass-light-muted: #6e6e73;
+  --color-glass-light-outline: #8e8e93;
+  --color-outline: #c7c7cc;
+  --color-surface: #1c1d20;
+  --color-surface-strong: #292a2e;
+  --color-success-ink: #111113;
+  --shadow-panel: 0 20px 56px rgba(2, 10, 20, 0.34);
+  --radius-panel: 26px;
+  --radius-control: 17px;
   --text-ui-xs: 11px;
   --text-ui-sm: 12px;
   --text-ui-title: 18px;
@@ -32,8 +26,8 @@
 @layer base {
   :root {
     color-scheme: dark;
-    background: #17120f;
-    color: #f4ecde;
+    background: #080a0e;
+    color: #f5f5f7;
     --rail-left-width: 352px;
     --rail-right-width: 212px;
     --rail-content-pad: 1.25rem;
@@ -72,10 +66,10 @@
     @apply m-0 min-h-full w-full overflow-x-hidden font-sans font-normal;
     line-height: 1.4;
     background:
-      radial-gradient(circle at top left, rgba(113, 171, 222, 0.2), transparent 30%),
-      radial-gradient(circle at bottom right, rgba(74, 108, 152, 0.18), transparent 32%),
-      linear-gradient(180deg, #152337 0%, #0d1522 100%);
-    color: #f4ecde;
+      radial-gradient(circle at 18% 10%, rgba(255, 255, 255, 0.08), transparent 28%),
+      radial-gradient(circle at 84% 88%, rgba(255, 255, 255, 0.05), transparent 30%),
+      linear-gradient(180deg, #17191e 0%, #080a0e 100%);
+    color: #f5f5f7;
     overscroll-behavior: none;
   }
 

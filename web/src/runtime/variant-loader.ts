@@ -7,11 +7,29 @@ interface LoadRuntimeVariantArgs {
   publishVariantBenchmark: (variantId: string) => void;
   configureUnifiedGsplat: (app: any, variant: any) => any;
   setStatus?: (title: string, detail: string) => void;
+  registerCancel?: (cancel: (() => void) | null) => void;
   trackFirstFrame: (app: any, variantId: string, switchStartedAt: number) => void;
 }
 
-async function loadGsplatAsset(pc: any, runtimeState: any, variantId: string, url: string) {
-  const splatAsset = new pc.Asset(`ruoshui-${variantId}:${url}`, 'gsplat', { url });
+async function loadGsplatAsset(
+  pc: any,
+  runtimeState: any,
+  variantId: string,
+  url: string,
+  registerCancel?: (cancel: (() => void) | null) => void
+) {
+  const abortController = new AbortController();
+  registerCancel?.(() => abortController.abort());
+  const response = await fetch(url, { signal: abortController.signal });
+
+  if (!response.ok) {
+    throw new Error(`加载模型失败：${response.status} ${response.statusText}`);
+  }
+
+  const splatAsset = new pc.Asset(`ruoshui-${variantId}:${url}`, 'gsplat', {
+    url,
+    contents: response
+  });
 
   await new Promise<void>((resolve, reject) => {
     const loader = new pc.AssetListLoader([splatAsset], runtimeState.app.assets);
@@ -21,11 +39,17 @@ async function loadGsplatAsset(pc: any, runtimeState: any, variantId: string, ur
     };
 
     runtimeState.app.assets.on('error', onError);
-    loader.load(() => {
+    loader.load((err: unknown) => {
       runtimeState.app.assets.off('error', onError);
+      if (err) {
+        reject(new Error(`加载 ${variantId} 失败：${String(err)}`));
+        return;
+      }
       resolve();
     });
   });
+
+  registerCancel?.(null);
 
   return {
     asset: splatAsset
@@ -113,6 +137,7 @@ async function loadVariantIntoRuntime({
   publishVariantBenchmark,
   configureUnifiedGsplat,
   setStatus,
+  registerCancel,
   trackFirstFrame
 }: LoadRuntimeVariantArgs) {
   if (!runtimeState?.app) {
@@ -121,6 +146,7 @@ async function loadVariantIntoRuntime({
 
   const shouldAbort =
     typeof timings.shouldAbort === 'function' ? timings.shouldAbort : () => false;
+  const cancelRegistration = registerCancel ?? timings.registerCancel;
 
   runtimeState.loopController?.wake?.();
 
@@ -134,7 +160,18 @@ async function loadVariantIntoRuntime({
 
   setStatus?.('加载中', `读取 ${variant.name} 资源`);
   const assetLoadStartedAt = performance.now();
-  const loadedSplatAsset = await loadGsplatAsset(pc, runtimeState, variant.id, variant.assetUrl);
+  let loadedSplatAsset: { asset: any };
+  try {
+    loadedSplatAsset = await loadGsplatAsset(
+      pc,
+      runtimeState,
+      variant.id,
+      variant.assetUrl,
+      cancelRegistration
+    );
+  } finally {
+    cancelRegistration?.(null);
+  }
 
   if (shouldAbort()) {
     runtimeState.app.assets.remove(loadedSplatAsset.asset);

@@ -27,9 +27,8 @@
 
 当前已建立的 token 类型：
 
-- `color`: `canvas / ink / ink-muted / brand / outline / surface`
-- `color`: `community-*`，用于图文社区这类浅底、暖色、editorial 风格的局部界面
-- `shadow`: `panel / community`
+- `color`: `canvas / ink / ink-muted / brand / outline / surface`，社区与 viewer 共用同一套中性 Liquid Glass 主题
+- `shadow`: `panel`
 - `radius`: `panel / control`
 - `text`: `ui-xs / ui-sm / ui-title`
 
@@ -37,9 +36,9 @@
 
 - 新增视觉 token 时，优先加到 `@theme`
 - 不要继续在组件里散落新的 `rgba(...)` 和硬编码颜色
-- 如果只是某个子域（例如社区 feed）需要一整组独立视觉语言，优先新增成一组语义化 token，而不是把临时色值直接写进业务组件
-- 当 viewer HUD 和社区层需要统一视觉语言时，优先先收敛共享 token（例如 `brand / outline / surface`），再决定哪些区域继续保留 `community-*` 的局部增强
-- 如果 HUD 已经有更合适的主色语义，社区不要抢主色；优先保留 HUD 的品牌色，把社区做成“不同材质的表面，同一套交互色”
+- 社区 feed 不再维护独立暖色 token；只有确实不同的材质或交互语义才新增共享 primitive
+- viewer HUD 和社区层统一使用 `brand / outline / surface`；不要重新引入 `community-*` 颜色别名
+- 社区可以保留若水原有绿色作为唯一强调色，面板、边框和文字使用共享中性 token
 
 ### 2. Primitive Layer
 

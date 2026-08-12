@@ -78,6 +78,8 @@ function createVariantOrchestrationController({
   getVariantBenchmark,
   onRuntimeReady
 }: CreateVariantOrchestrationControllerArgs) {
+  let cancelActiveLoad: (() => void) | null = null;
+
   function clearLoadingAfterPresent(runtimeState: any, loadToken: number) {
     let resolved = false;
 
@@ -109,6 +111,16 @@ function createVariantOrchestrationController({
 
   async function mountRuntime(variant: ViewerVariant, timings: any) {
     const runtime = getRuntime();
+    let registeredCancel: (() => void) | null = null;
+    const registerCancel = (cancel: (() => void) | null) => {
+      if (cancel) {
+        registeredCancel = cancel;
+        cancelActiveLoad = cancel;
+      } else if (cancelActiveLoad === registeredCancel) {
+        cancelActiveLoad = null;
+      }
+    };
+
     if (runtime) {
       await loadVariantIntoRuntime({
         pc,
@@ -119,6 +131,7 @@ function createVariantOrchestrationController({
         publishVariantBenchmark,
         configureUnifiedGsplat,
         setStatus,
+        registerCancel,
         trackFirstFrame: (app, variantId, switchStartedAt) =>
           trackBenchmarkFirstFrame(
             app,
@@ -132,7 +145,12 @@ function createVariantOrchestrationController({
     }
 
     const canvas = createSceneCanvas(sceneContainer);
-    return createRuntime(canvas, variant, timings, getSceneLook());
+    return createRuntime(
+      canvas,
+      variant,
+      { ...timings, registerCancel },
+      getSceneLook()
+    );
   }
 
   function activatePreset(presetId: string, immediate = false) {
@@ -174,6 +192,8 @@ function createVariantOrchestrationController({
       stopActiveBenchmarkRoute('未播放', 'switch');
     }
 
+    cancelActiveLoad?.();
+    cancelActiveLoad = null;
     const loadToken = issueLoadToken();
     const hadExistingRuntime = Boolean(getRuntime());
     const switchStartedAt = performance.now();
@@ -182,7 +202,6 @@ function createVariantOrchestrationController({
     setActiveVariantId(variant.id);
     updateVariantButtons();
     renderVariantMeta(variant);
-    setVariantButtonsDisabled(true);
     setLoading(initial ? 'boot' : 'switch');
     setStatus(
       initial ? '正在展开' : '正在切换',
@@ -212,6 +231,9 @@ function createVariantOrchestrationController({
       setStatus('场景已就绪', `${variant.size} · ${variant.retention} 保留`);
       clearLoadingAfterPresent(nextRuntime, loadToken);
     } catch (error) {
+      if (!isCurrentLoadToken(loadToken)) {
+        return;
+      }
       setStatus(
         '加载失败',
         error instanceof Error ? error.message : '未知错误'

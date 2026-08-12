@@ -15,7 +15,8 @@ function LoadingOverlay() {
       aria-hidden={!shouldShow}
       className={cn(
         'pointer-events-none absolute inset-0 z-[5] opacity-0 transition-opacity duration-300 ease-out',
-        shouldShow && 'pointer-events-auto opacity-100'
+        shouldShow && 'opacity-100',
+        shouldShow && (isError || loading.mode === 'boot') && 'pointer-events-auto'
       )}
       data-mode={loading.mode}
     >
@@ -25,8 +26,8 @@ function LoadingOverlay() {
           isError
             ? 'bg-[radial-gradient(circle_at_18%_18%,rgba(227,158,158,0.18),transparent_24%),radial-gradient(circle_at_78%_78%,rgba(145,103,74,0.16),transparent_26%),linear-gradient(135deg,rgba(24,16,15,0.94)_0%,rgba(29,18,18,0.82)_48%,rgba(27,17,17,0.9)_100%)]'
             : loading.mode === 'switch'
-            ? 'bg-[radial-gradient(circle_at_22%_24%,rgba(168,201,125,0.12),transparent_24%),radial-gradient(circle_at_78%_78%,rgba(145,103,74,0.12),transparent_26%),linear-gradient(135deg,rgba(23,18,15,0.72)_0%,rgba(23,18,15,0.42)_48%,rgba(23,18,15,0.64)_100%)] backdrop-blur-[10px]'
-            : 'bg-[radial-gradient(circle_at_22%_24%,rgba(168,201,125,0.18),transparent_24%),radial-gradient(circle_at_78%_78%,rgba(145,103,74,0.18),transparent_26%),linear-gradient(135deg,rgba(23,18,15,0.92)_0%,rgba(23,18,15,0.7)_48%,rgba(23,18,15,0.86)_100%)]'
+            ? 'bg-[rgba(8,9,12,0.62)] backdrop-blur-[10px]'
+            : 'bg-[rgba(8,9,12,0.84)]'
         )}
       />
       <div className="absolute bottom-6 left-6 right-6 max-w-[460px]">
@@ -44,7 +45,7 @@ function LoadingOverlay() {
           ) : (
             <>
               <span className="absolute inset-0 animate-[ruoshui-loading-spin_2.2s_linear_infinite]">
-                <span className="absolute left-1/2 top-0 h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-brand-strong/92 shadow-[0_0_16px_rgba(199,227,158,0.42)]" />
+              <span className="absolute left-1/2 top-0 h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-brand-strong/92 shadow-[0_0_16px_rgba(199,227,158,0.42)]" />
               </span>
               <span className="absolute inset-0 animate-[ruoshui-loading-spin_3.3s_linear_infinite_reverse]">
                 <span className="absolute bottom-[6%] left-1/2 h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-ink/82 shadow-[0_0_14px_rgba(244,236,222,0.26)]" />

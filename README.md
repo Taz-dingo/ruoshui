@@ -12,3 +12,31 @@
 - 部署或排障时再读 [`docs/project/engineering-memory.md`](docs/project/engineering-memory.md)
 
 开发前按 [`AGENTS.md`](AGENTS.md) 启用对应 repo skill；每轮保持小而完整，验证后提交并通过 PR 更新。
+
+## 本地运行
+
+```bash
+pnpm install
+pnpm dev:web
+```
+
+然后打开 `http://localhost:5173`。前端开发服务器会把 `/edge-models/*` 和 `/edge-media/*` 代理到 R2；如果要联调论坛 API，另开终端运行：
+
+```bash
+pnpm dev:forum-api
+```
+
+检查前端：
+
+```bash
+pnpm --dir web typecheck
+pnpm --dir web build
+```
+
+## 发布
+
+```bash
+pnpm --dir web deploy:pages
+```
+
+发布前会自动构建 Pages、打包 Functions，并部署到 `https://ruoshui-web.pages.dev`。

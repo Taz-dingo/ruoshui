@@ -11,16 +11,18 @@ const appShellClassNames = {
 } as const;
 
 const surfaceClassNames = {
-  floating: 'rounded-full border border-outline/18 bg-surface/84 text-ink shadow-panel backdrop-blur-[16px]',
-  infoField: 'rounded-control border border-ink-muted/8 bg-ink/3',
-  panel: 'rounded-panel border border-outline/16 bg-surface/76 shadow-panel backdrop-blur-[14px]',
-  popover: 'rounded-control border border-ink-muted/12 bg-surface/96 text-ink shadow-panel backdrop-blur-[18px]',
-  subtle: 'rounded-control border border-ink-muted/8 bg-ink/3'
+  floating: 'rounded-full border border-ink/20 bg-[linear-gradient(180deg,rgba(255,255,255,0.2),rgba(255,255,255,0.08))] text-ink shadow-panel backdrop-blur-[22px] saturate-[1.1]',
+  lightPanel: 'rounded-panel border border-glass-light-outline/38 bg-[linear-gradient(180deg,rgba(255,255,255,0.76),rgba(242,242,247,0.52))] text-glass-light-ink shadow-panel backdrop-blur-[28px] saturate-[1.15]',
+  lightSubtle: 'rounded-control border border-glass-light-outline/28 bg-white/30 backdrop-blur-[18px]',
+  infoField: 'rounded-control border border-ink/10 bg-ink/6 backdrop-blur-[14px]',
+  panel: 'rounded-panel border border-ink/20 bg-[linear-gradient(180deg,rgba(255,255,255,0.16),rgba(12,13,16,0.42))] shadow-panel backdrop-blur-[24px] saturate-[1.1]',
+  popover: 'rounded-control border border-ink/20 bg-[rgba(28,29,32,0.92)] text-ink shadow-panel backdrop-blur-[24px]',
+  subtle: 'rounded-control border border-ink/10 bg-ink/6 backdrop-blur-[14px]'
 } as const;
 
 const scrollAreaClassNames = {
   thin:
-    'overflow-y-auto [scrollbar-width:thin] [scrollbar-color:rgba(168,201,125,0.28)_transparent] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-brand/24'
+    'overflow-y-auto [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.24)_transparent] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-ink/20'
 } as const;
 
 const textClassNames = {
@@ -36,7 +38,7 @@ const inspectorSectionClassNames = {
   summary:
     'ml-auto min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-[10px] text-ink-muted/66 max-[760px]:text-[var(--type-mobile-summary)]',
   title:
-    'text-[10px] uppercase tracking-[0.18em] text-brand/88 max-[760px]:text-[var(--type-mobile-section-label)]',
+    'text-[10px] uppercase tracking-[0.18em] text-ink-muted/80 max-[760px]:text-[var(--type-mobile-section-label)]',
   trigger:
     'flex w-full items-center justify-between gap-3 border-0 bg-transparent px-0 py-2.5 text-left text-ink opacity-95 transition-[opacity,transform] duration-180 ease-out max-[760px]:gap-3 max-[760px]:py-[0.85rem]',
   triggerIcon:
@@ -90,9 +92,9 @@ const buttonVariants = cva(
       variant: {
         floating: `${surfaceClassNames.floating} px-4 py-3`,
         ghost: 'border-transparent bg-transparent px-[13px] py-[9px] text-ink-muted/72 shadow-none',
-        primary: 'border-transparent bg-brand px-[13px] py-[9px] text-[#2a221a]',
+        primary: 'border-transparent bg-brand px-[13px] py-[9px] text-white',
         secondary: 'border-outline/20 bg-ink/4 px-[13px] py-[9px] text-ink',
-        tertiary: 'border-brand/22 bg-brand/8 px-[13px] py-[9px] text-brand-strong'
+        tertiary: 'border-brand/38 bg-brand/12 px-[13px] py-[9px] text-brand-strong'
       }
     },
     defaultVariants: {
@@ -119,8 +121,8 @@ const itemCardButtonVariants = cva(
   {
     variants: {
       active: {
-        false: 'border-ink-muted/8 bg-ink/3',
-        true: 'border-brand/36 bg-brand/12'
+        false: 'border-ink/10 bg-ink/6',
+        true: 'border-brand/42 bg-brand/16'
       },
       density: {
         compact: 'px-2.5 py-2',

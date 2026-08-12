@@ -21,7 +21,7 @@ import {
   requestUploadTicket,
   uploadFileWithTicket
 } from '../../community/api';
-import { scrollAreaClassNames } from '../../styles/system';
+import { scrollAreaClassNames, surfaceClassNames } from '../../styles/system';
 import { requestFocusScenePin } from '../../ui/commands/viewer-command-bus';
 import { cn } from '../../utils/cn';
 import { Button } from '../ui/button';
@@ -292,7 +292,7 @@ function CommunitySheet({
   }
 
   const sheetClassName = cn(
-    'fixed z-[8] overflow-hidden border border-community-outline/72 p-0 shadow-community',
+    'fixed z-[8] overflow-hidden border border-glass-light-outline/38 p-0 shadow-panel',
     scrollAreaClassNames.thin,
     isMobile
       ? 'left-[calc(0.45rem+var(--safe-left))] right-[calc(0.45rem+var(--safe-right))] bottom-[calc(0.35rem+var(--safe-bottom))] top-auto h-[min(calc(var(--app-height)*0.84),780px)] rounded-[28px]'
@@ -305,23 +305,22 @@ function CommunitySheet({
     : posts.slice(0, 4);
   const topPins = pins.slice(0, 8);
   const showDetailSecondaryRail = !isMobile;
-  const shellSurfaceClassName = 'bg-community-bg/74 backdrop-blur-[28px]';
-  const shellBodyClassName = 'bg-[linear-gradient(180deg,rgba(246,239,231,0.76)_0%,rgba(243,232,220,0.72)_58%,rgba(241,227,214,0.68)_100%)]';
-  const chromeSurfaceClassName = 'bg-community-panel/62';
-  const panelSurfaceClassName = 'bg-community-panel/66';
-  const panelStrongSurfaceClassName = 'bg-community-panel-strong/68';
-  const softSurfaceClassName = 'bg-community-bg/58';
+  const shellSurfaceClassName = 'bg-[rgba(255,255,255,0.58)] backdrop-blur-[30px] saturate-[1.2]';
+  const shellBodyClassName = 'bg-[rgba(245,245,247,0.42)]';
+  const chromeSurfaceClassName = 'bg-white/30 backdrop-blur-[16px]';
+  const panelSurfaceClassName = surfaceClassNames.lightPanel;
+  const panelStrongSurfaceClassName = 'bg-black/8';
+  const softSurfaceClassName = surfaceClassNames.lightSubtle;
   const tabButtonClassName =
     'h-10 rounded-full border px-4 text-[12px] font-medium transition-[transform,background-color,border-color,color] duration-180 ease-out hover:-translate-y-px';
   const utilityButtonClassName =
     cn(
-      'h-10 rounded-full border border-community-outline/80 px-4 text-[12px] font-medium text-community-ink transition-[transform,background-color,border-color,color] duration-180 ease-out hover:-translate-y-px hover:border-community-accent/60 hover:text-community-accent',
+      'h-10 rounded-full border border-glass-light-outline/28 px-4 text-[12px] font-medium text-glass-light-ink transition-[transform,background-color,border-color,color] duration-180 ease-out hover:-translate-y-px hover:border-brand/60 hover:text-brand',
       chromeSurfaceClassName
     );
   const inputClassName =
     cn(
-      'w-full rounded-[20px] border border-community-outline/72 px-4 py-3 text-[14px] leading-[1.6] text-community-ink outline-none transition-[border-color,box-shadow,background-color] duration-180 ease-out placeholder:text-community-muted/72 focus:border-community-accent/72 focus:bg-white focus:shadow-[0_0_0_4px_rgba(155,184,116,0.14)]',
-      'bg-community-panel/72'
+      'w-full rounded-control border border-glass-light-outline/28 bg-white/42 px-4 py-3 text-[14px] leading-[1.6] text-glass-light-ink outline-none transition-[border-color,box-shadow,background-color] duration-180 ease-out placeholder:text-glass-light-muted/72 focus:border-brand/72 focus:bg-white/60 focus:shadow-[0_0_0_4px_rgba(168,201,125,0.18)]'
     );
 
   return (
@@ -331,8 +330,8 @@ function CommunitySheet({
         className={cn(sheetClassName, shellSurfaceClassName)}
         side={isMobile ? 'bottom' : 'right'}
       >
-        <div className={cn('flex h-full min-h-0 flex-col text-community-ink', shellBodyClassName)}>
-          <div className="border-b border-community-outline/72 px-5 pt-5 pb-4 max-[760px]:px-4">
+        <div className={cn('flex h-full min-h-0 flex-col text-glass-light-ink', shellBodyClassName)}>
+          <div className="border-b border-glass-light-outline/24 px-5 pt-5 pb-4 max-[760px]:px-4">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0 flex-1">
                 <div className="mt-1 grid gap-4">
@@ -340,7 +339,7 @@ function CommunitySheet({
                     <h2 className="m-0 text-[30px] leading-[0.98] tracking-[-0.06em] max-[760px]:text-[26px]">
                       社区笔记
                     </h2>
-                    <p className="mt-2 mb-0 max-w-[38rem] text-[14px] leading-[1.7] text-community-muted">
+                    <p className="mt-2 mb-0 max-w-[38rem] text-[14px] leading-[1.7] text-glass-light-muted">
                       浏览、查看详情，再回到场景点位。
                     </p>
                   </div>
@@ -351,8 +350,8 @@ function CommunitySheet({
                     className={cn(
                       tabButtonClassName,
                       activeView === 'feed'
-                        ? 'border-community-accent bg-community-accent text-white'
-                        : cn('border-community-outline/80 text-community-ink', chromeSurfaceClassName)
+                        ? 'border-brand bg-brand text-white'
+                        : cn('border-glass-light-outline/20 text-glass-light-ink', chromeSurfaceClassName)
                     )}
                     onClick={() => setActiveView('feed')}
                     type="button"
@@ -363,8 +362,8 @@ function CommunitySheet({
                     className={cn(
                       tabButtonClassName,
                       activeView === 'compose'
-                        ? 'border-community-accent bg-community-accent text-white'
-                        : cn('border-community-outline/80 text-community-ink', chromeSurfaceClassName)
+                        ? 'border-brand bg-brand text-white'
+                        : cn('border-glass-light-outline/20 text-glass-light-ink', chromeSurfaceClassName)
                     )}
                     onClick={() => setActiveView('compose')}
                     type="button"
@@ -385,7 +384,7 @@ function CommunitySheet({
               <button
                 aria-label="关闭社区面板"
                 className={cn(
-                  'flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-community-outline/80 text-[20px] leading-none text-community-ink transition-[transform,border-color,color] duration-180 ease-out hover:-translate-y-px hover:border-community-accent/60 hover:text-community-accent',
+                  'flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-glass-light-outline/20 text-[20px] leading-none text-glass-light-ink transition-[transform,border-color,color] duration-180 ease-out hover:-translate-y-px hover:border-brand/60 hover:text-brand',
                   chromeSurfaceClassName
                 )}
                 onClick={() => onOpenChange(false)}
@@ -398,7 +397,7 @@ function CommunitySheet({
 
           <div className={cn('flex-1 min-h-0 overflow-y-auto px-5 py-5 max-[760px]:px-4', scrollAreaClassNames.thin)}>
             {errorMessage ? (
-              <div className="mb-4 rounded-[22px] border border-[#d39c8b] bg-[#fff0e9] px-4 py-3 text-[13px] leading-[1.6] text-[#8a4d3b]">
+              <div className="mb-4 rounded-[22px] border border-[#b86b61]/55 bg-[#fff1ef]/72 px-4 py-3 text-[13px] leading-[1.6] text-[#7a3128]">
                 {errorMessage}
               </div>
             ) : null}
@@ -406,12 +405,12 @@ function CommunitySheet({
             {activeView === 'feed' ? (
               <div className="grid gap-4">
                 <div className="grid gap-4">
-                  <section className={cn('grid gap-3 rounded-[30px] border border-community-outline/75 px-4 py-4 shadow-community', panelSurfaceClassName)}>
+                  <section className={cn('grid gap-3 px-4 py-4', panelSurfaceClassName)}>
                     <div className="grid gap-1">
                       <h3 className="m-0 text-[22px] leading-[1.04] tracking-[-0.05em]">
                         {selectedPin?.title ?? '全部笔记'}
                       </h3>
-                      <p className="m-0 text-[13px] leading-[1.65] text-community-muted">
+                      <p className="m-0 text-[13px] leading-[1.65] text-glass-light-muted">
                         {selectedPin?.summary ?? `当前 ${posts.length} 篇笔记。`}
                       </p>
                     </div>
@@ -422,8 +421,8 @@ function CommunitySheet({
                           tabButtonClassName,
                           'shrink-0',
                           activePinId === null
-                            ? 'border-community-accent bg-community-accent text-white'
-                            : cn('border-community-outline/80 text-community-ink', softSurfaceClassName)
+                            ? 'border-brand bg-brand text-white'
+                            : cn('border-glass-light-outline/20 text-glass-light-ink', softSurfaceClassName)
                         )}
                         onClick={() => void handlePinFilter(null)}
                         type="button"
@@ -437,8 +436,8 @@ function CommunitySheet({
                             tabButtonClassName,
                             'shrink-0',
                             activePinId === pin.id
-                              ? 'border-community-accent bg-community-accent text-white'
-                              : cn('border-community-outline/80 text-community-ink', softSurfaceClassName)
+                              ? 'border-brand bg-brand text-white'
+                              : cn('border-glass-light-outline/20 text-glass-light-ink', softSurfaceClassName)
                           )}
                           onClick={() => void handlePinFilter(pin)}
                           type="button"
@@ -461,7 +460,7 @@ function CommunitySheet({
                           onClick={() => void openPostDetail(post.id)}
                           type="button"
                         >
-                          <article className={cn('overflow-hidden rounded-[30px] border border-community-outline/75 shadow-community transition-[transform,box-shadow,border-color] duration-220 ease-out group-hover:-translate-y-1 group-hover:border-community-accent/55', panelSurfaceClassName)}>
+                          <article className={cn('overflow-hidden transition-[transform,box-shadow,border-color] duration-220 ease-out group-hover:-translate-y-1 group-hover:border-brand/55', panelSurfaceClassName)}>
                             {post.mediaAssets[0]?.publicUrl ? (
                               <div className={cn('overflow-hidden', panelStrongSurfaceClassName, getPostCardHeight(index, true))}>
                                 <img
@@ -473,11 +472,11 @@ function CommunitySheet({
                             ) : (
                               <div
                                 className={cn(
-                                  'flex items-end bg-[linear-gradient(180deg,#efe3d6_0%,#e4d0bc_100%)] px-4 py-4',
+                                  'flex items-end bg-[linear-gradient(180deg,rgba(255,255,255,0.68),rgba(220,220,225,0.36))] px-4 py-4',
                                   getPostCardHeight(index, false)
                                 )}
                               >
-                                <p className="m-0 max-w-[12rem] text-[18px] font-medium leading-[1.2] text-community-ink">
+                                <p className="m-0 max-w-[12rem] text-[18px] font-medium leading-[1.2] text-glass-light-ink">
                                   {post.pins[0]?.title ?? sceneTitle}
                                 </p>
                               </div>
@@ -486,23 +485,23 @@ function CommunitySheet({
                             <div className="grid gap-3 px-4 py-4">
                               <div className="flex items-start justify-between gap-3">
                                 <div className="min-w-0">
-                                  <p className="m-0 text-[10px] uppercase tracking-[0.18em] text-community-accent">
+                                  <p className="m-0 text-[10px] uppercase tracking-[0.18em] text-brand">
                                     {post.pins[0]?.title ?? '未绑点位'}
                                   </p>
-                                  <h3 className="mt-2 line-clamp-2 text-[20px] leading-[1.18] tracking-[-0.045em] text-community-ink">
+                                  <h3 className="mt-2 line-clamp-2 text-[20px] leading-[1.18] tracking-[-0.045em] text-glass-light-ink">
                                     {post.title}
                                   </h3>
                                 </div>
                                 {post.status !== 'published' ? (
-                                  <span className={cn('shrink-0 rounded-full px-2.5 py-1 text-[10px] font-medium text-community-muted', softSurfaceClassName)}>
+                                  <span className={cn('shrink-0 rounded-full px-2.5 py-1 text-[10px] font-medium text-glass-light-muted', softSurfaceClassName)}>
                                     {postStatusLabels[post.status]}
                                   </span>
                                 ) : null}
                               </div>
-                              <p className="m-0 text-[13px] leading-[1.65] text-community-muted">
+                              <p className="m-0 text-[13px] leading-[1.65] text-glass-light-muted">
                                 {getPostPreview(post)}
                               </p>
-                              <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-community-muted">
+                              <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-glass-light-muted">
                                 <span>{formatPostDate(post.createdAt)}</span>
                                 <div className="flex items-center gap-2">
                                   <span>{post.mediaAssets.length} 图</span>
@@ -514,11 +513,11 @@ function CommunitySheet({
                         </button>
                       ))
                     ) : (
-                      <div className={cn('rounded-[30px] border border-community-outline/75 px-5 py-6 shadow-community', panelSurfaceClassName)}>
+                      <div className={cn('px-5 py-6', panelSurfaceClassName)}>
                         <h3 className="m-0 text-[20px] leading-[1.1] tracking-[-0.04em]">
                           还没有笔记
                         </h3>
-                        <p className="mt-3 mb-0 text-[13px] leading-[1.65] text-community-muted">
+                        <p className="mt-3 mb-0 text-[13px] leading-[1.65] text-glass-light-muted">
                           现在还没有可浏览的图文。
                         </p>
                       </div>
@@ -533,7 +532,7 @@ function CommunitySheet({
                 <div className="grid gap-4">
                   <div className="flex flex-wrap items-center gap-2">
                     <Button
-                      className={cn('border-community-outline/80 px-5 text-community-ink hover:border-community-accent/60 hover:text-community-accent', chromeSurfaceClassName)}
+                      className={cn('border-glass-light-outline/20 px-5 text-glass-light-ink hover:border-brand/60 hover:text-brand', chromeSurfaceClassName)}
                       onClick={() => setActiveView('feed')}
                       variant="secondary"
                     >
@@ -541,7 +540,7 @@ function CommunitySheet({
                     </Button>
                     {selectedPost?.pins[0] ? (
                       <Button
-                        className="border-community-accent/24 bg-community-accent/10 px-5 text-community-accent hover:border-community-accent/40"
+                        className="border-brand/24 bg-brand/10 px-5 text-brand hover:border-brand/40"
                         onClick={() => void handlePinFilter(selectedPost.pins[0])}
                         variant="tertiary"
                       >
@@ -551,13 +550,13 @@ function CommunitySheet({
                   </div>
 
                   {isDetailLoading ? (
-                    <div className={cn('rounded-[30px] border border-community-outline/75 px-5 py-6 shadow-community', panelSurfaceClassName)}>
-                      <p className="m-0 text-[13px] leading-[1.65] text-community-muted">
+                    <div className={cn('px-5 py-6', panelSurfaceClassName)}>
+                      <p className="m-0 text-[13px] leading-[1.65] text-glass-light-muted">
                         正在把笔记详情和点位关系拉过来。
                       </p>
                     </div>
                   ) : selectedPost ? (
-                    <article className={cn('overflow-hidden rounded-[30px] border border-community-outline/75 shadow-community', panelSurfaceClassName)}>
+                    <article className={cn('overflow-hidden', panelSurfaceClassName)}>
                       {selectedPost.mediaAssets[0]?.publicUrl ? (
                         <img
                           alt={selectedPost.title}
@@ -567,26 +566,26 @@ function CommunitySheet({
                       ) : null}
                       <div className="grid gap-5 px-5 py-5">
                         <header className="grid gap-2">
-                          <p className="m-0 text-[10px] uppercase tracking-[0.18em] text-community-accent">
+                          <p className="m-0 text-[10px] uppercase tracking-[0.18em] text-brand">
                             {selectedPost.pins[0]?.title ?? '未绑点位'}
                           </p>
                           <h3 className="m-0 text-[32px] leading-[1.02] tracking-[-0.065em] max-[760px]:text-[28px]">
                             {selectedPost.title}
                           </h3>
-                          <div className="flex flex-wrap gap-2 text-[11px] text-community-muted">
+                          <div className="flex flex-wrap gap-2 text-[11px] text-glass-light-muted">
                             <span>{formatPostDate(selectedPost.createdAt)}</span>
                             <span>{selectedPost.mediaAssets.length} 张图</span>
                             <span>{selectedPost.pins.length} 个点位</span>
                             <span>{getPostReadTime(selectedPost.body)} 分钟阅读</span>
                           </div>
                           {selectedPost.excerpt ? (
-                            <p className="m-0 text-[15px] leading-[1.75] text-community-muted">
+                            <p className="m-0 text-[15px] leading-[1.75] text-glass-light-muted">
                               {selectedPost.excerpt}
                             </p>
                           ) : null}
                         </header>
 
-                        <article className="whitespace-pre-wrap text-[15px] leading-[1.9] text-community-ink/88">
+                        <article className="whitespace-pre-wrap text-[15px] leading-[1.9] text-glass-light-ink/88">
                           {selectedPost.body}
                         </article>
 
@@ -607,8 +606,8 @@ function CommunitySheet({
                       </div>
                     </article>
                   ) : (
-                    <div className={cn('rounded-[30px] border border-community-outline/75 px-5 py-6 shadow-community', panelSurfaceClassName)}>
-                      <p className="m-0 text-[13px] leading-[1.65] text-community-muted">
+                    <div className={cn('px-5 py-6', panelSurfaceClassName)}>
+                      <p className="m-0 text-[13px] leading-[1.65] text-glass-light-muted">
                         先从推荐流里选一条，再展开详情。
                       </p>
                     </div>
@@ -617,9 +616,9 @@ function CommunitySheet({
 
                 {showDetailSecondaryRail ? (
                   <aside className="grid gap-4 self-start">
-                  <section className={cn('grid gap-3 rounded-[30px] border border-community-outline/75 px-4 py-4 shadow-community', panelSurfaceClassName)}>
+                  <section className={cn('grid gap-3 px-4 py-4', panelSurfaceClassName)}>
                     <div className="grid gap-1">
-                      <p className="m-0 text-[10px] uppercase tracking-[0.22em] text-community-accent">
+                      <p className="m-0 text-[10px] uppercase tracking-[0.22em] text-brand">
                         Scene Link
                       </p>
                       <h3 className="m-0 text-[20px] leading-[1.08] tracking-[-0.04em]">
@@ -630,7 +629,7 @@ function CommunitySheet({
                       <div className="grid gap-2">
                         {selectedPost.pins.map((pin) => (
                           <Button
-                            className={cn('justify-start border-community-outline/80 px-4 text-left text-community-ink hover:border-community-accent/60 hover:text-community-accent', softSurfaceClassName)}
+                            className={cn('justify-start border-glass-light-outline/20 px-4 text-left text-glass-light-ink hover:border-brand/60 hover:text-brand', softSurfaceClassName)}
                             key={pin.id}
                             onClick={() => handleReturnToScene(pin)}
                             variant="secondary"
@@ -640,15 +639,15 @@ function CommunitySheet({
                         ))}
                       </div>
                     ) : (
-                      <p className="m-0 text-[13px] leading-[1.65] text-community-muted">
+                      <p className="m-0 text-[13px] leading-[1.65] text-glass-light-muted">
                         这条笔记暂时还没绑到具体点位。
                       </p>
                     )}
                   </section>
 
-                  <section className={cn('grid gap-3 rounded-[30px] border border-community-outline/75 px-4 py-4 shadow-community', panelSurfaceClassName)}>
+                  <section className={cn('grid gap-3 px-4 py-4', panelSurfaceClassName)}>
                     <div className="grid gap-1">
-                      <p className="m-0 text-[10px] uppercase tracking-[0.22em] text-community-accent">
+                      <p className="m-0 text-[10px] uppercase tracking-[0.22em] text-brand">
                         Related
                       </p>
                       <h3 className="m-0 text-[20px] leading-[1.08] tracking-[-0.04em]">
@@ -660,20 +659,20 @@ function CommunitySheet({
                         relatedPosts.map((post) => (
                           <button
                             key={post.id}
-                            className={cn('grid gap-1 rounded-[22px] border border-community-outline/72 px-4 py-3 text-left transition-[transform,border-color,background-color] duration-180 ease-out hover:-translate-y-px hover:border-community-accent/44 hover:bg-white', softSurfaceClassName)}
+                            className={cn('grid gap-1 px-4 py-3 text-left transition-[transform,border-color,background-color] duration-180 ease-out hover:-translate-y-px hover:border-brand/44 hover:bg-black/8', softSurfaceClassName)}
                             onClick={() => void openPostDetail(post.id)}
                             type="button"
                           >
-                            <span className="text-[13px] font-medium text-community-ink">
+                            <span className="text-[13px] font-medium text-glass-light-ink">
                               {post.title}
                             </span>
-                            <span className="text-[12px] leading-[1.6] text-community-muted">
+                            <span className="text-[12px] leading-[1.6] text-glass-light-muted">
                               {getPostPreview(post)}
                             </span>
                           </button>
                         ))
                       ) : (
-                        <p className="m-0 text-[13px] leading-[1.65] text-community-muted">
+                        <p className="m-0 text-[13px] leading-[1.65] text-glass-light-muted">
                           还没有更多推荐。
                         </p>
                       )}
@@ -687,17 +686,17 @@ function CommunitySheet({
             {activeView === 'compose' ? (
               <div className="grid gap-5">
                 <form className="grid gap-4" onSubmit={handleSubmitPost}>
-                  <section className={cn('grid gap-4 rounded-[30px] border border-community-outline/75 p-4 shadow-community', panelSurfaceClassName)}>
+                  <section className={cn('grid gap-4 p-4', panelSurfaceClassName)}>
                     <div className="grid gap-1">
                       <h3 className="m-0 text-[26px] leading-[1.03] tracking-[-0.055em] max-[760px]:text-[24px]">
                         写笔记
                       </h3>
-                      <p className="m-0 text-[13px] leading-[1.65] text-community-muted">
+                      <p className="m-0 text-[13px] leading-[1.65] text-glass-light-muted">
                         第一张图会作为封面。
                       </p>
                     </div>
 
-                    <label className="grid gap-2 text-[12px] font-medium text-community-muted">
+                    <label className="grid gap-2 text-[12px] font-medium text-glass-light-muted">
                       标题
                       <input
                         className={inputClassName}
@@ -709,7 +708,7 @@ function CommunitySheet({
                       />
                     </label>
 
-                    <label className="grid gap-2 text-[12px] font-medium text-community-muted">
+                    <label className="grid gap-2 text-[12px] font-medium text-glass-light-muted">
                       摘要
                       <input
                         className={inputClassName}
@@ -720,7 +719,7 @@ function CommunitySheet({
                       />
                     </label>
 
-                    <label className="grid gap-2 text-[12px] font-medium text-community-muted">
+                    <label className="grid gap-2 text-[12px] font-medium text-glass-light-muted">
                       正文
                       <textarea
                         className={cn(inputClassName, 'min-h-[240px] resize-y')}
@@ -732,7 +731,7 @@ function CommunitySheet({
                     </label>
 
                     <div className="grid gap-3 sm:grid-cols-2">
-                      <label className="grid gap-2 text-[12px] font-medium text-community-muted">
+                      <label className="grid gap-2 text-[12px] font-medium text-glass-light-muted">
                         关联点位
                         <select
                           className={inputClassName}
@@ -748,7 +747,7 @@ function CommunitySheet({
                         </select>
                       </label>
 
-                      <label className="grid gap-2 text-[12px] font-medium text-community-muted">
+                      <label className="grid gap-2 text-[12px] font-medium text-glass-light-muted">
                         可见性
                         <select
                           className={inputClassName}
@@ -762,12 +761,12 @@ function CommunitySheet({
                       </label>
                     </div>
 
-                    <label className="grid gap-2 text-[12px] font-medium text-community-muted">
+                    <label className="grid gap-2 text-[12px] font-medium text-glass-light-muted">
                       图片
-                      <div className={cn('grid gap-3 rounded-[24px] border border-dashed border-community-outline px-4 py-4', softSurfaceClassName)}>
+                      <div className={cn('grid gap-3 rounded-[24px] border border-dashed border-glass-light-outline/28 px-4 py-4', softSurfaceClassName)}>
                         <input
                           accept="image/*"
-                          className="text-[12px] text-community-muted"
+                          className="text-[12px] text-glass-light-muted"
                           multiple
                           onChange={(event) =>
                             setComposerFiles(Array.from(event.target.files ?? []))
@@ -779,17 +778,17 @@ function CommunitySheet({
                             {composerFiles.map((file) => (
                               <div
                                 key={`${file.name}-${file.size}`}
-                                className={cn('flex items-center justify-between gap-3 rounded-[18px] px-3 py-3 text-[12px] text-community-ink', chromeSurfaceClassName)}
+                                className={cn('flex items-center justify-between gap-3 rounded-[18px] px-3 py-3 text-[12px] text-glass-light-ink', chromeSurfaceClassName)}
                               >
                                 <span className="truncate">{file.name}</span>
-                                <span className="shrink-0 text-community-muted">
+                                <span className="shrink-0 text-glass-light-muted">
                                   {formatFileSize(file.size)}
                                 </span>
                               </div>
                             ))}
                           </div>
                         ) : (
-                          <p className="m-0 text-[12px] leading-[1.6] text-community-muted">
+                          <p className="m-0 text-[12px] leading-[1.6] text-glass-light-muted">
                             直接选多张图即可，当前会按顺序上传，并把第一张当封面。
                           </p>
                         )}
@@ -797,7 +796,7 @@ function CommunitySheet({
                     </label>
 
                     {composerMessage ? (
-                      <p className="m-0 rounded-[20px] border border-community-accent/20 bg-community-accent/10 px-4 py-3 text-[12px] leading-[1.6] text-community-accent">
+                      <p className="m-0 rounded-[20px] border border-brand/20 bg-brand/10 px-4 py-3 text-[12px] leading-[1.6] text-brand">
                         {composerMessage}
                       </p>
                     ) : null}
@@ -811,7 +810,7 @@ function CommunitySheet({
                         {isPublishing ? '正在发布' : '发布笔记'}
                       </Button>
                       <Button
-                        className={cn('border-community-outline/80 px-5 text-community-ink hover:border-community-accent/60 hover:text-community-accent', softSurfaceClassName)}
+                        className={cn('border-glass-light-outline/20 px-5 text-glass-light-ink hover:border-brand/60 hover:text-brand', softSurfaceClassName)}
                         disabled={isPublishing}
                         onClick={() => {
                           setComposerBody('');

@@ -176,7 +176,7 @@ function HighlightLayer({
             transform: `translate3d(${highlightAuthoring.previewLeft}px, ${highlightAuthoring.previewTop}px, 0)`
           }}
         >
-          <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#d7efad] shadow-[0_0_0_6px_rgba(199,227,158,0.16)]" aria-hidden="true" />
+          <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-brand-strong shadow-[0_0_0_6px_rgba(199,227,158,0.16)]" aria-hidden="true" />
           <span className="text-[11px] font-semibold">预览点</span>
         </div>
       ) : null}
@@ -185,7 +185,7 @@ function HighlightLayer({
         <button
           key={item.id}
           className={cn(
-            'pointer-events-auto absolute inline-flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 rounded-full border border-outline/18 bg-[rgba(37,28,23,0.22)] px-2.5 py-1.5 text-left text-ink transition-[opacity,background-color,border-color,backdrop-filter] duration-180 ease-out backdrop-blur-[0px] hover:border-brand/42 hover:bg-surface/76 hover:backdrop-blur-[12px] focus-visible:border-brand/42 focus-visible:bg-surface/76 focus-visible:backdrop-blur-[12px]',
+            'pointer-events-auto absolute inline-flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 rounded-full border border-outline/18 bg-[rgba(20,22,26,0.22)] px-2.5 py-1.5 text-left text-ink transition-[opacity,background-color,border-color,backdrop-filter] duration-180 ease-out backdrop-blur-[0px] hover:border-brand/42 hover:bg-surface/76 hover:backdrop-blur-[12px] focus-visible:border-brand/42 focus-visible:bg-surface/76 focus-visible:backdrop-blur-[12px]',
             item.id === activeHighlightId && 'border-brand/42 bg-surface/76 backdrop-blur-[12px]',
             (!item.isVisible || highlightAuthoring.isEnabled) && 'pointer-events-none opacity-0'
           )}
