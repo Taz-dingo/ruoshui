@@ -1,43 +1,44 @@
 interface RuntimeEnvironmentState {
   app: any;
-  sourceTexture: any;
-  skyboxTexture: any;
+  root: any;
+  skyDome: any;
+  texture: any;
 }
 
 async function createRuntimeEnvironment(pc: any, app: any) {
-  const sourceTexture = await loadEquirectTexture(
+  const texture = await loadEquirectTexture(
     pc,
     app,
     '/edge-media/images/sky/qwantani-morning-puresky.jpg'
   );
-  const skyboxTexture = createSkyboxTexture(pc, app, 1024);
 
-  pc.reprojectTexture(sourceTexture, skyboxTexture, {
-    numSamples: 1024,
-    seamPixels: 1
+  const root = new pc.Entity('RuoshuiSky');
+  const skyDome = new pc.Entity('RuoshuiSkyDome');
+  skyDome.addComponent('render', {
+    type: 'sphere',
+    castShadows: false,
+    receiveShadows: false,
+    layers: [pc.LAYERID_SKYBOX]
   });
-
-  app.scene.sky.type = pc.SKYTYPE_INFINITE;
-  app.scene.skyboxMip = 0;
-  app.scene.setSkybox([
-    skyboxTexture,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null
-  ]);
+  skyDome.setLocalScale(52, 52, 52);
+  skyDome.render.meshInstances[0].material = createSkyMaterial(pc, texture);
+  root.addChild(skyDome);
+  app.root.addChild(root);
 
   return {
     app,
-    sourceTexture,
-    skyboxTexture
+    root,
+    skyDome,
+    texture
   };
 }
 
-function updateRuntimeEnvironment(_runtimeState?: unknown) {
-  return;
+function updateRuntimeEnvironment(runtimeState?: any) {
+  const camera = runtimeState?.camera;
+  const root = runtimeState?.environment?.root;
+  if (camera && root) {
+    root.setPosition(camera.getPosition());
+  }
 }
 
 function destroyRuntimeEnvironment(
@@ -47,12 +48,8 @@ function destroyRuntimeEnvironment(
     return;
   }
 
-  if (environment.app?.scene?.skybox === environment.skyboxTexture) {
-    environment.app.scene.setSkybox();
-  }
-
-  environment.skyboxTexture?.destroy?.();
-  environment.sourceTexture?.destroy?.();
+  environment.root?.destroy?.();
+  environment.texture?.destroy?.();
 }
 
 async function loadEquirectTexture(pc: any, app: any, url: string) {
@@ -74,16 +71,6 @@ async function loadEquirectTexture(pc: any, app: any, url: string) {
   return texture;
 }
 
-function createSkyboxTexture(pc: any, app: any, size: number) {
-  return new pc.Texture(app.graphicsDevice, {
-    cubemap: true,
-    width: size,
-    height: size,
-    format: pc.PIXELFORMAT_R8_G8_B8_A8,
-    mipmaps: false
-  });
-}
-
 function loadImage(url: string) {
   return new Promise<HTMLImageElement>((resolve, reject) => {
     const image = new Image();
@@ -93,6 +80,21 @@ function loadImage(url: string) {
     image.onerror = () => reject(new Error(`Failed to load sky texture: ${url}`));
     image.src = url;
   });
+}
+
+function createSkyMaterial(pc: any, texture: any) {
+  const material = new pc.StandardMaterial();
+  material.useLighting = false;
+  material.emissive.set(1, 1, 1);
+  material.emissiveMap = texture;
+  material.emissiveMapTiling.set(-1, 1);
+  material.emissiveMapOffset.set(1, 0);
+  material.cull = pc.CULLFACE_NONE;
+  material.depthWrite = false;
+  material.depthTest = true;
+  material.update();
+
+  return material;
 }
 
 export {
