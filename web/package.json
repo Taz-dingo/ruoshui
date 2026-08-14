@@ -10,6 +10,7 @@
     "build": "vite build",
     "build:pages": "pnpm run build && node scripts/prepare-cloudflare-pages.mjs",
     "deploy:pages": "node scripts/deploy-cloudflare-pages.mjs",
+    "visual-check": "node scripts/visual-check.mjs",
     "preview": "vite preview"
   },
   "devDependencies": {

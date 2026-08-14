@@ -21,3 +21,6 @@ dist
 .env.*.local
 .wrangler
 services/forum-api/.dev.vars
+
+# Visual-check artifacts (regenerated on each run)
+web/.visual-check/
