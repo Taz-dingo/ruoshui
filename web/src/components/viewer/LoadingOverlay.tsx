@@ -9,6 +9,15 @@ function LoadingOverlay() {
   const modeLabel = loading.mode === 'boot' ? '正在进入' : '正在切换';
   const modeMeta = loading.mode === 'boot' ? '请稍候' : '准备下一版';
   const shouldShow = loading.visible || isError;
+  const bootBackdropStyle =
+    !isError && loading.mode === 'boot'
+      ? {
+          backgroundColor: 'rgb(71, 96, 126)',
+          backgroundImage: "url('/edge-media/images/sky/qwantani-morning-puresky.jpg')",
+          backgroundPosition: 'center',
+          backgroundSize: 'cover'
+        }
+      : undefined;
 
   return (
     <div
@@ -27,8 +36,9 @@ function LoadingOverlay() {
             ? 'bg-[radial-gradient(circle_at_18%_18%,rgba(227,158,158,0.18),transparent_24%),radial-gradient(circle_at_78%_78%,rgba(145,103,74,0.16),transparent_26%),linear-gradient(135deg,rgba(24,16,15,0.94)_0%,rgba(29,18,18,0.82)_48%,rgba(27,17,17,0.9)_100%)]'
             : loading.mode === 'switch'
             ? 'bg-[rgba(8,9,12,0.62)] backdrop-blur-[10px]'
-            : 'bg-[rgba(8,9,12,0.84)]'
+            : 'bg-[rgba(8,9,12,0.2)] backdrop-blur-[8px]'
         )}
+        style={bootBackdropStyle}
       />
       <div className="absolute bottom-6 left-6 right-6 max-w-[460px]">
         <span className="block text-[11px] uppercase tracking-[0.22em] text-brand-strong/78">若水广场</span>
