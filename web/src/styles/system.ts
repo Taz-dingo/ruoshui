@@ -2,7 +2,7 @@ import { cva } from 'class-variance-authority';
 
 const appShellClassNames = {
   appRoot: 'relative z-[1] min-h-[var(--app-height)] w-full',
-  bodyBleed: 'relative overflow-x-hidden min-h-[var(--app-height)] bg-canvas',
+  bodyBleed: 'relative h-[var(--app-height)] overflow-hidden bg-canvas',
   hudRoot: 'pointer-events-none relative z-[1] h-[var(--app-height)]',
   main: 'relative min-h-[var(--app-height)]',
   sceneRoot:

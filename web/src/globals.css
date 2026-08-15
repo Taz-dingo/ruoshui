@@ -59,11 +59,11 @@
   }
 
   html {
-    @apply m-0 min-h-full w-full overflow-x-hidden;
+    @apply m-0 min-h-full w-full overflow-hidden;
   }
 
   body {
-    @apply m-0 min-h-full w-full overflow-x-hidden font-sans font-normal;
+    @apply m-0 h-[var(--app-height)] w-full overflow-hidden font-sans font-normal;
     line-height: 1.4;
     background:
       radial-gradient(circle at 18% 10%, rgba(255, 255, 255, 0.08), transparent 28%),
