@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 
 import { CommunitySheet } from '../components/community/CommunitySheet';
+import { ControlDockMenu } from '../components/viewer/ControlDockMenu';
 import { HighlightLayer } from '../components/viewer/HighlightLayer';
 import { LoadingOverlay } from '../components/viewer/LoadingOverlay';
 import { MobileControlPanel } from '../components/viewer/MobileControlPanel';
-import { ViewerInspectorPanels } from '../components/viewer/ViewerInspectorPanels';
 import { Sheet, SheetContent } from '../components/ui/sheet';
 import {
   appShellClassNames,
@@ -25,7 +25,7 @@ const communitySceneId = 'ruoshui-main';
 const hudClassName = cn(
   'pointer-events-none relative z-[4] h-full min-h-0 overflow-hidden'
 );
-const sidebarPanelClassName = cn(
+const dockMenuSurfaceClassName = cn(
   'pointer-events-auto w-full rounded-[26px] border border-ink/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.13),rgba(12,13,16,0.32))] px-0 py-2 opacity-100 shadow-none backdrop-blur-[24px] saturate-[1.1]',
   scrollAreaClassNames.thin,
   'hover:border-outline/20 hover:bg-surface/64 hover:backdrop-blur-[10px] focus-within:border-outline/20 focus-within:bg-surface/64 focus-within:backdrop-blur-[10px] max-h-[calc(var(--app-height)-7rem)]'
@@ -79,16 +79,6 @@ function App({
   const setPresetPanel = useViewerUiStore((store) => store.setPresetPanel);
   const setRouteControls = useViewerUiStore((store) => store.setRouteControls);
   const perfHud = useViewerUiStore((store) => store.perfHud);
-
-  const toggleInspectorPanel = (panelId: string) => {
-    if (isMobileViewport) {
-      setIsMobilePanelOpen(true);
-    }
-
-    setActiveInspectorPanel((currentPanelId) =>
-      currentPanelId === panelId ? null : panelId
-    );
-  };
 
   const dismissMobilePanel = () => {
     setIsMobilePanelOpen(false);
@@ -159,53 +149,54 @@ function App({
           <div className={hudClassName}>
             <div
               className={cn(
-                'pointer-events-auto group fixed bottom-[calc(0.85rem+var(--safe-bottom))] left-1/2 z-[6] flex -translate-x-1/2 items-end gap-2',
+                'pointer-events-none fixed bottom-[calc(1.5rem+var(--safe-bottom))] left-1/2 z-[6] flex -translate-x-1/2 items-end gap-2',
                 isMobilePanelOpen && 'max-[760px]:pointer-events-none max-[760px]:opacity-0'
               )}
             >
-              <div className={dockPanelClassName}>
-                <div className={sidebarPanelClassName}>
-                  <ViewerInspectorPanels
-                    activeInspectorPanel={activeInspectorPanel}
-                    copyMiniMapTransform={() => undefined}
-                    hasMiniMap={false}
-                    isMapVisible={false}
-                    isMobile={false}
-                    miniMapCopyNote="地图已从界面隐藏。"
-                    miniMapTransform={null}
-                    onMapVisibilityChange={() => undefined}
-                    onPrimaryAction={undefined}
-                    onTogglePanel={toggleInspectorPanel}
-                    onMiniMapTransformChange={() => undefined}
-                    resetMiniMapTransform={() => undefined}
-                    viewerConfig={viewerConfig}
-                  />
+              <div className="group relative">
+                <div className={dockPanelClassName}>
+                  <div className={dockMenuSurfaceClassName}>
+                    <ControlDockMenu
+                      menuId="variants"
+                      viewerConfig={viewerConfig}
+                    />
+                  </div>
                 </div>
+                <button
+                  aria-label="打开模型版本菜单"
+                  className={dockButtonClassName}
+                  onClick={() => openControlPanel('variants')}
+                  onMouseDown={stopInteractionPropagation}
+                  onPointerDown={stopInteractionPropagation}
+                  onTouchStart={stopInteractionPropagation}
+                  title="模型版本"
+                  type="button"
+                >
+                  <DockIcon kind="model" />
+                </button>
               </div>
-              <button
-                aria-label="打开模型版本菜单"
-                className={dockButtonClassName}
-                onClick={() => openControlPanel('variants')}
-                onMouseDown={stopInteractionPropagation}
-                onPointerDown={stopInteractionPropagation}
-                onTouchStart={stopInteractionPropagation}
-                title="模型版本"
-                type="button"
-              >
-                <DockIcon kind="model" />
-              </button>
-              <button
-                aria-label="打开导览镜头菜单"
-                className={dockButtonClassName}
-                onClick={() => openControlPanel('presets')}
-                onMouseDown={stopInteractionPropagation}
-                onPointerDown={stopInteractionPropagation}
-                onTouchStart={stopInteractionPropagation}
-                title="导览镜头"
-                type="button"
-              >
-                <DockIcon kind="preset" />
-              </button>
+              <div className="group relative">
+                <div className={dockPanelClassName}>
+                  <div className={dockMenuSurfaceClassName}>
+                    <ControlDockMenu
+                      menuId="presets"
+                      viewerConfig={viewerConfig}
+                    />
+                  </div>
+                </div>
+                <button
+                  aria-label="打开导览镜头菜单"
+                  className={dockButtonClassName}
+                  onClick={() => openControlPanel('presets')}
+                  onMouseDown={stopInteractionPropagation}
+                  onPointerDown={stopInteractionPropagation}
+                  onTouchStart={stopInteractionPropagation}
+                  title="导览镜头"
+                  type="button"
+                >
+                  <DockIcon kind="preset" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -222,17 +213,8 @@ function App({
             >
               <MobileControlPanel
                 activeInspectorPanel={activeInspectorPanel}
-                copyMiniMapTransform={() => undefined}
-                hasMiniMap={false}
-                isMapVisible={false}
                 isOpen={isMobilePanelOpen}
-                miniMapCopyNote="地图已从界面隐藏。"
-                miniMapTransform={null}
-                onMapVisibilityChange={() => undefined}
                 onActionComplete={dismissMobilePanel}
-                onMiniMapTransformChange={() => undefined}
-                onToggleInspectorPanel={toggleInspectorPanel}
-                resetMiniMapTransform={() => undefined}
                 viewerConfig={viewerConfig}
               />
             </SheetContent>
