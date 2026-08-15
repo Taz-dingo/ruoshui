@@ -23,23 +23,19 @@ interface AppProps {
 const communitySceneId = 'ruoshui-main';
 
 const hudClassName = cn(
-  'pointer-events-none relative z-[4] grid h-full min-h-0 grid-cols-[var(--rail-left-width)_minmax(0,1fr)] gap-4 overflow-hidden p-4',
-  'max-[1180px]:grid-cols-[minmax(320px,var(--rail-left-width))_minmax(0,1fr)] max-[1180px]:overflow-visible',
-  'max-[760px]:block max-[760px]:h-full max-[760px]:overflow-hidden',
-  'max-[760px]:[padding:calc(0.35rem+var(--safe-top))_calc(0.55rem+var(--safe-right))_calc(5.15rem+var(--safe-bottom))_calc(0.55rem+var(--safe-left))]'
-);
-const railClassName = cn(
-  'flex min-h-0 w-full flex-col justify-start gap-3.5 self-stretch pr-1.5',
-  scrollAreaClassNames.thin,
-  'max-[1180px]:w-full max-[1180px]:overflow-visible max-[1180px]:pr-0',
-  'max-[760px]:gap-3 max-[760px]:overflow-visible max-[760px]:pr-0 max-[760px]:w-[min(calc(100vw-9.25rem),320px)]'
+  'pointer-events-none relative z-[4] h-full min-h-0 overflow-hidden'
 );
 const sidebarPanelClassName = cn(
-  'pointer-events-auto w-full rounded-[26px] border border-ink/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.13),rgba(12,13,16,0.32))] px-0 py-2 opacity-100 shadow-none backdrop-blur-[24px] saturate-[1.1] transition-[opacity,transform,background-color,border-color,backdrop-filter] duration-180 ease-out',
+  'pointer-events-auto w-full rounded-[26px] border border-ink/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.13),rgba(12,13,16,0.32))] px-0 py-2 opacity-100 shadow-none backdrop-blur-[24px] saturate-[1.1]',
   scrollAreaClassNames.thin,
-  'hover:border-outline/20 hover:bg-surface/64 hover:backdrop-blur-[10px] focus-within:border-outline/20 focus-within:bg-surface/64 focus-within:backdrop-blur-[10px]',
-  '[max-height:calc(var(--app-height)-2rem)] max-[760px]:w-[min(calc(100vw-1.5rem),320px)] max-[760px]:max-h-[min(calc(var(--app-height)*0.46),380px)]'
+  'hover:border-outline/20 hover:bg-surface/64 hover:backdrop-blur-[10px] focus-within:border-outline/20 focus-within:bg-surface/64 focus-within:backdrop-blur-[10px] max-h-[calc(var(--app-height)-7rem)]'
 );
+const dockPanelClassName = cn(
+  'pointer-events-none absolute bottom-[calc(100%+0.8rem)] left-1/2 w-[min(360px,calc(100vw-2rem))] -translate-x-1/2 translate-y-2 opacity-0 transition-[opacity,transform] duration-180 ease-out',
+  'group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100 max-[760px]:hidden'
+);
+const dockButtonClassName =
+  'pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full border border-ink/18 bg-[rgba(14,16,20,0.58)] text-ink-muted/76 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_10px_22px_rgba(0,0,0,0.24)] backdrop-blur-[18px] transition-[transform,border-color,background-color,color] duration-180 ease-out hover:-translate-y-0.5 hover:border-brand/46 hover:bg-[rgba(26,30,34,0.72)] hover:text-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-strong/70';
 const mobileSheetClassName = cn(
   'fixed z-[7] left-[calc(0.45rem+var(--safe-left))] right-[calc(0.45rem+var(--safe-right))] bottom-[calc(0.35rem+var(--safe-bottom))] h-[min(calc(var(--app-height)*0.78),680px)] max-h-none overflow-hidden rounded-[28px] border border-ink/20 bg-[linear-gradient(180deg,rgba(255,255,255,0.18),rgba(10,11,14,0.88))] px-0 py-0 shadow-panel backdrop-blur-[28px] saturate-[1.1] [touch-action:pan-y] overscroll-none',
   'data-[state=closed]:pointer-events-none data-[state=closed]:animate-[ruoshui-sheet-bottom-out_220ms_cubic-bezier(0.4,0,1,1)_forwards] data-[state=open]:pointer-events-auto data-[state=open]:animate-[ruoshui-sheet-bottom-in_340ms_cubic-bezier(0.16,1,0.3,1)_forwards]'
@@ -50,6 +46,25 @@ function stopInteractionPropagation(event: {
   preventDefault?: () => void;
 }) {
   event.stopPropagation();
+}
+
+function DockIcon({ kind }: { kind: 'model' | 'preset' }) {
+  if (kind === 'model') {
+    return (
+      <svg aria-hidden="true" className="h-[19px] w-[19px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7">
+        <path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z" />
+        <path d="m4.4 7.7 7.6 4.4 7.6-4.4M12 12.1V21" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg aria-hidden="true" className="h-[19px] w-[19px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7">
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="m15.8 8.2-2.1 5.5-5.5 2.1 2.1-5.5 5.5-2.1Z" />
+      <path d="M12 3.5v1.2M20.5 12h-1.2M12 19.3v1.2M4.7 12H3.5" />
+    </svg>
+  );
 }
 
 function App({
@@ -75,18 +90,15 @@ function App({
     );
   };
 
-  const toggleMobilePanel = () => {
-    setIsMobilePanelOpen((isOpen) => {
-      const nextOpen = !isOpen;
-      if (nextOpen && !activeInspectorPanel) {
-        setActiveInspectorPanel('variants');
-      }
-      return nextOpen;
-    });
-  };
-
   const dismissMobilePanel = () => {
     setIsMobilePanelOpen(false);
+  };
+
+  const openControlPanel = (panelId: string) => {
+    setActiveInspectorPanel(panelId);
+    if (isMobileViewport) {
+      setIsMobilePanelOpen(true);
+    }
   };
 
   const openFullCommunity = () => {
@@ -145,31 +157,56 @@ function App({
           <LoadingOverlay />
 
           <div className={hudClassName}>
-            <aside className={cn(railClassName, 'self-start max-[760px]:relative max-[760px]:z-[1]')}>
-              <div
-                className={cn(
-                  sidebarPanelClassName,
-                  isMobileViewport && 'hidden'
-                )}
-              >
-                <ViewerInspectorPanels
-                  activeInspectorPanel={activeInspectorPanel}
-                  copyMiniMapTransform={() => undefined}
-                  hasMiniMap={false}
-                  isMapVisible={false}
-                  isMobile={false}
-                  miniMapCopyNote="地图已从界面隐藏。"
-                  miniMapTransform={null}
-                  onMapVisibilityChange={() => undefined}
-                  onPrimaryAction={undefined}
-                  onTogglePanel={toggleInspectorPanel}
-                  onMiniMapTransformChange={() => undefined}
-                  resetMiniMapTransform={() => undefined}
-                  viewerConfig={viewerConfig}
-                />
+            <div
+              className={cn(
+                'pointer-events-auto group fixed bottom-[calc(0.85rem+var(--safe-bottom))] left-1/2 z-[6] flex -translate-x-1/2 items-end gap-2',
+                isMobilePanelOpen && 'max-[760px]:pointer-events-none max-[760px]:opacity-0'
+              )}
+            >
+              <div className={dockPanelClassName}>
+                <div className={sidebarPanelClassName}>
+                  <ViewerInspectorPanels
+                    activeInspectorPanel={activeInspectorPanel}
+                    copyMiniMapTransform={() => undefined}
+                    hasMiniMap={false}
+                    isMapVisible={false}
+                    isMobile={false}
+                    miniMapCopyNote="地图已从界面隐藏。"
+                    miniMapTransform={null}
+                    onMapVisibilityChange={() => undefined}
+                    onPrimaryAction={undefined}
+                    onTogglePanel={toggleInspectorPanel}
+                    onMiniMapTransformChange={() => undefined}
+                    resetMiniMapTransform={() => undefined}
+                    viewerConfig={viewerConfig}
+                  />
+                </div>
               </div>
-            </aside>
-
+              <button
+                aria-label="打开模型版本菜单"
+                className={dockButtonClassName}
+                onClick={() => openControlPanel('variants')}
+                onMouseDown={stopInteractionPropagation}
+                onPointerDown={stopInteractionPropagation}
+                onTouchStart={stopInteractionPropagation}
+                title="模型版本"
+                type="button"
+              >
+                <DockIcon kind="model" />
+              </button>
+              <button
+                aria-label="打开导览镜头菜单"
+                className={dockButtonClassName}
+                onClick={() => openControlPanel('presets')}
+                onMouseDown={stopInteractionPropagation}
+                onPointerDown={stopInteractionPropagation}
+                onTouchStart={stopInteractionPropagation}
+                title="导览镜头"
+                type="button"
+              >
+                <DockIcon kind="preset" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -178,30 +215,6 @@ function App({
             open={isMobilePanelOpen}
             onOpenChange={setIsMobilePanelOpen}
           >
-            <div
-              className={cn(
-                'pointer-events-auto fixed right-[calc(0.45rem+var(--safe-right))] bottom-[calc(0.35rem+var(--safe-bottom))] z-[6] block opacity-82 transition-[opacity,transform,background-color,border-color] duration-180 ease-out',
-                isMobilePanelOpen && 'pointer-events-none translate-y-[0.35rem] scale-[0.96] opacity-0'
-              )}
-            >
-              <button
-                aria-expanded={isMobilePanelOpen}
-                className="flex h-11 w-11 items-center justify-center rounded-full border border-ink/18 bg-[rgba(255,255,255,0.12)] p-0 text-center text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_10px_22px_rgba(0,0,0,0.24)] backdrop-blur-[18px] [touch-action:manipulation]"
-                onClick={toggleMobilePanel}
-                onMouseDown={stopInteractionPropagation}
-                onPointerDown={stopInteractionPropagation}
-                onTouchStart={stopInteractionPropagation}
-                type="button"
-              >
-                <span className={cn('grid h-4 w-4 shrink-0 gap-[3px]', isMobilePanelOpen ? 'text-brand-strong/96' : 'text-ink-muted/72')} aria-hidden="true">
-                  <span className="block h-[2px] rounded-full bg-current" />
-                  <span className="block h-[2px] rounded-full bg-current" />
-                  <span className="block h-[2px] rounded-full bg-current" />
-                </span>
-                <span className="sr-only">打开场景控制面板</span>
-              </button>
-            </div>
-
             <SheetContent
               aria-label="移动端场景控制面板"
               className={mobileSheetClassName}
