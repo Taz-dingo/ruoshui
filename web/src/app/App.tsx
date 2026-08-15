@@ -26,7 +26,7 @@ const hudClassName = cn(
   'pointer-events-none relative z-[4] h-full min-h-0 overflow-hidden'
 );
 const dockMenuSurfaceClassName = cn(
-  'pointer-events-auto w-full rounded-[26px] border border-ink/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.13),rgba(12,13,16,0.32))] px-0 py-2 opacity-100 shadow-none backdrop-blur-[24px] saturate-[1.1]',
+  'w-full rounded-[26px] border border-ink/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.13),rgba(12,13,16,0.32))] px-0 py-2 opacity-100 shadow-none backdrop-blur-[24px] saturate-[1.1]',
   scrollAreaClassNames.thin,
   'hover:border-outline/20 hover:bg-surface/64 hover:backdrop-blur-[10px] focus-within:border-outline/20 focus-within:bg-surface/64 focus-within:backdrop-blur-[10px] max-h-[calc(var(--app-height)-7rem)]'
 );
