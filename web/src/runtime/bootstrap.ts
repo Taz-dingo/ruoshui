@@ -180,12 +180,12 @@ function resolvePreferredDeviceTypes(
   const deviceTypes = [];
   const hasNavigatorGpu = 'gpu' in runtimeWindow.navigator;
 
-  if (preference !== 'webgl2' && hasNavigatorGpu && pc.DEVICETYPE_WEBGPU) {
-    deviceTypes.push(pc.DEVICETYPE_WEBGPU);
-  }
-
   if (preference !== 'webgpu' && pc.DEVICETYPE_WEBGL2) {
     deviceTypes.push(pc.DEVICETYPE_WEBGL2);
+  }
+
+  if (preference !== 'webgl2' && hasNavigatorGpu && pc.DEVICETYPE_WEBGPU) {
+    deviceTypes.push(pc.DEVICETYPE_WEBGPU);
   }
 
   return deviceTypes;
