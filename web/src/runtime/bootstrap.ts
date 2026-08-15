@@ -59,7 +59,7 @@ async function createRuntimeApp({
     graphicsBackendPreference
   );
   const graphicsDeviceOptions = {
-    alpha: false,
+    alpha: true,
     antialias: false,
     preserveDrawingBuffer: enableCanvasCapture,
     powerPreference: 'high-performance',

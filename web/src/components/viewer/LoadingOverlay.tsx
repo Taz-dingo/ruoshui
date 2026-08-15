@@ -26,8 +26,8 @@ function LoadingOverlay() {
           isError
             ? 'bg-[radial-gradient(circle_at_18%_18%,rgba(227,158,158,0.18),transparent_24%),radial-gradient(circle_at_78%_78%,rgba(145,103,74,0.16),transparent_26%),linear-gradient(135deg,rgba(24,16,15,0.94)_0%,rgba(29,18,18,0.82)_48%,rgba(27,17,17,0.9)_100%)]'
             : loading.mode === 'switch'
-            ? 'bg-[rgba(8,9,12,0.62)] backdrop-blur-[10px]'
-            : 'bg-[rgba(8,9,12,0.2)] backdrop-blur-[8px]'
+            ? 'bg-[radial-gradient(circle_at_22%_24%,rgba(150,214,255,0.12),transparent_24%),radial-gradient(circle_at_78%_78%,rgba(82,126,189,0.12),transparent_26%),linear-gradient(135deg,rgba(10,22,38,0.66)_0%,rgba(11,25,44,0.36)_48%,rgba(9,18,31,0.58)_100%)] backdrop-blur-[10px]'
+            : 'bg-[radial-gradient(circle_at_22%_24%,rgba(150,214,255,0.18),transparent_24%),radial-gradient(circle_at_78%_78%,rgba(82,126,189,0.18),transparent_26%),linear-gradient(135deg,rgba(12,25,44,0.9)_0%,rgba(13,31,53,0.68)_48%,rgba(9,18,31,0.84)_100%)] backdrop-blur-[14px]'
         )}
       />
       <div className="absolute bottom-6 left-6 right-6 max-w-[460px]">

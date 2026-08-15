@@ -102,7 +102,7 @@ async function createViewerRuntime({
 
   const camera = new pc.Entity('MemorialCamera');
   camera.addComponent('camera', {
-    clearColor: new pc.Color(0, 0, 0, 1),
+    clearColor: new pc.Color(0, 0, 0, 0),
     clearColorBuffer: true,
     clearDepthBuffer: true,
     fov: 52,

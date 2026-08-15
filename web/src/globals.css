@@ -157,3 +157,13 @@
     transform: translateY(1.35rem) scale(0.975);
   }
 }
+
+#scene-root {
+  background:
+    linear-gradient(180deg, rgba(15, 33, 55, 0.08) 0%, rgba(7, 14, 24, 0.26) 100%),
+    url('/edge-media/images/sky/qwantani-morning-puresky.jpg'),
+    linear-gradient(180deg, #2d527b 0%, #183252 36%, #0e1d31 68%, #0b121d 100%);
+  background-position: center center, center top, center center;
+  background-repeat: no-repeat;
+  background-size: cover, cover, cover;
+}
