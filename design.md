@@ -28,17 +28,21 @@
 - 控件优先 capsule / 44px touch target；面板使用 18–26px 圆角，避免卡片马赛克。
 - 以留白、对齐和场景裁切建立层级，不以边框、阴影或渐变堆层级。
 - 桌面和移动都只保留必要入口；移动端使用底部抽屉，适配 safe area。
+- viewer 桌面端的常驻控制收在底部略高于安全区的居中图标 dock；默认只显示图标，不显示完整面板。
 
 ## Viewer-specific rules
 
 - 左上纪念标题区和右上小地图从生产 UI 隐藏；地图计算、热点投影和数据结构可以保留。
 - 点位和社区内容是场景上的临时交互层，只在用户选择后出现。
 - 常驻控制只负责模型版本、导览镜头和必要状态；实验诊断不进入生产界面。
-- 动画短、稳、可逆：淡入、短距离滑动、按压缩放；禁止弹跳和持续装饰动画。
+- dock 图标 hover 只做嫩叶绿高亮，不做整体上浮；菜单只在对应图标 hover 时出现，两个菜单互斥，移动端改为点击展开底部抽屉。
+- dock 菜单使用 `@floating-ui/react` 的 `safePolygon()` 保持从图标移动到玻璃面板时的安全路径；离开安全区域后关闭。
+- 玻璃面板出现时直接使用最终透明度、模糊和饱和度，只做短距离位移；不要对 `opacity` 或 `backdrop-filter` 做会造成“先透明、后模糊”的入场动画。
+- 动画短、稳、可逆；禁止弹跳和持续装饰动画。
 
 ## Agent guardrails
 
 - 修改 UI 前先复用 `web/src/styles/system.ts` 的 token 和 primitive，不在业务组件散落新颜色。
 - 新增颜色前证明嫩叶绿和中性灰不够用；新增渐变前证明场景本身无法提供同样效果。
-- 不新增设计依赖；优先 CSS backdrop blur、系统字体和现有 Radix primitives。
+- 不新增视觉设计依赖；优先 CSS backdrop blur、系统字体和现有 primitives。需要可靠的空间 hover 行为时，复用 `@floating-ui/react` 的 `safePolygon()`，不要重复实现鼠标轨迹算法。
 - 不把 Apple 的营销页产品 tile、导航栏或蓝色 CTA 直接照搬进 3D viewer。

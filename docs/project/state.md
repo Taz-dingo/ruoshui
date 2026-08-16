@@ -1,6 +1,6 @@
 # 项目状态快照
 
-最后更新：`2026-07-10`
+最后更新：`2026-08-16`
 
 ## 当前阶段
 
@@ -10,6 +10,8 @@
 
 - `web/`：React + TypeScript + Vite + Zustand + PlayCanvas/SOG viewer。
 - 场景：镜头预设、小地图、热点、加载反馈、按需渲染已具备。
+- viewer UI：底部居中 dock 默认只显示模型版本和导览镜头图标；桌面端用 `@floating-ui/react` `safePolygon()` 处理图标到菜单的 hover 路径，移动端使用点击后的底部抽屉。
+- viewer 玻璃菜单直接呈现最终的透明度与模糊效果，只做短位移动画；图标 hover 只高亮，不上浮。
 - 社区：feed / detail / compose / 多图 / 场景点位关联已接入。
 - 服务：`services/forum-api/` 以 Cloudflare Workers + D1 + R2 为主；Node/PostgreSQL 仅作 fallback。
 - 部署：前端在 `https://ruoshui-web.pages.dev`；生产模型经同源 `/edge-models/*` 提供。
