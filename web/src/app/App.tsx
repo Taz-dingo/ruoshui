@@ -1,4 +1,10 @@
 import { useEffect, useState } from 'react';
+import {
+  safePolygon,
+  useFloating,
+  useHover,
+  useInteractions
+} from '@floating-ui/react';
 
 import { CommunitySheet } from '../components/community/CommunitySheet';
 import { ControlDockMenu } from '../components/viewer/ControlDockMenu';
@@ -19,6 +25,8 @@ interface AppProps {
   data: ViewerContent;
   viewerConfig: ViewerConfig;
 }
+
+type DockMenuId = 'presets' | 'variants';
 
 const communitySceneId = 'ruoshui-main';
 
@@ -67,6 +75,76 @@ function DockIcon({ kind }: { kind: 'model' | 'preset' }) {
   );
 }
 
+interface DockMenuProps {
+  menuId: DockMenuId;
+  onActionComplete?: () => void;
+  onOpenChange: (open: boolean) => void;
+  onTriggerClick: () => void;
+  open: boolean;
+  viewerConfig: ViewerConfig;
+}
+
+function DockMenu({
+  menuId,
+  onActionComplete,
+  onOpenChange,
+  onTriggerClick,
+  open,
+  viewerConfig
+}: DockMenuProps) {
+  const { context, refs } = useFloating({
+    open,
+    onOpenChange
+  });
+  const hover = useHover(context, {
+    handleClose: safePolygon({ buffer: 1 }),
+    mouseOnly: true
+  });
+  const { getFloatingProps, getReferenceProps } = useInteractions([hover]);
+  const isVariants = menuId === 'variants';
+
+  return (
+    <div className="relative">
+      <div
+        {...getFloatingProps({
+          className: cn(
+            dockPanelClassName,
+            open && 'pointer-events-auto visible translate-y-0'
+          ),
+          id: `dock-menu-${menuId}`,
+          ref: refs.setFloating
+        })}
+      >
+        <div className={dockMenuSurfaceClassName}>
+          <ControlDockMenu
+            menuId={menuId}
+            onActionComplete={onActionComplete}
+            viewerConfig={viewerConfig}
+          />
+        </div>
+      </div>
+      <button
+        {...getReferenceProps({
+          'aria-controls': `dock-menu-${menuId}`,
+          'aria-expanded': open,
+          'aria-haspopup': 'true',
+          'aria-label': isVariants ? '打开模型版本菜单' : '打开导览镜头菜单',
+          onClick: onTriggerClick
+        })}
+        ref={refs.setReference}
+        className={dockButtonClassName}
+        onMouseDown={stopInteractionPropagation}
+        onPointerDown={stopInteractionPropagation}
+        onTouchStart={stopInteractionPropagation}
+        title={isVariants ? '模型版本' : '导览镜头'}
+        type="button"
+      >
+        <DockIcon kind={isVariants ? 'model' : 'preset'} />
+      </button>
+    </div>
+  );
+}
+
 function App({
   data,
   viewerConfig
@@ -74,7 +152,7 @@ function App({
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
   const [activeInspectorPanel, setActiveInspectorPanel] = useState<string | null>(null);
-  const [hoveredDockMenu, setHoveredDockMenu] = useState<'variants' | 'presets' | null>(null);
+  const [openDockMenu, setOpenDockMenu] = useState<DockMenuId | null>(null);
   const [isCommunityOpen, setIsCommunityOpen] = useState(false);
   const setVariantPanel = useViewerUiStore((store) => store.setVariantPanel);
   const setPresetPanel = useViewerUiStore((store) => store.setPresetPanel);
@@ -90,6 +168,12 @@ function App({
     if (isMobileViewport) {
       setIsMobilePanelOpen(true);
     }
+  };
+
+  const setDockMenuOpen = (menuId: DockMenuId, open: boolean) => {
+    setOpenDockMenu((current) =>
+      open ? menuId : current === menuId ? null : current
+    );
   };
 
   const openFullCommunity = () => {
@@ -154,64 +238,20 @@ function App({
                 isMobilePanelOpen && 'max-[760px]:pointer-events-none max-[760px]:opacity-0'
               )}
             >
-              <div
-                className="relative"
-                onMouseEnter={() => setHoveredDockMenu('variants')}
-                onMouseLeave={() => setHoveredDockMenu(null)}
-              >
-                <div className={cn(
-                  dockPanelClassName,
-                  hoveredDockMenu === 'variants' && 'pointer-events-auto visible translate-y-0'
-                )}>
-                  <div className={dockMenuSurfaceClassName}>
-                    <ControlDockMenu
-                      menuId="variants"
-                      viewerConfig={viewerConfig}
-                    />
-                  </div>
-                </div>
-                <button
-                  aria-label="打开模型版本菜单"
-                  className={dockButtonClassName}
-                  onClick={() => openControlPanel('variants')}
-                  onMouseDown={stopInteractionPropagation}
-                  onPointerDown={stopInteractionPropagation}
-                  onTouchStart={stopInteractionPropagation}
-                  title="模型版本"
-                  type="button"
-                >
-                  <DockIcon kind="model" />
-                </button>
-              </div>
-              <div
-                className="relative"
-                onMouseEnter={() => setHoveredDockMenu('presets')}
-                onMouseLeave={() => setHoveredDockMenu(null)}
-              >
-                <div className={cn(
-                  dockPanelClassName,
-                  hoveredDockMenu === 'presets' && 'pointer-events-auto visible translate-y-0'
-                )}>
-                  <div className={dockMenuSurfaceClassName}>
-                    <ControlDockMenu
-                      menuId="presets"
-                      viewerConfig={viewerConfig}
-                    />
-                  </div>
-                </div>
-                <button
-                  aria-label="打开导览镜头菜单"
-                  className={dockButtonClassName}
-                  onClick={() => openControlPanel('presets')}
-                  onMouseDown={stopInteractionPropagation}
-                  onPointerDown={stopInteractionPropagation}
-                  onTouchStart={stopInteractionPropagation}
-                  title="导览镜头"
-                  type="button"
-                >
-                  <DockIcon kind="preset" />
-                </button>
-              </div>
+              <DockMenu
+                menuId="variants"
+                onOpenChange={(open) => setDockMenuOpen('variants', open)}
+                onTriggerClick={() => openControlPanel('variants')}
+                open={openDockMenu === 'variants'}
+                viewerConfig={viewerConfig}
+              />
+              <DockMenu
+                menuId="presets"
+                onOpenChange={(open) => setDockMenuOpen('presets', open)}
+                onTriggerClick={() => openControlPanel('presets')}
+                open={openDockMenu === 'presets'}
+                viewerConfig={viewerConfig}
+              />
             </div>
           </div>
         </div>
