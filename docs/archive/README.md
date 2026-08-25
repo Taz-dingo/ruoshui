@@ -5,4 +5,6 @@
 - `model-training/`：素材盘点、3DGS 训练路线、算法筛选和已停止的渐进式交付实验。
 - `delivery-history/`：已完成的 Web MVP 交付记录。
 
+归档文档可能引用当时生成的清单、临时数据或实验产物；这些文件不再为了历史复现而常驻当前工作树，需要时从 Git 历史恢复。
+
 当前工作请从 [`../README.md`](../README.md) 和 [`../project/state.md`](../project/state.md) 开始。只有任务明确涉及历史训练结论时，才按需读取归档。
