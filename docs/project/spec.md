@@ -57,7 +57,7 @@
 - 首次访问优先稳定和可理解，再追求复杂动画或极限性能。
 - 移动端控制必须尊重安全区、旋转和双指手势。
 
-视觉与组件细节见 [`web-style-system.md`](web-style-system.md)。
+视觉约束以仓库根目录 [`design.md`](../../design.md) 为准；具体实现以 `web/src/globals.css` 与 `web/src/styles/system.ts` 为准。
 
 ## 上线成功标准
 
