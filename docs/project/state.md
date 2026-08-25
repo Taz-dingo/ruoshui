@@ -1,38 +1,63 @@
 # 项目状态快照
 
-最后更新：`2026-08-16`
+最后更新：`2026-08-25`
+
+本文件只记录**当前已经成立的事实与尚未解决的事实**。下一步执行顺序见 [`tasks.md`](tasks.md)。
 
 ## 当前阶段
 
-若水广场已进入业务开发阶段。正式场景经同源 `/edge-models/hhuc-original.sog` 从 R2 提供；训练和算法筛选已结束并归档，`hhuc-streamed-v2` 作为实验性 LOD 入口保留，用于和原始版做加载体感对照。
+若水广场已经完成底层技术骨架，但还没有完成最终产品形态。项目当前不缺主要基础设施，真正未收口的是“内容如何被生产、挂到空间里、再被用户消费”这一核心链路。
 
-## 当前系统
+训练和算法筛选已经结束并归档。正式场景经同源 `/edge-models/hhuc-original.sog` 从 R2 提供；`hhuc-streamed-v2` 仅保留为实验性 LOD / loading 体感对照，不是当前产品主线。
+
+## 已经具备
 
 - `web/`：React + TypeScript + Vite + Zustand + PlayCanvas/SOG viewer。
-- 场景：镜头预设、小地图、热点、加载反馈、按需渲染已具备。
-- viewer UI：底部居中 dock 默认只显示模型版本和导览镜头图标；桌面端用 `@floating-ui/react` `safePolygon()` 处理图标到菜单的 hover 路径，移动端使用点击后的底部抽屉。
-- viewer 玻璃菜单直接呈现最终的透明度与模糊效果，只做短位移动画；图标 hover 只高亮，不上浮。
-- 社区：feed / detail / compose / 多图 / 场景点位关联已接入。
-- 服务：`services/forum-api/` 以 Cloudflare Workers + D1 + R2 为主；Node/PostgreSQL 仅作 fallback。
-- 部署：前端在 `https://ruoshui-web.pages.dev`；生产模型经同源 `/edge-models/*` 提供。
+- 场景基础：镜头预设、小地图、热点、加载反馈、按需渲染。
+- viewer UI：桌面底部 dock 与移动端抽屉已具备基础实现。
+- 社区技术骨架：feed / detail / compose / 多图 / 场景点位关联已接入。
+- 服务主路径：Cloudflare Pages + Workers + D1 + R2；Node/PostgreSQL 仅作 fallback。
+- 本地已验证“场景点位 → 点位笔记 → 完整社区 → 详情 → 返回场景”的技术闭环。
+- Pages `/api/*` 可代理到 forum-api；正式模型通过 `/edge-models/*` 提供。
 
-## 已验证主流程
+## 尚未完成的核心产品问题
 
-- Web 场景可浏览、可切镜头、可查看热点并聚焦点位。
-- “场景点位 → 点位笔记 → 完整社区 → 详情 → 返回场景”已通过本地 Workers/D1 浏览器验证。
-- Pages `/api/*` 可代理到 forum-api。
-- 仓库只保留一份正式模型源；训练历史已移入 [`../archive/model-training/`](../archive/model-training/)。
+### 内容与论坛
 
-## 当前重点
+- 论坛 / 图文的最终交互形态尚未确定；现有 feed / detail / compose 是技术骨架，不代表最终产品设计。
+- 地点故事的内容模型、图文排布、地点页与帖子之间的层级仍需定义。
+- 首批正式内容尚未生产；当前点位和内容仍以测试数据为主。
 
-- 补齐首批真实故事点位、正文和媒体。
-- 建立显式内容种子或管理流程，替换本地联调占位内容。
+### 点位系统
 
-## 已知风险
+- 真实点位体系尚未建立。
+- 点击点位后的镜头运动、最终停留视角、内容出现方式和返回方式尚未收口。
+- 点位 authoring 仍需变成低摩擦的可视化流程，而不是依赖手填坐标或相机参数。
 
-- Mobile Safari 的视口、安全区和双指交互仍需真机收口。
-- D1/R2 只有最小链路；分页、索引、媒体校验和孤儿清理尚未完整生产化。
-- 内容种子必须走显式工具或管理流程，前端正常启动不得自动创建 scene/pin。
-- 核心模型依赖边缘代理与 R2；部署验证需同时检查页面、API 和模型请求。
+### 内容生产
 
-需要下一步时读 [`tasks.md`](tasks.md)；需要部署/排障规则时读 [`engineering-memory.md`](engineering-memory.md)。
+- 真实照片上传链路尚未完整跑通。
+- 个人历史照片的大规模筛选、按地点整理和初始内容填写尚未开始系统化处理。
+- 需要显式 seed / 管理流程；正常页面启动不得自动创建 scene、pin 或帖子。
+
+### 场景体验
+
+- 当前 3DGS 只覆盖校园主体区域，模型之外的空世界尚未做产品化处理。
+- Mobile Safari 的视口、安全区、旋转和双指交互仍需真机收口。
+- Android / iPad / 触屏等多设备核心链路尚未系统验收。
+
+### 发布质量
+
+- 仍需完整 release acceptance，包括慢网、失败态、图片 / API / 模型异常和生产全链路复验。
+- Loading 目前只要求稳定可理解；progressive SOG 属于低优先级体验增强。
+
+## 当前判断
+
+下一阶段不应继续优先扩展底层能力，而应先确定两个产品问题：
+
+1. 一篇 Ruoshui 的“地点故事”最终是什么形态；
+2. 用户如何从 3D 场景进入地点故事，再自然返回空间。
+
+这两个问题确定后，再完成点位 authoring、首批内容、照片上传与多设备收口。
+
+需要下一步时读 [`tasks.md`](tasks.md)；产品边界不清楚时读 [`spec.md`](spec.md)；部署 / 排障时读 [`engineering-memory.md`](engineering-memory.md)。
