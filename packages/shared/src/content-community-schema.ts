@@ -5,7 +5,7 @@ const userIdSchema = entityIdSchema;
 const storyIdSchema = entityIdSchema;
 const storyRevisionIdSchema = entityIdSchema;
 const placeIdSchema = entityIdSchema;
-const sceneIdSchema = entityIdSchema;
+const contentSceneIdSchema = entityIdSchema;
 const commentIdSchema = entityIdSchema;
 const mediaAssetIdSchema = entityIdSchema;
 
@@ -122,7 +122,7 @@ const submitStoryRevisionInputSchema = storyContentFieldsSchema.superRefine(vali
 
 const placeSchema = z.object({
   id: placeIdSchema,
-  sceneId: sceneIdSchema.optional(),
+  sceneId: contentSceneIdSchema.optional(),
   name: z.string().trim().min(1).max(120),
   intro: z.string().trim().max(2_000).optional(),
   anchor: spatialAnchorSchema,
@@ -132,7 +132,7 @@ const placeSchema = z.object({
 });
 
 const createPlaceInputSchema = z.object({
-  sceneId: sceneIdSchema.optional(),
+  sceneId: contentSceneIdSchema.optional(),
   name: z.string().trim().min(1).max(120),
   intro: z.string().trim().max(2_000).optional(),
   anchor: spatialAnchorSchema,
@@ -152,7 +152,7 @@ const updatePlaceInputSchema = z
     }
   });
 
-const listPlacesInputSchema = z.object({ sceneId: sceneIdSchema.optional() });
+const listPlacesInputSchema = z.object({ sceneId: contentSceneIdSchema.optional() });
 
 const storyRevisionSchema = storyContentFieldsSchema.extend({
   id: storyRevisionIdSchema,
@@ -242,7 +242,6 @@ export {
   placeIdSchema,
   placeSchema,
   requestEmailOtpInputSchema,
-  sceneIdSchema,
   spatialAnchorSchema,
   storyDraftPatchSchema,
   storyDraftSchema,
