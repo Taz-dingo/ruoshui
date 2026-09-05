@@ -188,9 +188,12 @@ function StoryComposerFlow({
     setPlacesLoading(true);
     setMessage(null);
 
-    const draftRequest = initialStoryId
-      ? fetchOwnedStoryDraft(initialStoryId).then((draft) => [draft])
-      : fetchStoryDrafts();
+    const draftRequest =
+      initialStoryId === null
+        ? Promise.resolve<StoryDraft[]>([])
+        : typeof initialStoryId === 'string'
+          ? fetchOwnedStoryDraft(initialStoryId).then((draft) => [draft])
+          : fetchStoryDrafts();
     const [placeResult, draftResult] = await Promise.allSettled([
       fetchPlaces(sceneId),
       draftRequest,
