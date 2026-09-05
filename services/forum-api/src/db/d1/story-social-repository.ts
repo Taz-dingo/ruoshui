@@ -117,12 +117,20 @@ function createD1StorySocialRepository(database: D1Database): StorySocialReposit
       const row = await database
         .prepare(
           `SELECT
-             id,
-             story_id AS storyId,
-             author_user_id AS authorUserId,
-             root_comment_id AS rootCommentId
-           FROM comments
-           WHERE id = ?1 AND status = 'visible'
+             c.id AS id,
+             c.story_id AS storyId,
+             c.author_user_id AS authorUserId,
+             c.root_comment_id AS rootCommentId
+           FROM comments c
+           WHERE c.id = ?1
+             AND c.status = 'visible'
+             AND (
+               c.root_comment_id IS NULL
+               OR EXISTS (
+                 SELECT 1 FROM comments root
+                 WHERE root.id = c.root_comment_id AND root.status = 'visible'
+               )
+             )
            LIMIT 1`,
         )
         .bind(commentId)
