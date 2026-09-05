@@ -13,6 +13,7 @@ import {
 import { useViewerUiStore } from '../../ui/state/viewer-ui-store';
 import { scrollAreaClassNames } from '../../styles/system';
 import { cn } from '../../utils/cn';
+import { StoryDiscussion } from './StoryDiscussion';
 
 interface PlaceMemoryLayerProps {
   isMobile: boolean;
@@ -179,6 +180,7 @@ function StoryDetail({
             {story.body}
           </div>
         ) : null}
+        <StoryDiscussion storyId={story.id} />
         <div className="mt-8 border-t border-black/[0.055] pt-4 text-[10px] text-black/30">
           发布于 {formatPublishedTime(story.publishedAt)}
         </div>
