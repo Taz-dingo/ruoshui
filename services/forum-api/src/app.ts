@@ -8,6 +8,10 @@ import type { ForumRepository } from "./lib/forum-repository.js";
 import { PlaceServiceError, type PlaceService } from "./lib/place.js";
 import { StorageProviderError, type StorageProvider } from "./lib/storage.js";
 import {
+  StoryReadServiceError,
+  type StoryReadService,
+} from "./lib/story-read.js";
+import {
   StoryReviewServiceError,
   type StoryReviewService,
 } from "./lib/story-review.js";
@@ -16,6 +20,7 @@ import { createAuthRoute } from "./routes/auth-route.js";
 import { createForumRoute } from "./routes/forum-route.js";
 import { createHealthRoute } from "./routes/health-route.js";
 import { createPlaceRoute } from "./routes/place-route.js";
+import { createPublishedStoryRoute } from "./routes/published-story-route.js";
 import { createStorageRoute } from "./routes/storage-route.js";
 import { createStoryReviewRoute } from "./routes/story-review-route.js";
 import { createStoryRoute } from "./routes/story-route.js";
@@ -28,6 +33,7 @@ interface CreateAppOptions {
   placeService?: PlaceService;
   runtime: "node" | "cloudflare";
   storageProvider: StorageProvider;
+  storyReadService?: StoryReadService;
   storyReviewService?: StoryReviewService;
   storyService?: StoryService;
 }
@@ -96,6 +102,15 @@ function createApp(options: CreateAppOptions): Hono {
         adminUserIds: options.adminUserIds ?? new Set(),
         authService: options.authService,
         placeService: options.placeService,
+      }),
+    );
+  }
+  if (options.storyReadService) {
+    app.route(
+      "/api/published-stories",
+      createPublishedStoryRoute({
+        readService: options.storyReadService,
+        storageProvider: options.storageProvider,
       }),
     );
   }
@@ -193,6 +208,7 @@ function createApp(options: CreateAppOptions): Hono {
     if (
       error instanceof AuthServiceError ||
       error instanceof StoryServiceError ||
+      error instanceof StoryReadServiceError ||
       error instanceof StoryReviewServiceError ||
       error instanceof PlaceServiceError ||
       error instanceof AdminAccessError
