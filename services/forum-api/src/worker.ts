@@ -3,9 +3,12 @@ import type { ExecutionContext } from "@cloudflare/workers-types";
 import { createApp } from "./app.js";
 import { createD1AuthRepository } from "./db/d1/auth-repository.js";
 import { createD1ForumRepository } from "./db/d1/forum-repository.js";
+import { createD1PlaceRepository } from "./db/d1/place-repository.js";
 import { createD1StoryRepository } from "./db/d1/story-repository.js";
+import { parseAdminUserIds } from "./lib/admin.js";
 import { createAuthService, type AuthService } from "./lib/auth.js";
 import { createCloudflareAuthEmailSender } from "./lib/auth-email.js";
+import { createPlaceService } from "./lib/place.js";
 import { createR2StorageProvider } from "./lib/storage.js";
 import { createStoryService } from "./lib/story.js";
 import type { CloudflareForumApiBindings } from "./worker-bindings.js";
@@ -30,11 +33,13 @@ export default {
   fetch(request: Request, env: CloudflareForumApiBindings, executionContext: ExecutionContext) {
     const authService = createConfiguredAuthService(env);
     const app = createApp({
+      adminUserIds: parseAdminUserIds(env.ADMIN_USER_IDS),
       authService,
       corsOrigin: env.CORS_ORIGIN ?? "http://localhost:5173",
       forumRepository: createD1ForumRepository(env.DB, {
         mediaPublicBaseUrl: env.MEDIA_PUBLIC_BASE_URL,
       }),
+      placeService: createPlaceService({ repository: createD1PlaceRepository(env.DB) }),
       runtime: "cloudflare",
       storageProvider: createR2StorageProvider({
         bucket: env.MEDIA_BUCKET,
