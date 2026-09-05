@@ -9,7 +9,7 @@ import { createD1StoryRepository } from "./db/d1/story-repository.js";
 import { createD1StoryReviewRepository } from "./db/d1/story-review-repository.js";
 import { parseAdminUserIds } from "./lib/admin.js";
 import { createAuthService, type AuthService } from "./lib/auth.js";
-import { createCloudflareAuthEmailSender } from "./lib/auth-email.js";
+import { createTencentSesAuthEmailSender } from "./lib/auth-email.js";
 import { createPlaceService } from "./lib/place.js";
 import { createR2StorageProvider } from "./lib/storage.js";
 import { createStoryReadService } from "./lib/story-read.js";
@@ -17,17 +17,35 @@ import { createStoryService } from "./lib/story.js";
 import { createStoryReviewService } from "./lib/story-review.js";
 import type { CloudflareForumApiBindings } from "./worker-bindings.js";
 
+function parseTencentSesTemplateId(value: string | undefined): number | null {
+  if (!value?.trim()) {
+    return null;
+  }
+  const templateId = Number(value);
+  return Number.isSafeInteger(templateId) && templateId > 0 ? templateId : null;
+}
+
 function createConfiguredAuthService(env: CloudflareForumApiBindings): AuthService | undefined {
-  if (!env.AUTH_OTP_SECRET || !env.AUTH_EMAIL_FROM || !env.EMAIL) {
+  const templateId = parseTencentSesTemplateId(env.TENCENT_SES_TEMPLATE_ID);
+  if (
+    !env.AUTH_OTP_SECRET ||
+    !env.AUTH_EMAIL_FROM ||
+    !env.TENCENT_CLOUD_SECRET_ID ||
+    !env.TENCENT_CLOUD_SECRET_KEY ||
+    !templateId
+  ) {
     return undefined;
   }
 
   return createAuthService({
     repository: createD1AuthRepository(env.DB),
-    emailSender: createCloudflareAuthEmailSender({
-      binding: env.EMAIL,
+    emailSender: createTencentSesAuthEmailSender({
       fromEmail: env.AUTH_EMAIL_FROM,
       fromName: env.AUTH_EMAIL_FROM_NAME,
+      region: env.TENCENT_SES_REGION ?? "ap-guangzhou",
+      secretId: env.TENCENT_CLOUD_SECRET_ID,
+      secretKey: env.TENCENT_CLOUD_SECRET_KEY,
+      templateId,
     }),
     otpSecret: env.AUTH_OTP_SECRET,
   });
@@ -64,3 +82,5 @@ export default {
     return app.fetch(request, env, executionContext);
   },
 };
+
+export { parseTencentSesTemplateId };
