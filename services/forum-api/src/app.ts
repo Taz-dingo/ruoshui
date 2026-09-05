@@ -4,6 +4,10 @@ import { ZodError } from "zod";
 
 import { AdminAccessError } from "./lib/admin.js";
 import { AuthServiceError, type AuthService } from "./lib/auth.js";
+import {
+  CommentModerationServiceError,
+  type CommentModerationService,
+} from "./lib/comment-moderation.js";
 import type { ForumRepository } from "./lib/forum-repository.js";
 import { PlaceServiceError, type PlaceService } from "./lib/place.js";
 import { StorageProviderError, type StorageProvider } from "./lib/storage.js";
@@ -22,6 +26,7 @@ import {
 } from "./lib/story-social.js";
 import { StoryServiceError, type StoryService } from "./lib/story.js";
 import { createAuthRoute } from "./routes/auth-route.js";
+import { createCommentModerationRoute } from "./routes/comment-moderation-route.js";
 import { createForumRoute } from "./routes/forum-route.js";
 import { createHealthRoute } from "./routes/health-route.js";
 import { createPlaceRoute } from "./routes/place-route.js";
@@ -34,6 +39,7 @@ import { createStoryRoute } from "./routes/story-route.js";
 interface CreateAppOptions {
   adminUserIds?: ReadonlySet<string>;
   authService?: AuthService;
+  commentModerationService?: CommentModerationService;
   corsOrigin: string;
   forumRepository: ForumRepository;
   placeService?: PlaceService;
@@ -131,6 +137,16 @@ function createApp(options: CreateAppOptions): Hono {
       }),
     );
   }
+  if (options.commentModerationService) {
+    app.route(
+      "/api/admin/comments",
+      createCommentModerationRoute({
+        adminUserIds: options.adminUserIds ?? new Set(),
+        authService: options.authService,
+        moderationService: options.commentModerationService,
+      }),
+    );
+  }
   if (options.storyReviewService) {
     app.route(
       "/api/admin/story-reviews",
@@ -225,6 +241,7 @@ function createApp(options: CreateAppOptions): Hono {
 
     if (
       error instanceof AuthServiceError ||
+      error instanceof CommentModerationServiceError ||
       error instanceof StoryServiceError ||
       error instanceof StoryReadServiceError ||
       error instanceof StoryReviewServiceError ||
