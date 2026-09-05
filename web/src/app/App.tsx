@@ -180,7 +180,7 @@ function App({
   const [isCommunityOpen, setIsCommunityOpen] = useState(false);
   const [isMyStoriesOpen, setIsMyStoriesOpen] = useState(false);
   const [isStoryComposerOpen, setIsStoryComposerOpen] = useState(false);
-  const [storyComposerTargetId, setStoryComposerTargetId] = useState<string | null>(null);
+  const [storyComposerTargetId, setStoryComposerTargetId] = useState<string | null | undefined>(undefined);
   const setVariantPanel = useViewerUiStore((store) => store.setVariantPanel);
   const setPresetPanel = useViewerUiStore((store) => store.setPresetPanel);
   const setRouteControls = useViewerUiStore((store) => store.setRouteControls);
@@ -210,18 +210,26 @@ function App({
     setIsCommunityOpen(true);
   };
 
-  const openStoryComposer = (storyId?: string) => {
+  const prepareStoryComposer = (target: string | null | undefined) => {
     setOpenDockMenu(null);
     setIsMobilePanelOpen(false);
     setIsCommunityOpen(false);
     setIsMyStoriesOpen(false);
-    setStoryComposerTargetId(storyId ?? null);
+    setStoryComposerTargetId(target);
     setIsStoryComposerOpen(true);
+  };
+
+  const openStoryComposer = (storyId?: string) => {
+    prepareStoryComposer(storyId);
+  };
+
+  const createFreshStory = () => {
+    prepareStoryComposer(null);
   };
 
   const setStoryComposerOpen = (open: boolean) => {
     setIsStoryComposerOpen(open);
-    if (!open) setStoryComposerTargetId(null);
+    if (!open) setStoryComposerTargetId(undefined);
   };
 
   const openMyStories = () => {
@@ -229,7 +237,7 @@ function App({
     setIsMobilePanelOpen(false);
     setIsCommunityOpen(false);
     setIsStoryComposerOpen(false);
-    setStoryComposerTargetId(null);
+    setStoryComposerTargetId(undefined);
     setIsMyStoriesOpen(true);
   };
 
@@ -393,8 +401,9 @@ function App({
         sceneTitle={data.scene.title}
       />
       <MyStoriesPanel
+        onCreateStory={createFreshStory}
         onOpenChange={setIsMyStoriesOpen}
-        onOpenStoryComposer={openStoryComposer}
+        onOpenStoryComposer={(storyId) => openStoryComposer(storyId)}
         open={isMyStoriesOpen}
       />
       <StoryComposerFlow
