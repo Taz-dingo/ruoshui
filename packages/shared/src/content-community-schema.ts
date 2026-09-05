@@ -232,6 +232,13 @@ const createCommentInputSchema = z.object({
   replyToCommentId: commentIdSchema.optional(),
 });
 
+const createStoryCommentInputSchema = z
+  .object({
+    body: z.string().trim().min(1).max(2_000),
+    replyToCommentId: commentIdSchema.optional(),
+  })
+  .strict();
+
 const commentSchema = z.object({
   id: commentIdSchema,
   storyId: storyIdSchema,
@@ -244,6 +251,26 @@ const commentSchema = z.object({
   updatedAt: z.string().datetime(),
 });
 
+const publishedCommentSchema = z.object({
+  id: commentIdSchema,
+  storyId: storyIdSchema,
+  author: publishedStoryAuthorSchema,
+  rootCommentId: commentIdSchema.nullable(),
+  replyToCommentId: commentIdSchema.nullable(),
+  body: z.string().min(1).max(2_000),
+  likeCount: z.number().int().nonnegative(),
+  viewerHasLiked: z.boolean(),
+  createdAt: z.string().datetime(),
+});
+
+const storySocialSchema = z.object({
+  storyId: storyIdSchema,
+  likeCount: z.number().int().nonnegative(),
+  viewerHasLiked: z.boolean(),
+  commentCount: z.number().int().nonnegative(),
+  comments: z.array(publishedCommentSchema),
+});
+
 const storyLikeKeySchema = z.object({ storyId: storyIdSchema, userId: userIdSchema });
 const commentLikeKeySchema = z.object({ commentId: commentIdSchema, userId: userIdSchema });
 
@@ -253,11 +280,13 @@ type Comment = z.infer<typeof commentSchema>;
 type CommentLikeKey = z.infer<typeof commentLikeKeySchema>;
 type CommentStatus = z.infer<typeof commentStatusSchema>;
 type CreateCommentInput = z.infer<typeof createCommentInputSchema>;
+type CreateStoryCommentInput = z.infer<typeof createStoryCommentInputSchema>;
 type CreatePlaceInput = z.infer<typeof createPlaceInputSchema>;
 type CreateStoryDraftInput = z.infer<typeof createStoryDraftInputSchema>;
 type ListPlacesInput = z.infer<typeof listPlacesInputSchema>;
 type ListPublishedStoriesInput = z.infer<typeof listPublishedStoriesInputSchema>;
 type Place = z.infer<typeof placeSchema>;
+type PublishedComment = z.infer<typeof publishedCommentSchema>;
 type PublishedStory = z.infer<typeof publishedStorySchema>;
 type PublishedStoryAuthor = z.infer<typeof publishedStoryAuthorSchema>;
 type RejectStoryRevisionInput = z.infer<typeof rejectStoryRevisionInputSchema>;
@@ -273,6 +302,7 @@ type StoryReviewItem = z.infer<typeof storyReviewItemSchema>;
 type StoryReviewPatch = z.infer<typeof storyReviewPatchSchema>;
 type StoryRevision = z.infer<typeof storyRevisionSchema>;
 type StoryRevisionStatus = z.infer<typeof storyRevisionStatusSchema>;
+type StorySocial = z.infer<typeof storySocialSchema>;
 type StoryStatus = z.infer<typeof storyStatusSchema>;
 type SubmitStoryRevisionInput = z.infer<typeof submitStoryRevisionInputSchema>;
 type UpdatePlaceInput = z.infer<typeof updatePlaceInputSchema>;
@@ -288,6 +318,7 @@ export {
   commentSchema,
   commentStatusSchema,
   createCommentInputSchema,
+  createStoryCommentInputSchema,
   createPlaceInputSchema,
   createStoryDraftInputSchema,
   emailAddressSchema,
@@ -296,6 +327,7 @@ export {
   mediaAssetIdSchema,
   placeIdSchema,
   placeSchema,
+  publishedCommentSchema,
   publishedStoryAuthorSchema,
   publishedStorySchema,
   rejectStoryRevisionInputSchema,
@@ -313,6 +345,7 @@ export {
   storyRevisionSchema,
   storyRevisionStatusSchema,
   storySchema,
+  storySocialSchema,
   storyStatusSchema,
   submitStoryRevisionInputSchema,
   updatePlaceInputSchema,
@@ -329,11 +362,13 @@ export type {
   CommentLikeKey,
   CommentStatus,
   CreateCommentInput,
+  CreateStoryCommentInput,
   CreatePlaceInput,
   CreateStoryDraftInput,
   ListPlacesInput,
   ListPublishedStoriesInput,
   Place,
+  PublishedComment,
   PublishedStory,
   PublishedStoryAuthor,
   RejectStoryRevisionInput,
@@ -349,6 +384,7 @@ export type {
   StoryReviewPatch,
   StoryRevision,
   StoryRevisionStatus,
+  StorySocial,
   StoryStatus,
   SubmitStoryRevisionInput,
   UpdatePlaceInput,
