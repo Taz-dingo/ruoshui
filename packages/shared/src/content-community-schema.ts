@@ -26,9 +26,9 @@ const spatialAnchorSchema = z.object({
 });
 
 const storyLocationSchema = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("none") }),
-  z.object({ kind: z.literal("place"), placeId: placeIdSchema }),
-  z.object({ kind: z.literal("anchor"), anchor: spatialAnchorSchema }),
+  z.object({ kind: z.literal("none") }).strict(),
+  z.object({ kind: z.literal("place"), placeId: placeIdSchema }).strict(),
+  z.object({ kind: z.literal("anchor"), anchor: spatialAnchorSchema }).strict(),
 ]);
 
 const userSchema = z.object({
@@ -57,9 +57,10 @@ const storyContentFieldsSchema = z.object({
   location: storyLocationSchema.default({ kind: "none" }),
 });
 
-const storyDraftPatchSchema = storyContentFieldsSchema.partial();
-
-const submitStoryRevisionInputSchema = storyContentFieldsSchema.superRefine((value, context) => {
+const validateStoryContent = (
+  value: z.infer<typeof storyContentFieldsSchema>,
+  context: z.RefinementCtx,
+) => {
   const hasBody = Boolean(value.body?.trim());
   const hasMedia = value.mediaAssetIds.length > 0;
 
@@ -70,7 +71,10 @@ const submitStoryRevisionInputSchema = storyContentFieldsSchema.superRefine((val
       path: ["body"],
     });
   }
-});
+};
+
+const storyDraftPatchSchema = storyContentFieldsSchema.partial();
+const submitStoryRevisionInputSchema = storyContentFieldsSchema.superRefine(validateStoryContent);
 
 const placeSchema = z.object({
   id: placeIdSchema,
@@ -82,15 +86,17 @@ const placeSchema = z.object({
   updatedAt: z.string().datetime(),
 });
 
-const storyRevisionSchema = submitStoryRevisionInputSchema.extend({
-  id: storyRevisionIdSchema,
-  storyId: storyIdSchema,
-  status: storyRevisionStatusSchema,
-  createdByUserId: userIdSchema,
-  moderationNote: z.string().max(2_000).nullable(),
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
-});
+const storyRevisionSchema = storyContentFieldsSchema
+  .extend({
+    id: storyRevisionIdSchema,
+    storyId: storyIdSchema,
+    status: storyRevisionStatusSchema,
+    createdByUserId: userIdSchema,
+    moderationNote: z.string().max(2_000).nullable(),
+    createdAt: z.string().datetime(),
+    updatedAt: z.string().datetime(),
+  })
+  .superRefine(validateStoryContent);
 
 const storySchema = z.object({
   id: storyIdSchema,
