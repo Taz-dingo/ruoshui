@@ -45,9 +45,7 @@ const emailAddressSchema = z
   .max(320)
   .transform((email) => email.toLowerCase());
 const authProviderSchema = z.enum(["email"]);
-const requestEmailOtpInputSchema = z.object({
-  email: emailAddressSchema,
-});
+const requestEmailOtpInputSchema = z.object({ email: emailAddressSchema });
 const verifyEmailOtpInputSchema = z.object({
   email: emailAddressSchema,
   code: z.string().regex(/^\d{6}$/),
@@ -74,14 +72,34 @@ const storyContentFieldsSchema = z.object({
   location: storyLocationSchema.default({ kind: "none" }),
 });
 
+const storyDraftInputSchema = z
+  .object({
+    title: z.string().trim().max(160).optional(),
+    body: z.string().trim().max(20_000).optional(),
+    memoryTime: z.string().trim().max(120).optional(),
+    mediaAssetIds: z.array(mediaAssetIdSchema).max(12).optional(),
+    location: storyLocationSchema.optional(),
+  })
+  .superRefine((value, context) => {
+    const meaningful =
+      Boolean(value.title?.trim()) ||
+      Boolean(value.body?.trim()) ||
+      Boolean(value.memoryTime?.trim()) ||
+      Boolean(value.mediaAssetIds?.length) ||
+      (value.location !== undefined && value.location.kind !== "none");
+    if (!meaningful) {
+      context.addIssue({
+        code: "custom",
+        message: "Draft update must contain at least one meaningful field.",
+      });
+    }
+  });
+
 const validateStoryContent = (
   value: z.infer<typeof storyContentFieldsSchema>,
   context: z.RefinementCtx,
 ) => {
-  const hasBody = Boolean(value.body?.trim());
-  const hasMedia = value.mediaAssetIds.length > 0;
-
-  if (!hasBody && !hasMedia) {
+  if (!value.body?.trim() && value.mediaAssetIds.length === 0) {
     context.addIssue({
       code: "custom",
       message: "Story must contain body text or at least one media asset.",
@@ -90,7 +108,6 @@ const validateStoryContent = (
   }
 };
 
-const storyDraftPatchSchema = storyContentFieldsSchema.partial();
 const submitStoryRevisionInputSchema = storyContentFieldsSchema.superRefine(validateStoryContent);
 
 const placeSchema = z.object({
@@ -103,17 +120,15 @@ const placeSchema = z.object({
   updatedAt: z.string().datetime(),
 });
 
-const storyRevisionSchema = storyContentFieldsSchema
-  .extend({
-    id: storyRevisionIdSchema,
-    storyId: storyIdSchema,
-    status: storyRevisionStatusSchema,
-    createdByUserId: userIdSchema,
-    moderationNote: z.string().max(2_000).nullable(),
-    createdAt: z.string().datetime(),
-    updatedAt: z.string().datetime(),
-  })
-  .superRefine(validateStoryContent);
+const storyRevisionSchema = storyContentFieldsSchema.extend({
+  id: storyRevisionIdSchema,
+  storyId: storyIdSchema,
+  status: storyRevisionStatusSchema,
+  createdByUserId: userIdSchema,
+  moderationNote: z.string().max(2_000).nullable(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+});
 
 const storySchema = z.object({
   id: storyIdSchema,
@@ -122,6 +137,11 @@ const storySchema = z.object({
   publishedRevisionId: storyRevisionIdSchema.nullable(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
+});
+
+const storyDraftSchema = z.object({
+  story: storySchema,
+  revision: storyRevisionSchema,
 });
 
 const createCommentInputSchema = z.object({
@@ -143,15 +163,8 @@ const commentSchema = z.object({
   updatedAt: z.string().datetime(),
 });
 
-const storyLikeKeySchema = z.object({
-  storyId: storyIdSchema,
-  userId: userIdSchema,
-});
-
-const commentLikeKeySchema = z.object({
-  commentId: commentIdSchema,
-  userId: userIdSchema,
-});
+const storyLikeKeySchema = z.object({ storyId: storyIdSchema, userId: userIdSchema });
+const commentLikeKeySchema = z.object({ commentId: commentIdSchema, userId: userIdSchema });
 
 type AuthProvider = z.infer<typeof authProviderSchema>;
 type CameraPose = z.infer<typeof cameraPoseSchema>;
@@ -163,7 +176,8 @@ type Place = z.infer<typeof placeSchema>;
 type RequestEmailOtpInput = z.infer<typeof requestEmailOtpInputSchema>;
 type SpatialAnchor = z.infer<typeof spatialAnchorSchema>;
 type Story = z.infer<typeof storySchema>;
-type StoryDraftPatch = z.infer<typeof storyDraftPatchSchema>;
+type StoryDraft = z.infer<typeof storyDraftSchema>;
+type StoryDraftInput = z.infer<typeof storyDraftInputSchema>;
 type StoryLikeKey = z.infer<typeof storyLikeKeySchema>;
 type StoryLocation = z.infer<typeof storyLocationSchema>;
 type StoryRevision = z.infer<typeof storyRevisionSchema>;
@@ -188,7 +202,8 @@ export {
   placeSchema,
   requestEmailOtpInputSchema,
   spatialAnchorSchema,
-  storyDraftPatchSchema,
+  storyDraftInputSchema,
+  storyDraftSchema,
   storyIdSchema,
   storyLikeKeySchema,
   storyLocationSchema,
@@ -215,7 +230,8 @@ export type {
   RequestEmailOtpInput,
   SpatialAnchor,
   Story,
-  StoryDraftPatch,
+  StoryDraft,
+  StoryDraftInput,
   StoryLikeKey,
   StoryLocation,
   StoryRevision,
