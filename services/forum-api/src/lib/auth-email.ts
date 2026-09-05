@@ -34,12 +34,18 @@ function textBytes(value: string): Uint8Array {
   return new TextEncoder().encode(value);
 }
 
+function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  const copy = new Uint8Array(bytes.byteLength);
+  copy.set(bytes);
+  return copy.buffer;
+}
+
 function bytesToHex(bytes: Uint8Array): string {
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 async function sha256Hex(value: string): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", textBytes(value));
+  const digest = await crypto.subtle.digest("SHA-256", toArrayBuffer(textBytes(value)));
   return bytesToHex(new Uint8Array(digest));
 }
 
@@ -47,14 +53,19 @@ async function hmacSha256(
   key: string | Uint8Array,
   value: string,
 ): Promise<Uint8Array> {
+  const keyBytes = typeof key === "string" ? textBytes(key) : key;
   const importedKey = await crypto.subtle.importKey(
     "raw",
-    typeof key === "string" ? textBytes(key) : key,
+    toArrayBuffer(keyBytes),
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign"],
   );
-  const signature = await crypto.subtle.sign("HMAC", importedKey, textBytes(value));
+  const signature = await crypto.subtle.sign(
+    "HMAC",
+    importedKey,
+    toArrayBuffer(textBytes(value)),
+  );
   return new Uint8Array(signature);
 }
 
