@@ -30,11 +30,13 @@ import {
   uploadFileWithTicket,
   verifyEmailOtp,
 } from '../../community/content-api';
+import { fetchOwnedStoryDraft } from '../../community/my-stories-api';
 import { scrollAreaClassNames } from '../../styles/system';
 import { cn } from '../../utils/cn';
 import { SpatialAnchorEditorOverlay } from './SpatialAnchorEditorOverlay';
 
 interface StoryComposerFlowProps {
+  initialStoryId?: string | null;
   onOpenChange: (open: boolean) => void;
   open: boolean;
   sceneId: string;
@@ -97,7 +99,12 @@ function hasPublishableStory(snapshot: EditorSnapshot) {
   return Boolean(snapshot.body.trim() || snapshot.mediaAssetIds.length);
 }
 
-function StoryComposerFlow({ onOpenChange, open, sceneId }: StoryComposerFlowProps) {
+function StoryComposerFlow({
+  initialStoryId,
+  onOpenChange,
+  open,
+  sceneId,
+}: StoryComposerFlowProps) {
   const [step, setStep] = useState<FlowStep>('checking');
   const [user, setUser] = useState<User | null>(null);
   const [email, setEmail] = useState('');
@@ -181,9 +188,12 @@ function StoryComposerFlow({ onOpenChange, open, sceneId }: StoryComposerFlowPro
     setPlacesLoading(true);
     setMessage(null);
 
+    const draftRequest = initialStoryId
+      ? fetchOwnedStoryDraft(initialStoryId).then((draft) => [draft])
+      : fetchStoryDrafts();
     const [placeResult, draftResult] = await Promise.allSettled([
       fetchPlaces(sceneId),
-      fetchStoryDrafts(),
+      draftRequest,
     ]);
 
     if (placeResult.status === 'fulfilled') {
@@ -242,7 +252,7 @@ function StoryComposerFlow({ onOpenChange, open, sceneId }: StoryComposerFlowPro
     return () => {
       cancelled = true;
     };
-  }, [open]);
+  }, [initialStoryId, open]);
 
   function createSnapshot(): EditorSnapshot {
     return {
