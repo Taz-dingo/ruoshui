@@ -6,99 +6,96 @@
 
 当前目标：完成 **Content & Community v1**，让真实校友能从登录、投稿、审核、发布到阅读、点赞、评论形成完整闭环。
 
-## P0：先把长期数据关系与工程约束立住
+## P0：生产 Auth 收口
 
-### 1. 最小 Gate / CI 基建
+### 1. 腾讯云 SES
 
-- [x] 建立稳定 root gate 命令，覆盖 typecheck、tests、build；GitHub Actions 在 PR 与 main push 上执行完整 gate。
-- [x] 已机械化第一批核心 invariant：Story 正文或图片至少一项非空、最多 12 图、v1 位置互斥、Draft 与 Submit 校验分离、StoryDraft 所有权与提交状态。
-- [ ] 为正常阅读路径补回归验证：不得隐式创建 Scene / Place / Story 等业务数据。
-- [ ] 随 product-visible slice 增加真实入口 / 真实副作用 smoke，不只验证组件或 mock。
+- [x] 保持 `AuthEmailSender` provider abstraction，不改 OTP / User / Session 上层逻辑。
+- [x] Worker 改为直接调用腾讯云 SES API 3.0 `SendEmail`，使用 `TC3-HMAC-SHA256`；移除 Cloudflare `EMAIL` binding 依赖。
+- [x] 默认公开配置：`AUTH_EMAIL_FROM=no-reply@auth.tazdingo.net`、`AUTH_EMAIL_FROM_NAME=若水`、`TENCENT_SES_REGION=ap-guangzhou`。
+- [ ] 腾讯云验证 `auth.tazdingo.net` 发信域名并配置 SES 要求的 SPF / DKIM。
+- [ ] 腾讯云创建 / 验证 `no-reply@auth.tazdingo.net` 发信地址。
+- [ ] 创建 OTP 模板并通过审核：模板使用单变量 `{{code}}`，静态注明 10 分钟有效。
+- [ ] 给 Worker 配置 `TENCENT_CLOUD_SECRET_ID`、`TENCENT_CLOUD_SECRET_KEY`、`TENCENT_SES_TEMPLATE_ID`；Secret 不进入 Git。
+- [ ] 部署生产 Worker 并跑真实 smoke：request OTP → 实际收件 → verify → `/me` → StoryDraft create / patch → 跨请求 Session。
 
-### 2. User / Auth
+### 2. Auth 后续
 
-- [x] 建立持久 `User`、Email AuthIdentity、OTP challenge、Session 数据模型。
-- [x] 完成 Email OTP 登录 / 注册 backend：OTP 哈希、限频、失败次数、持久 Session、`/me`、logout、displayName 更新。
-- [ ] 配置生产 Email Service binding、`AUTH_EMAIL_FROM`、`AUTH_OTP_SECRET` 并应用 D1 migration；D1 migration 与 `AUTH_OTP_SECRET` 已完成，Email binding/from 因账号没有 Cloudflare zone 阻塞；配置完成前生产 auth 保持关闭。
-- [ ] 第一次登录 UI：可设置 displayName，也可跳过并使用系统默认展示名。
-- [ ] Story Editor、评论 / 回复入口要求先登录；点赞允许触发登录后补做原操作。
-- [ ] 实现改邮箱：旧邮箱 OTP + 新邮箱 OTP，成功后 revoke 其他 sessions；旧邮箱不可访问时保留人工处理路径。
-- [ ] 管理员权限由环境变量 `ADMIN_USER_IDS` 中的稳定 userId allowlist 判断；权限必须在 API / service 层强制执行。
+- [x] 持久 User、Email AuthIdentity、OTP challenge、Session 数据模型。
+- [x] Email OTP 登录 / 注册 backend：OTP 哈希、60 秒 resend、失败次数、10 分钟 TTL、90 天 Session。
+- [x] Web 第一次登录流程：Email OTP；可设置 displayName，也可跳过使用默认展示名。
+- [x] Story Editor 进入前要求登录。
+- [x] 管理员权限由 `ADMIN_USER_IDS` 稳定 userId allowlist 在 API 层强制执行。
+- [ ] 评论 / 回复进入前要求登录；点赞触发登录后补做原操作。
+- [ ] 改邮箱：旧邮箱 OTP + 新邮箱 OTP，成功后 revoke 其他 sessions；旧邮箱不可访问时走人工处理。
 
-### 3. Place / Anchor / Story 数据模型
+## P1：Place → Story 正式消费体验
 
-- [x] 引入 `SpatialAnchor` contract：marker position + camera pose（position / target / fov）。
-- [x] 引入 `Place` 数据模型：公共 Anchor + name / intro / 人工 focus camera。
-- [x] v1 Story location 三选一：已有 Place / 自定义 Anchor / 无位置。
-- [x] 建立 Story / StoryRevision / ordered media / Draft / Published 数据关系；title optional、body optional、media <= 12、memoryTime optional。
-- [x] 建立 Story/Comment Like 与两层评论关系的底层表结构；前台行为尚未实现。
-- [ ] 旧 forum 技术骨架逐步迁移到新领域模型，不做一次性无意义重写。
+### 3. Place pins / focus
 
-## P1：Story 生产与审核
+- [ ] 完成动态 Place pins 从 Places API → viewer runtime → PlayCanvas 投影 → React overlay 的正式链路。
+- [ ] 点击 Place 后使用人工保存的完整 camera pose（position / target / fov），不再使用旧 forum 固定 offset。
+- [ ] 加入轻微 ambient focus 运镜；用户操作立即取消，合适条件下可恢复。
 
-### 4. Story Draft backend
+### 4. Place Memory Panel
 
-- [x] 已完成登录用户的 Draft create / list / get / patch / submit API。
-- [x] Draft 可以不完整；提交时才要求 body / media 至少一项。
-- [x] 提交前验证关联媒体均为 ready；其他用户不能读取或修改该 Draft。
-- [x] `changes_requested` Revision 可继续编辑，编辑后回到 `draft`。
-- [ ] 媒体上传链路迁移到正式 User / Draft 所有权模型；当前旧 storage / media confirm 仍是 PoC 路径。
-
-### 5. Story Editor
-
-- [ ] 做单页 Composer：顶部媒体区 → optional title → 普通多行 body → memoryTime → location → 提交审核。
-- [ ] 照片支持最多 12 张、拖拽排序、第一张默认 cover、删除、上传中 / 失败 / 重试状态。
-- [ ] 纯文字 Story 在 Feed 使用 TextCover；无 title 时从 body 提取 display title；纯图片 fallback 使用 `memoryTime + Place`。
-- [ ] 前端接入 server-side StoryDraft 自动保存与跨会话恢复。
-- [ ] PC / Mobile 复用同一信息结构，不做两套产品。
-
-### 6. Place Picker / Spatial Anchor Editor
-
-- [ ] 提供 Place read / authoring API 与搜索式 Place Picker。
-- [ ] “标记一个特别的角落”进入共用 Anchor Editor：标落点 → 调整镜头 → 保存 → 返回原 StoryDraft 与原滚动位置。
-- [ ] 普通投稿保存为 proposed anchor；Admin 审核时复用同一编辑器做轻量校准。
-- [ ] Place focus camera 不再从统一 offset 临时计算，而是使用人工保存 pose。
-
-### 7. Review / Revision / 内容治理
-
-- [ ] 跑通 Pending Review → Published / Changes Requested / Rejected 的 Admin API 与 UI。
-- [ ] Admin 可以修轻量元数据、错别字、Anchor / Camera；正文或语义实质修改退回作者。
-- [ ] 已发布 Story 修改创建新 Revision；旧 Published Revision 继续在线，新 Revision 审核通过后原子替换。
-- [ ] 用户可主动下架；删除先 soft delete。
-
-## P2：消费体验与轻社交
-
-### 8. Place Story Feed
-
-- [ ] 点击 Place 后镜头过渡到人工 focus pose，并加入轻微 ambient 运镜；用户手动操作时立即退出，可在合适条件下恢复。
-- [ ] Place 内容层顶部是地点标题 / 介绍，下方直接展示 Story masonry feed；下滚后收缩为 sticky title。
+- [ ] Place 顶部完整标题 / intro，下方直接 masonry Published Story feed。
+- [ ] 下滚后 intro 收缩为 sticky title。
 - [ ] PC 使用较窄侧边内容层；Mobile 使用可扩展 Bottom Sheet。
+- [ ] Published Story feed 只使用新 `/api/published-stories` read model，不回退到旧 forum 数据。
+- [ ] 纯文字 Story 使用 TextCover；纯图片 / 无 title Story 使用既定 fallback display title。
 
-### 9. Story Detail / Social
+### 5. Story Detail
 
-- [ ] Story Detail 多图横滑；展示作者、memoryTime、Place / Anchor、正文、Like、Comment。
-- [ ] Story 和 Comment Like 接入持久 User。
-- [ ] 评论必须先登录；v1 只支持文字。
-- [ ] 视觉只保留两层：一级评论 + 二级讨论区；更深 reply 用 `rootCommentId` + `replyToCommentId`，不继续缩进。
-- [ ] 支持评论隐藏 / 删除等基础 moderation；完整 User Ban 暂不实现。
+- [ ] 同一内容容器内从 Place Feed 打开 Story Detail，并可返回原滚动位置。
+- [ ] 多图横滑；展示作者、memoryTime、Place / custom Anchor、正文。
+- [ ] “回到这里”调用 Story / Place 的 SpatialAnchor camera pose 返回 3D。
+
+## P2：Social / Revision 收口
+
+### 6. Like / Comment / Reply
+
+- [ ] Story Like + Comment Like 接持久 User。
+- [ ] 评论只支持文字，必须登录。
+- [ ] UI 只保留两层视觉：一级评论 + 二级讨论区；更深回复使用 `rootCommentId` + `replyToCommentId`，不继续缩进。
+- [ ] 评论隐藏 / 删除等基础 moderation；完整 User Ban 暂不做。
+
+### 7. 作者侧已发布 Story 管理
+
+- [ ] 已发布 Story 编辑时创建新 Revision；旧 Published Revision 在审核通过前继续公开。
+- [ ] 用户可主动下架。
+- [ ] 删除先 soft delete，媒体物理清理由后续治理流程处理。
+
+## 已完成的 Content & Community 基础
+
+- [x] 根 `pnpm check` + GitHub Actions CI。
+- [x] User / SpatialAnchor / Place / Story / StoryRevision / StoryDraft / Comment / Like shared contracts 与 D1 schema。
+- [x] Story body/media、<=12 图、单位置、Draft ownership、media ownership、Published Revision 等关键 invariant。
+- [x] StoryDraft create / list / get / patch / submit。
+- [x] authenticated Story media upload ownership。
+- [x] Place read / admin authoring API。
+- [x] Web Story Composer：OTP、草稿恢复 / autosave、12 图、排序、Place、提交审核。
+- [x] 共用 3D Spatial Anchor Editor。
+- [x] Review backend + Admin Review Console：queue、受保护 media、轻量校准、approve / request changes / reject。
+- [x] Published Story public read API，只暴露当前 `publishedRevisionId` 及其媒体。
 
 ## P3：真实内容、设备与发布收口
 
-### 10. 首批正式内容
+### 8. 首批正式内容
 
 - [ ] 先选约 5 个正式 Place，优先把“若水广场”做到完整。
-- [ ] 用真实照片与 Story 跑通完整上传 / 审核 / 发布链路。
+- [ ] 用真实照片与 Story 跑通 upload → review → publish → Place Feed → Detail 全链路。
 
-### 11. Loading
+### 9. Loading
 
 - [ ] 并行请求少量 Story thumbnail，用简单 scale / opacity / blur 生长效果覆盖等待。
 - [ ] 模型 ready 后立即切入 3D；不重启自研 Streamed SOG / progressive splat。
 
-### 12. Mobile / Release Acceptance
+### 10. Mobile / Release Acceptance
 
-- [ ] iPhone Safari 真机验证 viewport、safe area、横竖屏、热点、单指 rotate、双指 pan + pinch zoom、Bottom Sheet 与 3D 手势冲突。
+- [ ] iPhone Safari 真机验证 viewport、safe area、横竖屏、Place pins、单指 rotate、双指 pan + pinch zoom、Bottom Sheet 与 3D 手势冲突。
 - [ ] 验证 Android Chrome 与 iPad / 触屏核心链路。
-- [ ] production acceptance 覆盖 OTP、Draft 恢复、上传、Review、Revision、API / 图片 / 模型失败、Like / Comment、返回场景、Pages / Workers / D1 / R2。
+- [ ] production acceptance 覆盖 OTP、Draft 恢复、上传、Review、Revision、API / 图片 / 模型失败、Like / Comment、返回场景、Pages / Workers / D1 / R2 / 腾讯云 SES。
 - [ ] 找少量真实校友做可用性测试。
 
 ## Later
