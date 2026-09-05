@@ -2,6 +2,7 @@ import type {
   ConfirmMediaAssetInput,
   CreateStoryDraftInput,
   Place,
+  PublishedStory,
   StoryDraft,
   StoryDraftPatch,
   StoryReviewItem,
@@ -113,6 +114,27 @@ async function updateDisplayName(displayName: string | null): Promise<User> {
 async function fetchPlaces(sceneId: string): Promise<Place[]> {
   const query = new URLSearchParams({ sceneId });
   return requestData<Place[]>(`/api/places?${query.toString()}`);
+}
+
+async function fetchPublishedStories(input: {
+  placeId?: string;
+  limit?: number;
+} = {}): Promise<PublishedStory[]> {
+  const query = new URLSearchParams();
+  if (input.placeId) query.set('placeId', input.placeId);
+  if (input.limit) query.set('limit', String(input.limit));
+  const suffix = query.size > 0 ? `?${query.toString()}` : '';
+  return requestData<PublishedStory[]>(`/api/published-stories${suffix}`);
+}
+
+async function fetchPublishedStory(storyId: string): Promise<PublishedStory> {
+  return requestData<PublishedStory>(
+    `/api/published-stories/${encodeURIComponent(storyId)}`,
+  );
+}
+
+function getPublishedStoryMediaUrl(storyId: string, mediaAssetId: string): string {
+  return `/api/published-stories/${encodeURIComponent(storyId)}/media/${encodeURIComponent(mediaAssetId)}`;
 }
 
 async function fetchStoryDrafts(): Promise<StoryDraft[]> {
@@ -248,9 +270,12 @@ export {
   createStoryDraft,
   fetchCurrentUser,
   fetchPlaces,
+  fetchPublishedStories,
+  fetchPublishedStory,
   fetchStoryDrafts,
   fetchStoryReviewItem,
   fetchStoryReviewQueue,
+  getPublishedStoryMediaUrl,
   getStoryReviewMediaUrl,
   patchStoryReview,
   rejectStoryReview,
