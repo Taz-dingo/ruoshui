@@ -31,7 +31,7 @@
 
 - shared contracts 已有 User、SpatialAnchor、Place、Story、StoryRevision、StoryDraft、Comment、Like 等新领域模型。
 - D1 与 Postgres schema 已加入 users / auth identities / OTP / sessions / places / stories / revisions / revision media / comments / likes。
-- D1 migration `0001_content_community_foundation.sql` 已进入仓库，但**尚未确认应用到生产 D1**。
+- D1 migration `0001_content_community_foundation.sql` 已于 `2026-09-05` 应用到生产 `ruoshui-forum`（database id `77f54654-bb08-41b4-afb4-cfd1c3669a26`）；远端 `d1_migrations` 已确认同时记录 `0000_initial.sql` 与 `0001_content_community_foundation.sql`，旧 scene 数据仍在。
 - v1 Story location 已机械化为 Place / custom Anchor / none 三选一；正文或图片至少一项、图片最多 12 张等提交约束已有测试。
 
 ### Auth backend
@@ -40,6 +40,7 @@
 - 登录成功会创建 / 复用持久 User，并创建只在客户端持有明文的 90 天 Session token；数据库只存 token hash。
 - `/api/auth/email/request-otp`、`/verify`、`/me`、`/profile`、`/logout` 已具备。
 - Worker 已支持可选 Cloudflare Email Service adapter；只有 `EMAIL` binding + `AUTH_EMAIL_FROM` + `AUTH_OTP_SECRET` 都存在时才启用 auth routes，因此当前代码可以安全上线而不会伪造邮件配置。
+- 生产 Worker `ruoshui-forum-api` 已部署版本 `8967ac3f-7c0b-4785-a200-2fbad68c43a7`；`AUTH_OTP_SECRET` 已通过 Wrangler Secret 设置，既有 `UPLOAD_SIGNING_SECRET`、D1、R2 和 vars 均仍在部署 binding 清单中。
 
 ### Story Draft backend
 
@@ -61,7 +62,8 @@
 
 ## 当前实现差距 / 已知限制
 
-- 生产 Auth **尚未启用**：还缺 Cloudflare Email Service sender 配置、`AUTH_OTP_SECRET` 和生产 D1 migration 应用。
+- 生产 Auth **尚未启用**：`AUTH_OTP_SECRET` 和 D1 migration 已完成，但账号当前没有任何 Cloudflare zone，故无法配置可验证的 Email Sending sender/domain、`EMAIL` binding、`AUTH_EMAIL_FROM` / `AUTH_EMAIL_FROM_NAME`；Pages 同源 OTP 请求实际返回 404。需要先由人工在该账号添加并激活自有域名、启用 Email Sending、发布 Cloudflare 要求的 DNS 记录，然后提供真实发件地址/显示名再部署。
+- 本次生产 smoke 已验证 Pages 同源 `/api/forum/bootstrap` 返回 200；直接 `workers.dev/health` 在当前终端网络中超时，不能记为 health 通过。OTP 邮件、OTP 登录、`/api/auth/me`、StoryDraft 创建/修改和跨请求 session 因 Auth 未启用尚未执行。
 - 改邮箱的双 OTP 流程和 `ADMIN_USER_IDS` 服务端权限检查尚未实现。
 - Web 前端仍是旧 `CommunitySheet` 的“社区笔记 / 推荐流 / 写笔记”PoC；新 Auth / StoryDraft backend 还没有接入 UI。
 - 当前正常社区 refresh 仍调用 `ensureCommunityScene()`，存在读取路径隐式写业务数据的问题；必须在替换旧社区壳时移除。

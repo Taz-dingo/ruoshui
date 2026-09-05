@@ -19,7 +19,7 @@
 
 - [x] 建立持久 `User`、Email AuthIdentity、OTP challenge、Session 数据模型。
 - [x] 完成 Email OTP 登录 / 注册 backend：OTP 哈希、限频、失败次数、持久 Session、`/me`、logout、displayName 更新。
-- [ ] 配置生产 Email Service binding、`AUTH_EMAIL_FROM`、`AUTH_OTP_SECRET` 并应用 D1 migration；配置完成前生产 auth 保持关闭。
+- [ ] 配置生产 Email Service binding、`AUTH_EMAIL_FROM`、`AUTH_OTP_SECRET` 并应用 D1 migration；D1 migration 与 `AUTH_OTP_SECRET` 已完成，Email binding/from 因账号没有 Cloudflare zone 阻塞；配置完成前生产 auth 保持关闭。
 - [ ] 第一次登录 UI：可设置 displayName，也可跳过并使用系统默认展示名。
 - [ ] Story Editor、评论 / 回复入口要求先登录；点赞允许触发登录后补做原操作。
 - [ ] 实现改邮箱：旧邮箱 OTP + 新邮箱 OTP，成功后 revoke 其他 sessions；旧邮箱不可访问时保留人工处理路径。
