@@ -39,6 +39,7 @@ function SpatialAnchorEditorOverlay({
   const livePoint = useViewerUiStore((store) => store.highlightAuthoring.pointPosition);
   const cameraPosition = useViewerUiStore((store) => store.camera.positionValue);
   const cameraTarget = useViewerUiStore((store) => store.camera.targetValue);
+  const cameraFov = useViewerUiStore((store) => store.camera.fovValue);
   const isPlace = context === 'place';
   const subject = isPlace ? '地点' : '故事';
 
@@ -84,6 +85,7 @@ function SpatialAnchorEditorOverlay({
       cameraPose: {
         position: tupleToVector(cameraPosition),
         target: tupleToVector(cameraTarget),
+        ...(cameraFov !== null ? { fovDeg: cameraFov } : {}),
       },
     });
   }
@@ -153,6 +155,7 @@ function SpatialAnchorEditorOverlay({
                   ? '现在可以继续正常旋转、平移和缩放。这个镜头会成为别人点击这个地点时看到的最佳视角。'
                   : '现在可以继续正常旋转、平移和缩放。这个视角会成为别人从 Story “回到这里”时看到的镜头。'}
               </p>
+              <div className="mb-3 text-[10px] text-white/40">当前 FOV · {cameraFov?.toFixed(1) ?? 'viewer default'}°</div>
               <button
                 className="h-11 w-full rounded-full bg-white text-[13px] font-semibold text-black disabled:opacity-35"
                 disabled={!cameraPosition || !cameraTarget}
