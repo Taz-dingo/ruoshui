@@ -72,28 +72,37 @@ const storyContentFieldsSchema = z.object({
   location: storyLocationSchema.default({ kind: "none" }),
 });
 
-const storyDraftInputSchema = z
-  .object({
-    title: z.string().trim().max(160).optional(),
-    body: z.string().trim().max(20_000).optional(),
-    memoryTime: z.string().trim().max(120).optional(),
-    mediaAssetIds: z.array(mediaAssetIdSchema).max(12).optional(),
-    location: storyLocationSchema.optional(),
-  })
-  .superRefine((value, context) => {
-    const meaningful =
-      Boolean(value.title?.trim()) ||
-      Boolean(value.body?.trim()) ||
-      Boolean(value.memoryTime?.trim()) ||
-      Boolean(value.mediaAssetIds?.length) ||
-      (value.location !== undefined && value.location.kind !== "none");
-    if (!meaningful) {
-      context.addIssue({
-        code: "custom",
-        message: "Draft update must contain at least one meaningful field.",
-      });
-    }
-  });
+const storyDraftFieldsSchema = z.object({
+  title: z.string().trim().max(160).optional(),
+  body: z.string().trim().max(20_000).optional(),
+  memoryTime: z.string().trim().max(120).optional(),
+  mediaAssetIds: z.array(mediaAssetIdSchema).max(12).optional(),
+  location: storyLocationSchema.optional(),
+});
+
+const storyDraftPatchSchema = storyDraftFieldsSchema.superRefine((value, context) => {
+  if (Object.values(value).every((field) => field === undefined)) {
+    context.addIssue({
+      code: "custom",
+      message: "Draft update must contain at least one field.",
+    });
+  }
+});
+
+const createStoryDraftInputSchema = storyDraftFieldsSchema.superRefine((value, context) => {
+  const meaningful =
+    Boolean(value.title?.trim()) ||
+    Boolean(value.body?.trim()) ||
+    Boolean(value.memoryTime?.trim()) ||
+    Boolean(value.mediaAssetIds?.length) ||
+    (value.location !== undefined && value.location.kind !== "none");
+  if (!meaningful) {
+    context.addIssue({
+      code: "custom",
+      message: "Draft must start with at least one meaningful field.",
+    });
+  }
+});
 
 const validateStoryContent = (
   value: z.infer<typeof storyContentFieldsSchema>,
@@ -172,12 +181,13 @@ type Comment = z.infer<typeof commentSchema>;
 type CommentLikeKey = z.infer<typeof commentLikeKeySchema>;
 type CommentStatus = z.infer<typeof commentStatusSchema>;
 type CreateCommentInput = z.infer<typeof createCommentInputSchema>;
+type CreateStoryDraftInput = z.infer<typeof createStoryDraftInputSchema>;
 type Place = z.infer<typeof placeSchema>;
 type RequestEmailOtpInput = z.infer<typeof requestEmailOtpInputSchema>;
 type SpatialAnchor = z.infer<typeof spatialAnchorSchema>;
 type Story = z.infer<typeof storySchema>;
 type StoryDraft = z.infer<typeof storyDraftSchema>;
-type StoryDraftInput = z.infer<typeof storyDraftInputSchema>;
+type StoryDraftPatch = z.infer<typeof storyDraftPatchSchema>;
 type StoryLikeKey = z.infer<typeof storyLikeKeySchema>;
 type StoryLocation = z.infer<typeof storyLocationSchema>;
 type StoryRevision = z.infer<typeof storyRevisionSchema>;
@@ -196,13 +206,14 @@ export {
   commentSchema,
   commentStatusSchema,
   createCommentInputSchema,
+  createStoryDraftInputSchema,
   emailAddressSchema,
   mediaAssetIdSchema,
   placeIdSchema,
   placeSchema,
   requestEmailOtpInputSchema,
   spatialAnchorSchema,
-  storyDraftInputSchema,
+  storyDraftPatchSchema,
   storyDraftSchema,
   storyIdSchema,
   storyLikeKeySchema,
@@ -226,12 +237,13 @@ export type {
   CommentLikeKey,
   CommentStatus,
   CreateCommentInput,
+  CreateStoryDraftInput,
   Place,
   RequestEmailOtpInput,
   SpatialAnchor,
   Story,
   StoryDraft,
-  StoryDraftInput,
+  StoryDraftPatch,
   StoryLikeKey,
   StoryLocation,
   StoryRevision,
