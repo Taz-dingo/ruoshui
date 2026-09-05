@@ -7,6 +7,7 @@ import {
 } from '@floating-ui/react';
 
 import { AdminCommentModerationConsole } from '../components/admin/AdminCommentModerationConsole';
+import { AdminPlaceConsole } from '../components/admin/AdminPlaceConsole';
 import { AdminReviewConsole } from '../components/admin/AdminReviewConsole';
 import { CommunitySheet } from '../components/community/CommunitySheet';
 import { MyStoriesPanel } from '../components/community/MyStoriesPanel';
@@ -188,6 +189,7 @@ function App({
   const adminMode = new URLSearchParams(window.location.search).get('admin');
   const isAdminReviewMode = adminMode === 'review';
   const isAdminCommentMode = adminMode === 'comments';
+  const isAdminPlaceMode = adminMode === 'places';
 
   const dismissMobilePanel = () => {
     setIsMobilePanelOpen(false);
@@ -414,6 +416,7 @@ function App({
       />
       {isAdminReviewMode ? <AdminReviewConsole sceneId={communitySceneId} /> : null}
       {isAdminCommentMode ? <AdminCommentModerationConsole /> : null}
+      {isAdminPlaceMode ? <AdminPlaceConsole sceneId={communitySceneId} /> : null}
     </main>
   );
 }
