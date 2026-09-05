@@ -13,6 +13,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:migrate:local": "wrangler d1 migrations apply ruoshui-forum --local",
     "deploy": "wrangler deploy",
+    "test": "pnpm run build:shared && tsx --test src/**/*.test.ts",
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
