@@ -1,5 +1,7 @@
 import type { Story, StoryDraft } from "@ruoshui/shared";
 
+import { StoryServiceError } from "./story.js";
+
 interface StoryAuthorRepository {
   createDraftFromPublished(
     userId: string,
@@ -16,13 +18,10 @@ interface StoryAuthorService {
   unpublishStory(userId: string, storyId: string): Promise<Story>;
 }
 
-class StoryAuthorServiceError extends Error {
-  readonly status: 404 | 409;
-
+class StoryAuthorServiceError extends StoryServiceError {
   constructor(message: string, status: 404 | 409) {
-    super(message);
+    super(message, status);
     this.name = "StoryAuthorServiceError";
-    this.status = status;
   }
 }
 
