@@ -2,3 +2,8 @@ CORS_ORIGIN=http://localhost:5173
 MEDIA_PUBLIC_BASE_URL=http://127.0.0.1:8787/media/
 PUBLIC_API_BASE_URL=http://127.0.0.1:8787
 UPLOAD_SIGNING_SECRET=replace-this-before-sharing
+
+# Auth routes are enabled only when these vars AND an EMAIL binding are configured.
+AUTH_OTP_SECRET=replace-with-a-long-random-secret
+AUTH_EMAIL_FROM=no-reply@example.com
+AUTH_EMAIL_FROM_NAME=若水
