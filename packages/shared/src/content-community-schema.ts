@@ -178,6 +178,37 @@ const storyDraftSchema = z.object({
   revision: storyRevisionSchema,
 });
 
+const storyReviewItemSchema = z.object({
+  story: storySchema,
+  revision: storyRevisionSchema,
+  author: userSchema,
+});
+
+const storyReviewPatchSchema = z
+  .object({
+    title: z.string().trim().max(160).nullable().optional(),
+    memoryTime: z.string().trim().max(120).nullable().optional(),
+    location: storyLocationSchema.optional(),
+  })
+  .strict()
+  .superRefine((value, context) => {
+    if (Object.values(value).every((field) => field === undefined)) {
+      context.addIssue({ code: "custom", message: "Review update must contain at least one field." });
+    }
+  });
+
+const requestStoryChangesInputSchema = z
+  .object({
+    note: z.string().trim().min(1).max(2_000),
+  })
+  .strict();
+
+const rejectStoryRevisionInputSchema = z
+  .object({
+    note: z.string().trim().max(2_000).optional(),
+  })
+  .strict();
+
 const createCommentInputSchema = z.object({
   storyId: storyIdSchema,
   body: z.string().trim().min(1).max(2_000),
@@ -210,13 +241,17 @@ type CreatePlaceInput = z.infer<typeof createPlaceInputSchema>;
 type CreateStoryDraftInput = z.infer<typeof createStoryDraftInputSchema>;
 type ListPlacesInput = z.infer<typeof listPlacesInputSchema>;
 type Place = z.infer<typeof placeSchema>;
+type RejectStoryRevisionInput = z.infer<typeof rejectStoryRevisionInputSchema>;
 type RequestEmailOtpInput = z.infer<typeof requestEmailOtpInputSchema>;
+type RequestStoryChangesInput = z.infer<typeof requestStoryChangesInputSchema>;
 type SpatialAnchor = z.infer<typeof spatialAnchorSchema>;
 type Story = z.infer<typeof storySchema>;
 type StoryDraft = z.infer<typeof storyDraftSchema>;
 type StoryDraftPatch = z.infer<typeof storyDraftPatchSchema>;
 type StoryLikeKey = z.infer<typeof storyLikeKeySchema>;
 type StoryLocation = z.infer<typeof storyLocationSchema>;
+type StoryReviewItem = z.infer<typeof storyReviewItemSchema>;
+type StoryReviewPatch = z.infer<typeof storyReviewPatchSchema>;
 type StoryRevision = z.infer<typeof storyRevisionSchema>;
 type StoryRevisionStatus = z.infer<typeof storyRevisionStatusSchema>;
 type StoryStatus = z.infer<typeof storyStatusSchema>;
@@ -241,13 +276,17 @@ export {
   mediaAssetIdSchema,
   placeIdSchema,
   placeSchema,
+  rejectStoryRevisionInputSchema,
   requestEmailOtpInputSchema,
+  requestStoryChangesInputSchema,
   spatialAnchorSchema,
   storyDraftPatchSchema,
   storyDraftSchema,
   storyIdSchema,
   storyLikeKeySchema,
   storyLocationSchema,
+  storyReviewItemSchema,
+  storyReviewPatchSchema,
   storyRevisionIdSchema,
   storyRevisionSchema,
   storyRevisionStatusSchema,
@@ -272,13 +311,17 @@ export type {
   CreateStoryDraftInput,
   ListPlacesInput,
   Place,
+  RejectStoryRevisionInput,
   RequestEmailOtpInput,
+  RequestStoryChangesInput,
   SpatialAnchor,
   Story,
   StoryDraft,
   StoryDraftPatch,
   StoryLikeKey,
   StoryLocation,
+  StoryReviewItem,
+  StoryReviewPatch,
   StoryRevision,
   StoryRevisionStatus,
   StoryStatus,

@@ -5,12 +5,14 @@ import { createD1AuthRepository } from "./db/d1/auth-repository.js";
 import { createD1ForumRepository } from "./db/d1/forum-repository.js";
 import { createD1PlaceRepository } from "./db/d1/place-repository.js";
 import { createD1StoryRepository } from "./db/d1/story-repository.js";
+import { createD1StoryReviewRepository } from "./db/d1/story-review-repository.js";
 import { parseAdminUserIds } from "./lib/admin.js";
 import { createAuthService, type AuthService } from "./lib/auth.js";
 import { createCloudflareAuthEmailSender } from "./lib/auth-email.js";
 import { createPlaceService } from "./lib/place.js";
 import { createR2StorageProvider } from "./lib/storage.js";
 import { createStoryService } from "./lib/story.js";
+import { createStoryReviewService } from "./lib/story-review.js";
 import type { CloudflareForumApiBindings } from "./worker-bindings.js";
 
 function createConfiguredAuthService(env: CloudflareForumApiBindings): AuthService | undefined {
@@ -48,6 +50,9 @@ export default {
         publicBaseUrl: env.MEDIA_PUBLIC_BASE_URL,
         uploadSigningSecret: env.UPLOAD_SIGNING_SECRET,
       }),
+      storyReviewService: authService
+        ? createStoryReviewService({ repository: createD1StoryReviewRepository(env.DB) })
+        : undefined,
       storyService: authService
         ? createStoryService({ repository: createD1StoryRepository(env.DB) })
         : undefined,
