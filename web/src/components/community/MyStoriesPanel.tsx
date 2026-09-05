@@ -22,8 +22,9 @@ import { cn } from '../../utils/cn';
 type PanelState = 'checking' | 'email' | 'otp' | 'ready' | 'error';
 
 interface MyStoriesPanelProps {
+  onCreateStory: () => void;
   onOpenChange: (open: boolean) => void;
-  onOpenStoryComposer: (storyId?: string) => void;
+  onOpenStoryComposer: (storyId: string) => void;
   open: boolean;
 }
 
@@ -69,7 +70,12 @@ function formatDate(value: string) {
   }).format(date);
 }
 
-function MyStoriesPanel({ onOpenChange, onOpenStoryComposer, open }: MyStoriesPanelProps) {
+function MyStoriesPanel({
+  onCreateStory,
+  onOpenChange,
+  onOpenStoryComposer,
+  open,
+}: MyStoriesPanelProps) {
   const [panelState, setPanelState] = useState<PanelState>('checking');
   const [stories, setStories] = useState<OwnedStoryItem[]>([]);
   const [email, setEmail] = useState('');
@@ -160,9 +166,14 @@ function MyStoriesPanel({ onOpenChange, onOpenStoryComposer, open }: MyStoriesPa
     }
   }
 
-  function openComposer(storyId?: string) {
+  function openComposer(storyId: string) {
     onOpenChange(false);
     onOpenStoryComposer(storyId);
+  }
+
+  function createFreshStory() {
+    onOpenChange(false);
+    onCreateStory();
   }
 
   async function handleContinue(item: OwnedStoryItem) {
@@ -192,7 +203,7 @@ function MyStoriesPanel({ onOpenChange, onOpenStoryComposer, open }: MyStoriesPa
       return;
     }
 
-    openComposer();
+    createFreshStory();
   }
 
   async function handleUnpublish(item: OwnedStoryItem) {
@@ -290,7 +301,7 @@ function MyStoriesPanel({ onOpenChange, onOpenStoryComposer, open }: MyStoriesPa
 
               <div className="mb-4 flex items-center justify-between gap-3">
                 <div className="text-[12px] font-semibold">全部 Story</div>
-                <button className="rounded-full bg-[#20251d] px-4 py-2 text-[10px] font-medium text-white" onClick={() => openComposer()} type="button">＋ 新 Story</button>
+                <button className="rounded-full bg-[#20251d] px-4 py-2 text-[10px] font-medium text-white" onClick={createFreshStory} type="button">＋ 新 Story</button>
               </div>
 
               {stories.length === 0 ? (
