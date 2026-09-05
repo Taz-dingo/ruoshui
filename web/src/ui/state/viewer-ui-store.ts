@@ -77,7 +77,8 @@ const emptyCameraState: CameraViewState = {
   visibleGroundPolygonValue: [],
   distanceValue: null,
   pitchValue: null,
-  yawValue: null
+  yawValue: null,
+  fovValue: null
 };
 
 const emptyBlockingErrorState = null;
