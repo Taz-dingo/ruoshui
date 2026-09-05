@@ -12,13 +12,38 @@ import {
 function createHarness() {
   const publishedStories = new Set(["story_1", "story_2"]);
   const commentRefs = new Map([
-    ["comment_root", { id: "comment_root", storyId: "story_1", rootCommentId: null }],
-    ["comment_reply", { id: "comment_reply", storyId: "story_1", rootCommentId: "comment_root" }],
-    ["comment_other", { id: "comment_other", storyId: "story_2", rootCommentId: null }],
+    [
+      "comment_root",
+      {
+        id: "comment_root",
+        storyId: "story_1",
+        authorUserId: "user_1",
+        rootCommentId: null,
+      },
+    ],
+    [
+      "comment_reply",
+      {
+        id: "comment_reply",
+        storyId: "story_1",
+        authorUserId: "user_2",
+        rootCommentId: "comment_root",
+      },
+    ],
+    [
+      "comment_other",
+      {
+        id: "comment_other",
+        storyId: "story_2",
+        authorUserId: "user_3",
+        rootCommentId: null,
+      },
+    ],
   ]);
   const createdComments: CreateSocialCommentRecord[] = [];
   const storyLikes = new Map<string, boolean>();
   const commentLikes = new Map<string, boolean>();
+  const commentStatuses = new Map<string, "visible" | "hidden" | "deleted">();
 
   const snapshot: StorySocial = {
     storyId: "story_1",
@@ -40,10 +65,15 @@ function createHarness() {
       };
     },
     async getVisibleComment(commentId) {
-      return commentRefs.get(commentId) ?? null;
+      const comment = commentRefs.get(commentId) ?? null;
+      if (!comment || commentStatuses.get(commentId) === "deleted") return null;
+      return comment;
     },
     async createComment(input) {
       createdComments.push(input);
+    },
+    async setCommentStatus(commentId, status) {
+      commentStatuses.set(commentId, status);
     },
     async setStoryLike(storyId, userId, liked) {
       storyLikes.set(`${userId}:${storyId}`, liked);
@@ -55,6 +85,7 @@ function createHarness() {
 
   return {
     commentLikes,
+    commentStatuses,
     createdComments,
     service: createStorySocialService({
       repository,
@@ -117,6 +148,21 @@ test("a reply cannot point at a comment from another Story", async () => {
     (error) => error instanceof StorySocialServiceError && error.status === 400,
   );
   assert.equal(harness.createdComments.length, 0);
+});
+
+test("comment authors can soft-delete their own visible comment", async () => {
+  const harness = createHarness();
+  await harness.service.deleteOwnComment("comment_root", "user_1");
+  assert.equal(harness.commentStatuses.get("comment_root"), "deleted");
+});
+
+test("users cannot delete someone else's comment", async () => {
+  const harness = createHarness();
+  await assert.rejects(
+    () => harness.service.deleteOwnComment("comment_reply", "user_1"),
+    (error) => error instanceof StorySocialServiceError && error.status === 403,
+  );
+  assert.equal(harness.commentStatuses.has("comment_reply"), false);
 });
 
 test("like writes are explicit idempotent states instead of toggle commands", async () => {

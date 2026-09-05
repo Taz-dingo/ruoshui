@@ -25,6 +25,22 @@ interface AuthEnvelope {
   user?: User | null;
 }
 
+interface AdminCommentModerationItem {
+  id: string;
+  storyId: string;
+  storyTitle: string | null;
+  author: {
+    id: string;
+    displayName: string | null;
+  };
+  rootCommentId: string | null;
+  replyToCommentId: string | null;
+  body: string;
+  status: 'visible' | 'hidden' | 'deleted';
+  createdAt: string;
+  updatedAt: string;
+}
+
 class ApiRequestError extends Error {
   readonly status: number;
 
@@ -167,10 +183,32 @@ async function createStoryComment(
   );
 }
 
+async function deleteOwnComment(commentId: string): Promise<StorySocial> {
+  return requestData<StorySocial>(
+    `/api/story-social/comments/${encodeURIComponent(commentId)}`,
+    { method: 'DELETE' },
+  );
+}
+
 async function setCommentLike(commentId: string, liked: boolean): Promise<StorySocial> {
   return requestData<StorySocial>(
     `/api/story-social/comments/${encodeURIComponent(commentId)}/like`,
     { method: liked ? 'PUT' : 'DELETE' },
+  );
+}
+
+async function fetchAdminComments(limit = 100): Promise<AdminCommentModerationItem[]> {
+  const query = new URLSearchParams({ limit: String(limit) });
+  return requestData<AdminCommentModerationItem[]>(`/api/admin/comments?${query.toString()}`);
+}
+
+async function setAdminCommentHidden(
+  commentId: string,
+  hidden: boolean,
+): Promise<AdminCommentModerationItem> {
+  return requestData<AdminCommentModerationItem>(
+    `/api/admin/comments/${encodeURIComponent(commentId)}/${hidden ? 'hide' : 'restore'}`,
+    { method: 'POST' },
   );
 }
 
@@ -306,6 +344,8 @@ export {
   confirmStoryMedia,
   createStoryComment,
   createStoryDraft,
+  deleteOwnComment,
+  fetchAdminComments,
   fetchCurrentUser,
   fetchPlaces,
   fetchPublishedStories,
@@ -321,6 +361,7 @@ export {
   requestEmailOtp,
   requestStoryReviewChanges,
   requestStoryUploadTicket,
+  setAdminCommentHidden,
   setCommentLike,
   setStoryLike,
   submitStoryDraft,
@@ -329,3 +370,5 @@ export {
   uploadFileWithTicket,
   verifyEmailOtp,
 };
+
+export type { AdminCommentModerationItem };

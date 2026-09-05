@@ -6,6 +6,7 @@ import type {
 interface SocialCommentRef {
   id: string;
   storyId: string;
+  authorUserId: string;
   rootCommentId: string | null;
 }
 
@@ -24,6 +25,11 @@ interface StorySocialRepository {
   getVisibleComment(commentId: string): Promise<SocialCommentRef | null>;
   isStoryPublished(storyId: string): Promise<boolean>;
   setCommentLike(commentId: string, userId: string, liked: boolean, now: Date): Promise<void>;
+  setCommentStatus(
+    commentId: string,
+    status: "visible" | "hidden" | "deleted",
+    now: Date,
+  ): Promise<void>;
   setStoryLike(storyId: string, userId: string, liked: boolean, now: Date): Promise<void>;
 }
 
@@ -33,15 +39,16 @@ interface StorySocialService {
     userId: string,
     input: CreateStoryCommentInput,
   ): Promise<StorySocial>;
+  deleteOwnComment(commentId: string, userId: string): Promise<StorySocial>;
   getSocial(storyId: string, viewerUserId?: string): Promise<StorySocial>;
   setCommentLike(commentId: string, userId: string, liked: boolean): Promise<StorySocial>;
   setStoryLike(storyId: string, userId: string, liked: boolean): Promise<StorySocial>;
 }
 
 class StorySocialServiceError extends Error {
-  readonly status: 400 | 404;
+  readonly status: 400 | 403 | 404;
 
-  constructor(message: string, status: 400 | 404) {
+  constructor(message: string, status: 400 | 403 | 404) {
     super(message);
     this.name = "StorySocialServiceError";
     this.status = status;
@@ -96,6 +103,19 @@ function createStorySocialService(
         now: now(),
       });
       return options.repository.getSocial(storyId, userId);
+    },
+
+    async deleteOwnComment(commentId, userId) {
+      const comment = await options.repository.getVisibleComment(commentId);
+      if (!comment) {
+        throw new StorySocialServiceError("Visible comment not found.", 404);
+      }
+      if (comment.authorUserId !== userId) {
+        throw new StorySocialServiceError("You can only delete your own comment.", 403);
+      }
+      await requirePublishedStory(comment.storyId);
+      await options.repository.setCommentStatus(commentId, "deleted", now());
+      return options.repository.getSocial(comment.storyId, userId);
     },
 
     async setStoryLike(storyId, userId, liked) {

@@ -82,6 +82,16 @@ function createStorySocialRoute(options: CreateStorySocialRouteOptions): Hono {
     );
   });
 
+  route.delete("/comments/:commentId", async (context) => {
+    const userId = await requireViewerUserId(context);
+    if (userId instanceof Response) return userId;
+    const commentId = commentIdSchema.parse(context.req.param("commentId"));
+    return context.json({
+      ok: true,
+      data: await options.socialService.deleteOwnComment(commentId, userId),
+    });
+  });
+
   route.put("/comments/:commentId/like", async (context) => {
     const userId = await requireViewerUserId(context);
     if (userId instanceof Response) return userId;
