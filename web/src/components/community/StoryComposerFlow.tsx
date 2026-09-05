@@ -21,7 +21,6 @@ import {
   fetchCurrentUser,
   fetchPlaces,
   fetchStoryDrafts,
-  getPublishedStoryMediaUrl,
   requestEmailOtp,
   requestStoryUploadTicket,
   submitStoryDraft,
@@ -30,7 +29,10 @@ import {
   uploadFileWithTicket,
   verifyEmailOtp,
 } from '../../community/content-api';
-import { fetchOwnedStoryDraft } from '../../community/my-stories-api';
+import {
+  fetchOwnedStoryDraft,
+  getOwnedStoryMediaUrl,
+} from '../../community/my-stories-api';
 import { scrollAreaClassNames } from '../../styles/system';
 import { cn } from '../../utils/cn';
 import { SpatialAnchorEditorOverlay } from './SpatialAnchorEditorOverlay';
@@ -167,16 +169,12 @@ function StoryComposerFlow({
     setBody(draft.revision.body ?? '');
     setMemoryTime(draft.revision.memoryTime ?? '');
     setLocation(draft.revision.location);
-    const canReadPublishedMedia =
-      draft.story.status === 'active' && Boolean(draft.story.publishedRevisionId);
     setMedia(
       draft.revision.mediaAssetIds.map((assetId, index) => ({
         assetId,
         clientId: `restored_${assetId}`,
         name: `已保存照片 ${index + 1}`,
-        ...(canReadPublishedMedia
-          ? { previewUrl: getPublishedStoryMediaUrl(draft.story.id, assetId) }
-          : {}),
+        previewUrl: getOwnedStoryMediaUrl(draft.story.id, assetId),
         status: 'restored',
       }))
     );
