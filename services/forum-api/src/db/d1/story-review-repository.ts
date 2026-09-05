@@ -7,11 +7,12 @@ import type {
   User,
 } from "@ruoshui/shared";
 import type { D1Database } from "@cloudflare/workers-types";
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 
 import type { StoryReviewRepository } from "../../lib/story-review.js";
 import {
+  mediaAssets,
   stories,
   storyRevisionMedia,
   storyRevisions,
@@ -203,6 +204,27 @@ function createD1StoryReviewRepository(database: D1Database): StoryReviewReposit
     async getReviewItem(revisionId) {
       const row = await getJoinedRevision(revisionId);
       return row ? hydrateRow(row) : null;
+    },
+
+    async getReviewMediaRef(revisionId, mediaAssetId) {
+      const [row] = await db
+        .select({
+          id: mediaAssets.id,
+          mimeType: mediaAssets.mimeType,
+          objectKey: mediaAssets.objectKey,
+        })
+        .from(storyRevisionMedia)
+        .innerJoin(mediaAssets, eq(mediaAssets.id, storyRevisionMedia.mediaAssetId))
+        .where(
+          and(
+            eq(storyRevisionMedia.storyRevisionId, revisionId),
+            eq(storyRevisionMedia.mediaAssetId, mediaAssetId),
+            eq(mediaAssets.status, "ready"),
+          ),
+        )
+        .limit(1)
+        .all();
+      return row ?? null;
     },
 
     async listPendingReviews() {

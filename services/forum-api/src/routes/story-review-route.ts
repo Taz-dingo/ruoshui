@@ -1,4 +1,5 @@
 import {
+  mediaAssetIdSchema,
   rejectStoryRevisionInputSchema,
   requestStoryChangesInputSchema,
   storyReviewPatchSchema,
@@ -9,6 +10,7 @@ import { getCookie } from "hono/cookie";
 
 import { AdminAccessError, requireAdminUser } from "../lib/admin.js";
 import type { AuthService } from "../lib/auth.js";
+import type { StorageProvider } from "../lib/storage.js";
 import type { StoryReviewService } from "../lib/story-review.js";
 import { SESSION_COOKIE_NAME } from "./auth-route.js";
 
@@ -16,6 +18,7 @@ interface CreateStoryReviewRouteOptions {
   adminUserIds: ReadonlySet<string>;
   authService?: AuthService;
   reviewService: StoryReviewService;
+  storageProvider: StorageProvider;
 }
 
 function createStoryReviewRoute(options: CreateStoryReviewRouteOptions): Hono {
@@ -51,6 +54,44 @@ function createStoryReviewRoute(options: CreateStoryReviewRouteOptions): Hono {
     return context.json({
       ok: true,
       data: await options.reviewService.listPendingReviews(),
+    });
+  });
+
+  route.get("/:revisionId/media/:mediaAssetId", async (context) => {
+    const admin = await requireAdmin(context);
+    if (admin instanceof Response) return admin;
+
+    if (!options.storageProvider.readObject) {
+      return context.json(
+        { ok: false, error: "Review media reads are not available for the current storage provider." },
+        501,
+      );
+    }
+
+    const revisionId = storyRevisionIdSchema.parse(context.req.param("revisionId"));
+    const mediaAssetId = mediaAssetIdSchema.parse(context.req.param("mediaAssetId"));
+    const media = await options.reviewService.getReviewMediaRef(revisionId, mediaAssetId);
+    const object = await options.storageProvider.readObject(media.objectKey);
+    if (!object) {
+      return context.notFound();
+    }
+
+    const headers = new Headers();
+    headers.set("content-type", object.contentType ?? media.mimeType);
+    headers.set("cache-control", "private, max-age=60");
+    if (object.contentLength !== undefined) {
+      headers.set("content-length", String(object.contentLength));
+    }
+    if (object.etag) {
+      headers.set("etag", object.etag);
+    }
+    if (object.uploadedAt) {
+      headers.set("last-modified", object.uploadedAt.toUTCString());
+    }
+
+    return new Response(object.body as BodyInit | null, {
+      headers,
+      status: 200,
     });
   });
 

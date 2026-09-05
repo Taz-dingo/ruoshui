@@ -60,6 +60,16 @@ function createHarness() {
       return items.get(revisionId) ?? null;
     },
 
+    async getReviewMediaRef(revisionId, mediaAssetId) {
+      const item = items.get(revisionId);
+      if (!item?.revision.mediaAssetIds.includes(mediaAssetId)) return null;
+      return {
+        id: mediaAssetId,
+        mimeType: "image/jpeg",
+        objectKey: `story-drafts/${item.story.authorUserId}/${mediaAssetId}.jpg`,
+      };
+    },
+
     async listPendingReviews() {
       return [...items.values()].filter((item) => item.revision.status === "pending_review");
     },
@@ -166,6 +176,19 @@ test("review queue only returns pending revisions", async () => {
 
   const queue = await harness.service.listPendingReviews();
   assert.deepEqual(queue.map((item) => item.revision.id), ["revision_pending"]);
+});
+
+test("review media can only be resolved through the revision that references it", async () => {
+  const harness = createHarness();
+  harness.items.set("revision_1", createReviewItem("revision_1"));
+
+  const media = await harness.service.getReviewMediaRef("revision_1", "media_1");
+  assert.equal(media.objectKey, "story-drafts/user_author/media_1.jpg");
+
+  await assert.rejects(
+    () => harness.service.getReviewMediaRef("revision_1", "media_foreign"),
+    (error) => error instanceof StoryReviewServiceError && error.status === 404,
+  );
 });
 
 test("review correction is limited to metadata and location", async () => {

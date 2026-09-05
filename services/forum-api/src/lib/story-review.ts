@@ -3,9 +3,19 @@ import type {
   StoryReviewPatch,
 } from "@ruoshui/shared";
 
+interface StoryReviewMediaRef {
+  id: string;
+  mimeType: string;
+  objectKey: string;
+}
+
 interface StoryReviewRepository {
   approveRevision(revisionId: string, now: Date): Promise<StoryReviewItem | null>;
   getReviewItem(revisionId: string): Promise<StoryReviewItem | null>;
+  getReviewMediaRef(
+    revisionId: string,
+    mediaAssetId: string,
+  ): Promise<StoryReviewMediaRef | null>;
   listPendingReviews(): Promise<StoryReviewItem[]>;
   patchPendingRevision(
     revisionId: string,
@@ -27,6 +37,7 @@ interface StoryReviewRepository {
 interface StoryReviewService {
   approveRevision(revisionId: string): Promise<StoryReviewItem>;
   getReviewItem(revisionId: string): Promise<StoryReviewItem>;
+  getReviewMediaRef(revisionId: string, mediaAssetId: string): Promise<StoryReviewMediaRef>;
   listPendingReviews(): Promise<StoryReviewItem[]>;
   patchRevision(revisionId: string, input: StoryReviewPatch): Promise<StoryReviewItem>;
   rejectRevision(revisionId: string, note?: string): Promise<StoryReviewItem>;
@@ -89,6 +100,15 @@ function createStoryReviewService(
       return requireReviewItem(revisionId);
     },
 
+    async getReviewMediaRef(revisionId, mediaAssetId) {
+      await requireReviewItem(revisionId);
+      const media = await options.repository.getReviewMediaRef(revisionId, mediaAssetId);
+      if (!media) {
+        throw new StoryReviewServiceError("Story review media not found.", 404);
+      }
+      return media;
+    },
+
     async listPendingReviews() {
       return options.repository.listPendingReviews();
     },
@@ -146,6 +166,7 @@ function createStoryReviewService(
 export { StoryReviewServiceError, createStoryReviewService };
 export type {
   CreateStoryReviewServiceOptions,
+  StoryReviewMediaRef,
   StoryReviewRepository,
   StoryReviewService,
 };

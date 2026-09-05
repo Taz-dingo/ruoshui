@@ -106,6 +106,7 @@ function createApp(options: CreateAppOptions): Hono {
         adminUserIds: options.adminUserIds ?? new Set(),
         authService: options.authService,
         reviewService: options.storyReviewService,
+        storageProvider: options.storageProvider,
       }),
     );
   }
