@@ -7,6 +7,7 @@ import { AuthServiceError, type AuthService } from "./lib/auth.js";
 import type { ForumRepository } from "./lib/forum-repository.js";
 import { PlaceServiceError, type PlaceService } from "./lib/place.js";
 import { StorageProviderError, type StorageProvider } from "./lib/storage.js";
+import type { StoryAuthorService } from "./lib/story-author.js";
 import {
   StoryReadServiceError,
   type StoryReadService,
@@ -38,6 +39,7 @@ interface CreateAppOptions {
   placeService?: PlaceService;
   runtime: "node" | "cloudflare";
   storageProvider: StorageProvider;
+  storyAuthorService?: StoryAuthorService;
   storyReadService?: StoryReadService;
   storyReviewService?: StoryReviewService;
   storyService?: StoryService;
@@ -146,6 +148,7 @@ function createApp(options: CreateAppOptions): Hono {
       createStoryRoute({
         authService: options.authService,
         storageProvider: options.storageProvider,
+        storyAuthorService: options.storyAuthorService,
         storyService: options.storyService,
       }),
     );

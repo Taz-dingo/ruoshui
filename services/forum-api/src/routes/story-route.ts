@@ -11,11 +11,13 @@ import { getCookie } from "hono/cookie";
 import type { AuthService } from "../lib/auth.js";
 import type { StorageProvider } from "../lib/storage.js";
 import type { StoryService } from "../lib/story.js";
+import type { StoryAuthorService } from "../lib/story-author.js";
 import { SESSION_COOKIE_NAME } from "./auth-route.js";
 
 interface CreateStoryRouteOptions {
   authService: AuthService;
   storageProvider: StorageProvider;
+  storyAuthorService?: StoryAuthorService;
   storyService: StoryService;
 }
 
@@ -103,6 +105,45 @@ function createStoryRoute(options: CreateStoryRouteOptions): Hono {
     const storyId = storyIdSchema.parse(context.req.param("storyId"));
     const draft = await options.storyService.submitDraft(user.id, storyId);
     return context.json({ ok: true, data: draft });
+  });
+
+  route.post("/:storyId/edit", async (context) => {
+    const user = await getUser(context);
+    if (!user) {
+      return context.json({ ok: false, error: "Authentication required." }, 401);
+    }
+    if (!options.storyAuthorService) {
+      return context.json({ ok: false, error: "Story authoring is not configured." }, 503);
+    }
+    const storyId = storyIdSchema.parse(context.req.param("storyId"));
+    const draft = await options.storyAuthorService.createEditDraft(user.id, storyId);
+    return context.json({ ok: true, data: draft }, 201);
+  });
+
+  route.post("/:storyId/unpublish", async (context) => {
+    const user = await getUser(context);
+    if (!user) {
+      return context.json({ ok: false, error: "Authentication required." }, 401);
+    }
+    if (!options.storyAuthorService) {
+      return context.json({ ok: false, error: "Story authoring is not configured." }, 503);
+    }
+    const storyId = storyIdSchema.parse(context.req.param("storyId"));
+    const story = await options.storyAuthorService.unpublishStory(user.id, storyId);
+    return context.json({ ok: true, data: story });
+  });
+
+  route.delete("/:storyId", async (context) => {
+    const user = await getUser(context);
+    if (!user) {
+      return context.json({ ok: false, error: "Authentication required." }, 401);
+    }
+    if (!options.storyAuthorService) {
+      return context.json({ ok: false, error: "Story authoring is not configured." }, 503);
+    }
+    const storyId = storyIdSchema.parse(context.req.param("storyId"));
+    const story = await options.storyAuthorService.deleteStory(user.id, storyId);
+    return context.json({ ok: true, data: story });
   });
 
   return route;
