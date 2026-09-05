@@ -6,7 +6,7 @@
 
 ## 当前阶段
 
-若水已经完成底层 3D / Cloudflare / 旧社区技术骨架，并完成 Content & Community v1 的主要产品决策。第一轮工程基础也已经进入 `main`：仓库开始从“3D viewer + forum PoC”迁移到**空间 → Place / Anchor → Story → 讨论 → 回到空间**的校园记忆产品。
+若水已经从“3D viewer + forum PoC”进入 **Content & Community v1** 主线。新的 User/Auth、Place/Anchor、Story Draft/Revision、审核和 Published Story read path 已进入 `main`；当前主要工作转向 Place → Story 的正式消费体验与轻社交。
 
 正式场景继续使用完整 Single SOG，经同源 `/edge-models/hhuc-original.sog` 从 R2 提供。自研 Streamed SOG / LOD 只保留历史实验，不作为当前产品主线。
 
@@ -18,20 +18,20 @@
 - 场景基础：镜头预设、小地图、热点、加载反馈、按需渲染。
 - 手机 3D 交互逻辑：单指 rotate、双指 pan + pinch zoom；仍需真机 polish。
 - 服务主路径：Cloudflare Pages + Workers + D1 + R2；Node/PostgreSQL 仅作明确 fallback。
-- Pages `/api/*` 同源代理可透传 Worker response headers，包括后续 Session cookie。
+- Pages `/api/*` 同源代理可透传 Worker response headers，包括 Session cookie。
 
 ### Agent / Gate 基础
 
-- 人机协作长期规则已沉淀到 [`agent-collaboration.md`](agent-collaboration.md)；产品 rationale 见 [`../decisions/2026-09-06-content-community-v1.md`](../decisions/2026-09-06-content-community-v1.md)。
-- 根 `pnpm check` 已统一执行 typecheck + tests + build。
-- `.github/workflows/ci.yml` 已在 PR 和 main push 上执行完整 gate；当前 main CI 为 green。
-- Story 的第一批关键 contract 已被 shared schema / tests 固化，不再只靠 prose。
+- 人机协作长期规则已沉淀到 [`agent-collaboration.md`](agent-collaboration.md)。
+- 根 `pnpm check` 统一执行 typecheck + tests + build。
+- `.github/workflows/ci.yml` 已在 PR 和 main push 上执行完整 gate。
+- Story 的关键 contract 已被 shared schema / tests 固化，不再只靠 prose。
 
-### Content & Community 新领域基础
+### Content & Community 领域基础
 
 - shared contracts 已有 User、SpatialAnchor、Place、Story、StoryRevision、StoryDraft、Comment、Like 等新领域模型。
-- D1 与 Postgres schema 已加入 users / auth identities / OTP / sessions / places / stories / revisions / revision media / comments / likes。
-- D1 migration `0001_content_community_foundation.sql` 已于 `2026-09-05` 应用到生产 `ruoshui-forum`（database id `77f54654-bb08-41b4-afb4-cfd1c3669a26`）；远端 `d1_migrations` 已确认同时记录 `0000_initial.sql` 与 `0001_content_community_foundation.sql`，旧 scene 数据仍在。
+- D1 schema / migration 已加入 users、auth identities、OTP、sessions、places、stories、revisions、revision media、comments、likes。
+- `0001_content_community_foundation.sql` 已应用到生产 `ruoshui-forum`，旧 scene 数据仍在。
 - v1 Story location 已机械化为 Place / custom Anchor / none 三选一；正文或图片至少一项、图片最多 12 张等提交约束已有测试。
 
 ### Auth backend
@@ -39,37 +39,38 @@
 - Email OTP backend 已完成：邮箱 normalization、随机 6 位 OTP、服务端哈希、60 秒 resend 限制、错误尝试计数、10 分钟有效期。
 - 登录成功会创建 / 复用持久 User，并创建只在客户端持有明文的 90 天 Session token；数据库只存 token hash。
 - `/api/auth/email/request-otp`、`/verify`、`/me`、`/profile`、`/logout` 已具备。
-- Worker 已支持可选 Cloudflare Email Service adapter；只有 `EMAIL` binding + `AUTH_EMAIL_FROM` + `AUTH_OTP_SECRET` 都存在时才启用 auth routes，因此当前代码可以安全上线而不会伪造邮件配置。
-- 生产 Worker `ruoshui-forum-api` 已部署当前 `main` 版本 `ca0c1632-b789-4b3d-8fdb-ccc5b787a7f5`；`AUTH_OTP_SECRET` 已通过 Wrangler Secret 设置，既有 `UPLOAD_SIGNING_SECRET`、D1、R2 和 vars 均仍在部署 binding 清单中。
+- 邮件 provider 已从 Cloudflare Email Sending 改为 **腾讯云 SES API 3.0**；Worker 直接使用 `TC3-HMAC-SHA256` 签名调用 `SendEmail`，不再需要 Cloudflare `EMAIL` binding 或仅为 OTP 升级 Workers Paid。
+- SES 使用审核模板发送验证码，模板变量只保留 `{{code}}`；当前 OTP 有效期固定 10 分钟，写入模板静态文案。
+- 相关决定和生产配置要求见 [`../decisions/2026-09-06-tencent-ses-auth-email.md`](../decisions/2026-09-06-tencent-ses-auth-email.md)。
 
-### Story Draft backend
+### Story 生产与审核
 
-- 已完成登录用户的 Story Draft create / list / get / patch / submit API。
+- 登录用户的 Story Draft create / list / get / patch / submit API 已完成。
 - Draft 可以是不完整内容；最终 submit 时才强制 body / media 至少一项。
-- StoryDraft 归属检查在 service / repository 边界执行，其他 User 无法读取或编辑。
-- submit 前会验证引用的 media asset 均为 ready。
-- `changes_requested` Revision 可以继续编辑，编辑后回到 `draft`；提交后进入 `pending_review`。
+- StoryDraft 与媒体 ownership 在 service / repository 边界执行；用户不能把其他人的 media ID 挂进自己的 Story。
+- Web Story Composer 已接真实 Auth / Draft / upload / Place：Email OTP、可跳过 displayName、草稿恢复 / 自动保存、照片上传与排序、Place 选择、提交审核均走正式 API。
+- 共用 Spatial Anchor Editor 已接入 Story Composer：正常浏览 3D → 临时落点 → 恢复 3D 操作调镜头 → 保存 Anchor → 回到原 Story 草稿。
+- Place read / admin authoring API 已完成；管理员边界由 `ADMIN_USER_IDS` 的稳定 userId allowlist 强制执行。
+- Review backend + Admin Review Console 已完成：待审核队列、受保护看图、标题 / 时间 / 地点轻量校准、3D Anchor 重标、通过发布、退回修改、拒绝。
+- Review media 只通过管理员受保护 route 读取，不把待审核 R2 对象变成公共 URL。
+- Published Story read API 已完成：公开端只读取 Story 当前 `publishedRevisionId`；待审核、拒绝、changes-requested 和被替换 Revision 及其媒体不会经公开 API 暴露。
 
-## 已确定但尚未完成的产品 contract
+## 尚未完成的产品 contract
 
-- `Place` 要拥有人工维护的 focus camera；当前旧 pin focus 仍用统一 offset 临时计算。
-- Place 内容层要改成地点介绍 + masonry Story feed，并在滚动后收缩为 sticky title。
-- PC 最终用窄侧边内容层，Mobile 用可扩展 Bottom Sheet。
-- Story Editor 要采用简单图片内容 Composer：媒体排序、optional title、普通 textarea、memoryTime、Place / Anchor、自动保存。
-- 普通用户和 Admin 要复用同一个 3D Anchor Editor。
-- Review backend / Admin UI、Published Revision 原子切换、主动下架 / soft delete 尚未实现。
-- Story Detail、Like、Comment、Reply 的新产品 UI / API 尚未实现。
+- Place 3D 热点和正式 Place Memory Panel 仍在实现：地点介绍 + masonry Story feed、滚动 sticky title、PC 窄侧边层 / Mobile Bottom Sheet。
+- Place focus 要完整使用人工保存的 camera pose，并加入可取消的轻微 ambient 运镜。
+- Story Detail 要完成多图横滑、作者 / memoryTime / Place / Anchor、Like / Comment / Reply。
+- Story / Comment Like、两层视觉 Comment / Reply 和评论 moderation 尚未接入最终产品 UI。
+- 用户主动下架 / soft delete、已发布 Story 的作者侧 Revision 编辑入口仍需收口。
+- 改邮箱的旧邮箱 OTP + 新邮箱 OTP 流程尚未实现。
 
-## 当前实现差距 / 已知限制
+## 当前生产阻塞 / 已知限制
 
-- 生产 Auth **尚未启用**：`AUTH_OTP_SECRET` 和 D1 migration 已完成，但账号当前没有任何 Cloudflare zone，故无法配置可验证的 Email Sending sender/domain、`EMAIL` binding、`AUTH_EMAIL_FROM` / `AUTH_EMAIL_FROM_NAME`；Pages 同源 OTP 请求实际返回 404。需要先由人工在该账号添加并激活自有域名、启用 Email Sending、发布 Cloudflare 要求的 DNS 记录，然后提供真实发件地址/显示名再部署。
-- 本次生产 smoke 已验证 Pages 同源 `/api/forum/bootstrap` 返回 200；直接 `workers.dev/health` 在当前终端网络中超时，不能记为 health 通过。OTP 邮件、OTP 登录、`/api/auth/me`、StoryDraft 创建/修改和跨请求 session 因 Auth 未启用尚未执行。
-- 改邮箱的双 OTP 流程和 `ADMIN_USER_IDS` 服务端权限检查尚未实现。
-- Web 前端仍是旧 `CommunitySheet` 的“社区笔记 / 推荐流 / 写笔记”PoC；新 Auth / StoryDraft backend 还没有接入 UI。
-- 当前正常社区 refresh 仍调用 `ensureCommunityScene()`，存在读取路径隐式写业务数据的问题；必须在替换旧社区壳时移除。
-- 旧 storage / media confirm API 还没有绑定正式 User / Draft ownership；在开放新 Story Editor 前需要收口，否则 media ID 归属边界不够严格。
-- Place read / authoring API、真实 Place 和真实 Story 尚未正式落库。
-- Node/PostgreSQL fallback 还没有同步新 Auth / Story service runtime；当前新主路径只接 Worker + D1。
+- 生产 Auth 还不能做真实 OTP smoke：代码已经切到腾讯云 SES，但仍需要在腾讯云完成 `auth.tazdingo.net` 发信域名验证、发信地址、验证码模板审核，并给 Worker 配置 `TENCENT_CLOUD_SECRET_ID`、`TENCENT_CLOUD_SECRET_KEY`、`TENCENT_SES_TEMPLATE_ID`。`AUTH_OTP_SECRET` 已存在。
+- `AUTH_EMAIL_FROM=no-reply@auth.tazdingo.net`、`AUTH_EMAIL_FROM_NAME=若水`、`TENCENT_SES_REGION=ap-guangzhou` 已作为非敏感 Worker vars 写入配置；腾讯云 Secret / Template ID 不进入 Git。
+- 腾讯云 SES 模板审核通过前不要把 OTP smoke 记为通过。
+- Node/PostgreSQL fallback 尚未同步新的 Auth / Story service runtime；当前 Content & Community 新主路径以 Worker + D1 为准。
+- 当前旧 forum UI / read path 仍保留兼容代码，正在由正式 Place / Story 消费链路逐步替换；不要一次性无意义重写。
 
 ## 场景与发布后置项
 
@@ -80,11 +81,9 @@
 
 ## 当前判断
 
-P0 的 repository gate、新领域 schema、Email OTP backend、StoryDraft backend 已经成立。下一步应集中做**可见的内容生产链路**：
+接下来并行推进两条线：
 
-1. 收口 authenticated media upload ownership；
-2. 建 Place read / authoring 与共用 Anchor Editor；
-3. 接入 Web Login + Story Editor + server-side Draft autosave；
-4. 再做 Review / Revision publish 和新的 Place Feed / Story Detail / Social。
+1. 产品代码：完成 Place → Story 正式阅读体验，再接 Story Detail / Like / Comment / Reply。
+2. 生产配置：腾讯云 SES 域名 / 发件地址 / 模板审核通过后，配置 Worker secrets / template id，部署并跑真实 OTP → Session → StoryDraft smoke。
 
 产品边界见 [`spec.md`](spec.md)；执行顺序见 [`tasks.md`](tasks.md)；人机协作规则见 [`agent-collaboration.md`](agent-collaboration.md)；部署 / 排障规则见 [`engineering-memory.md`](engineering-memory.md)。
