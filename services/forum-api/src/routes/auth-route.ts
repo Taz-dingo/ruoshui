@@ -18,16 +18,6 @@ function isSecureRequest(requestUrl: string): boolean {
   return new URL(requestUrl).protocol === "https:";
 }
 
-function requireSessionUser(
-  user: Awaited<ReturnType<AuthService["getUserForSessionToken"]>>,
-): asserts user is NonNullable<typeof user> {
-  if (!user) {
-    const error = new Error("Authentication required.");
-    Object.assign(error, { status: 401 });
-    throw error;
-  }
-}
-
 function createAuthRoute(options: CreateAuthRouteOptions): Hono {
   const route = new Hono();
 
@@ -66,7 +56,9 @@ function createAuthRoute(options: CreateAuthRouteOptions): Hono {
   route.patch("/profile", async (context) => {
     const sessionToken = getCookie(context, SESSION_COOKIE_NAME);
     const user = await options.authService.getUserForSessionToken(sessionToken);
-    requireSessionUser(user);
+    if (!user) {
+      return context.json({ ok: false, error: "Authentication required." }, 401);
+    }
 
     const input = updateUserProfileInputSchema.parse(await context.req.json());
     const updatedUser = await options.authService.updateDisplayName(user.id, input.displayName);
