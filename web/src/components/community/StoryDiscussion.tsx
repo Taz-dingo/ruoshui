@@ -4,6 +4,7 @@ import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ApiRequestError,
   createStoryComment,
+  deleteOwnComment,
   fetchCurrentUser,
   fetchStorySocial,
   requestEmailOtp,
@@ -174,6 +175,31 @@ function StoryDiscussion({ storyId }: { storyId: string }) {
     }
   }
 
+  async function handleDeleteComment(comment: PublishedComment) {
+    if (!user || user.id !== comment.author.id) return;
+    const hasReplies = comment.rootCommentId === null && (repliesByRoot.get(comment.id)?.length ?? 0) > 0;
+    const prompt = hasReplies
+      ? '删除这条评论后，这个讨论串会从公开页面隐藏。确认删除？'
+      : '确认删除这条评论？';
+    if (!window.confirm(prompt)) return;
+
+    setBusyKey(`comment-delete:${comment.id}`);
+    setSocialError(null);
+    try {
+      setSocial(await deleteOwnComment(comment.id));
+      if (replyToCommentId === comment.id) setReplyToCommentId(null);
+    } catch (error) {
+      if (error instanceof ApiRequestError && error.status === 401) {
+        setUser(null);
+        setSocialError('登录状态已失效，请重新登录后再删除。');
+      } else {
+        setSocialError(error instanceof Error ? error.message : '评论删除失败。');
+      }
+    } finally {
+      setBusyKey(null);
+    }
+  }
+
   async function handleSubmitComment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const body = commentBody.trim();
@@ -238,6 +264,7 @@ function StoryDiscussion({ storyId }: { storyId: string }) {
     const repliedComment = comment.replyToCommentId
       ? commentsById.get(comment.replyToCommentId) ?? null
       : null;
+    const isOwnComment = user?.id === comment.author.id;
     return (
       <article
         className={cn(
@@ -270,6 +297,16 @@ function StoryDiscussion({ storyId }: { storyId: string }) {
           >
             {comment.viewerHasLiked ? '♥' : '♡'} {comment.likeCount || ''}
           </button>
+          {isOwnComment ? (
+            <button
+              className="hover:text-[#9b4138] disabled:opacity-35"
+              disabled={busyKey === `comment-delete:${comment.id}`}
+              onClick={() => void handleDeleteComment(comment)}
+              type="button"
+            >
+              {busyKey === `comment-delete:${comment.id}` ? '删除中…' : '删除'}
+            </button>
+          ) : null}
         </div>
       </article>
     );
