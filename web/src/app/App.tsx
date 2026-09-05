@@ -8,6 +8,7 @@ import {
 
 import { AdminReviewConsole } from '../components/admin/AdminReviewConsole';
 import { CommunitySheet } from '../components/community/CommunitySheet';
+import { PlaceMemoryLayer } from '../components/community/PlaceMemoryLayer';
 import { StoryComposerFlow } from '../components/community/StoryComposerFlow';
 import { ControlDockMenu } from '../components/viewer/ControlDockMenu';
 import { HighlightLayer } from '../components/viewer/HighlightLayer';
@@ -249,6 +250,7 @@ function App({
             onOpenFullCommunity={openFullCommunity}
             sceneId={communitySceneId}
           />
+          <PlaceMemoryLayer isMobile={isMobileViewport} sceneId={communitySceneId} />
           <LoadingOverlay />
 
           <div className={hudClassName}>

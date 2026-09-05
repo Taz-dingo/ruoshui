@@ -4,7 +4,8 @@ import type { GraphicsBackendPreference } from '../../runtime/bootstrap';
 import type { ViewerVariant } from '../../content/types';
 import {
   subscribeViewerCommands,
-  type ViewerCommand
+  type ViewerCommand,
+  type ViewerPlacePin
 } from '../commands/viewer-command-bus';
 
 interface InstallViewerStartupBindingsArgs {
@@ -32,8 +33,15 @@ interface InstallViewerStartupBindingsArgs {
     target?: [number, number, number];
     title: string;
   }) => void;
+  focusSpatialAnchor: (command: {
+    position: [number, number, number];
+    target: [number, number, number];
+    title: string;
+    fovDeg?: number;
+  }) => void;
   setHighlightAuthoringEnabled: (enabled: boolean) => void;
   setHighlightPlaneY: (value: number) => void;
+  setPlacePins: (pins: ViewerPlacePin[]) => void;
 }
 
 interface InitializeViewerStartupArgs {
@@ -77,8 +85,10 @@ function installViewerStartupBindings({
   setAntiAliasEnabled,
   applySceneLook,
   focusScenePin,
+  focusSpatialAnchor,
   setHighlightAuthoringEnabled,
-  setHighlightPlaneY
+  setHighlightPlaneY,
+  setPlacePins
 }: InstallViewerStartupBindingsArgs) {
   const unsubscribe = subscribeViewerCommands((command: ViewerCommand) => {
     switch (command.type) {
@@ -136,6 +146,12 @@ function installViewerStartupBindings({
         return;
       case 'focus-scene-pin':
         focusScenePin(command);
+        return;
+      case 'focus-spatial-anchor':
+        focusSpatialAnchor(command);
+        return;
+      case 'set-place-pins':
+        setPlacePins(command.pins);
         return;
       case 'set-highlight-authoring-enabled':
         setHighlightAuthoringEnabled(command.enabled);

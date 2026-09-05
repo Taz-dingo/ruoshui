@@ -84,6 +84,25 @@ interface FocusScenePinCommand {
   title: string;
 }
 
+interface ViewerPlacePin {
+  id: string;
+  name: string;
+  position: [number, number, number];
+}
+
+interface SetPlacePinsCommand {
+  type: 'set-place-pins';
+  pins: ViewerPlacePin[];
+}
+
+interface FocusSpatialAnchorCommand {
+  type: 'focus-spatial-anchor';
+  title: string;
+  position: [number, number, number];
+  target: [number, number, number];
+  fovDeg?: number;
+}
+
 interface SelectPresetCommand {
   type: 'select-preset';
   presetId: string;
@@ -111,6 +130,7 @@ type ViewerCommand =
   | DownloadRouteAnalysisJsonCommand
   | DownloadViewCaptureJsonCommand
   | FocusScenePinCommand
+  | FocusSpatialAnchorCommand
   | GraphicsBackendPreferenceChangeCommand
   | RenderScaleChangeCommand
   | RunCurrentRouteBenchmarkCommand
@@ -118,6 +138,7 @@ type ViewerCommand =
   | SceneLookChangeCommand
   | SetHighlightAuthoringEnabledCommand
   | SetHighlightPlaneYCommand
+  | SetPlacePinsCommand
   | SelectPresetCommand
   | SelectRouteCommand
   | SelectVariantCommand;
@@ -184,6 +205,20 @@ function requestFocusScenePin(command: Omit<FocusScenePinCommand, 'type'>) {
   emitViewerCommand({
     type: 'focus-scene-pin',
     ...command
+  });
+}
+
+function requestFocusSpatialAnchor(command: Omit<FocusSpatialAnchorCommand, 'type'>) {
+  emitViewerCommand({
+    type: 'focus-spatial-anchor',
+    ...command
+  });
+}
+
+function requestSetPlacePins(pins: ViewerPlacePin[]) {
+  emitViewerCommand({
+    type: 'set-place-pins',
+    pins
   });
 }
 
@@ -272,6 +307,7 @@ export {
   requestDownloadRouteAnalysisJson,
   requestDownloadViewCaptureJson,
   requestFocusScenePin,
+  requestFocusSpatialAnchor,
   requestGraphicsBackendPreferenceChange,
   requestPresetSelection,
   requestRenderScaleChange,
@@ -281,10 +317,12 @@ export {
   requestSceneLookChange,
   requestSetHighlightAuthoringEnabled,
   requestSetHighlightPlaneY,
+  requestSetPlacePins,
   requestVariantSelection,
   subscribeViewerCommands
 };
 
 export type {
-  ViewerCommand
+  ViewerCommand,
+  ViewerPlacePin
 };

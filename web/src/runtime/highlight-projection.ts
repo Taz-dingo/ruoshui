@@ -6,10 +6,43 @@ interface ProjectedWorldPoint {
   isVisible: boolean;
 }
 
+interface NamedWorldPin {
+  id: string;
+  name: string;
+  position: [number, number, number];
+}
+
+interface ProjectNamedPinsArgs {
+  pc: any;
+  runtimeState: any;
+  pins: NamedWorldPin[];
+}
+
 interface ProjectHighlightPinsArgs {
   pc: any;
   runtimeState: any;
   highlights: ViewerHighlight[];
+}
+
+function projectNamedPins({
+  pc,
+  runtimeState,
+  pins
+}: ProjectNamedPinsArgs) {
+  return pins
+    .map((pin) => {
+      const projected = projectWorldPoint(pc, runtimeState, pin.position);
+      if (!projected) {
+        return null;
+      }
+
+      return {
+        id: pin.id,
+        name: pin.name,
+        ...projected
+      };
+    })
+    .filter((item): item is NonNullable<typeof item> => Boolean(item));
 }
 
 function projectHighlightPins({
@@ -17,20 +50,15 @@ function projectHighlightPins({
   runtimeState,
   highlights
 }: ProjectHighlightPinsArgs) {
-  return highlights
-    .map((highlight) => {
-      const projected = projectWorldPoint(pc, runtimeState, highlight.position);
-      if (!projected) {
-        return null;
-      }
-
-      return {
-        id: highlight.id,
-        name: highlight.name,
-        ...projected
-      };
-    })
-    .filter(Boolean);
+  return projectNamedPins({
+    pc,
+    runtimeState,
+    pins: highlights.map((highlight) => ({
+      id: highlight.id,
+      name: highlight.name,
+      position: highlight.position
+    }))
+  });
 }
 
 function projectWorldPoint(
@@ -82,5 +110,11 @@ function projectWorldPoint(
 
 export {
   projectHighlightPins,
+  projectNamedPins,
   projectWorldPoint
+};
+
+export type {
+  NamedWorldPin,
+  ProjectedWorldPoint
 };
