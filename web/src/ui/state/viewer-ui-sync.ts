@@ -238,7 +238,8 @@ function buildCameraState(pc: any, runtimeState: CameraRuntimeLike): CameraViewS
       visibleGroundPolygonValue: [],
       distanceValue: null,
       pitchValue: null,
-      yawValue: null
+      yawValue: null,
+      fovValue: null
     };
   }
 
@@ -289,7 +290,8 @@ function buildCameraState(pc: any, runtimeState: CameraRuntimeLike): CameraViewS
     visibleGroundPolygonValue: visibleGroundPolygon,
     distanceValue: distance,
     pitchValue: pitch,
-    yawValue: yaw
+    yawValue: yaw,
+    fovValue: cameraComponent?.fov ?? null
   };
 }
 
