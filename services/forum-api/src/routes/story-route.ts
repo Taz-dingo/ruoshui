@@ -1,28 +1,61 @@
 import {
+  confirmMediaAssetInputSchema,
   createStoryDraftInputSchema,
   storyDraftPatchSchema,
   storyIdSchema,
+  uploadRequestSchema,
 } from "@ruoshui/shared";
-import { Hono, type Context } from "hono";
+import { Hono } from "hono";
 import { getCookie } from "hono/cookie";
 
 import type { AuthService } from "../lib/auth.js";
+import type { StorageProvider } from "../lib/storage.js";
 import type { StoryService } from "../lib/story.js";
 import { SESSION_COOKIE_NAME } from "./auth-route.js";
 
 interface CreateStoryRouteOptions {
   authService: AuthService;
+  storageProvider: StorageProvider;
   storyService: StoryService;
 }
 
 function createStoryRoute(options: CreateStoryRouteOptions): Hono {
   const route = new Hono();
 
-  async function getUser(context: Context) {
+  async function getUser(context: Parameters<Parameters<Hono["use"]>[1]>[0]) {
     return options.authService.getUserForSessionToken(
       getCookie(context, SESSION_COOKIE_NAME),
     );
   }
+
+  route.post("/media/upload-requests", async (context) => {
+    const user = await getUser(context);
+    if (!user) {
+      return context.json({ ok: false, error: "Authentication required." }, 401);
+    }
+
+    const input = uploadRequestSchema.parse(await context.req.json());
+    const ticket = await options.storageProvider.createUploadTicket(input, {
+      objectKeyPrefix: `story-drafts/${user.id}`,
+    });
+    return context.json({ ok: true, data: ticket }, 201);
+  });
+
+  route.post("/media/confirm", async (context) => {
+    const user = await getUser(context);
+    if (!user) {
+      return context.json({ ok: false, error: "Authentication required." }, 401);
+    }
+
+    const input = confirmMediaAssetInputSchema.parse(await context.req.json());
+    const result = await options.storyService.confirmMediaAsset(user.id, {
+      ...input,
+      postId: undefined,
+      sceneId: undefined,
+      status: "ready",
+    });
+    return context.json({ ok: true, data: result }, 201);
+  });
 
   route.get("/drafts", async (context) => {
     const user = await getUser(context);
