@@ -21,7 +21,6 @@ import {
 
 type StoryRow = typeof stories.$inferSelect;
 type StoryRevisionRow = typeof storyRevisions.$inferSelect;
-type StoryRevisionMediaRow = typeof storyRevisionMedia.$inferSelect;
 
 const editableRevisionStatuses = ["draft", "changes_requested"] as const;
 
@@ -224,6 +223,25 @@ function createD1StoryRepository(database: D1Database): StoryRepository {
     );
   }
 
+  async function countOwnedMedia(userId: string, mediaAssetIds: string[], readyOnly: boolean) {
+    const uniqueIds = [...new Set(mediaAssetIds)];
+    if (uniqueIds.length === 0) {
+      return 0;
+    }
+
+    const placeholders = uniqueIds.map((_, index) => `?${index + 2}`).join(", ");
+    const statusFilter = readyOnly ? " AND status = 'ready'" : "";
+    const row = await database
+      .prepare(
+        `SELECT COUNT(*) AS count FROM media_assets
+         WHERE owner_user_id = ?1 AND id IN (${placeholders})${statusFilter}`,
+      )
+      .bind(userId, ...uniqueIds)
+      .first<{ count: number }>();
+
+    return Number(row?.count ?? 0);
+  }
+
   return {
     async createDraft(userId, input, now) {
       const storyId = createEntityId("story");
@@ -388,17 +406,77 @@ function createD1StoryRepository(database: D1Database): StoryRepository {
       };
     },
 
-    async areMediaAssetsReady(mediaAssetIds) {
-      if (mediaAssetIds.length === 0) {
+    async areMediaAssetsOwnedByUser(userId, mediaAssetIds) {
+      const uniqueIds = [...new Set(mediaAssetIds)];
+      if (uniqueIds.length === 0) {
         return true;
       }
+      return (await countOwnedMedia(userId, uniqueIds, false)) === uniqueIds.length;
+    },
+
+    async areMediaAssetsReadyForUser(userId, mediaAssetIds) {
       const uniqueIds = [...new Set(mediaAssetIds)];
-      const rows = await db
-        .select({ id: mediaAssets.id })
-        .from(mediaAssets)
-        .where(and(inArray(mediaAssets.id, uniqueIds), eq(mediaAssets.status, "ready")))
-        .all();
-      return rows.length === uniqueIds.length;
+      if (uniqueIds.length === 0) {
+        return true;
+      }
+      return (await countOwnedMedia(userId, uniqueIds, true)) === uniqueIds.length;
+    },
+
+    async confirmMediaAssetForUser(userId, input, now) {
+      const existing = await database
+        .prepare("SELECT id, owner_user_id AS ownerUserId FROM media_assets WHERE object_key = ?1 LIMIT 1")
+        .bind(input.objectKey)
+        .first<{ id: string; ownerUserId: string | null }>();
+
+      if (existing?.ownerUserId && existing.ownerUserId !== userId) {
+        throw new Error("Media asset is already owned by another user.");
+      }
+
+      if (existing) {
+        await database
+          .prepare(
+            `UPDATE media_assets SET
+              owner_user_id = ?1, bucket = ?2, mime_type = ?3, size_bytes = ?4,
+              width = ?5, height = ?6, status = ?7, updated_at = ?8
+             WHERE id = ?9 AND (owner_user_id IS NULL OR owner_user_id = ?1)`,
+          )
+          .bind(
+            userId,
+            input.bucket,
+            input.mimeType,
+            input.sizeBytes,
+            input.width ?? null,
+            input.height ?? null,
+            input.status,
+            now.getTime(),
+            existing.id,
+          )
+          .run();
+        return existing.id;
+      }
+
+      const id = createEntityId("media");
+      await database
+        .prepare(
+          `INSERT INTO media_assets (
+            id, scene_id, post_id, owner_user_id, object_key, bucket, mime_type,
+            size_bytes, width, height, status, created_at, updated_at
+          ) VALUES (?1, NULL, NULL, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?10)`,
+        )
+        .bind(
+          id,
+          userId,
+          input.objectKey,
+          input.bucket,
+          input.mimeType,
+          input.sizeBytes,
+          input.width ?? null,
+          input.height ?? null,
+          input.status,
+          now.getTime(),
+        )
+        .run();
+      return id;
     },
   };
 }
