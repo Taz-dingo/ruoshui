@@ -20,7 +20,7 @@ type PendingAction =
   | { kind: 'comment'; replyToCommentId?: string }
   | null;
 
-function displayName(user: { id: string; displayName: string | null }) {
+function displayName(user: { id: string; displayName?: string | null }) {
   return user.displayName ?? `若水用户 ${user.id.slice(-4).toUpperCase()}`;
 }
 
