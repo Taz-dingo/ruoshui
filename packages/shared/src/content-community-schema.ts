@@ -8,20 +8,20 @@ const placeIdSchema = entityIdSchema;
 const commentIdSchema = entityIdSchema;
 const mediaAssetIdSchema = entityIdSchema;
 
-const vector3Schema = z.object({
+const spatialVector3Schema = z.object({
   x: z.number(),
   y: z.number(),
   z: z.number(),
 });
 
 const cameraPoseSchema = z.object({
-  position: vector3Schema,
-  target: vector3Schema,
+  position: spatialVector3Schema,
+  target: spatialVector3Schema,
   fovDeg: z.number().min(20).max(100).optional(),
 });
 
 const spatialAnchorSchema = z.object({
-  markerPosition: vector3Schema,
+  markerPosition: spatialVector3Schema,
   cameraPose: cameraPoseSchema,
 });
 
@@ -172,7 +172,6 @@ export {
   submitStoryRevisionInputSchema,
   userIdSchema,
   userSchema,
-  vector3Schema,
 };
 
 export type {
