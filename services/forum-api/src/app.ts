@@ -2,13 +2,16 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { ZodError } from "zod";
 
+import { AuthServiceError, type AuthService } from "./lib/auth.js";
 import type { ForumRepository } from "./lib/forum-repository.js";
 import { StorageProviderError, type StorageProvider } from "./lib/storage.js";
+import { createAuthRoute } from "./routes/auth-route.js";
 import { createForumRoute } from "./routes/forum-route.js";
 import { createHealthRoute } from "./routes/health-route.js";
 import { createStorageRoute } from "./routes/storage-route.js";
 
 interface CreateAppOptions {
+  authService?: AuthService;
   corsOrigin: string;
   forumRepository: ForumRepository;
   runtime: "node" | "cloudflare";
@@ -52,6 +55,7 @@ function createApp(options: CreateAppOptions): Hono {
   app.use(
     "*",
     cors({
+      credentials: true,
       origin: options.corsOrigin,
     }),
   );
@@ -63,6 +67,14 @@ function createApp(options: CreateAppOptions): Hono {
       runtime: options.runtime,
     }),
   );
+  if (options.authService) {
+    app.route(
+      "/api/auth",
+      createAuthRoute({
+        authService: options.authService,
+      }),
+    );
+  }
   app.route(
     "/api/forum",
     createForumRoute({
@@ -130,6 +142,16 @@ function createApp(options: CreateAppOptions): Hono {
           details: error.flatten(),
         },
         400,
+      );
+    }
+
+    if (error instanceof AuthServiceError) {
+      return context.json(
+        {
+          ok: false,
+          error: error.message,
+        },
+        error.status,
       );
     }
 
