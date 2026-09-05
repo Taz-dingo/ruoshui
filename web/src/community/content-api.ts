@@ -4,6 +4,8 @@ import type {
   Place,
   StoryDraft,
   StoryDraftPatch,
+  StoryReviewItem,
+  StoryReviewPatch,
   UploadRequest,
   UploadTicket,
   User,
@@ -19,6 +21,16 @@ interface AuthEnvelope {
   error?: string;
   ok?: boolean;
   user?: User | null;
+}
+
+class ApiRequestError extends Error {
+  readonly status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = 'ApiRequestError';
+    this.status = status;
+  }
 }
 
 async function readJson<T>(response: Response): Promise<T | null> {
@@ -37,7 +49,7 @@ async function requestData<T>(input: RequestInfo | URL, init?: RequestInit): Pro
   const payload = await readJson<ApiEnvelope<T>>(response);
 
   if (!response.ok) {
-    throw new Error(payload?.error ?? `HTTP ${response.status}`);
+    throw new ApiRequestError(response.status, payload?.error ?? `HTTP ${response.status}`);
   }
   if (!payload || !('data' in payload)) {
     throw new Error('若水 API 返回了无法识别的数据。');
@@ -166,13 +178,84 @@ async function confirmStoryMedia(input: ConfirmMediaAssetInput): Promise<string>
   return result.id;
 }
 
+async function fetchStoryReviewQueue(): Promise<StoryReviewItem[]> {
+  return requestData<StoryReviewItem[]>('/api/admin/story-reviews');
+}
+
+async function fetchStoryReviewItem(revisionId: string): Promise<StoryReviewItem> {
+  return requestData<StoryReviewItem>(
+    `/api/admin/story-reviews/${encodeURIComponent(revisionId)}`,
+  );
+}
+
+async function patchStoryReview(
+  revisionId: string,
+  input: StoryReviewPatch,
+): Promise<StoryReviewItem> {
+  return requestData<StoryReviewItem>(
+    `/api/admin/story-reviews/${encodeURIComponent(revisionId)}`,
+    {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(input),
+    },
+  );
+}
+
+async function approveStoryReview(revisionId: string): Promise<StoryReviewItem> {
+  return requestData<StoryReviewItem>(
+    `/api/admin/story-reviews/${encodeURIComponent(revisionId)}/approve`,
+    { method: 'POST' },
+  );
+}
+
+async function requestStoryReviewChanges(
+  revisionId: string,
+  note: string,
+): Promise<StoryReviewItem> {
+  return requestData<StoryReviewItem>(
+    `/api/admin/story-reviews/${encodeURIComponent(revisionId)}/request-changes`,
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ note }),
+    },
+  );
+}
+
+async function rejectStoryReview(
+  revisionId: string,
+  note?: string,
+): Promise<StoryReviewItem> {
+  return requestData<StoryReviewItem>(
+    `/api/admin/story-reviews/${encodeURIComponent(revisionId)}/reject`,
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(note?.trim() ? { note: note.trim() } : {}),
+    },
+  );
+}
+
+function getStoryReviewMediaUrl(revisionId: string, mediaAssetId: string): string {
+  return `/api/admin/story-reviews/${encodeURIComponent(revisionId)}/media/${encodeURIComponent(mediaAssetId)}`;
+}
+
 export {
+  ApiRequestError,
+  approveStoryReview,
   confirmStoryMedia,
   createStoryDraft,
   fetchCurrentUser,
   fetchPlaces,
   fetchStoryDrafts,
+  fetchStoryReviewItem,
+  fetchStoryReviewQueue,
+  getStoryReviewMediaUrl,
+  patchStoryReview,
+  rejectStoryReview,
   requestEmailOtp,
+  requestStoryReviewChanges,
   requestStoryUploadTicket,
   submitStoryDraft,
   updateDisplayName,
