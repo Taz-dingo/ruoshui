@@ -7,3 +7,6 @@ UPLOAD_SIGNING_SECRET=replace-this-before-sharing
 AUTH_OTP_SECRET=replace-with-a-long-random-secret
 AUTH_EMAIL_FROM=no-reply@example.com
 AUTH_EMAIL_FROM_NAME=若水
+
+# Comma-separated persistent User IDs. Do not use email addresses here.
+ADMIN_USER_IDS=user_replace_me

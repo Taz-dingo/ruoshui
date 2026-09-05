@@ -3,6 +3,7 @@ import type { D1Database, R2Bucket } from "@cloudflare/workers-types";
 import type { CloudflareEmailBinding } from "./lib/auth-email.js";
 
 interface CloudflareForumApiBindings {
+  ADMIN_USER_IDS?: string;
   AUTH_EMAIL_FROM?: string;
   AUTH_EMAIL_FROM_NAME?: string;
   AUTH_OTP_SECRET?: string;
