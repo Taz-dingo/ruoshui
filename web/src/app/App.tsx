@@ -6,6 +6,7 @@ import {
   useInteractions
 } from '@floating-ui/react';
 
+import { AdminReviewConsole } from '../components/admin/AdminReviewConsole';
 import { CommunitySheet } from '../components/community/CommunitySheet';
 import { StoryComposerFlow } from '../components/community/StoryComposerFlow';
 import { ControlDockMenu } from '../components/viewer/ControlDockMenu';
@@ -169,6 +170,7 @@ function App({
   const setPresetPanel = useViewerUiStore((store) => store.setPresetPanel);
   const setRouteControls = useViewerUiStore((store) => store.setRouteControls);
   const perfHud = useViewerUiStore((store) => store.perfHud);
+  const isAdminReviewMode = new URLSearchParams(window.location.search).get('admin') === 'review';
 
   const dismissMobilePanel = () => {
     setIsMobilePanelOpen(false);
@@ -345,6 +347,7 @@ function App({
         open={isStoryComposerOpen}
         sceneId={communitySceneId}
       />
+      {isAdminReviewMode ? <AdminReviewConsole sceneId={communitySceneId} /> : null}
     </main>
   );
 }
