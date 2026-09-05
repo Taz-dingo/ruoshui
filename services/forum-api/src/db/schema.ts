@@ -83,6 +83,7 @@ const mediaAssets = pgTable(
     postId: varchar("post_id", { length: 120 }).references(() => forumPosts.id, {
       onDelete: "set null",
     }),
+    ownerUserId: varchar("owner_user_id", { length: 120 }),
     objectKey: varchar("object_key", { length: 512 }).notNull(),
     bucket: varchar("bucket", { length: 120 }).notNull(),
     mimeType: varchar("mime_type", { length: 120 }).notNull(),
@@ -95,6 +96,7 @@ const mediaAssets = pgTable(
   (table) => [
     uniqueIndex("media_assets_object_key_idx").on(table.objectKey),
     index("media_assets_post_id_idx").on(table.postId),
+    index("media_assets_owner_user_id_idx").on(table.ownerUserId),
   ],
 );
 

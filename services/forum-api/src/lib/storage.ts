@@ -24,8 +24,12 @@ interface ReadObjectResult {
   uploadedAt?: Date;
 }
 
+interface CreateUploadTicketOptions {
+  objectKeyPrefix?: string;
+}
+
 interface StorageProvider {
-  createUploadTicket(input: unknown): Promise<UploadTicket>;
+  createUploadTicket(input: unknown, options?: CreateUploadTicketOptions): Promise<UploadTicket>;
   readObject?(objectKey: string): Promise<ReadObjectResult | null>;
   readonly name: StorageProviderName;
   uploadObject?(input: UploadObjectInput): Promise<UploadObjectResult>;
@@ -53,13 +57,36 @@ class StorageProviderError extends Error {
   }
 }
 
+function sanitizeFileName(fileName: string): string {
+  return fileName.replace(/[^a-zA-Z0-9._-]/g, "-");
+}
+
+function sanitizeObjectKeyPrefix(prefix: string | undefined): string {
+  if (!prefix) {
+    return "";
+  }
+
+  return prefix
+    .split("/")
+    .map((segment) => sanitizeFileName(segment))
+    .filter(Boolean)
+    .join("/");
+}
+
+function createObjectKey(fileName: string, now: Date, prefix?: string): string {
+  const safePrefix = sanitizeObjectKeyPrefix(prefix);
+  const datedPrefix = `uploads/${now.getUTCFullYear()}/${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+  const basePrefix = safePrefix || datedPrefix;
+  return `${basePrefix}/${now.getTime()}-${sanitizeFileName(fileName)}`;
+}
+
 class NoopStorageProvider implements StorageProvider {
   readonly name = "none" as const;
 
-  async createUploadTicket(input: unknown): Promise<UploadTicket> {
+  async createUploadTicket(input: unknown, options: CreateUploadTicketOptions = {}): Promise<UploadTicket> {
     const payload = uploadRequestSchema.parse(input);
     const now = new Date();
-    const objectKey = `draft/${now.getTime()}-${sanitizeFileName(payload.fileName)}`;
+    const objectKey = createObjectKey(payload.fileName, now, options.objectKeyPrefix || "draft");
 
     return {
       provider: this.name,
@@ -81,10 +108,10 @@ class AliOssStorageProvider implements StorageProvider {
     this.publicBaseUrl = options.publicBaseUrl?.trim() ?? "";
   }
 
-  async createUploadTicket(input: unknown): Promise<UploadTicket> {
+  async createUploadTicket(input: unknown, options: CreateUploadTicketOptions = {}): Promise<UploadTicket> {
     const payload = uploadRequestSchema.parse(input);
     const now = new Date();
-    const objectKey = `uploads/${now.getUTCFullYear()}/${now.getUTCMonth() + 1}/${now.getTime()}-${sanitizeFileName(payload.fileName)}`;
+    const objectKey = createObjectKey(payload.fileName, now, options.objectKeyPrefix);
 
     return {
       provider: this.name,
@@ -118,10 +145,10 @@ class R2StorageProvider implements StorageProvider {
     this.uploadSigningSecret = options.uploadSigningSecret;
   }
 
-  async createUploadTicket(input: unknown): Promise<UploadTicket> {
+  async createUploadTicket(input: unknown, options: CreateUploadTicketOptions = {}): Promise<UploadTicket> {
     const payload = uploadRequestSchema.parse(input);
     const now = new Date();
-    const objectKey = `uploads/${now.getUTCFullYear()}/${String(now.getUTCMonth() + 1).padStart(2, "0")}/${now.getTime()}-${sanitizeFileName(payload.fileName)}`;
+    const objectKey = createObjectKey(payload.fileName, now, options.objectKeyPrefix);
     const expiresAt = new Date(now.getTime() + 15 * 60 * 1000).toISOString();
     const uploadUrl = new URL(
       `/api/storage/objects/${encodeURIComponent(objectKey)}`,
@@ -225,10 +252,6 @@ class R2StorageProvider implements StorageProvider {
   }
 }
 
-function sanitizeFileName(fileName: string): string {
-  return fileName.replace(/[^a-zA-Z0-9._-]/g, "-");
-}
-
 function ensureTrailingSlash(value: string): string {
   return value.endsWith("/") ? value : `${value}/`;
 }
@@ -318,6 +341,7 @@ export {
 };
 
 export type {
+  CreateUploadTicketOptions,
   ReadObjectResult,
   StorageProvider,
   StorageProviderName,

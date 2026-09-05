@@ -1,12 +1,19 @@
 import {
   submitStoryRevisionInputSchema,
+  type ConfirmMediaAssetInput,
   type CreateStoryDraftInput,
   type StoryDraft,
   type StoryDraftPatch,
 } from "@ruoshui/shared";
 
 interface StoryRepository {
-  areMediaAssetsReady(mediaAssetIds: string[]): Promise<boolean>;
+  areMediaAssetsOwnedByUser(userId: string, mediaAssetIds: string[]): Promise<boolean>;
+  areMediaAssetsReadyForUser(userId: string, mediaAssetIds: string[]): Promise<boolean>;
+  confirmMediaAssetForUser(
+    userId: string,
+    input: ConfirmMediaAssetInput,
+    now: Date,
+  ): Promise<string>;
   createDraft(userId: string, input: CreateStoryDraftInput, now: Date): Promise<StoryDraft>;
   getDraft(userId: string, storyId: string): Promise<StoryDraft | null>;
   listDrafts(userId: string): Promise<StoryDraft[]>;
@@ -25,6 +32,7 @@ interface StoryRepository {
 }
 
 interface StoryService {
+  confirmMediaAsset(userId: string, input: ConfirmMediaAssetInput): Promise<{ id: string }>;
   createDraft(userId: string, input: CreateStoryDraftInput): Promise<StoryDraft>;
   getDraft(userId: string, storyId: string): Promise<StoryDraft>;
   listDrafts(userId: string): Promise<StoryDraft[]>;
@@ -58,8 +66,25 @@ function createStoryService(options: CreateStoryServiceOptions): StoryService {
     return draft;
   }
 
+  async function requireOwnedMedia(userId: string, mediaAssetIds: string[]): Promise<void> {
+    if (!(await options.repository.areMediaAssetsOwnedByUser(userId, mediaAssetIds))) {
+      throw new StoryServiceError("One or more photos are unavailable.", 409);
+    }
+  }
+
   return {
+    async confirmMediaAsset(userId, input) {
+      const expectedPrefix = `story-drafts/${userId}/`;
+      if (!input.objectKey.startsWith(expectedPrefix)) {
+        throw new StoryServiceError("Photo upload does not belong to this user.", 409);
+      }
+
+      const id = await options.repository.confirmMediaAssetForUser(userId, input, now());
+      return { id };
+    },
+
     async createDraft(userId, input) {
+      await requireOwnedMedia(userId, input.mediaAssetIds ?? []);
       return options.repository.createDraft(userId, input, now());
     },
 
@@ -73,6 +98,9 @@ function createStoryService(options: CreateStoryServiceOptions): StoryService {
 
     async updateDraft(userId, storyId, input) {
       await requireDraft(userId, storyId);
+      if (input.mediaAssetIds !== undefined) {
+        await requireOwnedMedia(userId, input.mediaAssetIds);
+      }
       const updated = await options.repository.updateDraft(userId, storyId, input, now());
       if (!updated) {
         throw new StoryServiceError("Story draft changed while it was being edited.", 409);
@@ -90,7 +118,7 @@ function createStoryService(options: CreateStoryServiceOptions): StoryService {
         location: draft.revision.location,
       });
 
-      if (!(await options.repository.areMediaAssetsReady(draft.revision.mediaAssetIds))) {
+      if (!(await options.repository.areMediaAssetsReadyForUser(userId, draft.revision.mediaAssetIds))) {
         throw new StoryServiceError("One or more photos are still uploading or unavailable.", 409);
       }
 
