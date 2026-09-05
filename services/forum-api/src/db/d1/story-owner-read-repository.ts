@@ -2,6 +2,7 @@ import type { D1Database } from "@cloudflare/workers-types";
 
 import type {
   OwnedStoryItem,
+  OwnedStoryMediaRef,
   OwnedStoryRevisionSummary,
   OwnedStoryWorkState,
   StoryOwnerReadRepository,
@@ -63,6 +64,29 @@ function createD1StoryOwnerReadRepository(
   database: D1Database,
 ): StoryOwnerReadRepository {
   return {
+    async getOwnedStoryMediaRef(userId, storyId, mediaAssetId) {
+      const row = await database
+        .prepare(
+          `SELECT
+             ma.id AS id,
+             ma.mime_type AS mimeType,
+             ma.object_key AS objectKey
+           FROM stories s
+           INNER JOIN story_revisions r ON r.story_id = s.id
+           INNER JOIN story_revision_media srm ON srm.story_revision_id = r.id
+           INNER JOIN media_assets ma ON ma.id = srm.media_asset_id
+           WHERE s.id = ?1
+             AND s.author_user_id = ?2
+             AND s.status != 'deleted'
+             AND srm.media_asset_id = ?3
+             AND ma.status = 'ready'
+           LIMIT 1`,
+        )
+        .bind(storyId, userId, mediaAssetId)
+        .first<OwnedStoryMediaRef>();
+      return row ?? null;
+    },
+
     async listOwnedStories(userId) {
       const rows = await database
         .prepare(

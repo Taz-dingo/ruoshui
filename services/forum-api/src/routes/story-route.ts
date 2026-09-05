@@ -1,6 +1,7 @@
 import {
   confirmMediaAssetInputSchema,
   createStoryDraftInputSchema,
+  mediaAssetIdSchema,
   storyDraftPatchSchema,
   storyIdSchema,
   uploadRequestSchema,
@@ -43,6 +44,57 @@ function createStoryRoute(options: CreateStoryRouteOptions): Hono {
     return context.json({
       ok: true,
       data: await options.storyOwnerReadService.listOwnedStories(user.id),
+    });
+  });
+
+  route.get("/:storyId/media/:mediaAssetId", async (context) => {
+    const user = await getUser(context);
+    if (!user) {
+      return context.json({ ok: false, error: "Authentication required." }, 401);
+    }
+    if (!options.storyOwnerReadService) {
+      return context.json({ ok: false, error: "Story ownership reads are not configured." }, 503);
+    }
+    if (!options.storageProvider.readObject) {
+      return context.json(
+        { ok: false, error: "Story media reads are not available for the current storage provider." },
+        501,
+      );
+    }
+
+    const storyId = storyIdSchema.parse(context.req.param("storyId"));
+    const mediaAssetId = mediaAssetIdSchema.parse(context.req.param("mediaAssetId"));
+    const media = await options.storyOwnerReadService.getOwnedStoryMediaRef(
+      user.id,
+      storyId,
+      mediaAssetId,
+    );
+    if (!media) {
+      return context.notFound();
+    }
+
+    const object = await options.storageProvider.readObject(media.objectKey);
+    if (!object) {
+      return context.notFound();
+    }
+
+    const headers = new Headers();
+    headers.set("content-type", object.contentType ?? media.mimeType);
+    headers.set("cache-control", "private, max-age=300");
+    headers.set("vary", "Cookie");
+    if (object.contentLength !== undefined) {
+      headers.set("content-length", String(object.contentLength));
+    }
+    if (object.etag) {
+      headers.set("etag", object.etag);
+    }
+    if (object.uploadedAt) {
+      headers.set("last-modified", object.uploadedAt.toUTCString());
+    }
+
+    return new Response(object.body as BodyInit | null, {
+      headers,
+      status: 200,
     });
   });
 
