@@ -3,7 +3,7 @@ import {
   storyDraftPatchSchema,
   storyIdSchema,
 } from "@ruoshui/shared";
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import { getCookie } from "hono/cookie";
 
 import type { AuthService } from "../lib/auth.js";
@@ -18,7 +18,7 @@ interface CreateStoryRouteOptions {
 function createStoryRoute(options: CreateStoryRouteOptions): Hono {
   const route = new Hono();
 
-  async function getUser(context: Parameters<Parameters<Hono["use"]>[1]>[0]) {
+  async function getUser(context: Context) {
     return options.authService.getUserForSessionToken(
       getCookie(context, SESSION_COOKIE_NAME),
     );
