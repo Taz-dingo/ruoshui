@@ -58,7 +58,11 @@ async function fetchOwnedStoryDraft(storyId: string): Promise<StoryDraft> {
   return requestOwnedData<StoryDraft>(`/api/stories/drafts/${encodeURIComponent(storyId)}`);
 }
 
-export { fetchMyStories, fetchOwnedStoryDraft };
+function getOwnedStoryMediaUrl(storyId: string, mediaAssetId: string): string {
+  return `/api/stories/${encodeURIComponent(storyId)}/media/${encodeURIComponent(mediaAssetId)}`;
+}
+
+export { fetchMyStories, fetchOwnedStoryDraft, getOwnedStoryMediaUrl };
 export type {
   OwnedStoryItem,
   OwnedStoryPublicState,
