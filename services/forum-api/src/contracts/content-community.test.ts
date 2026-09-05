@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { submitStoryRevisionInputSchema } from "@ruoshui/shared";
+import {
+  createStoryDraftInputSchema,
+  storyDraftPatchSchema,
+  storyRevisionSchema,
+  submitStoryRevisionInputSchema,
+} from "@ruoshui/shared";
 
 const baseLocation = { kind: "none" as const };
 
@@ -81,4 +86,36 @@ test("story location is exactly one of none, place or custom anchor", () => {
   assert.equal(placeResult.success, true);
   assert.equal(anchorResult.success, true);
   assert.equal(invalidResult.success, false);
+});
+
+test("draft revisions may be incomplete before submission", () => {
+  const result = storyRevisionSchema.safeParse({
+    id: "revision_1",
+    storyId: "story_1",
+    status: "draft",
+    createdByUserId: "user_1",
+    mediaAssetIds: [],
+    location: baseLocation,
+    moderationNote: null,
+    createdAt: "2026-09-06T00:00:00.000Z",
+    updatedAt: "2026-09-06T00:00:00.000Z",
+  });
+
+  assert.equal(result.success, true);
+});
+
+test("a draft is created only after a meaningful first edit", () => {
+  assert.equal(createStoryDraftInputSchema.safeParse({}).success, false);
+  assert.equal(createStoryDraftInputSchema.safeParse({ title: "" }).success, false);
+  assert.equal(
+    createStoryDraftInputSchema.safeParse({ location: { kind: "place", placeId: "place_1" } })
+      .success,
+    true,
+  );
+});
+
+test("draft patches can explicitly clear media or location", () => {
+  assert.equal(storyDraftPatchSchema.safeParse({}).success, false);
+  assert.equal(storyDraftPatchSchema.safeParse({ mediaAssetIds: [] }).success, true);
+  assert.equal(storyDraftPatchSchema.safeParse({ location: { kind: "none" } }).success, true);
 });
