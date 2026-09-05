@@ -5,7 +5,7 @@
     "summary": "以《知天下AI》交付的高质量 `SOG` 成果，呈现可浏览、可停留、可承接故事的校园纪念场景。",
     "format": "Spatially Ordered Gaussians (SOG)",
     "bounds": "3.08 × 1.45 × 3.17",
-    "defaultVariantId": "lodstream",
+    "defaultVariantId": "original",
     "miniMap": {
       "label": "常州老校区",
       "subtitle": "若水广场 · 顶视示意",
@@ -67,18 +67,18 @@
       "splats": "1,868,855",
       "retention": "100%",
       "kind": "Production",
-      "note": "稳定单次加载，作为画质与性能基线。"
+      "note": "生产默认：稳定单次加载，作为当前正式画质与性能基线。"
     },
     {
       "id": "lodstream",
       "name": "LOD 流式",
-      "summary": "按视角和距离逐步加载空间节点。",
+      "summary": "实验性的按视角和距离分块加载方案。",
       "assetUrl": "/edge-models/hhuc-streamed-v2/lod-meta.json",
       "size": "43 MiB（按需加载，首帧 1.8 MiB）",
       "splats": "1,728,347",
       "retention": "100% / 25% / 8% / 2.5%",
-      "kind": "Streamed SOG",
-      "note": "默认版本：先渲染低阶 LOD，再按距离加载空间分块。",
+      "kind": "Experimental Streamed SOG",
+      "note": "实验保留，不作为生产默认；当前暂停继续投入自研 progressive / streaming。",
       "streamed": true,
       "splatBudget": 700000
     }
