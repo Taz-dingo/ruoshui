@@ -4,6 +4,7 @@ import { createApp } from "./app.js";
 import { createD1AuthRepository } from "./db/d1/auth-repository.js";
 import { createD1ForumRepository } from "./db/d1/forum-repository.js";
 import { createD1PlaceRepository } from "./db/d1/place-repository.js";
+import { createD1StoryAuthorRepository } from "./db/d1/story-author-repository.js";
 import { createD1StoryReadRepository } from "./db/d1/story-read-repository.js";
 import { createD1StoryRepository } from "./db/d1/story-repository.js";
 import { createD1StoryReviewRepository } from "./db/d1/story-review-repository.js";
@@ -13,6 +14,7 @@ import { createAuthService, type AuthService } from "./lib/auth.js";
 import { createTencentSesAuthEmailSender } from "./lib/auth-email.js";
 import { createPlaceService } from "./lib/place.js";
 import { createR2StorageProvider } from "./lib/storage.js";
+import { createStoryAuthorService } from "./lib/story-author.js";
 import { createStoryReadService } from "./lib/story-read.js";
 import { createStoryService } from "./lib/story.js";
 import { createStoryReviewService } from "./lib/story-review.js";
@@ -56,6 +58,7 @@ function createConfiguredAuthService(env: CloudflareForumApiBindings): AuthServi
 export default {
   fetch(request: Request, env: CloudflareForumApiBindings, executionContext: ExecutionContext) {
     const authService = createConfiguredAuthService(env);
+    const storyRepository = createD1StoryRepository(env.DB);
     const app = createApp({
       adminUserIds: parseAdminUserIds(env.ADMIN_USER_IDS),
       authService,
@@ -72,12 +75,17 @@ export default {
         publicBaseUrl: env.MEDIA_PUBLIC_BASE_URL,
         uploadSigningSecret: env.UPLOAD_SIGNING_SECRET,
       }),
+      storyAuthorService: authService
+        ? createStoryAuthorService({
+            repository: createD1StoryAuthorRepository(env.DB, storyRepository),
+          })
+        : undefined,
       storyReadService: createStoryReadService(createD1StoryReadRepository(env.DB)),
       storyReviewService: authService
         ? createStoryReviewService({ repository: createD1StoryReviewRepository(env.DB) })
         : undefined,
       storyService: authService
-        ? createStoryService({ repository: createD1StoryRepository(env.DB) })
+        ? createStoryService({ repository: storyRepository })
         : undefined,
       storySocialService: createStorySocialService({
         repository: createD1StorySocialRepository(env.DB),
