@@ -7,7 +7,7 @@ import {
 import { Hono } from "hono";
 import { getCookie } from "hono/cookie";
 
-import { requireAdminUser } from "../lib/admin.js";
+import { AdminAccessError, requireAdminUser } from "../lib/admin.js";
 import type { AuthService } from "../lib/auth.js";
 import type { StoryReviewService } from "../lib/story-review.js";
 import { SESSION_COOKIE_NAME } from "./auth-route.js";
@@ -33,7 +33,14 @@ function createStoryReviewRoute(options: CreateStoryReviewRouteOptions): Hono {
       return context.json({ ok: false, error: "Authentication required." }, 401);
     }
 
-    requireAdminUser(user.id, options.adminUserIds);
+    try {
+      requireAdminUser(user.id, options.adminUserIds);
+    } catch (error) {
+      if (error instanceof AdminAccessError) {
+        return context.json({ ok: false, error: error.message }, error.status);
+      }
+      throw error;
+    }
     return user;
   }
 
