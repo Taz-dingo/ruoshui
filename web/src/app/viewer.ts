@@ -43,6 +43,7 @@ import {
   installViewerStartupBindings
 } from '../ui/controllers/viewer-startup-controller';
 import { createViewerShellController } from '../ui/controllers/viewer-shell-controller';
+import type { ViewerPlacePin } from '../ui/commands/viewer-command-bus';
 import { createViewCaptureController } from '../capture/view-capture-controller';
 import {
   clearViewerLoading,
@@ -92,6 +93,7 @@ async function initializeViewer({
     routeRunHistoryStorageKey,
     maxRouteRunHistory
   );
+  let placePins: ViewerPlacePin[] = [];
 
   initLongTaskObserver(longTaskBuffer);
 
@@ -134,6 +136,7 @@ async function initializeViewer({
   const viewerShellController = createViewerShellController({
     pc,
     highlights: data.highlights ?? [],
+    getPlacePins: () => placePins,
     showPerfHud: viewerConfig.showPerfHud,
     publishVariantPanel,
     getVariantBenchmark,
@@ -432,6 +435,33 @@ async function initializeViewer({
         false
       );
       setViewerStatus('回到社区点位', `正在飞向 ${command.title}。`);
+    },
+    focusSpatialAnchor: (command) => {
+      const runtimeState = session.getRuntime();
+      if (!runtimeState) {
+        setViewerStatus('地点未就绪', '当前运行时还没完成初始化，暂时无法回到这个地点。');
+        return;
+      }
+
+      if (command.fovDeg && runtimeState.camera?.camera) {
+        runtimeState.camera.camera.fov = command.fovDeg;
+      }
+      moveCamera(
+        runtimeState,
+        {
+          position: command.position,
+          target: command.target
+        },
+        false
+      );
+      runtimeState.requestRender?.();
+      setViewerStatus('回到校园地点', `正在飞向 ${command.title}。`);
+    },
+    setPlacePins: (pins) => {
+      placePins = pins;
+      const runtimeState = session.getRuntime();
+      renderHighlightOverlay(runtimeState);
+      runtimeState?.requestRender?.();
     },
     setHighlightAuthoringEnabled,
     setHighlightPlaneY
