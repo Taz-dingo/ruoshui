@@ -13,10 +13,12 @@ import {
 import { useViewerUiStore } from '../../ui/state/viewer-ui-store';
 import { scrollAreaClassNames } from '../../styles/system';
 import { cn } from '../../utils/cn';
+import { StoryAuthorActions } from './StoryAuthorActions';
 import { StoryDiscussion } from './StoryDiscussion';
 
 interface PlaceMemoryLayerProps {
   isMobile: boolean;
+  onOpenStoryComposer: () => void;
   sceneId: string;
 }
 
@@ -118,15 +120,19 @@ function StoryCard({ story, onOpen }: { story: PublishedStory; onOpen: () => voi
 }
 
 function StoryDetail({
+  onBack,
+  onEditStory,
+  onRemovedStory,
   place,
   placesById,
   story,
-  onBack,
 }: {
+  onBack: () => void;
+  onEditStory: (storyId: string) => void;
+  onRemovedStory: (storyId: string) => void;
   place: Place;
   placesById: Map<string, Place>;
   story: PublishedStory;
-  onBack: () => void;
 }) {
   return (
     <div className="min-h-full bg-[#f7f7f3]">
@@ -180,6 +186,7 @@ function StoryDetail({
             {story.body}
           </div>
         ) : null}
+        <StoryAuthorActions onEdit={onEditStory} onRemoved={onRemovedStory} story={story} />
         <StoryDiscussion storyId={story.id} />
         <div className="mt-8 border-t border-black/[0.055] pt-4 text-[10px] text-black/30">
           发布于 {formatPublishedTime(story.publishedAt)}
@@ -189,7 +196,7 @@ function StoryDetail({
   );
 }
 
-function PlaceMemoryLayer({ isMobile, sceneId }: PlaceMemoryLayerProps) {
+function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemoryLayerProps) {
   const placeOverlay = useViewerUiStore((store) => store.placeOverlay);
   const highlightAuthoring = useViewerUiStore((store) => store.highlightAuthoring);
   const [places, setPlaces] = useState<Place[]>([]);
@@ -273,6 +280,16 @@ function PlaceMemoryLayer({ isMobile, sceneId }: PlaceMemoryLayerProps) {
     setMobileExpanded(false);
   }
 
+  function handleEditStory() {
+    setActiveStoryId(null);
+    onOpenStoryComposer();
+  }
+
+  function handleRemovedStory(storyId: string) {
+    setStories((current) => current.filter((story) => story.id !== storyId));
+    setActiveStoryId(null);
+  }
+
   if (places.length === 0 && !activePlace) {
     return placesError ? (
       <div className="pointer-events-none absolute left-[calc(1rem+var(--safe-left))] top-[calc(1rem+var(--safe-top))] z-[3] rounded-full bg-black/36 px-3 py-2 text-[10px] text-white/62 backdrop-blur-[12px]">
@@ -328,6 +345,8 @@ function PlaceMemoryLayer({ isMobile, sceneId }: PlaceMemoryLayerProps) {
             <div className={cn('h-full overflow-y-auto', scrollAreaClassNames.thin)}>
               <StoryDetail
                 onBack={() => setActiveStoryId(null)}
+                onEditStory={handleEditStory}
+                onRemovedStory={handleRemovedStory}
                 place={activePlace}
                 placesById={placesById}
                 story={activeStory}

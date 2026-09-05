@@ -250,7 +250,11 @@ function App({
             onOpenFullCommunity={openFullCommunity}
             sceneId={communitySceneId}
           />
-          <PlaceMemoryLayer isMobile={isMobileViewport} sceneId={communitySceneId} />
+          <PlaceMemoryLayer
+            isMobile={isMobileViewport}
+            onOpenStoryComposer={openStoryComposer}
+            sceneId={communitySceneId}
+          />
           <LoadingOverlay />
 
           <div className={hudClassName}>
