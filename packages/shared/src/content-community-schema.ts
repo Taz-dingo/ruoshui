@@ -5,6 +5,7 @@ const userIdSchema = entityIdSchema;
 const storyIdSchema = entityIdSchema;
 const storyRevisionIdSchema = entityIdSchema;
 const placeIdSchema = entityIdSchema;
+const sceneIdSchema = entityIdSchema;
 const commentIdSchema = entityIdSchema;
 const mediaAssetIdSchema = entityIdSchema;
 
@@ -121,6 +122,7 @@ const submitStoryRevisionInputSchema = storyContentFieldsSchema.superRefine(vali
 
 const placeSchema = z.object({
   id: placeIdSchema,
+  sceneId: sceneIdSchema.optional(),
   name: z.string().trim().min(1).max(120),
   intro: z.string().trim().max(2_000).optional(),
   anchor: spatialAnchorSchema,
@@ -128,6 +130,29 @@ const placeSchema = z.object({
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
+
+const createPlaceInputSchema = z.object({
+  sceneId: sceneIdSchema.optional(),
+  name: z.string().trim().min(1).max(120),
+  intro: z.string().trim().max(2_000).optional(),
+  anchor: spatialAnchorSchema,
+  sortOrder: z.number().int().default(0),
+});
+
+const updatePlaceInputSchema = z
+  .object({
+    name: z.string().trim().min(1).max(120).optional(),
+    intro: z.string().trim().max(2_000).nullable().optional(),
+    anchor: spatialAnchorSchema.optional(),
+    sortOrder: z.number().int().optional(),
+  })
+  .superRefine((value, context) => {
+    if (Object.values(value).every((field) => field === undefined)) {
+      context.addIssue({ code: "custom", message: "Place update must contain at least one field." });
+    }
+  });
+
+const listPlacesInputSchema = z.object({ sceneId: sceneIdSchema.optional() });
 
 const storyRevisionSchema = storyContentFieldsSchema.extend({
   id: storyRevisionIdSchema,
@@ -181,7 +206,9 @@ type Comment = z.infer<typeof commentSchema>;
 type CommentLikeKey = z.infer<typeof commentLikeKeySchema>;
 type CommentStatus = z.infer<typeof commentStatusSchema>;
 type CreateCommentInput = z.infer<typeof createCommentInputSchema>;
+type CreatePlaceInput = z.infer<typeof createPlaceInputSchema>;
 type CreateStoryDraftInput = z.infer<typeof createStoryDraftInputSchema>;
+type ListPlacesInput = z.infer<typeof listPlacesInputSchema>;
 type Place = z.infer<typeof placeSchema>;
 type RequestEmailOtpInput = z.infer<typeof requestEmailOtpInputSchema>;
 type SpatialAnchor = z.infer<typeof spatialAnchorSchema>;
@@ -194,6 +221,7 @@ type StoryRevision = z.infer<typeof storyRevisionSchema>;
 type StoryRevisionStatus = z.infer<typeof storyRevisionStatusSchema>;
 type StoryStatus = z.infer<typeof storyStatusSchema>;
 type SubmitStoryRevisionInput = z.infer<typeof submitStoryRevisionInputSchema>;
+type UpdatePlaceInput = z.infer<typeof updatePlaceInputSchema>;
 type UpdateUserProfileInput = z.infer<typeof updateUserProfileInputSchema>;
 type User = z.infer<typeof userSchema>;
 type VerifyEmailOtpInput = z.infer<typeof verifyEmailOtpInputSchema>;
@@ -206,12 +234,15 @@ export {
   commentSchema,
   commentStatusSchema,
   createCommentInputSchema,
+  createPlaceInputSchema,
   createStoryDraftInputSchema,
   emailAddressSchema,
+  listPlacesInputSchema,
   mediaAssetIdSchema,
   placeIdSchema,
   placeSchema,
   requestEmailOtpInputSchema,
+  sceneIdSchema,
   spatialAnchorSchema,
   storyDraftPatchSchema,
   storyDraftSchema,
@@ -224,6 +255,7 @@ export {
   storySchema,
   storyStatusSchema,
   submitStoryRevisionInputSchema,
+  updatePlaceInputSchema,
   updateUserProfileInputSchema,
   userIdSchema,
   userSchema,
@@ -237,7 +269,9 @@ export type {
   CommentLikeKey,
   CommentStatus,
   CreateCommentInput,
+  CreatePlaceInput,
   CreateStoryDraftInput,
+  ListPlacesInput,
   Place,
   RequestEmailOtpInput,
   SpatialAnchor,
@@ -250,6 +284,7 @@ export type {
   StoryRevisionStatus,
   StoryStatus,
   SubmitStoryRevisionInput,
+  UpdatePlaceInput,
   UpdateUserProfileInput,
   User,
   VerifyEmailOtpInput,
