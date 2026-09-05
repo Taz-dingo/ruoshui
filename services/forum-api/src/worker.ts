@@ -7,6 +7,7 @@ import { createD1PlaceRepository } from "./db/d1/place-repository.js";
 import { createD1StoryReadRepository } from "./db/d1/story-read-repository.js";
 import { createD1StoryRepository } from "./db/d1/story-repository.js";
 import { createD1StoryReviewRepository } from "./db/d1/story-review-repository.js";
+import { createD1StorySocialRepository } from "./db/d1/story-social-repository.js";
 import { parseAdminUserIds } from "./lib/admin.js";
 import { createAuthService, type AuthService } from "./lib/auth.js";
 import { createTencentSesAuthEmailSender } from "./lib/auth-email.js";
@@ -15,6 +16,7 @@ import { createR2StorageProvider } from "./lib/storage.js";
 import { createStoryReadService } from "./lib/story-read.js";
 import { createStoryService } from "./lib/story.js";
 import { createStoryReviewService } from "./lib/story-review.js";
+import { createStorySocialService } from "./lib/story-social.js";
 import type { CloudflareForumApiBindings } from "./worker-bindings.js";
 
 function parseTencentSesTemplateId(value: string | undefined): number | null {
@@ -77,6 +79,9 @@ export default {
       storyService: authService
         ? createStoryService({ repository: createD1StoryRepository(env.DB) })
         : undefined,
+      storySocialService: createStorySocialService({
+        repository: createD1StorySocialRepository(env.DB),
+      }),
     });
 
     return app.fetch(request, env, executionContext);
