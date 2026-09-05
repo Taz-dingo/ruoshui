@@ -4,7 +4,6 @@ packages:
   - "packages/*"
 allowBuilds:
   canvas: true
-onlyBuiltDependencies:
-  - esbuild
-  - sharp
-  - workerd
+  esbuild: true
+  sharp: true
+  workerd: true
