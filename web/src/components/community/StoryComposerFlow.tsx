@@ -21,6 +21,7 @@ import {
   fetchCurrentUser,
   fetchPlaces,
   fetchStoryDrafts,
+  getPublishedStoryMediaUrl,
   requestEmailOtp,
   requestStoryUploadTicket,
   submitStoryDraft,
@@ -70,6 +71,12 @@ function defaultDisplayName(user: User) {
 
 function createClientId() {
   return `local_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function revokePreviewUrl(previewUrl?: string) {
+  if (previewUrl?.startsWith('blob:')) {
+    URL.revokeObjectURL(previewUrl);
+  }
 }
 
 function getMediaAssetIds(media: LocalMedia[]) {
@@ -124,14 +131,14 @@ function StoryComposerFlow({ onOpenChange, open, sceneId }: StoryComposerFlowPro
   useEffect(() => {
     return () => {
       for (const item of mediaRef.current) {
-        if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+        revokePreviewUrl(item.previewUrl);
       }
     };
   }, []);
 
   function resetEditorState() {
     for (const item of mediaRef.current) {
-      if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+      revokePreviewUrl(item.previewUrl);
     }
     setTitle('');
     setBody('');
@@ -153,11 +160,16 @@ function StoryComposerFlow({ onOpenChange, open, sceneId }: StoryComposerFlowPro
     setBody(draft.revision.body ?? '');
     setMemoryTime(draft.revision.memoryTime ?? '');
     setLocation(draft.revision.location);
+    const canReadPublishedMedia =
+      draft.story.status === 'active' && Boolean(draft.story.publishedRevisionId);
     setMedia(
       draft.revision.mediaAssetIds.map((assetId, index) => ({
         assetId,
         clientId: `restored_${assetId}`,
         name: `已保存照片 ${index + 1}`,
+        ...(canReadPublishedMedia
+          ? { previewUrl: getPublishedStoryMediaUrl(draft.story.id, assetId) }
+          : {}),
         status: 'restored',
       }))
     );
@@ -424,7 +436,7 @@ function StoryComposerFlow({ onOpenChange, open, sceneId }: StoryComposerFlowPro
   function removeMedia(clientId: string) {
     setMedia((current) => {
       const target = current.find((item) => item.clientId === clientId);
-      if (target?.previewUrl) URL.revokeObjectURL(target.previewUrl);
+      revokePreviewUrl(target?.previewUrl);
       return current.filter((item) => item.clientId !== clientId);
     });
   }
@@ -675,7 +687,7 @@ function StoryComposerFlow({ onOpenChange, open, sceneId }: StoryComposerFlowPro
             <div className="mx-auto grid w-full max-w-[700px] gap-0 px-6 py-6 max-[760px]:px-4">
               {restoredDraft ? (
                 <div className="mb-5 rounded-[16px] bg-brand/12 px-4 py-3 text-[12px] leading-[1.6] text-[#52643e]">
-                  已恢复你上次没写完的草稿。已上传照片会继续保留；当前版本先用占位块表示跨会话恢复的图片。
+                  已恢复草稿。你之前上传的照片和内容都还在，可以直接继续修改。
                 </div>
               ) : null}
 
