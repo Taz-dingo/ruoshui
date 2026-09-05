@@ -42,6 +42,17 @@ function createPlaceRoute(options: CreatePlaceRouteOptions): Hono {
     return context.json({ ok: true, data: await options.placeService.listPlaces(input) });
   });
 
+  // Kept separate from the public list so the Place authoring console can verify
+  // admin access without attempting a write first. Register before /:placeId.
+  route.get("/admin", async (context) => {
+    const admin = await requireAdmin(context);
+    if (admin instanceof Response) {
+      return admin;
+    }
+    const input = listPlacesInputSchema.parse({ sceneId: context.req.query("sceneId") });
+    return context.json({ ok: true, data: await options.placeService.listPlaces(input) });
+  });
+
   route.get("/:placeId", async (context) => {
     const placeId = placeIdSchema.parse(context.req.param("placeId"));
     return context.json({ ok: true, data: await options.placeService.getPlace(placeId) });

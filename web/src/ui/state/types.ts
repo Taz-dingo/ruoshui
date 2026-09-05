@@ -61,6 +61,7 @@ interface CameraViewState {
   distanceValue: number | null;
   pitchValue: number | null;
   yawValue: number | null;
+  fovValue: number | null;
 }
 
 interface HighlightPinView {
