@@ -83,6 +83,7 @@ function createApp(options: CreateAppOptions): Hono {
       "/api/stories",
       createStoryRoute({
         authService: options.authService,
+        storageProvider: options.storageProvider,
         storyService: options.storyService,
       }),
     );
