@@ -21,11 +21,27 @@ interface OwnedStoryItem {
   updatedAt: string;
 }
 
+interface OwnedStoryMediaRef {
+  id: string;
+  mimeType: string;
+  objectKey: string;
+}
+
 interface StoryOwnerReadRepository {
+  getOwnedStoryMediaRef(
+    userId: string,
+    storyId: string,
+    mediaAssetId: string,
+  ): Promise<OwnedStoryMediaRef | null>;
   listOwnedStories(userId: string): Promise<OwnedStoryItem[]>;
 }
 
 interface StoryOwnerReadService {
+  getOwnedStoryMediaRef(
+    userId: string,
+    storyId: string,
+    mediaAssetId: string,
+  ): Promise<OwnedStoryMediaRef | null>;
   listOwnedStories(userId: string): Promise<OwnedStoryItem[]>;
 }
 
@@ -33,6 +49,9 @@ function createStoryOwnerReadService(
   repository: StoryOwnerReadRepository,
 ): StoryOwnerReadService {
   return {
+    async getOwnedStoryMediaRef(userId, storyId, mediaAssetId) {
+      return repository.getOwnedStoryMediaRef(userId, storyId, mediaAssetId);
+    },
     async listOwnedStories(userId) {
       return repository.listOwnedStories(userId);
     },
@@ -42,6 +61,7 @@ function createStoryOwnerReadService(
 export { createStoryOwnerReadService };
 export type {
   OwnedStoryItem,
+  OwnedStoryMediaRef,
   OwnedStoryPublicState,
   OwnedStoryRevisionSummary,
   OwnedStoryWorkState,
