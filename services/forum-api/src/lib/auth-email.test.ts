@@ -36,10 +36,10 @@ test("Tencent Cloud TC3 signature is deterministic for the SES request", async (
 });
 
 test("Tencent SES sender uses the approved template and only sends the OTP code as template data", async () => {
-  let capturedRequest: { input: RequestInfo | URL; init?: RequestInit } | null = null;
+  const capturedRequests: Array<{ input: RequestInfo | URL; init?: RequestInit }> = [];
   const sender = createTencentSesAuthEmailSender({
     fetchFn: async (input, init) => {
-      capturedRequest = { input, init };
+      capturedRequests.push({ input, init });
       return new Response(
         JSON.stringify({ Response: { MessageId: "message_1", RequestId: "request_1" } }),
         { status: 200, headers: { "content-type": "application/json" } },
@@ -60,6 +60,7 @@ test("Tencent SES sender uses the approved template and only sends the OTP code 
     expiresInMinutes: 10,
   });
 
+  const capturedRequest = capturedRequests[0];
   assert.ok(capturedRequest);
   assert.equal(String(capturedRequest.input), "https://ses.tencentcloudapi.com/");
   assert.equal(capturedRequest.init?.method, "POST");
