@@ -17,7 +17,8 @@
 - [ ] 腾讯云创建 / 验证 `no-reply@auth.tazdingo.net` 发信地址。
 - [ ] 创建 OTP 模板并通过审核：模板使用单变量 `{{code}}`，静态注明 10 分钟有效。
 - [ ] 给 Worker 配置 `TENCENT_CLOUD_SECRET_ID`、`TENCENT_CLOUD_SECRET_KEY`、`TENCENT_SES_TEMPLATE_ID`；Secret 不进入 Git。
-- [ ] 部署生产 Worker 并跑真实 smoke：request OTP → 实际收件 → verify → `/me` → StoryDraft create / patch → 跨请求 Session。
+- [x] 从最新 `main` 部署生产 Worker；当前版本为 `fc8bf286-6609-46f1-b11e-33c2e054e593`。
+- [ ] 配置完成后跑真实 smoke：request OTP → 实际收件 → verify → `/me` → StoryDraft create / patch → 跨请求 Session。
 
 ### 2. Auth 后续
 

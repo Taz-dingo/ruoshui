@@ -41,6 +41,7 @@
 - `/api/auth/email/request-otp`、`/verify`、`/me`、`/profile`、`/logout` 已具备。
 - 邮件 provider 已从 Cloudflare Email Sending 改为 **腾讯云 SES API 3.0**；Worker 直接使用 `TC3-HMAC-SHA256` 签名调用 `SendEmail`，不再需要 Cloudflare `EMAIL` binding 或仅为 OTP 升级 Workers Paid。
 - SES 使用审核模板发送验证码，模板变量只保留 `{{code}}`；当前 OTP 有效期固定 10 分钟，写入模板静态文案。
+- 最新 `main`（`4c27bec`）已部署到生产 Worker `ruoshui-forum-api`，版本为 `fc8bf286-6609-46f1-b11e-33c2e054e593`；现有 `AUTH_OTP_SECRET` 与 `UPLOAD_SIGNING_SECRET` 未被覆盖。
 - 相关决定和生产配置要求见 [`../decisions/2026-09-06-tencent-ses-auth-email.md`](../decisions/2026-09-06-tencent-ses-auth-email.md)。
 
 ### Story 生产与审核
@@ -69,6 +70,7 @@
 - 生产 Auth 还不能做真实 OTP smoke：代码已经切到腾讯云 SES，但仍需要在腾讯云完成 `auth.tazdingo.net` 发信域名验证、发信地址、验证码模板审核，并给 Worker 配置 `TENCENT_CLOUD_SECRET_ID`、`TENCENT_CLOUD_SECRET_KEY`、`TENCENT_SES_TEMPLATE_ID`。`AUTH_OTP_SECRET` 已存在。
 - `AUTH_EMAIL_FROM=no-reply@auth.tazdingo.net`、`AUTH_EMAIL_FROM_NAME=若水`、`TENCENT_SES_REGION=ap-guangzhou` 已作为非敏感 Worker vars 写入配置；腾讯云 Secret / Template ID 不进入 Git。
 - 腾讯云 SES 模板审核通过前不要把 OTP smoke 记为通过。
+- 本次部署后从当前终端直连 `workers.dev/health` 仍无法建立连接；Pages 同源旧 forum bootstrap 已返回 200，不能据此替代完整 Auth / Story smoke。
 - Node/PostgreSQL fallback 尚未同步新的 Auth / Story service runtime；当前 Content & Community 新主路径以 Worker + D1 为准。
 - 当前旧 forum UI / read path 仍保留兼容代码，正在由正式 Place / Story 消费链路逐步替换；不要一次性无意义重写。
 
