@@ -31,6 +31,7 @@ import {
 } from '../../community/content-api';
 import { scrollAreaClassNames } from '../../styles/system';
 import { cn } from '../../utils/cn';
+import { SpatialAnchorEditorOverlay } from './SpatialAnchorEditorOverlay';
 
 interface StoryComposerFlowProps {
   onOpenChange: (open: boolean) => void;
@@ -101,6 +102,7 @@ function StoryComposerFlow({ onOpenChange, open, sceneId }: StoryComposerFlowPro
   const [placesLoading, setPlacesLoading] = useState(false);
   const [placePickerOpen, setPlacePickerOpen] = useState(false);
   const [placeQuery, setPlaceQuery] = useState('');
+  const [anchorEditorOpen, setAnchorEditorOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [memoryTime, setMemoryTime] = useState('');
@@ -140,6 +142,7 @@ function StoryComposerFlow({ onOpenChange, open, sceneId }: StoryComposerFlowPro
     setRestoredDraft(false);
     setPlacePickerOpen(false);
     setPlaceQuery('');
+    setAnchorEditorOpen(false);
     storyIdRef.current = null;
   }
 
@@ -165,24 +168,40 @@ function StoryComposerFlow({ onOpenChange, open, sceneId }: StoryComposerFlowPro
   async function loadEditorData() {
     setPlacesLoading(true);
     setMessage(null);
-    try {
-      const [nextPlaces, drafts] = await Promise.all([
-        fetchPlaces(sceneId),
-        fetchStoryDrafts(),
-      ]);
-      setPlaces(nextPlaces);
-      if (drafts[0]) {
-        hydrateDraft(drafts[0]);
+
+    const [placeResult, draftResult] = await Promise.allSettled([
+      fetchPlaces(sceneId),
+      fetchStoryDrafts(),
+    ]);
+
+    if (placeResult.status === 'fulfilled') {
+      setPlaces(placeResult.value);
+    } else {
+      setPlaces([]);
+    }
+
+    if (draftResult.status === 'fulfilled') {
+      if (draftResult.value[0]) {
+        hydrateDraft(draftResult.value[0]);
       } else {
         resetEditorState();
       }
-      setStep('editor');
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : '故事编辑器加载失败了。');
-      setStep('editor');
-    } finally {
-      setPlacesLoading(false);
     }
+
+    const failures = [placeResult, draftResult].filter(
+      (result): result is PromiseRejectedResult => result.status === 'rejected'
+    );
+    if (failures.length > 0) {
+      const firstReason = failures[0]?.reason;
+      setMessage(
+        firstReason instanceof Error
+          ? firstReason.message
+          : '部分故事编辑数据暂时没有加载成功。'
+      );
+    }
+
+    setPlacesLoading(false);
+    setStep('editor');
   }
 
   useEffect(() => {
@@ -198,11 +217,6 @@ function StoryComposerFlow({ onOpenChange, open, sceneId }: StoryComposerFlowPro
         setUser(currentUser);
         if (!currentUser) {
           setStep('email');
-          return;
-        }
-        if (!currentUser.displayName) {
-          setDisplayName('');
-          setStep('profile');
           return;
         }
         await loadEditorData();
@@ -270,7 +284,7 @@ function StoryComposerFlow({ onOpenChange, open, sceneId }: StoryComposerFlowPro
   }
 
   useEffect(() => {
-    if (!open || step !== 'editor') return;
+    if (!open || step !== 'editor' || anchorEditorOpen) return;
     if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
 
     const snapshot = createSnapshot();
@@ -283,7 +297,7 @@ function StoryComposerFlow({ onOpenChange, open, sceneId }: StoryComposerFlowPro
     return () => {
       if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
     };
-  }, [body, location, media, memoryTime, open, step, title]);
+  }, [anchorEditorOpen, body, location, media, memoryTime, open, step, title]);
 
   async function handleRequestOtp(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -307,6 +321,7 @@ function StoryComposerFlow({ onOpenChange, open, sceneId }: StoryComposerFlowPro
       const nextUser = await verifyEmailOtp(email.trim(), otpCode.trim());
       setUser(nextUser);
       if (!nextUser.displayName) {
+        setDisplayName('');
         setStep('profile');
       } else {
         await loadEditorData();
@@ -449,6 +464,22 @@ function StoryComposerFlow({ onOpenChange, open, sceneId }: StoryComposerFlowPro
     setDraggedMediaId(null);
   }
 
+  async function openAnchorEditor() {
+    setMessage(null);
+    setPlacePickerOpen(false);
+    if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
+
+    const snapshot = createSnapshot();
+    try {
+      if (hasMeaningfulDraft(snapshot)) {
+        await queuePersist(snapshot);
+      }
+      setAnchorEditorOpen(true);
+    } catch {
+      setMessage('先把当前草稿保存好，再去标记位置。');
+    }
+  }
+
   async function handleSubmitStory() {
     setMessage(null);
     const snapshot = createSnapshot();
@@ -501,6 +532,19 @@ function StoryComposerFlow({ onOpenChange, open, sceneId }: StoryComposerFlowPro
           : '';
 
   if (!open) return null;
+
+  if (anchorEditorOpen) {
+    return (
+      <SpatialAnchorEditorOverlay
+        onCancel={() => setAnchorEditorOpen(false)}
+        onSave={(anchor) => {
+          setLocation({ kind: 'anchor', anchor });
+          setAnchorEditorOpen(false);
+          setPlacePickerOpen(false);
+        }}
+      />
+    );
+  }
 
   return (
     <div
@@ -785,6 +829,21 @@ function StoryComposerFlow({ onOpenChange, open, sceneId }: StoryComposerFlowPro
                       placeholder="搜索地点"
                       value={placeQuery}
                     />
+                    <button
+                      className={cn(
+                        'rounded-[13px] px-3 py-3 text-left text-[13px]',
+                        location.kind === 'anchor' ? 'bg-white text-black' : 'text-black/58 hover:bg-white/60'
+                      )}
+                      onClick={() => void openAnchorEditor()}
+                      type="button"
+                    >
+                      <div className="font-medium">
+                        {location.kind === 'anchor' ? '你标记的校园角落' : '地图上一个特别的角落'}
+                      </div>
+                      <div className="mt-1 text-[11px] leading-[1.5] text-black/38">
+                        在 3D 校园里标记位置，再保存别人“回到这里”时看到的视角。
+                      </div>
+                    </button>
                     <button
                       className={cn(
                         'rounded-[13px] px-3 py-3 text-left text-[13px]',
