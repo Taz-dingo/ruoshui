@@ -7,6 +7,7 @@ import {
 } from '@floating-ui/react';
 
 import { CommunitySheet } from '../components/community/CommunitySheet';
+import { StoryComposerFlow } from '../components/community/StoryComposerFlow';
 import { ControlDockMenu } from '../components/viewer/ControlDockMenu';
 import { HighlightLayer } from '../components/viewer/HighlightLayer';
 import { LoadingOverlay } from '../components/viewer/LoadingOverlay';
@@ -71,6 +72,15 @@ function DockIcon({ kind }: { kind: 'model' | 'preset' }) {
       <circle cx="12" cy="12" r="8.5" />
       <path d="m15.8 8.2-2.1 5.5-5.5 2.1 2.1-5.5 5.5-2.1Z" />
       <path d="M12 3.5v1.2M20.5 12h-1.2M12 19.3v1.2M4.7 12H3.5" />
+    </svg>
+  );
+}
+
+function StoryIcon() {
+  return (
+    <svg aria-hidden="true" className="h-[19px] w-[19px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7">
+      <path d="M5 19h4l9.6-9.6a2.1 2.1 0 0 0-3-3L6 16v3Z" />
+      <path d="m13.9 8.1 3 3" />
     </svg>
   );
 }
@@ -154,6 +164,7 @@ function App({
   const [activeInspectorPanel, setActiveInspectorPanel] = useState<string | null>(null);
   const [openDockMenu, setOpenDockMenu] = useState<DockMenuId | null>(null);
   const [isCommunityOpen, setIsCommunityOpen] = useState(false);
+  const [isStoryComposerOpen, setIsStoryComposerOpen] = useState(false);
   const setVariantPanel = useViewerUiStore((store) => store.setVariantPanel);
   const setPresetPanel = useViewerUiStore((store) => store.setPresetPanel);
   const setRouteControls = useViewerUiStore((store) => store.setRouteControls);
@@ -178,6 +189,13 @@ function App({
 
   const openFullCommunity = () => {
     setIsCommunityOpen(true);
+  };
+
+  const openStoryComposer = () => {
+    setOpenDockMenu(null);
+    setIsMobilePanelOpen(false);
+    setIsCommunityOpen(false);
+    setIsStoryComposerOpen(true);
   };
 
   useEffect(() => {
@@ -252,6 +270,18 @@ function App({
                 open={openDockMenu === 'presets'}
                 viewerConfig={viewerConfig}
               />
+              <button
+                aria-label="留下你的故事"
+                className={dockButtonClassName}
+                onClick={openStoryComposer}
+                onMouseDown={stopInteractionPropagation}
+                onPointerDown={stopInteractionPropagation}
+                onTouchStart={stopInteractionPropagation}
+                title="留下故事"
+                type="button"
+              >
+                <StoryIcon />
+              </button>
             </div>
           </div>
         </div>
@@ -309,6 +339,11 @@ function App({
         scenePreviewImage={data.scene.miniMap?.imageUrl}
         sceneSummary={data.scene.summary}
         sceneTitle={data.scene.title}
+      />
+      <StoryComposerFlow
+        onOpenChange={setIsStoryComposerOpen}
+        open={isStoryComposerOpen}
+        sceneId={communitySceneId}
       />
     </main>
   );
