@@ -78,6 +78,7 @@ const mediaAssets = sqliteTable(
     postId: text("post_id").references(() => forumPosts.id, {
       onDelete: "set null",
     }),
+    ownerUserId: text("owner_user_id"),
     objectKey: text("object_key").notNull(),
     bucket: text("bucket").notNull(),
     mimeType: text("mime_type").notNull(),
@@ -92,6 +93,7 @@ const mediaAssets = sqliteTable(
   (table) => [
     uniqueIndex("media_assets_object_key_idx").on(table.objectKey),
     index("media_assets_post_id_idx").on(table.postId),
+    index("media_assets_owner_user_id_idx").on(table.ownerUserId),
   ],
 );
 
