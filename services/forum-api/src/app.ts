@@ -5,10 +5,12 @@ import { ZodError } from "zod";
 import { AuthServiceError, type AuthService } from "./lib/auth.js";
 import type { ForumRepository } from "./lib/forum-repository.js";
 import { StorageProviderError, type StorageProvider } from "./lib/storage.js";
+import { StoryServiceError, type StoryService } from "./lib/story.js";
 import { createAuthRoute } from "./routes/auth-route.js";
 import { createForumRoute } from "./routes/forum-route.js";
 import { createHealthRoute } from "./routes/health-route.js";
 import { createStorageRoute } from "./routes/storage-route.js";
+import { createStoryRoute } from "./routes/story-route.js";
 
 interface CreateAppOptions {
   authService?: AuthService;
@@ -16,6 +18,7 @@ interface CreateAppOptions {
   forumRepository: ForumRepository;
   runtime: "node" | "cloudflare";
   storageProvider: StorageProvider;
+  storyService?: StoryService;
 }
 
 function isDatabaseUnavailableError(error: unknown): boolean {
@@ -72,6 +75,15 @@ function createApp(options: CreateAppOptions): Hono {
       "/api/auth",
       createAuthRoute({
         authService: options.authService,
+      }),
+    );
+  }
+  if (options.authService && options.storyService) {
+    app.route(
+      "/api/stories",
+      createStoryRoute({
+        authService: options.authService,
+        storyService: options.storyService,
       }),
     );
   }
@@ -145,7 +157,7 @@ function createApp(options: CreateAppOptions): Hono {
       );
     }
 
-    if (error instanceof AuthServiceError) {
+    if (error instanceof AuthServiceError || error instanceof StoryServiceError) {
       return context.json(
         {
           ok: false,
