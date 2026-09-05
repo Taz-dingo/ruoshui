@@ -15,6 +15,10 @@ import {
   StoryReviewServiceError,
   type StoryReviewService,
 } from "./lib/story-review.js";
+import {
+  StorySocialServiceError,
+  type StorySocialService,
+} from "./lib/story-social.js";
 import { StoryServiceError, type StoryService } from "./lib/story.js";
 import { createAuthRoute } from "./routes/auth-route.js";
 import { createForumRoute } from "./routes/forum-route.js";
@@ -23,6 +27,7 @@ import { createPlaceRoute } from "./routes/place-route.js";
 import { createPublishedStoryRoute } from "./routes/published-story-route.js";
 import { createStorageRoute } from "./routes/storage-route.js";
 import { createStoryReviewRoute } from "./routes/story-review-route.js";
+import { createStorySocialRoute } from "./routes/story-social-route.js";
 import { createStoryRoute } from "./routes/story-route.js";
 
 interface CreateAppOptions {
@@ -36,6 +41,7 @@ interface CreateAppOptions {
   storyReadService?: StoryReadService;
   storyReviewService?: StoryReviewService;
   storyService?: StoryService;
+  storySocialService?: StorySocialService;
 }
 
 function isDatabaseUnavailableError(error: unknown): boolean {
@@ -111,6 +117,15 @@ function createApp(options: CreateAppOptions): Hono {
       createPublishedStoryRoute({
         readService: options.storyReadService,
         storageProvider: options.storageProvider,
+      }),
+    );
+  }
+  if (options.storySocialService) {
+    app.route(
+      "/api/story-social",
+      createStorySocialRoute({
+        authService: options.authService,
+        socialService: options.storySocialService,
       }),
     );
   }
@@ -210,6 +225,7 @@ function createApp(options: CreateAppOptions): Hono {
       error instanceof StoryServiceError ||
       error instanceof StoryReadServiceError ||
       error instanceof StoryReviewServiceError ||
+      error instanceof StorySocialServiceError ||
       error instanceof PlaceServiceError ||
       error instanceof AdminAccessError
     ) {
