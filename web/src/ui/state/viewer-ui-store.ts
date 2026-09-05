@@ -6,6 +6,7 @@ import type {
   HighlightOverlayViewState,
   LoadingViewState,
   PerfHudViewState,
+  PlaceOverlayViewState,
   PresetPanelViewState,
   RenderScaleViewState,
   RouteControlsViewState,
@@ -27,6 +28,7 @@ interface ViewerUiStoreState {
   camera: CameraViewState;
   highlightAuthoring: HighlightAuthoringViewState;
   highlightOverlay: HighlightOverlayViewState;
+  placeOverlay: PlaceOverlayViewState;
   loading: LoadingViewState;
   perfHud: PerfHudViewState;
   renderScale: RenderScaleViewState;
@@ -49,6 +51,7 @@ interface ViewerUiStoreState {
   ) => void;
   setHighlightAuthoring: (highlightAuthoring: HighlightAuthoringViewState) => void;
   setHighlightOverlay: (highlightOverlay: HighlightOverlayViewState) => void;
+  setPlaceOverlay: (placeOverlay: PlaceOverlayViewState) => void;
   setLoading: (loading: LoadingViewState) => void;
   setPerfHud: (perfHud: PerfHudViewState) => void;
   setRenderScale: (renderScale: RenderScaleViewState) => void;
@@ -92,6 +95,10 @@ const emptyRouteDiagnosticsState: RouteDiagnosticsViewState = {
 };
 
 const emptyHighlightOverlayState: HighlightOverlayViewState = {
+  items: []
+};
+
+const emptyPlaceOverlayState: PlaceOverlayViewState = {
   items: []
 };
 
@@ -177,6 +184,7 @@ const useViewerUiStore = create<ViewerUiStoreState>((set) => ({
   camera: emptyCameraState,
   highlightAuthoring: emptyHighlightAuthoringState,
   highlightOverlay: emptyHighlightOverlayState,
+  placeOverlay: emptyPlaceOverlayState,
   loading: emptyLoadingState,
   perfHud: emptyPerfHudState,
   renderScale: emptyRenderScaleState,
@@ -193,6 +201,7 @@ const useViewerUiStore = create<ViewerUiStoreState>((set) => ({
   setBlockingError: (blockingError) => set({ blockingError }),
   setHighlightAuthoring: (highlightAuthoring) => set({ highlightAuthoring }),
   setHighlightOverlay: (highlightOverlay) => set({ highlightOverlay }),
+  setPlaceOverlay: (placeOverlay) => set({ placeOverlay }),
   setLoading: (loading) => set({ loading }),
   setPerfHud: (perfHud) => set({ perfHud }),
   setRenderScale: (renderScale) => set({ renderScale }),
@@ -212,6 +221,7 @@ export {
   emptyCameraState,
   emptyHighlightAuthoringState,
   emptyHighlightOverlayState,
+  emptyPlaceOverlayState,
   emptyLoadingState,
   emptyPerfHudState,
   emptyRenderScaleState,

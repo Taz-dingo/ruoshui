@@ -1,5 +1,6 @@
 import {
   projectHighlightPins,
+  projectNamedPins,
   projectWorldPoint
 } from '../../runtime/highlight-projection';
 import { syncCameraState, syncHighlightOverlayState } from '../state/viewer-ui-sync';
@@ -12,10 +13,12 @@ import {
 import { useViewerUiStore } from '../state/viewer-ui-store';
 import type { VariantBenchmark } from '../../benchmark/types';
 import type { ViewerHighlight, ViewerVariant } from '../../content/types';
+import type { ViewerPlacePin } from '../commands/viewer-command-bus';
 
 interface CreateViewerShellControllerArgs {
   pc: any;
   highlights: ViewerHighlight[];
+  getPlacePins: () => ViewerPlacePin[];
   showPerfHud: boolean;
   publishVariantPanel: () => void;
   getVariantBenchmark: (variantId: string | null | undefined) => VariantBenchmark | null;
@@ -28,6 +31,7 @@ interface CreateViewerShellControllerArgs {
 function createViewerShellController({
   pc,
   highlights,
+  getPlacePins,
   showPerfHud,
   publishVariantPanel,
   getVariantBenchmark,
@@ -85,6 +89,7 @@ function createViewerShellController({
   const renderHighlightOverlay = (runtimeState: any) => {
     if (!runtimeState?.camera || !runtimeState?.canvasElement) {
       syncHighlightOverlayState({ items: [] });
+      useViewerUiStore.getState().setPlaceOverlay({ items: [] });
       const highlightAuthoring = useViewerUiStore.getState().highlightAuthoring;
       if (highlightAuthoring.previewVisible) {
         useViewerUiStore.getState().setHighlightAuthoring({
@@ -123,25 +128,42 @@ function createViewerShellController({
       });
     }
 
-    const items = highlights.length > 0
+    const highlightItems = highlights.length > 0
       ? projectHighlightPins({
           pc,
           runtimeState,
           highlights
         })
       : [];
-    const snapshot = items
+    const highlightSnapshot = highlightItems
       .map((item) =>
         `${item.id}:${item.isVisible ? 1 : 0}:${Math.round(item.left)}:${Math.round(item.top)}`
       )
       .join('|');
 
-    if (runtimeState?.lastHighlightOverlaySnapshot === snapshot) {
-      return;
+    if (runtimeState.lastHighlightOverlaySnapshot !== highlightSnapshot) {
+      runtimeState.lastHighlightOverlaySnapshot = highlightSnapshot;
+      syncHighlightOverlayState({ items: highlightItems });
     }
 
-    runtimeState.lastHighlightOverlaySnapshot = snapshot;
-    syncHighlightOverlayState({ items });
+    const placePins = getPlacePins();
+    const placeItems = placePins.length > 0
+      ? projectNamedPins({
+          pc,
+          runtimeState,
+          pins: placePins
+        })
+      : [];
+    const placeSnapshot = placeItems
+      .map((item) =>
+        `${item.id}:${item.isVisible ? 1 : 0}:${Math.round(item.left)}:${Math.round(item.top)}`
+      )
+      .join('|');
+
+    if (runtimeState.lastPlaceOverlaySnapshot !== placeSnapshot) {
+      runtimeState.lastPlaceOverlaySnapshot = placeSnapshot;
+      useViewerUiStore.getState().setPlaceOverlay({ items: placeItems });
+    }
   };
 
   const renderPerfHud = (runtimeState: any) => {

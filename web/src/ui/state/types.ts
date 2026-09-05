@@ -75,6 +75,18 @@ interface HighlightOverlayViewState {
   items: HighlightPinView[];
 }
 
+interface PlacePinView {
+  id: string;
+  name: string;
+  left: number;
+  top: number;
+  isVisible: boolean;
+}
+
+interface PlaceOverlayViewState {
+  items: PlacePinView[];
+}
+
 interface HighlightAuthoringViewState {
   isEnabled: boolean;
   planeY: number;
@@ -210,6 +222,8 @@ export type {
   HighlightPinView,
   LoadingViewState,
   PerfHudViewState,
+  PlaceOverlayViewState,
+  PlacePinView,
   PresetPanelItemView,
   PresetPanelViewState,
   RenderScaleViewState,
