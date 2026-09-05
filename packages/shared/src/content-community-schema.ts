@@ -38,7 +38,24 @@ const userSchema = z.object({
   updatedAt: z.string().datetime(),
 });
 
+const emailAddressSchema = z
+  .string()
+  .trim()
+  .email()
+  .max(320)
+  .transform((email) => email.toLowerCase());
 const authProviderSchema = z.enum(["email"]);
+const requestEmailOtpInputSchema = z.object({
+  email: emailAddressSchema,
+});
+const verifyEmailOtpInputSchema = z.object({
+  email: emailAddressSchema,
+  code: z.string().regex(/^\d{6}$/),
+});
+const updateUserProfileInputSchema = z.object({
+  displayName: z.string().trim().min(1).max(80).nullable(),
+});
+
 const storyRevisionStatusSchema = z.enum([
   "draft",
   "pending_review",
@@ -143,6 +160,7 @@ type CommentLikeKey = z.infer<typeof commentLikeKeySchema>;
 type CommentStatus = z.infer<typeof commentStatusSchema>;
 type CreateCommentInput = z.infer<typeof createCommentInputSchema>;
 type Place = z.infer<typeof placeSchema>;
+type RequestEmailOtpInput = z.infer<typeof requestEmailOtpInputSchema>;
 type SpatialAnchor = z.infer<typeof spatialAnchorSchema>;
 type Story = z.infer<typeof storySchema>;
 type StoryDraftPatch = z.infer<typeof storyDraftPatchSchema>;
@@ -152,7 +170,9 @@ type StoryRevision = z.infer<typeof storyRevisionSchema>;
 type StoryRevisionStatus = z.infer<typeof storyRevisionStatusSchema>;
 type StoryStatus = z.infer<typeof storyStatusSchema>;
 type SubmitStoryRevisionInput = z.infer<typeof submitStoryRevisionInputSchema>;
+type UpdateUserProfileInput = z.infer<typeof updateUserProfileInputSchema>;
 type User = z.infer<typeof userSchema>;
+type VerifyEmailOtpInput = z.infer<typeof verifyEmailOtpInputSchema>;
 
 export {
   authProviderSchema,
@@ -162,9 +182,11 @@ export {
   commentSchema,
   commentStatusSchema,
   createCommentInputSchema,
+  emailAddressSchema,
   mediaAssetIdSchema,
   placeIdSchema,
   placeSchema,
+  requestEmailOtpInputSchema,
   spatialAnchorSchema,
   storyDraftPatchSchema,
   storyIdSchema,
@@ -176,8 +198,10 @@ export {
   storySchema,
   storyStatusSchema,
   submitStoryRevisionInputSchema,
+  updateUserProfileInputSchema,
   userIdSchema,
   userSchema,
+  verifyEmailOtpInputSchema,
 };
 
 export type {
@@ -188,6 +212,7 @@ export type {
   CommentStatus,
   CreateCommentInput,
   Place,
+  RequestEmailOtpInput,
   SpatialAnchor,
   Story,
   StoryDraftPatch,
@@ -197,5 +222,7 @@ export type {
   StoryRevisionStatus,
   StoryStatus,
   SubmitStoryRevisionInput,
+  UpdateUserProfileInput,
   User,
+  VerifyEmailOtpInput,
 };
