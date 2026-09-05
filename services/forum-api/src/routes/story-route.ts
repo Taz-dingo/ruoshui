@@ -10,14 +10,16 @@ import { getCookie } from "hono/cookie";
 
 import type { AuthService } from "../lib/auth.js";
 import type { StorageProvider } from "../lib/storage.js";
-import type { StoryService } from "../lib/story.js";
 import type { StoryAuthorService } from "../lib/story-author.js";
+import type { StoryOwnerReadService } from "../lib/story-owner-read.js";
+import type { StoryService } from "../lib/story.js";
 import { SESSION_COOKIE_NAME } from "./auth-route.js";
 
 interface CreateStoryRouteOptions {
   authService: AuthService;
   storageProvider: StorageProvider;
   storyAuthorService?: StoryAuthorService;
+  storyOwnerReadService?: StoryOwnerReadService;
   storyService: StoryService;
 }
 
@@ -29,6 +31,20 @@ function createStoryRoute(options: CreateStoryRouteOptions): Hono {
       getCookie(context, SESSION_COOKIE_NAME),
     );
   }
+
+  route.get("/mine", async (context) => {
+    const user = await getUser(context);
+    if (!user) {
+      return context.json({ ok: false, error: "Authentication required." }, 401);
+    }
+    if (!options.storyOwnerReadService) {
+      return context.json({ ok: false, error: "Story ownership reads are not configured." }, 503);
+    }
+    return context.json({
+      ok: true,
+      data: await options.storyOwnerReadService.listOwnedStories(user.id),
+    });
+  });
 
   route.post("/media/upload-requests", async (context) => {
     const user = await getUser(context);
