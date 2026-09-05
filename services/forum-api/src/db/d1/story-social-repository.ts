@@ -53,7 +53,15 @@ function createD1StorySocialRepository(database: D1Database): StorySocialReposit
          ${viewerCommentLikeExpression} AS viewerHasLiked
        FROM comments c
        INNER JOIN users u ON u.id = c.author_user_id
-       WHERE c.story_id = ?1 AND c.status = 'visible'
+       WHERE c.story_id = ?1
+         AND c.status = 'visible'
+         AND (
+           c.root_comment_id IS NULL
+           OR EXISTS (
+             SELECT 1 FROM comments root
+             WHERE root.id = c.root_comment_id AND root.status = 'visible'
+           )
+         )
        ORDER BY c.created_at ASC`,
     );
     const commentRows = viewerUserId
@@ -108,13 +116,22 @@ function createD1StorySocialRepository(database: D1Database): StorySocialReposit
     async getVisibleComment(commentId) {
       const row = await database
         .prepare(
-          `SELECT id, story_id AS storyId, root_comment_id AS rootCommentId
+          `SELECT
+             id,
+             story_id AS storyId,
+             author_user_id AS authorUserId,
+             root_comment_id AS rootCommentId
            FROM comments
            WHERE id = ?1 AND status = 'visible'
            LIMIT 1`,
         )
         .bind(commentId)
-        .first<{ id: string; storyId: string; rootCommentId: string | null }>();
+        .first<{
+          id: string;
+          storyId: string;
+          authorUserId: string;
+          rootCommentId: string | null;
+        }>();
       return row ?? null;
     },
 
@@ -144,6 +161,13 @@ function createD1StorySocialRepository(database: D1Database): StorySocialReposit
           input.body,
           timestamp,
         )
+        .run();
+    },
+
+    async setCommentStatus(commentId, status, now) {
+      await database
+        .prepare("UPDATE comments SET status = ?1, updated_at = ?2 WHERE id = ?3")
+        .bind(status, now.getTime(), commentId)
         .run();
     },
 
