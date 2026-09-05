@@ -7,6 +7,7 @@ import type {
   StoryDraftPatch,
   StoryReviewItem,
   StoryReviewPatch,
+  StorySocial,
   UploadRequest,
   UploadTicket,
   User,
@@ -135,6 +136,42 @@ async function fetchPublishedStory(storyId: string): Promise<PublishedStory> {
 
 function getPublishedStoryMediaUrl(storyId: string, mediaAssetId: string): string {
   return `/api/published-stories/${encodeURIComponent(storyId)}/media/${encodeURIComponent(mediaAssetId)}`;
+}
+
+async function fetchStorySocial(storyId: string): Promise<StorySocial> {
+  return requestData<StorySocial>(`/api/story-social/stories/${encodeURIComponent(storyId)}`);
+}
+
+async function setStoryLike(storyId: string, liked: boolean): Promise<StorySocial> {
+  return requestData<StorySocial>(
+    `/api/story-social/stories/${encodeURIComponent(storyId)}/like`,
+    { method: liked ? 'PUT' : 'DELETE' },
+  );
+}
+
+async function createStoryComment(
+  storyId: string,
+  body: string,
+  replyToCommentId?: string,
+): Promise<StorySocial> {
+  return requestData<StorySocial>(
+    `/api/story-social/stories/${encodeURIComponent(storyId)}/comments`,
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        body,
+        ...(replyToCommentId ? { replyToCommentId } : {}),
+      }),
+    },
+  );
+}
+
+async function setCommentLike(commentId: string, liked: boolean): Promise<StorySocial> {
+  return requestData<StorySocial>(
+    `/api/story-social/comments/${encodeURIComponent(commentId)}/like`,
+    { method: liked ? 'PUT' : 'DELETE' },
+  );
 }
 
 async function fetchStoryDrafts(): Promise<StoryDraft[]> {
@@ -267,6 +304,7 @@ export {
   ApiRequestError,
   approveStoryReview,
   confirmStoryMedia,
+  createStoryComment,
   createStoryDraft,
   fetchCurrentUser,
   fetchPlaces,
@@ -275,6 +313,7 @@ export {
   fetchStoryDrafts,
   fetchStoryReviewItem,
   fetchStoryReviewQueue,
+  fetchStorySocial,
   getPublishedStoryMediaUrl,
   getStoryReviewMediaUrl,
   patchStoryReview,
@@ -282,6 +321,8 @@ export {
   requestEmailOtp,
   requestStoryReviewChanges,
   requestStoryUploadTicket,
+  setCommentLike,
+  setStoryLike,
   submitStoryDraft,
   updateDisplayName,
   updateStoryDraft,
