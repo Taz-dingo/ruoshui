@@ -18,7 +18,7 @@ import { StoryDiscussion } from './StoryDiscussion';
 
 interface PlaceMemoryLayerProps {
   isMobile: boolean;
-  onOpenStoryComposer: () => void;
+  onOpenStoryComposer: (storyId?: string) => void;
   sceneId: string;
 }
 
@@ -280,9 +280,9 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
     setMobileExpanded(false);
   }
 
-  function handleEditStory() {
+  function handleEditStory(storyId: string) {
     setActiveStoryId(null);
-    onOpenStoryComposer();
+    onOpenStoryComposer(storyId);
   }
 
   function handleRemovedStory(storyId: string) {

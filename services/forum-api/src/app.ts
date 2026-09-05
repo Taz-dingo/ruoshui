@@ -12,6 +12,7 @@ import type { ForumRepository } from "./lib/forum-repository.js";
 import { PlaceServiceError, type PlaceService } from "./lib/place.js";
 import { StorageProviderError, type StorageProvider } from "./lib/storage.js";
 import type { StoryAuthorService } from "./lib/story-author.js";
+import type { StoryOwnerReadService } from "./lib/story-owner-read.js";
 import {
   StoryReadServiceError,
   type StoryReadService,
@@ -46,6 +47,7 @@ interface CreateAppOptions {
   runtime: "node" | "cloudflare";
   storageProvider: StorageProvider;
   storyAuthorService?: StoryAuthorService;
+  storyOwnerReadService?: StoryOwnerReadService;
   storyReadService?: StoryReadService;
   storyReviewService?: StoryReviewService;
   storyService?: StoryService;
@@ -165,6 +167,7 @@ function createApp(options: CreateAppOptions): Hono {
         authService: options.authService,
         storageProvider: options.storageProvider,
         storyAuthorService: options.storyAuthorService,
+        storyOwnerReadService: options.storyOwnerReadService,
         storyService: options.storyService,
       }),
     );

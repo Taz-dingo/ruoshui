@@ -9,6 +9,7 @@ import {
 import { AdminCommentModerationConsole } from '../components/admin/AdminCommentModerationConsole';
 import { AdminReviewConsole } from '../components/admin/AdminReviewConsole';
 import { CommunitySheet } from '../components/community/CommunitySheet';
+import { MyStoriesPanel } from '../components/community/MyStoriesPanel';
 import { PlaceMemoryLayer } from '../components/community/PlaceMemoryLayer';
 import { StoryComposerFlow } from '../components/community/StoryComposerFlow';
 import { ControlDockMenu } from '../components/viewer/ControlDockMenu';
@@ -84,6 +85,16 @@ function StoryIcon() {
     <svg aria-hidden="true" className="h-[19px] w-[19px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7">
       <path d="M5 19h4l9.6-9.6a2.1 2.1 0 0 0-3-3L6 16v3Z" />
       <path d="m13.9 8.1 3 3" />
+    </svg>
+  );
+}
+
+function MyStoriesIcon() {
+  return (
+    <svg aria-hidden="true" className="h-[19px] w-[19px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7">
+      <circle cx="8" cy="8" r="3" />
+      <path d="M3.8 18.5c.5-3 2-4.5 4.2-4.5s3.7 1.5 4.2 4.5" />
+      <path d="M15 7h5M15 11h5M15 15h4" />
     </svg>
   );
 }
@@ -167,7 +178,9 @@ function App({
   const [activeInspectorPanel, setActiveInspectorPanel] = useState<string | null>(null);
   const [openDockMenu, setOpenDockMenu] = useState<DockMenuId | null>(null);
   const [isCommunityOpen, setIsCommunityOpen] = useState(false);
+  const [isMyStoriesOpen, setIsMyStoriesOpen] = useState(false);
   const [isStoryComposerOpen, setIsStoryComposerOpen] = useState(false);
+  const [storyComposerTargetId, setStoryComposerTargetId] = useState<string | null | undefined>(undefined);
   const setVariantPanel = useViewerUiStore((store) => store.setVariantPanel);
   const setPresetPanel = useViewerUiStore((store) => store.setPresetPanel);
   const setRouteControls = useViewerUiStore((store) => store.setRouteControls);
@@ -197,11 +210,35 @@ function App({
     setIsCommunityOpen(true);
   };
 
-  const openStoryComposer = () => {
+  const prepareStoryComposer = (target: string | null | undefined) => {
     setOpenDockMenu(null);
     setIsMobilePanelOpen(false);
     setIsCommunityOpen(false);
+    setIsMyStoriesOpen(false);
+    setStoryComposerTargetId(target);
     setIsStoryComposerOpen(true);
+  };
+
+  const openStoryComposer = (storyId?: string) => {
+    prepareStoryComposer(storyId);
+  };
+
+  const createFreshStory = () => {
+    prepareStoryComposer(null);
+  };
+
+  const setStoryComposerOpen = (open: boolean) => {
+    setIsStoryComposerOpen(open);
+    if (!open) setStoryComposerTargetId(undefined);
+  };
+
+  const openMyStories = () => {
+    setOpenDockMenu(null);
+    setIsMobilePanelOpen(false);
+    setIsCommunityOpen(false);
+    setIsStoryComposerOpen(false);
+    setStoryComposerTargetId(undefined);
+    setIsMyStoriesOpen(true);
   };
 
   useEffect(() => {
@@ -282,9 +319,21 @@ function App({
                 viewerConfig={viewerConfig}
               />
               <button
+                aria-label="我的 Story"
+                className={dockButtonClassName}
+                onClick={openMyStories}
+                onMouseDown={stopInteractionPropagation}
+                onPointerDown={stopInteractionPropagation}
+                onTouchStart={stopInteractionPropagation}
+                title="我的 Story"
+                type="button"
+              >
+                <MyStoriesIcon />
+              </button>
+              <button
                 aria-label="留下你的故事"
                 className={dockButtonClassName}
-                onClick={openStoryComposer}
+                onClick={() => openStoryComposer()}
                 onMouseDown={stopInteractionPropagation}
                 onPointerDown={stopInteractionPropagation}
                 onTouchStart={stopInteractionPropagation}
@@ -351,8 +400,15 @@ function App({
         sceneSummary={data.scene.summary}
         sceneTitle={data.scene.title}
       />
+      <MyStoriesPanel
+        onCreateStory={createFreshStory}
+        onOpenChange={setIsMyStoriesOpen}
+        onOpenStoryComposer={(storyId) => openStoryComposer(storyId)}
+        open={isMyStoriesOpen}
+      />
       <StoryComposerFlow
-        onOpenChange={setIsStoryComposerOpen}
+        initialStoryId={storyComposerTargetId}
+        onOpenChange={setStoryComposerOpen}
         open={isStoryComposerOpen}
         sceneId={communitySceneId}
       />

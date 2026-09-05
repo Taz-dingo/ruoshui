@@ -6,6 +6,7 @@ import { createD1CommentModerationRepository } from "./db/d1/comment-moderation-
 import { createD1ForumRepository } from "./db/d1/forum-repository.js";
 import { createD1PlaceRepository } from "./db/d1/place-repository.js";
 import { createD1StoryAuthorRepository } from "./db/d1/story-author-repository.js";
+import { createD1StoryOwnerReadRepository } from "./db/d1/story-owner-read-repository.js";
 import { createD1StoryReadRepository } from "./db/d1/story-read-repository.js";
 import { createD1StoryRepository } from "./db/d1/story-repository.js";
 import { createD1StoryReviewRepository } from "./db/d1/story-review-repository.js";
@@ -17,6 +18,7 @@ import { createCommentModerationService } from "./lib/comment-moderation.js";
 import { createPlaceService } from "./lib/place.js";
 import { createR2StorageProvider } from "./lib/storage.js";
 import { createStoryAuthorService } from "./lib/story-author.js";
+import { createStoryOwnerReadService } from "./lib/story-owner-read.js";
 import { createStoryReadService } from "./lib/story-read.js";
 import { createStoryService } from "./lib/story.js";
 import { createStoryReviewService } from "./lib/story-review.js";
@@ -84,6 +86,9 @@ export default {
         ? createStoryAuthorService({
             repository: createD1StoryAuthorRepository(env.DB, storyRepository),
           })
+        : undefined,
+      storyOwnerReadService: authService
+        ? createStoryOwnerReadService(createD1StoryOwnerReadRepository(env.DB))
         : undefined,
       storyReadService: createStoryReadService(createD1StoryReadRepository(env.DB)),
       storyReviewService: authService
