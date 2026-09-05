@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type {
+  ConfirmMediaAssetInput,
   CreateStoryDraftInput,
   StoryDraft,
   StoryDraftPatch,
@@ -42,6 +43,7 @@ function createDraftRecord(userId: string, storyId: string, input: CreateStoryDr
 
 function createHarness() {
   const drafts = new Map<string, StoryDraft>();
+  const mediaOwners = new Map<string, string>();
   const readyMedia = new Set<string>();
   let sequence = 0;
 
@@ -103,13 +105,23 @@ function createHarness() {
       drafts.set(storyId, updated);
       return updated;
     },
-    async areMediaAssetsReady(ids) {
-      return ids.every((id) => readyMedia.has(id));
+    async areMediaAssetsOwnedByUser(userId, ids) {
+      return ids.every((id) => mediaOwners.get(id) === userId);
+    },
+    async areMediaAssetsReadyForUser(userId, ids) {
+      return ids.every((id) => mediaOwners.get(id) === userId && readyMedia.has(id));
+    },
+    async confirmMediaAssetForUser(userId, input: ConfirmMediaAssetInput) {
+      const id = `media_${++sequence}`;
+      mediaOwners.set(id, userId);
+      if (input.status === "ready") readyMedia.add(id);
+      return id;
     },
   };
 
   return {
     drafts,
+    mediaOwners,
     readyMedia,
     service: createStoryService({ repository }),
   };
@@ -131,6 +143,7 @@ test("a Story draft cannot be submitted without text or photos", async () => {
 
 test("photo Story waits until every referenced media asset is ready", async () => {
   const harness = createHarness();
+  harness.mediaOwners.set("media_1", "user_1");
   const draft = await harness.service.createDraft("user_1", {
     mediaAssetIds: ["media_1"],
   });
@@ -143,6 +156,32 @@ test("photo Story waits until every referenced media asset is ready", async () =
   harness.readyMedia.add("media_1");
   const submitted = await harness.service.submitDraft("user_1", draft.story.id);
   assert.equal(submitted.revision.status, "pending_review");
+});
+
+test("drafts cannot reference another user's media", async () => {
+  const harness = createHarness();
+  harness.mediaOwners.set("media_foreign", "user_2");
+
+  await assert.rejects(
+    () => harness.service.createDraft("user_1", { body: "故事", mediaAssetIds: ["media_foreign"] }),
+    (error) => error instanceof StoryServiceError && error.status === 409,
+  );
+});
+
+test("Story media confirmation must stay inside the current user's upload prefix", async () => {
+  const harness = createHarness();
+  const input: ConfirmMediaAssetInput = {
+    bucket: "ruoshui-media",
+    objectKey: "story-drafts/user_2/photo.jpg",
+    mimeType: "image/jpeg",
+    sizeBytes: 1024,
+    status: "ready",
+  };
+
+  await assert.rejects(
+    () => harness.service.confirmMediaAsset("user_1", input),
+    (error) => error instanceof StoryServiceError && error.status === 409,
+  );
 });
 
 test("users cannot read or edit another user's draft", async () => {
