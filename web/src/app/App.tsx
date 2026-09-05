@@ -6,6 +6,7 @@ import {
   useInteractions
 } from '@floating-ui/react';
 
+import { AdminCommentModerationConsole } from '../components/admin/AdminCommentModerationConsole';
 import { AdminReviewConsole } from '../components/admin/AdminReviewConsole';
 import { CommunitySheet } from '../components/community/CommunitySheet';
 import { PlaceMemoryLayer } from '../components/community/PlaceMemoryLayer';
@@ -171,7 +172,9 @@ function App({
   const setPresetPanel = useViewerUiStore((store) => store.setPresetPanel);
   const setRouteControls = useViewerUiStore((store) => store.setRouteControls);
   const perfHud = useViewerUiStore((store) => store.perfHud);
-  const isAdminReviewMode = new URLSearchParams(window.location.search).get('admin') === 'review';
+  const adminMode = new URLSearchParams(window.location.search).get('admin');
+  const isAdminReviewMode = adminMode === 'review';
+  const isAdminCommentMode = adminMode === 'comments';
 
   const dismissMobilePanel = () => {
     setIsMobilePanelOpen(false);
@@ -354,6 +357,7 @@ function App({
         sceneId={communitySceneId}
       />
       {isAdminReviewMode ? <AdminReviewConsole sceneId={communitySceneId} /> : null}
+      {isAdminCommentMode ? <AdminCommentModerationConsole /> : null}
     </main>
   );
 }
