@@ -190,19 +190,24 @@ const storyReviewPatchSchema = z
     memoryTime: z.string().trim().max(120).nullable().optional(),
     location: storyLocationSchema.optional(),
   })
+  .strict()
   .superRefine((value, context) => {
     if (Object.values(value).every((field) => field === undefined)) {
       context.addIssue({ code: "custom", message: "Review update must contain at least one field." });
     }
   });
 
-const requestStoryChangesInputSchema = z.object({
-  note: z.string().trim().min(1).max(2_000),
-});
+const requestStoryChangesInputSchema = z
+  .object({
+    note: z.string().trim().min(1).max(2_000),
+  })
+  .strict();
 
-const rejectStoryRevisionInputSchema = z.object({
-  note: z.string().trim().max(2_000).optional(),
-});
+const rejectStoryRevisionInputSchema = z
+  .object({
+    note: z.string().trim().max(2_000).optional(),
+  })
+  .strict();
 
 const createCommentInputSchema = z.object({
   storyId: storyIdSchema,
