@@ -40,7 +40,7 @@
 - 登录成功会创建 / 复用持久 User，并创建只在客户端持有明文的 90 天 Session token；数据库只存 token hash。
 - `/api/auth/email/request-otp`、`/verify`、`/me`、`/profile`、`/logout` 已具备。
 - Worker 已支持可选 Cloudflare Email Service adapter；只有 `EMAIL` binding + `AUTH_EMAIL_FROM` + `AUTH_OTP_SECRET` 都存在时才启用 auth routes，因此当前代码可以安全上线而不会伪造邮件配置。
-- 生产 Worker `ruoshui-forum-api` 已部署版本 `8967ac3f-7c0b-4785-a200-2fbad68c43a7`；`AUTH_OTP_SECRET` 已通过 Wrangler Secret 设置，既有 `UPLOAD_SIGNING_SECRET`、D1、R2 和 vars 均仍在部署 binding 清单中。
+- 生产 Worker `ruoshui-forum-api` 已部署当前 `main` 版本 `ca0c1632-b789-4b3d-8fdb-ccc5b787a7f5`；`AUTH_OTP_SECRET` 已通过 Wrangler Secret 设置，既有 `UPLOAD_SIGNING_SECRET`、D1、R2 和 vars 均仍在部署 binding 清单中。
 
 ### Story Draft backend
 
