@@ -178,6 +178,22 @@ const storyDraftSchema = z.object({
   revision: storyRevisionSchema,
 });
 
+const publishedStoryAuthorSchema = z.object({
+  id: userIdSchema,
+  displayName: z.string().trim().min(1).max(80).nullable(),
+});
+
+const publishedStorySchema = storyContentFieldsSchema.extend({
+  id: storyIdSchema,
+  author: publishedStoryAuthorSchema,
+  publishedAt: z.string().datetime(),
+});
+
+const listPublishedStoriesInputSchema = z.object({
+  placeId: placeIdSchema.optional(),
+  limit: z.coerce.number().int().positive().max(50).default(24),
+});
+
 const storyReviewItemSchema = z.object({
   story: storySchema,
   revision: storyRevisionSchema,
@@ -240,7 +256,10 @@ type CreateCommentInput = z.infer<typeof createCommentInputSchema>;
 type CreatePlaceInput = z.infer<typeof createPlaceInputSchema>;
 type CreateStoryDraftInput = z.infer<typeof createStoryDraftInputSchema>;
 type ListPlacesInput = z.infer<typeof listPlacesInputSchema>;
+type ListPublishedStoriesInput = z.infer<typeof listPublishedStoriesInputSchema>;
 type Place = z.infer<typeof placeSchema>;
+type PublishedStory = z.infer<typeof publishedStorySchema>;
+type PublishedStoryAuthor = z.infer<typeof publishedStoryAuthorSchema>;
 type RejectStoryRevisionInput = z.infer<typeof rejectStoryRevisionInputSchema>;
 type RequestEmailOtpInput = z.infer<typeof requestEmailOtpInputSchema>;
 type RequestStoryChangesInput = z.infer<typeof requestStoryChangesInputSchema>;
@@ -273,9 +292,12 @@ export {
   createStoryDraftInputSchema,
   emailAddressSchema,
   listPlacesInputSchema,
+  listPublishedStoriesInputSchema,
   mediaAssetIdSchema,
   placeIdSchema,
   placeSchema,
+  publishedStoryAuthorSchema,
+  publishedStorySchema,
   rejectStoryRevisionInputSchema,
   requestEmailOtpInputSchema,
   requestStoryChangesInputSchema,
@@ -310,7 +332,10 @@ export type {
   CreatePlaceInput,
   CreateStoryDraftInput,
   ListPlacesInput,
+  ListPublishedStoriesInput,
   Place,
+  PublishedStory,
+  PublishedStoryAuthor,
   RejectStoryRevisionInput,
   RequestEmailOtpInput,
   RequestStoryChangesInput,
