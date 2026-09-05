@@ -2,6 +2,7 @@ import type { ExecutionContext } from "@cloudflare/workers-types";
 
 import { createApp } from "./app.js";
 import { createD1AuthRepository } from "./db/d1/auth-repository.js";
+import { createD1CommentModerationRepository } from "./db/d1/comment-moderation-repository.js";
 import { createD1ForumRepository } from "./db/d1/forum-repository.js";
 import { createD1PlaceRepository } from "./db/d1/place-repository.js";
 import { createD1StoryAuthorRepository } from "./db/d1/story-author-repository.js";
@@ -12,6 +13,7 @@ import { createD1StorySocialRepository } from "./db/d1/story-social-repository.j
 import { parseAdminUserIds } from "./lib/admin.js";
 import { createAuthService, type AuthService } from "./lib/auth.js";
 import { createTencentSesAuthEmailSender } from "./lib/auth-email.js";
+import { createCommentModerationService } from "./lib/comment-moderation.js";
 import { createPlaceService } from "./lib/place.js";
 import { createR2StorageProvider } from "./lib/storage.js";
 import { createStoryAuthorService } from "./lib/story-author.js";
@@ -62,6 +64,9 @@ export default {
     const app = createApp({
       adminUserIds: parseAdminUserIds(env.ADMIN_USER_IDS),
       authService,
+      commentModerationService: createCommentModerationService({
+        repository: createD1CommentModerationRepository(env.DB),
+      }),
       corsOrigin: env.CORS_ORIGIN ?? "http://localhost:5173",
       forumRepository: createD1ForumRepository(env.DB, {
         mediaPublicBaseUrl: env.MEDIA_PUBLIC_BASE_URL,
