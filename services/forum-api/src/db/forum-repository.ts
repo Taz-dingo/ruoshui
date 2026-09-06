@@ -1,7 +1,4 @@
 import type {
-  ConfirmMediaAssetInput,
-  CreateForumPostInput,
-  CreateScenePinInput,
   ForumPost,
   ForumPostDetail,
   ListForumPostsInput,
@@ -9,12 +6,10 @@ import type {
   Scene,
   SceneBootstrap,
   ScenePin,
-  UpsertSceneInput,
 } from "@ruoshui/shared";
 import { and, desc, eq, inArray } from "drizzle-orm";
 
 import { env } from "../env.js";
-import { createEntityId } from "../lib/id.js";
 import { db } from "./client.js";
 import { forumPosts, mediaAssets, scenePins, scenes } from "./schema.js";
 
@@ -114,142 +109,6 @@ function buildPostDetail(
     mediaAssets: mediaRows.map(mapMediaAsset),
     pins: pinRows.map(mapScenePin),
   };
-}
-
-async function upsertScene(input: UpsertSceneInput): Promise<Scene> {
-  const [row] = await db
-    .insert(scenes)
-    .values({
-      id: input.id,
-      title: input.title,
-      description: input.description,
-      assetUrl: input.assetUrl,
-      previewImage: input.previewImage,
-    })
-    .onConflictDoUpdate({
-      target: scenes.id,
-      set: {
-        title: input.title,
-        description: input.description,
-        assetUrl: input.assetUrl,
-        previewImage: input.previewImage,
-        updatedAt: new Date(),
-      },
-    })
-    .returning();
-
-  return mapScene(row)!;
-}
-
-async function createForumPost(input: CreateForumPostInput): Promise<ForumPost> {
-  const coverAssetId = input.coverAssetId ?? input.mediaAssetIds?.[0];
-  const [row] = await db
-    .insert(forumPosts)
-    .values({
-      id: createEntityId("post"),
-      sceneId: input.sceneId,
-      title: input.title,
-      excerpt: input.excerpt,
-      body: input.body,
-      coverAssetId,
-      status: input.status,
-    })
-    .returning();
-
-  if (input.mediaAssetIds?.length) {
-    await db
-      .update(mediaAssets)
-      .set({
-        postId: row.id,
-        sceneId: input.sceneId,
-        updatedAt: new Date(),
-      })
-      .where(inArray(mediaAssets.id, input.mediaAssetIds));
-  }
-
-  if (input.pinId) {
-    await db
-      .update(scenePins)
-      .set({
-        postId: row.id,
-        updatedAt: new Date(),
-      })
-      .where(eq(scenePins.id, input.pinId));
-  }
-
-  return {
-    ...mapForumPost(row),
-    pinId: input.pinId,
-    coverAssetId,
-  };
-}
-
-async function createScenePin(input: CreateScenePinInput): Promise<ScenePin> {
-  const [row] = await db
-    .insert(scenePins)
-    .values({
-      id: createEntityId("pin"),
-      sceneId: input.sceneId,
-      postId: input.postId,
-      title: input.title,
-      summary: input.summary,
-      positionX: input.position.x,
-      positionY: input.position.y,
-      positionZ: input.position.z,
-      targetX: input.target?.x,
-      targetY: input.target?.y,
-      targetZ: input.target?.z,
-      metadata: input.metadata,
-    })
-    .returning();
-
-  return mapScenePin(row);
-}
-
-async function confirmMediaAsset(input: ConfirmMediaAssetInput): Promise<MediaAsset> {
-  const [existing] = await db
-    .select()
-    .from(mediaAssets)
-    .where(eq(mediaAssets.objectKey, input.objectKey))
-    .limit(1);
-
-  if (existing) {
-    const [row] = await db
-      .update(mediaAssets)
-      .set({
-        bucket: input.bucket,
-        height: input.height,
-        mimeType: input.mimeType,
-        postId: input.postId,
-        sceneId: input.sceneId,
-        sizeBytes: input.sizeBytes,
-        status: input.status,
-        updatedAt: new Date(),
-        width: input.width,
-      })
-      .where(eq(mediaAssets.id, existing.id))
-      .returning();
-
-    return mapMediaAsset(row);
-  }
-
-  const [row] = await db
-    .insert(mediaAssets)
-    .values({
-      id: createEntityId("media"),
-      bucket: input.bucket,
-      objectKey: input.objectKey,
-      mimeType: input.mimeType,
-      sizeBytes: input.sizeBytes,
-      width: input.width,
-      height: input.height,
-      status: input.status,
-      sceneId: input.sceneId,
-      postId: input.postId,
-    })
-    .returning();
-
-  return mapMediaAsset(row);
 }
 
 async function getSceneBootstrap(sceneId: string): Promise<SceneBootstrap> {
@@ -373,13 +232,9 @@ async function listPinsForPost(postId: string): Promise<ScenePin[]> {
 }
 
 export {
-  confirmMediaAsset,
-  createForumPost,
-  createScenePin,
   getForumPostDetail,
   getSceneBootstrap,
   listForumPosts,
   listPinsForPost,
   listPostsForScenePin,
-  upsertScene,
 };
