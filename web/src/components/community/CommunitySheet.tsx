@@ -1,31 +1,16 @@
-import type {
-  ForumPostDetail,
-  ScenePin
-} from '@ruoshui/shared';
-import {
-  startTransition,
-  type FormEvent,
-  useEffect,
-  useState
-} from 'react';
+import type { Place, PublishedStory } from '@ruoshui/shared';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import {
-  confirmMediaAsset,
-  createForumPost,
-  ensureCommunityScene,
-  fetchForumPostDetail,
-  fetchForumPosts,
-  fetchPinsForPost,
-  fetchPostsForScenePin,
-  fetchSceneBootstrap,
-  requestUploadTicket,
-  uploadFileWithTicket
-} from '../../community/api';
-import { scrollAreaClassNames, surfaceClassNames } from '../../styles/system';
-import { requestFocusScenePin } from '../../ui/commands/viewer-command-bus';
+  fetchPlaces,
+  fetchPublishedStories,
+  getPublishedStoryMediaUrl,
+} from '../../community/content-api';
+import { scrollAreaClassNames } from '../../styles/system';
+import { requestFocusSpatialAnchor } from '../../ui/commands/viewer-command-bus';
 import { cn } from '../../utils/cn';
-import { Button } from '../ui/button';
 import { Sheet, SheetContent } from '../ui/sheet';
+import { StoryDiscussion } from './StoryDiscussion';
 
 interface CommunitySheetProps {
   isMobile: boolean;
@@ -38,805 +23,371 @@ interface CommunitySheetProps {
   sceneTitle: string;
 }
 
-type CommunityView = 'compose' | 'detail' | 'feed';
-type PostStatus = 'archived' | 'draft' | 'published';
+type LoadState = 'idle' | 'loading' | 'ready' | 'error';
 
-const postCardHeightClassNames = [
-  'h-[188px]',
-  'h-[236px]',
-  'h-[208px]',
-  'h-[264px]'
-] as const;
-
-const postStatusLabels: Record<PostStatus, string> = {
-  archived: '已归档',
-  draft: '草稿',
-  published: '已发布'
-};
-
-function formatFileSize(sizeBytes: number) {
-  if (sizeBytes < 1024 * 1024) {
-    return `${Math.max(1, Math.round(sizeBytes / 1024))} KB`;
-  }
-
-  return `${(sizeBytes / (1024 * 1024)).toFixed(1)} MB`;
+function fallbackAuthorName(story: PublishedStory) {
+  return story.author.displayName ?? `若水用户 ${story.author.id.slice(-4).toUpperCase()}`;
 }
 
-function formatPostDate(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return '刚刚';
+function storyDisplayTitle(story: PublishedStory) {
+  if (story.title?.trim()) return story.title.trim();
+  if (story.body?.trim()) {
+    const compact = story.body.replace(/\s+/g, ' ').trim();
+    return compact.length > 30 ? `${compact.slice(0, 30)}…` : compact;
   }
+  if (story.memoryTime) return story.memoryTime;
+  return '一段校园记忆';
+}
 
+function storyTextCover(story: PublishedStory) {
+  const source =
+    story.title?.trim() ||
+    story.body?.replace(/\s+/g, ' ').trim() ||
+    story.memoryTime ||
+    '留在这里的一段记忆';
+  return source.length > 46 ? `${source.slice(0, 46)}…` : source;
+}
+
+function formatPublishedTime(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
   return new Intl.DateTimeFormat('zh-CN', {
+    year: 'numeric',
     month: 'numeric',
-    day: 'numeric'
+    day: 'numeric',
   }).format(date);
 }
 
-function getPostPreview(post: ForumPostDetail) {
-  const source = (post.excerpt ?? post.body).replace(/\s+/g, ' ').trim();
-  if (source.length <= 82) {
-    return source;
+function placeLabel(story: PublishedStory, placesById: Map<string, Place>) {
+  if (story.location.kind === 'place') {
+    return placesById.get(story.location.placeId)?.name ?? '校园地点';
   }
-
-  return `${source.slice(0, 82)}…`;
+  if (story.location.kind === 'anchor') return '校园里的一个角落';
+  return '若水广场';
 }
 
-function getPostReadTime(body: string) {
-  return Math.max(1, Math.ceil(body.replace(/\s+/g, '').length / 180));
+function canReturnToStory(story: PublishedStory, placesById: Map<string, Place>) {
+  if (story.location.kind === 'anchor') return true;
+  if (story.location.kind === 'place') return placesById.has(story.location.placeId);
+  return false;
 }
 
-function getPostCardHeight(index: number, hasCover: boolean) {
-  if (!hasCover) {
-    return 'h-[168px]';
-  }
+function focusStoryLocation(story: PublishedStory, placesById: Map<string, Place>) {
+  const anchor =
+    story.location.kind === 'anchor'
+      ? story.location.anchor
+      : story.location.kind === 'place'
+        ? placesById.get(story.location.placeId)?.anchor
+        : undefined;
+  if (!anchor) return false;
 
-  return postCardHeightClassNames[index % postCardHeightClassNames.length];
+  requestFocusSpatialAnchor({
+    title: placeLabel(story, placesById),
+    position: [
+      anchor.cameraPose.position.x,
+      anchor.cameraPose.position.y,
+      anchor.cameraPose.position.z,
+    ],
+    target: [
+      anchor.cameraPose.target.x,
+      anchor.cameraPose.target.y,
+      anchor.cameraPose.target.z,
+    ],
+    ...(anchor.cameraPose.fovDeg ? { fovDeg: anchor.cameraPose.fovDeg } : {}),
+    ambientFocus: true,
+  });
+  return true;
+}
+
+function StoryCard({ story, onOpen }: { story: PublishedStory; onOpen: () => void }) {
+  const firstMediaId = story.mediaAssetIds[0];
+
+  return (
+    <button
+      className="mb-3 block w-full break-inside-avoid overflow-hidden rounded-[18px] bg-white text-left shadow-[0_8px_30px_rgba(30,31,27,0.06)] ring-1 ring-black/[0.045] transition-transform duration-180 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#a8c97d]"
+      onClick={onOpen}
+      type="button"
+    >
+      {firstMediaId ? (
+        <img
+          alt={storyDisplayTitle(story)}
+          className="block aspect-[4/5] w-full bg-black/5 object-cover"
+          loading="lazy"
+          src={getPublishedStoryMediaUrl(story.id, firstMediaId)}
+        />
+      ) : (
+        <div className="grid aspect-[4/5] place-items-center bg-[#eef0e8] px-5 text-center">
+          <p className="m-0 text-[15px] font-medium leading-[1.75] tracking-[-0.02em] text-[#2c3328]">
+            {storyTextCover(story)}
+          </p>
+        </div>
+      )}
+      <div className="px-3.5 pb-3.5 pt-3">
+        <div className="line-clamp-2 text-[13px] font-semibold leading-[1.5] tracking-[-0.02em] text-[#20221f]">
+          {storyDisplayTitle(story)}
+        </div>
+        <div className="mt-2 flex items-center justify-between gap-2 text-[10px] text-black/38">
+          <span className="truncate">{fallbackAuthorName(story)}</span>
+          {story.memoryTime ? <span className="shrink-0">{story.memoryTime}</span> : null}
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function StoryDetail({
+  onBack,
+  onReturnToScene,
+  placesById,
+  story,
+}: {
+  onBack: () => void;
+  onReturnToScene: () => void;
+  placesById: Map<string, Place>;
+  story: PublishedStory;
+}) {
+  const locationName = placeLabel(story, placesById);
+  const canReturn = canReturnToStory(story, placesById);
+
+  return (
+    <div className="min-h-full bg-[#f7f7f3]">
+      <div className="sticky top-0 z-[3] flex h-[54px] items-center justify-between gap-2 border-b border-black/[0.055] bg-[#f7f7f3]/94 px-4 backdrop-blur-[18px]">
+        <button
+          className="shrink-0 rounded-full px-2 py-1 text-[13px] text-black/60 hover:bg-black/5"
+          onClick={onBack}
+          type="button"
+        >
+          ‹ 全部故事
+        </button>
+        <div className="min-w-0 flex-1 truncate text-center text-[12px] font-medium text-black/52">
+          {locationName}
+        </div>
+        {canReturn ? (
+          <button
+            className="shrink-0 rounded-full border border-black/8 bg-white px-3 py-1.5 text-[11px] font-medium text-black/62"
+            onClick={onReturnToScene}
+            type="button"
+          >
+            回到这里
+          </button>
+        ) : (
+          <span className="w-[74px] shrink-0" aria-hidden="true" />
+        )}
+      </div>
+
+      {story.mediaAssetIds.length > 0 ? (
+        <div className="flex snap-x snap-mandatory overflow-x-auto bg-[#e8e8e3] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {story.mediaAssetIds.map((mediaAssetId, index) => (
+            <div className="w-full shrink-0 snap-center" key={mediaAssetId}>
+              <img
+                alt={`${storyDisplayTitle(story)} · ${index + 1}`}
+                className="block max-h-[62vh] min-h-[280px] w-full object-contain"
+                loading={index > 1 ? 'lazy' : 'eager'}
+                src={getPublishedStoryMediaUrl(story.id, mediaAssetId)}
+              />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid min-h-[270px] place-items-center bg-[#edf0e6] px-8 text-center">
+          <p className="m-0 max-w-[320px] text-[22px] font-medium leading-[1.7] tracking-[-0.035em] text-[#2b3427]">
+            {storyTextCover(story)}
+          </p>
+        </div>
+      )}
+
+      <article className="px-5 pb-[calc(2rem+var(--safe-bottom))] pt-6">
+        <div className="mb-5 flex items-center justify-between gap-4 text-[11px] text-black/42">
+          <span className="font-medium text-black/64">{fallbackAuthorName(story)}</span>
+          <span>{story.memoryTime || formatPublishedTime(story.publishedAt)}</span>
+        </div>
+        {story.title ? (
+          <h2 className="mb-4 mt-0 text-[24px] font-semibold leading-[1.28] tracking-[-0.045em] text-[#191a18]">
+            {story.title}
+          </h2>
+        ) : null}
+        {story.body ? (
+          <div className="whitespace-pre-wrap text-[15px] leading-[1.95] tracking-[-0.01em] text-black/76">
+            {story.body}
+          </div>
+        ) : null}
+        <StoryDiscussion storyId={story.id} />
+        <div className="mt-8 border-t border-black/[0.055] pt-4 text-[10px] text-black/30">
+          发布于 {formatPublishedTime(story.publishedAt)}
+        </div>
+      </article>
+    </div>
+  );
 }
 
 function CommunitySheet({
   isMobile,
   open,
   onOpenChange,
-  sceneAssetUrl,
   sceneId,
-  scenePreviewImage,
-  sceneSummary,
-  sceneTitle
+  sceneTitle,
 }: CommunitySheetProps) {
-  const [activePinId, setActivePinId] = useState<string | null>(null);
-  const [activeView, setActiveView] = useState<CommunityView>('feed');
-  const [composerBody, setComposerBody] = useState('');
-  const [composerExcerpt, setComposerExcerpt] = useState('');
-  const [composerFiles, setComposerFiles] = useState<File[]>([]);
-  const [composerMessage, setComposerMessage] = useState<string | null>(null);
-  const [composerPinId, setComposerPinId] = useState('');
-  const [composerStatus, setComposerStatus] = useState<PostStatus>('published');
-  const [composerTitle, setComposerTitle] = useState('');
+  const [stories, setStories] = useState<PublishedStory[]>([]);
+  const [places, setPlaces] = useState<Place[]>([]);
+  const [activeStoryId, setActiveStoryId] = useState<string | null>(null);
+  const [loadState, setLoadState] = useState<LoadState>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isDetailLoading, setIsDetailLoading] = useState(false);
-  const [isPublishing, setIsPublishing] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [pins, setPins] = useState<ScenePin[]>([]);
-  const [posts, setPosts] = useState<ForumPostDetail[]>([]);
-  const [selectedPost, setSelectedPost] = useState<ForumPostDetail | null>(null);
+  const requestRef = useRef(0);
 
-  async function refreshCommunity(nextPinId: string | null = activePinId) {
-    setIsRefreshing(true);
+  const placesById = useMemo(
+    () => new Map(places.map((place) => [place.id, place])),
+    [places],
+  );
+  const activeStory = activeStoryId
+    ? stories.find((story) => story.id === activeStoryId) ?? null
+    : null;
+
+  async function refreshStories() {
+    const requestId = requestRef.current + 1;
+    requestRef.current = requestId;
+    setLoadState('loading');
     setErrorMessage(null);
 
-    try {
-      await ensureCommunityScene(sceneId, {
-        id: sceneId,
-        title: sceneTitle,
-        description: sceneSummary,
-        assetUrl: sceneAssetUrl,
-        previewImage: scenePreviewImage
-      });
+    const [storyResult, placeResult] = await Promise.allSettled([
+      fetchPublishedStories({ limit: 50 }),
+      fetchPlaces(sceneId),
+    ]);
+    if (requestRef.current !== requestId) return;
 
-      const bootstrap = await fetchSceneBootstrap(sceneId);
-      const feed = nextPinId
-        ? await fetchPostsForScenePin(sceneId, nextPinId)
-        : await fetchForumPosts({
-            sceneId,
-            status: 'published',
-            limit: 18
-          });
-
-      startTransition(() => {
-        setPins(bootstrap.pins);
-        setPosts(feed);
-      });
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : '社区内容刷新失败了，稍后再试一次。'
-      );
-    } finally {
-      setIsRefreshing(false);
+    if (placeResult.status === 'fulfilled') {
+      setPlaces(placeResult.value);
+    } else {
+      setPlaces([]);
     }
-  }
 
-  async function openPostDetail(postId: string) {
-    setActiveView('detail');
-    setIsDetailLoading(true);
-    setErrorMessage(null);
-
-    try {
-      const [detail, detailPins] = await Promise.all([
-        fetchForumPostDetail(postId),
-        fetchPinsForPost(postId)
-      ]);
-
-      startTransition(() => {
-        setSelectedPost({
-          ...detail,
-          pinId: detailPins[0]?.id ?? detail.pinId,
-          pins: detailPins
-        });
-      });
-    } catch (error) {
+    if (storyResult.status === 'rejected') {
+      setStories([]);
       setErrorMessage(
-        error instanceof Error ? error.message : '帖子详情加载失败了。'
+        storyResult.reason instanceof Error
+          ? storyResult.reason.message
+          : '校园故事加载失败。',
       );
-    } finally {
-      setIsDetailLoading(false);
+      setLoadState('error');
+      return;
     }
+
+    setStories(storyResult.value);
+    setLoadState('ready');
   }
 
   useEffect(() => {
     if (!open) {
+      requestRef.current += 1;
+      setActiveStoryId(null);
       return;
     }
 
-    void refreshCommunity();
-  }, [open]);
+    setActiveStoryId(null);
+    void refreshStories();
+  }, [open, sceneId]);
 
-  async function handlePinFilter(nextPin: ScenePin | null) {
-    const nextPinId = nextPin?.id ?? null;
-
-    setActivePinId(nextPinId);
-    if (nextPin) {
-      requestFocusScenePin({
-        pinId: nextPin.id,
-        position: [nextPin.position.x, nextPin.position.y, nextPin.position.z],
-        target: nextPin.target
-          ? [nextPin.target.x, nextPin.target.y, nextPin.target.z]
-          : undefined,
-        title: nextPin.title
-      });
-    }
-
-    setActiveView('feed');
-    await refreshCommunity(nextPinId);
-  }
-
-  function handleReturnToScene(pin: ScenePin) {
-    requestFocusScenePin({
-      pinId: pin.id,
-      position: [pin.position.x, pin.position.y, pin.position.z],
-      target: pin.target
-        ? [pin.target.x, pin.target.y, pin.target.z]
-        : undefined,
-      title: pin.title
-    });
+  function returnToStory(story: PublishedStory) {
+    if (!focusStoryLocation(story, placesById)) return;
     onOpenChange(false);
   }
 
-  async function handleSubmitPost(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setComposerMessage(null);
-    setErrorMessage(null);
-    setIsPublishing(true);
-
-    try {
-      const uploadedMediaIds: string[] = [];
-
-      for (const file of composerFiles) {
-        const mimeType = file.type || 'application/octet-stream';
-        const ticket = await requestUploadTicket({
-          fileName: file.name,
-          mimeType,
-          sizeBytes: file.size,
-          category: uploadedMediaIds.length === 0 ? 'post-cover' : 'post-inline'
-        });
-
-        await uploadFileWithTicket(ticket, file);
-
-        const mediaAsset = await confirmMediaAsset({
-          bucket: ticket.provider === 'r2' ? 'ruoshui-media' : ticket.provider,
-          objectKey: ticket.objectKey,
-          mimeType,
-          sizeBytes: file.size,
-          sceneId,
-          status: 'ready'
-        });
-
-        uploadedMediaIds.push(mediaAsset.id);
-      }
-
-      const createdPost = await createForumPost({
-        sceneId,
-        pinId: composerPinId || undefined,
-        title: composerTitle,
-        excerpt: composerExcerpt || undefined,
-        body: composerBody,
-        coverAssetId: uploadedMediaIds[0],
-        mediaAssetIds: uploadedMediaIds,
-        status: composerStatus
-      });
-
-      const detail = await fetchForumPostDetail(createdPost.id);
-      await refreshCommunity(activePinId);
-
-      startTransition(() => {
-        setActiveView('detail');
-        setSelectedPost(detail);
-      });
-      setComposerBody('');
-      setComposerExcerpt('');
-      setComposerFiles([]);
-      setComposerMessage('笔记已经发出去了，现在可以继续补图或者再写下一条。');
-      setComposerPinId('');
-      setComposerStatus('published');
-      setComposerTitle('');
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : '发布失败了，请稍后再试。'
-      );
-    } finally {
-      setIsPublishing(false);
-    }
-  }
-
   const sheetClassName = cn(
-    'fixed z-[8] overflow-hidden border border-glass-light-outline/38 p-0 shadow-panel',
-    scrollAreaClassNames.thin,
+    'fixed z-[8] overflow-hidden border border-black/[0.07] bg-[#f7f7f3]/96 p-0 text-[#181916] shadow-[0_24px_80px_rgba(18,20,16,0.18)] backdrop-blur-[24px]',
     isMobile
-      ? 'left-[calc(0.45rem+var(--safe-left))] right-[calc(0.45rem+var(--safe-right))] bottom-[calc(0.35rem+var(--safe-bottom))] top-auto h-[min(calc(var(--app-height)*0.84),780px)] rounded-[28px]'
-      : 'left-1/2 top-[calc(1rem+var(--safe-top))] h-[calc(var(--app-height)-2rem)] w-[min(1120px,calc(100vw-2.5rem))] -translate-x-1/2 rounded-[34px]'
+      ? 'bottom-[calc(0.35rem+var(--safe-bottom))] left-[calc(0.45rem+var(--safe-left))] right-[calc(0.45rem+var(--safe-right))] top-auto h-[min(calc(var(--app-height)*0.86),780px)] rounded-[28px]'
+      : 'bottom-[calc(1rem+var(--safe-bottom))] right-[calc(1rem+var(--safe-right))] top-[calc(1rem+var(--safe-top))] w-[min(560px,calc(100vw-2rem))] rounded-[28px]',
   );
-  const heroPreviewImage = scenePreviewImage ?? posts[0]?.mediaAssets[0]?.publicUrl;
-  const selectedPin = pins.find((pin) => pin.id === activePinId) ?? null;
-  const relatedPosts = selectedPost
-    ? posts.filter((post) => post.id !== selectedPost.id).slice(0, 4)
-    : posts.slice(0, 4);
-  const topPins = pins.slice(0, 8);
-  const showDetailSecondaryRail = !isMobile;
-  const shellSurfaceClassName = 'bg-[rgba(255,255,255,0.58)] backdrop-blur-[30px] saturate-[1.2]';
-  const shellBodyClassName = 'bg-[rgba(245,245,247,0.42)]';
-  const chromeSurfaceClassName = 'bg-white/30 backdrop-blur-[16px]';
-  const panelSurfaceClassName = surfaceClassNames.lightPanel;
-  const panelStrongSurfaceClassName = 'bg-black/8';
-  const softSurfaceClassName = surfaceClassNames.lightSubtle;
-  const tabButtonClassName =
-    'h-10 rounded-full border px-4 text-[12px] font-medium transition-[transform,background-color,border-color,color] duration-180 ease-out hover:-translate-y-px';
-  const utilityButtonClassName =
-    cn(
-      'h-10 rounded-full border border-glass-light-outline/28 px-4 text-[12px] font-medium text-glass-light-ink transition-[transform,background-color,border-color,color] duration-180 ease-out hover:-translate-y-px hover:border-brand/60 hover:text-brand',
-      chromeSurfaceClassName
-    );
-  const inputClassName =
-    cn(
-      'w-full rounded-control border border-glass-light-outline/28 bg-white/42 px-4 py-3 text-[14px] leading-[1.6] text-glass-light-ink outline-none transition-[border-color,box-shadow,background-color] duration-180 ease-out placeholder:text-glass-light-muted/72 focus:border-brand/72 focus:bg-white/60 focus:shadow-[0_0_0_4px_rgba(168,201,125,0.18)]'
-    );
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
-        aria-label="若水广场社区"
-        className={cn(sheetClassName, shellSurfaceClassName)}
+        aria-label="校园故事"
+        className={sheetClassName}
         side={isMobile ? 'bottom' : 'right'}
       >
-        <div className={cn('flex h-full min-h-0 flex-col text-glass-light-ink', shellBodyClassName)}>
-          <div className="border-b border-glass-light-outline/24 px-5 pt-5 pb-4 max-[760px]:px-4">
-            <div className="flex items-start justify-between gap-4">
+        {activeStory ? (
+          <div className={cn('h-full overflow-y-auto', scrollAreaClassNames.thin)}>
+            <StoryDetail
+              onBack={() => setActiveStoryId(null)}
+              onReturnToScene={() => returnToStory(activeStory)}
+              placesById={placesById}
+              story={activeStory}
+            />
+          </div>
+        ) : (
+          <div className="flex h-full min-h-0 flex-col">
+            <header className="flex items-start justify-between gap-4 border-b border-black/[0.055] px-5 pb-4 pt-5">
               <div className="min-w-0 flex-1">
-                <div className="mt-1 grid gap-4">
-                  <div className="min-w-0">
-                    <h2 className="m-0 text-[30px] leading-[0.98] tracking-[-0.06em] max-[760px]:text-[26px]">
-                      社区笔记
-                    </h2>
-                    <p className="mt-2 mb-0 max-w-[38rem] text-[14px] leading-[1.7] text-glass-light-muted">
-                      浏览、查看详情，再回到场景点位。
-                    </p>
-                  </div>
+                <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#708653]">
+                  {sceneTitle}
                 </div>
-
-                <div className="mt-4 flex flex-wrap items-center gap-2">
-                  <button
-                    className={cn(
-                      tabButtonClassName,
-                      activeView === 'feed'
-                        ? 'border-brand bg-brand text-white'
-                        : cn('border-glass-light-outline/20 text-glass-light-ink', chromeSurfaceClassName)
-                    )}
-                    onClick={() => setActiveView('feed')}
-                    type="button"
-                  >
-                    推荐流
-                  </button>
-                  <button
-                    className={cn(
-                      tabButtonClassName,
-                      activeView === 'compose'
-                        ? 'border-brand bg-brand text-white'
-                        : cn('border-glass-light-outline/20 text-glass-light-ink', chromeSurfaceClassName)
-                    )}
-                    onClick={() => setActiveView('compose')}
-                    type="button"
-                  >
-                    写笔记
-                  </button>
-                  <button
-                    className={utilityButtonClassName}
-                    disabled={isRefreshing}
-                    onClick={() => void refreshCommunity(activePinId)}
-                    type="button"
-                  >
-                    {isRefreshing ? '刷新中' : '刷新'}
-                  </button>
-                </div>
+                <h2 className="mb-0 mt-1 text-[28px] font-semibold leading-[1] tracking-[-0.05em]">
+                  校园故事
+                </h2>
+                <p className="mb-0 mt-2 text-[12px] leading-[1.65] text-black/42">
+                  从地点之外，看看整个校园留下的记忆。
+                </p>
               </div>
+              <div className="flex shrink-0 items-center gap-1">
+                <button
+                  className="rounded-full px-3 py-2 text-[10px] font-medium text-black/42 hover:bg-black/5 hover:text-black/62 disabled:opacity-40"
+                  disabled={loadState === 'loading'}
+                  onClick={() => void refreshStories()}
+                  type="button"
+                >
+                  {loadState === 'loading' ? '刷新中' : '刷新'}
+                </button>
+                <button
+                  aria-label="关闭校园故事"
+                  className="grid h-9 w-9 place-items-center rounded-full text-[20px] text-black/38 hover:bg-black/5"
+                  onClick={() => onOpenChange(false)}
+                  type="button"
+                >
+                  ×
+                </button>
+              </div>
+            </header>
 
-              <button
-                aria-label="关闭社区面板"
-                className={cn(
-                  'flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-glass-light-outline/20 text-[20px] leading-none text-glass-light-ink transition-[transform,border-color,color] duration-180 ease-out hover:-translate-y-px hover:border-brand/60 hover:text-brand',
-                  chromeSurfaceClassName
-                )}
-                onClick={() => onOpenChange(false)}
-                type="button"
-              >
-                ×
-              </button>
+            <div className={cn('min-h-0 flex-1 overflow-y-auto px-4 py-4', scrollAreaClassNames.thin)}>
+              {errorMessage ? (
+                <div className="mb-4 rounded-[16px] bg-[#fff0ed] px-4 py-3 text-[12px] leading-[1.6] text-[#8e4037]">
+                  {errorMessage}
+                </div>
+              ) : null}
+
+              {loadState === 'loading' && stories.length === 0 ? (
+                <div className="grid min-h-[280px] place-items-center text-[12px] text-black/35">
+                  正在找回校园里的故事…
+                </div>
+              ) : stories.length === 0 ? (
+                <div className="grid min-h-[280px] place-items-center rounded-[20px] border border-dashed border-black/10 px-8 text-center text-[12px] leading-[1.75] text-black/36">
+                  这里还没有公开的 Story。<br />第一段记忆可以从校园里的一个地点开始。
+                </div>
+              ) : (
+                <>
+                  <div className="mb-3 flex items-center justify-between px-1 text-[10px] text-black/30">
+                    <span>{stories.length} 段公开记忆</span>
+                    <span>按最新发布</span>
+                  </div>
+                  <div className="columns-2 [column-gap:0.75rem]">
+                    {stories.map((story) => (
+                      <StoryCard
+                        key={story.id}
+                        onOpen={() => setActiveStoryId(story.id)}
+                        story={story}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           </div>
-
-          <div className={cn('flex-1 min-h-0 overflow-y-auto px-5 py-5 max-[760px]:px-4', scrollAreaClassNames.thin)}>
-            {errorMessage ? (
-              <div className="mb-4 rounded-[22px] border border-[#b86b61]/55 bg-[#fff1ef]/72 px-4 py-3 text-[13px] leading-[1.6] text-[#7a3128]">
-                {errorMessage}
-              </div>
-            ) : null}
-
-            {activeView === 'feed' ? (
-              <div className="grid gap-4">
-                <div className="grid gap-4">
-                  <section className={cn('grid gap-3 px-4 py-4', panelSurfaceClassName)}>
-                    <div className="grid gap-1">
-                      <h3 className="m-0 text-[22px] leading-[1.04] tracking-[-0.05em]">
-                        {selectedPin?.title ?? '全部笔记'}
-                      </h3>
-                      <p className="m-0 text-[13px] leading-[1.65] text-glass-light-muted">
-                        {selectedPin?.summary ?? `当前 ${posts.length} 篇笔记。`}
-                      </p>
-                    </div>
-
-                    <div className="flex gap-2 overflow-x-auto pb-1">
-                      <button
-                        className={cn(
-                          tabButtonClassName,
-                          'shrink-0',
-                          activePinId === null
-                            ? 'border-brand bg-brand text-white'
-                            : cn('border-glass-light-outline/20 text-glass-light-ink', softSurfaceClassName)
-                        )}
-                        onClick={() => void handlePinFilter(null)}
-                        type="button"
-                      >
-                        全部
-                      </button>
-                      {topPins.map((pin) => (
-                        <button
-                          key={pin.id}
-                          className={cn(
-                            tabButtonClassName,
-                            'shrink-0',
-                            activePinId === pin.id
-                              ? 'border-brand bg-brand text-white'
-                              : cn('border-glass-light-outline/20 text-glass-light-ink', softSurfaceClassName)
-                          )}
-                          onClick={() => void handlePinFilter(pin)}
-                          type="button"
-                        >
-                          {pin.title}
-                        </button>
-                      ))}
-                    </div>
-                  </section>
-
-                  <div className={isMobile ? 'grid gap-3' : 'columns-2 [column-gap:0.9rem]'}>
-                    {posts.length > 0 ? (
-                      posts.map((post, index) => (
-                        <button
-                          key={post.id}
-                          className={cn(
-                            'group w-full text-left',
-                            !isMobile && 'mb-4 inline-block break-inside-avoid'
-                          )}
-                          onClick={() => void openPostDetail(post.id)}
-                          type="button"
-                        >
-                          <article className={cn('overflow-hidden transition-[transform,box-shadow,border-color] duration-220 ease-out group-hover:-translate-y-1 group-hover:border-brand/55', panelSurfaceClassName)}>
-                            {post.mediaAssets[0]?.publicUrl ? (
-                              <div className={cn('overflow-hidden', panelStrongSurfaceClassName, getPostCardHeight(index, true))}>
-                                <img
-                                  alt={post.title}
-                                  className="block h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.03]"
-                                  src={post.mediaAssets[0].publicUrl}
-                                />
-                              </div>
-                            ) : (
-                              <div
-                                className={cn(
-                                  'flex items-end bg-[linear-gradient(180deg,rgba(255,255,255,0.68),rgba(220,220,225,0.36))] px-4 py-4',
-                                  getPostCardHeight(index, false)
-                                )}
-                              >
-                                <p className="m-0 max-w-[12rem] text-[18px] font-medium leading-[1.2] text-glass-light-ink">
-                                  {post.pins[0]?.title ?? sceneTitle}
-                                </p>
-                              </div>
-                            )}
-
-                            <div className="grid gap-3 px-4 py-4">
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="min-w-0">
-                                  <p className="m-0 text-[10px] uppercase tracking-[0.18em] text-brand">
-                                    {post.pins[0]?.title ?? '未绑点位'}
-                                  </p>
-                                  <h3 className="mt-2 line-clamp-2 text-[20px] leading-[1.18] tracking-[-0.045em] text-glass-light-ink">
-                                    {post.title}
-                                  </h3>
-                                </div>
-                                {post.status !== 'published' ? (
-                                  <span className={cn('shrink-0 rounded-full px-2.5 py-1 text-[10px] font-medium text-glass-light-muted', softSurfaceClassName)}>
-                                    {postStatusLabels[post.status]}
-                                  </span>
-                                ) : null}
-                              </div>
-                              <p className="m-0 text-[13px] leading-[1.65] text-glass-light-muted">
-                                {getPostPreview(post)}
-                              </p>
-                              <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-glass-light-muted">
-                                <span>{formatPostDate(post.createdAt)}</span>
-                                <div className="flex items-center gap-2">
-                                  <span>{post.mediaAssets.length} 图</span>
-                                  <span>{getPostReadTime(post.body)} 分钟</span>
-                                </div>
-                              </div>
-                            </div>
-                          </article>
-                        </button>
-                      ))
-                    ) : (
-                      <div className={cn('px-5 py-6', panelSurfaceClassName)}>
-                        <h3 className="m-0 text-[20px] leading-[1.1] tracking-[-0.04em]">
-                          还没有笔记
-                        </h3>
-                        <p className="mt-3 mb-0 text-[13px] leading-[1.65] text-glass-light-muted">
-                          现在还没有可浏览的图文。
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ) : null}
-
-            {activeView === 'detail' ? (
-              <div className={cn('grid gap-5', showDetailSecondaryRail && 'grid-cols-[minmax(0,1fr)_320px]')}>
-                <div className="grid gap-4">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Button
-                      className={cn('border-glass-light-outline/20 px-5 text-glass-light-ink hover:border-brand/60 hover:text-brand', chromeSurfaceClassName)}
-                      onClick={() => setActiveView('feed')}
-                      variant="secondary"
-                    >
-                      返回推荐流
-                    </Button>
-                    {selectedPost?.pins[0] ? (
-                      <Button
-                        className="border-brand/24 bg-brand/10 px-5 text-brand hover:border-brand/40"
-                        onClick={() => void handlePinFilter(selectedPost.pins[0])}
-                        variant="tertiary"
-                      >
-                        查看同点位笔记
-                      </Button>
-                    ) : null}
-                  </div>
-
-                  {isDetailLoading ? (
-                    <div className={cn('px-5 py-6', panelSurfaceClassName)}>
-                      <p className="m-0 text-[13px] leading-[1.65] text-glass-light-muted">
-                        正在把笔记详情和点位关系拉过来。
-                      </p>
-                    </div>
-                  ) : selectedPost ? (
-                    <article className={cn('overflow-hidden', panelSurfaceClassName)}>
-                      {selectedPost.mediaAssets[0]?.publicUrl ? (
-                        <img
-                          alt={selectedPost.title}
-                          className={cn('block h-72 w-full object-cover max-[760px]:h-60', panelStrongSurfaceClassName)}
-                          src={selectedPost.mediaAssets[0].publicUrl}
-                        />
-                      ) : null}
-                      <div className="grid gap-5 px-5 py-5">
-                        <header className="grid gap-2">
-                          <p className="m-0 text-[10px] uppercase tracking-[0.18em] text-brand">
-                            {selectedPost.pins[0]?.title ?? '未绑点位'}
-                          </p>
-                          <h3 className="m-0 text-[32px] leading-[1.02] tracking-[-0.065em] max-[760px]:text-[28px]">
-                            {selectedPost.title}
-                          </h3>
-                          <div className="flex flex-wrap gap-2 text-[11px] text-glass-light-muted">
-                            <span>{formatPostDate(selectedPost.createdAt)}</span>
-                            <span>{selectedPost.mediaAssets.length} 张图</span>
-                            <span>{selectedPost.pins.length} 个点位</span>
-                            <span>{getPostReadTime(selectedPost.body)} 分钟阅读</span>
-                          </div>
-                          {selectedPost.excerpt ? (
-                            <p className="m-0 text-[15px] leading-[1.75] text-glass-light-muted">
-                              {selectedPost.excerpt}
-                            </p>
-                          ) : null}
-                        </header>
-
-                        <article className="whitespace-pre-wrap text-[15px] leading-[1.9] text-glass-light-ink/88">
-                          {selectedPost.body}
-                        </article>
-
-                        {selectedPost.mediaAssets.length > 1 ? (
-                          <div className="grid gap-3 sm:grid-cols-2">
-                            {selectedPost.mediaAssets.slice(1).map((mediaAsset) =>
-                              mediaAsset.publicUrl ? (
-                                <img
-                                  key={mediaAsset.id}
-                                  alt={selectedPost.title}
-                                  className={cn('block h-44 w-full rounded-[26px] object-cover', panelStrongSurfaceClassName)}
-                                  src={mediaAsset.publicUrl}
-                                />
-                              ) : null
-                            )}
-                          </div>
-                        ) : null}
-                      </div>
-                    </article>
-                  ) : (
-                    <div className={cn('px-5 py-6', panelSurfaceClassName)}>
-                      <p className="m-0 text-[13px] leading-[1.65] text-glass-light-muted">
-                        先从推荐流里选一条，再展开详情。
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {showDetailSecondaryRail ? (
-                  <aside className="grid gap-4 self-start">
-                  <section className={cn('grid gap-3 px-4 py-4', panelSurfaceClassName)}>
-                    <div className="grid gap-1">
-                      <p className="m-0 text-[10px] uppercase tracking-[0.22em] text-brand">
-                        Scene Link
-                      </p>
-                      <h3 className="m-0 text-[20px] leading-[1.08] tracking-[-0.04em]">
-                        关联点位
-                      </h3>
-                    </div>
-                    {selectedPost?.pins.length ? (
-                      <div className="grid gap-2">
-                        {selectedPost.pins.map((pin) => (
-                          <Button
-                            className={cn('justify-start border-glass-light-outline/20 px-4 text-left text-glass-light-ink hover:border-brand/60 hover:text-brand', softSurfaceClassName)}
-                            key={pin.id}
-                            onClick={() => handleReturnToScene(pin)}
-                            variant="secondary"
-                          >
-                            回到 {pin.title}
-                          </Button>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="m-0 text-[13px] leading-[1.65] text-glass-light-muted">
-                        这条笔记暂时还没绑到具体点位。
-                      </p>
-                    )}
-                  </section>
-
-                  <section className={cn('grid gap-3 px-4 py-4', panelSurfaceClassName)}>
-                    <div className="grid gap-1">
-                      <p className="m-0 text-[10px] uppercase tracking-[0.22em] text-brand">
-                        Related
-                      </p>
-                      <h3 className="m-0 text-[20px] leading-[1.08] tracking-[-0.04em]">
-                        继续往下刷
-                      </h3>
-                    </div>
-                    <div className="grid gap-2">
-                      {relatedPosts.length > 0 ? (
-                        relatedPosts.map((post) => (
-                          <button
-                            key={post.id}
-                            className={cn('grid gap-1 px-4 py-3 text-left transition-[transform,border-color,background-color] duration-180 ease-out hover:-translate-y-px hover:border-brand/44 hover:bg-black/8', softSurfaceClassName)}
-                            onClick={() => void openPostDetail(post.id)}
-                            type="button"
-                          >
-                            <span className="text-[13px] font-medium text-glass-light-ink">
-                              {post.title}
-                            </span>
-                            <span className="text-[12px] leading-[1.6] text-glass-light-muted">
-                              {getPostPreview(post)}
-                            </span>
-                          </button>
-                        ))
-                      ) : (
-                        <p className="m-0 text-[13px] leading-[1.65] text-glass-light-muted">
-                          还没有更多推荐。
-                        </p>
-                      )}
-                    </div>
-                  </section>
-                  </aside>
-                ) : null}
-              </div>
-            ) : null}
-
-            {activeView === 'compose' ? (
-              <div className="grid gap-5">
-                <form className="grid gap-4" onSubmit={handleSubmitPost}>
-                  <section className={cn('grid gap-4 p-4', panelSurfaceClassName)}>
-                    <div className="grid gap-1">
-                      <h3 className="m-0 text-[26px] leading-[1.03] tracking-[-0.055em] max-[760px]:text-[24px]">
-                        写笔记
-                      </h3>
-                      <p className="m-0 text-[13px] leading-[1.65] text-glass-light-muted">
-                        第一张图会作为封面。
-                      </p>
-                    </div>
-
-                    <label className="grid gap-2 text-[12px] font-medium text-glass-light-muted">
-                      标题
-                      <input
-                        className={inputClassName}
-                        maxLength={160}
-                        onChange={(event) => setComposerTitle(event.target.value)}
-                        placeholder="比如：若水广场边上那条路，晚上的风最容易记住"
-                        required
-                        value={composerTitle}
-                      />
-                    </label>
-
-                    <label className="grid gap-2 text-[12px] font-medium text-glass-light-muted">
-                      摘要
-                      <input
-                        className={inputClassName}
-                        maxLength={280}
-                        onChange={(event) => setComposerExcerpt(event.target.value)}
-                        placeholder="给推荐流一句短短的引子。"
-                        value={composerExcerpt}
-                      />
-                    </label>
-
-                    <label className="grid gap-2 text-[12px] font-medium text-glass-light-muted">
-                      正文
-                      <textarea
-                        className={cn(inputClassName, 'min-h-[240px] resize-y')}
-                        onChange={(event) => setComposerBody(event.target.value)}
-                        placeholder="把那段记忆、那个位置、为什么想记住它写下来。"
-                        required
-                        value={composerBody}
-                      />
-                    </label>
-
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <label className="grid gap-2 text-[12px] font-medium text-glass-light-muted">
-                        关联点位
-                        <select
-                          className={inputClassName}
-                          onChange={(event) => setComposerPinId(event.target.value)}
-                          value={composerPinId}
-                        >
-                          <option value="">暂不关联</option>
-                          {pins.map((pin) => (
-                            <option key={pin.id} value={pin.id}>
-                              {pin.title}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-
-                      <label className="grid gap-2 text-[12px] font-medium text-glass-light-muted">
-                        可见性
-                        <select
-                          className={inputClassName}
-                          onChange={(event) => setComposerStatus(event.target.value as PostStatus)}
-                          value={composerStatus}
-                        >
-                          <option value="published">直接发布</option>
-                          <option value="draft">先存草稿</option>
-                          <option value="archived">归档</option>
-                        </select>
-                      </label>
-                    </div>
-
-                    <label className="grid gap-2 text-[12px] font-medium text-glass-light-muted">
-                      图片
-                      <div className={cn('grid gap-3 rounded-[24px] border border-dashed border-glass-light-outline/28 px-4 py-4', softSurfaceClassName)}>
-                        <input
-                          accept="image/*"
-                          className="text-[12px] text-glass-light-muted"
-                          multiple
-                          onChange={(event) =>
-                            setComposerFiles(Array.from(event.target.files ?? []))
-                          }
-                          type="file"
-                        />
-                        {composerFiles.length > 0 ? (
-                          <div className="grid gap-2">
-                            {composerFiles.map((file) => (
-                              <div
-                                key={`${file.name}-${file.size}`}
-                                className={cn('flex items-center justify-between gap-3 rounded-[18px] px-3 py-3 text-[12px] text-glass-light-ink', chromeSurfaceClassName)}
-                              >
-                                <span className="truncate">{file.name}</span>
-                                <span className="shrink-0 text-glass-light-muted">
-                                  {formatFileSize(file.size)}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="m-0 text-[12px] leading-[1.6] text-glass-light-muted">
-                            直接选多张图即可，当前会按顺序上传，并把第一张当封面。
-                          </p>
-                        )}
-                      </div>
-                    </label>
-
-                    {composerMessage ? (
-                      <p className="m-0 rounded-[20px] border border-brand/20 bg-brand/10 px-4 py-3 text-[12px] leading-[1.6] text-brand">
-                        {composerMessage}
-                      </p>
-                    ) : null}
-
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        className="px-5"
-                        disabled={isPublishing}
-                        type="submit"
-                      >
-                        {isPublishing ? '正在发布' : '发布笔记'}
-                      </Button>
-                      <Button
-                        className={cn('border-glass-light-outline/20 px-5 text-glass-light-ink hover:border-brand/60 hover:text-brand', softSurfaceClassName)}
-                        disabled={isPublishing}
-                        onClick={() => {
-                          setComposerBody('');
-                          setComposerExcerpt('');
-                          setComposerFiles([]);
-                          setComposerMessage(null);
-                          setComposerPinId('');
-                          setComposerStatus('published');
-                          setComposerTitle('');
-                        }}
-                        variant="secondary"
-                      >
-                        清空
-                      </Button>
-                    </div>
-                  </section>
-                </form>
-              </div>
-            ) : null}
-          </div>
-        </div>
+        )}
       </SheetContent>
     </Sheet>
   );
 }
 
 export {
-  CommunitySheet
+  CommunitySheet,
 };
