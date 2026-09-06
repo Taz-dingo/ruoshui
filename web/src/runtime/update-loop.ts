@@ -52,7 +52,12 @@ function createRuntimeUpdateHandler({
       routeChanged ||
       (orbitChanged && !ambientMotionActive) ||
       runtimeState.performanceMode.isInteracting;
-    const unifiedLodChanged = updateUnifiedLodWarmup(runtimeState, dt, isMeasuredMotion);
+    const unifiedLodChanged = updateUnifiedLodWarmup(
+      runtimeState,
+      dt,
+      isMeasuredMotion,
+      !ambientMotionActive
+    );
     const hasActiveRoutePlayback = Boolean(runtimeState.routePlayback);
 
     if (runtimeState.routeRecord && hasActiveRoutePlayback) {
@@ -109,7 +114,12 @@ function createRuntimeUpdateHandler({
   };
 }
 
-function updateUnifiedLodWarmup(runtimeState: any, dt: number, isMoving: boolean) {
+function updateUnifiedLodWarmup(
+  runtimeState: any,
+  dt: number,
+  isMoving: boolean,
+  allowRiskRefresh = true
+) {
   const state = runtimeState?.unifiedLodState;
   const orbit = runtimeState?.orbit;
 
@@ -120,7 +130,7 @@ function updateUnifiedLodWarmup(runtimeState: any, dt: number, isMoving: boolean
   const riskSnapshot = getUnifiedLodRiskSnapshot(orbit);
   state.riskSnapshot = riskSnapshot;
 
-  if (riskSnapshot.shouldPrewarm) {
+  if (allowRiskRefresh && riskSnapshot.shouldPrewarm) {
     const refillSeconds = isMoving ? lowAnglePrewarmLeadSeconds : lowAnglePrewarmHoldSeconds;
     state.warmSecondsRemaining = Math.min(
       lowAnglePrewarmMaxSeconds,
