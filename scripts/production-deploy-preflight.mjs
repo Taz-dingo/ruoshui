@@ -34,7 +34,7 @@ function localMigrationNames() {
 }
 
 function runRemoteMigrationLedgerQuery() {
-  const sql = 'SELECT name FROM d1_migrations ORDER BY id;';
+  const sql = 'SELECT name FROM d1_migrations ORDER BY name;';
   const result = spawnSync(
     'pnpm',
     [
