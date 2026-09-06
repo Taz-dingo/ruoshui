@@ -26,7 +26,7 @@
 - [x] Web 第一次登录流程：Email OTP；displayName 可设置也可跳过。
 - [x] Story Editor、评论、回复在公开写入前要求登录；点赞触发登录后补做原操作。
 - [x] 管理员权限由 `ADMIN_USER_IDS` 稳定 userId allowlist 在 API 层强制执行。
-- [ ] 改邮箱：旧邮箱 OTP + 新邮箱 OTP，成功后 revoke 其他 sessions；旧邮箱不可访问时走人工处理。
+- [x] 改邮箱：旧邮箱 OTP → 当前 Session 绑定的短时 proof → 新邮箱 OTP；成功后保持同一 User、保留当前 Session 并 revoke 其他 sessions；旧邮箱不可访问时不提供绕过验证的自助路径。
 
 ## P1：首批真实 Place 与内容生产
 
@@ -81,6 +81,7 @@
 ### 8. Mobile / Release Acceptance
 
 - [ ] 生产 D1 apply `0003_media_derivatives.sql` 后再部署依赖 derivative 表的 Worker；确认旧媒体无 derivative 时仍正常展示。
+- [ ] 生产环境真实验证改邮箱：当前邮箱收 OTP → 新邮箱收 OTP → 当前 Session 保持 → 其他 Session 失效 → 新邮箱可登录同一 User。
 - [ ] iPhone Safari 真机验证 viewport、safe area、横竖屏、Place pins、单指 rotate、双指 pan + pinch zoom、Bottom Sheet 与 3D 手势冲突。
 - [ ] 验证 Android Chrome 与 iPad / 触屏核心链路。
 - [ ] production acceptance 覆盖 OTP、Draft 恢复、上传、thumbnail derivative、Review、Revision、My Stories、API / 图片 / 模型失败、Like / Comment、返回场景、Pages / Workers / D1 / R2 / 腾讯云 SES。
