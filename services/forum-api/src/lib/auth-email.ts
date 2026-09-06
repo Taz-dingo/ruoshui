@@ -1,4 +1,4 @@
-import type { AuthEmailSender } from "./auth.js";
+import type { AuthEmailSender, AuthOtpPurpose } from "./auth.js";
 
 const TENCENT_SES_ENDPOINT = "https://ses.tencentcloudapi.com/";
 const TENCENT_SES_HOST = "ses.tencentcloudapi.com";
@@ -77,6 +77,16 @@ function formatFromAddress(name: string, email: string): string {
   return `${name} <${email.trim()}>`;
 }
 
+function subjectForPurpose(purpose: AuthOtpPurpose): string {
+  if (purpose === "change_email_current") {
+    return "若水邮箱变更验证码";
+  }
+  if (purpose === "change_email_new") {
+    return "若水新邮箱验证码";
+  }
+  return "若水登录验证码";
+}
+
 async function createTencentCloudAuthorization(input: {
   payload: string;
   secretId: string;
@@ -119,12 +129,12 @@ function createTencentSesAuthEmailSender(
   const region = options.region ?? "ap-guangzhou";
 
   return {
-    async sendLoginOtp({ code, email }) {
+    async sendOtp({ code, email, purpose }) {
       const timestamp = Math.floor(now().getTime() / 1000);
       const payload = JSON.stringify({
         FromEmailAddress: formatFromAddress(fromName, options.fromEmail),
         Destination: [email],
-        Subject: "若水登录验证码",
+        Subject: subjectForPurpose(purpose),
         Template: {
           TemplateID: options.templateId,
           TemplateData: JSON.stringify({ code }),
