@@ -223,6 +223,39 @@ function createD1StoryRepository(database: D1Database): StoryRepository {
     );
   }
 
+  function createDerivativeStatements(
+    mediaAssetId: string,
+    derivatives: NonNullable<Parameters<StoryRepository["confirmMediaAssetForUser"]>[1]["derivatives"]>,
+    now: Date,
+  ): D1PreparedStatement[] {
+    return derivatives.map((derivative) =>
+      database
+        .prepare(
+          `INSERT INTO media_asset_derivatives (
+            media_asset_id, variant, object_key, mime_type, size_bytes, width, height,
+            created_at, updated_at
+          ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)
+          ON CONFLICT(media_asset_id, variant) DO UPDATE SET
+            object_key = excluded.object_key,
+            mime_type = excluded.mime_type,
+            size_bytes = excluded.size_bytes,
+            width = excluded.width,
+            height = excluded.height,
+            updated_at = excluded.updated_at`,
+        )
+        .bind(
+          mediaAssetId,
+          derivative.variant,
+          derivative.objectKey,
+          derivative.mimeType,
+          derivative.sizeBytes,
+          derivative.width,
+          derivative.height,
+          now.getTime(),
+        ),
+    );
+  }
+
   async function countOwnedMedia(userId: string, mediaAssetIds: string[], readyOnly: boolean) {
     const uniqueIds = [...new Set(mediaAssetIds)];
     if (uniqueIds.length === 0) {
@@ -432,16 +465,50 @@ function createD1StoryRepository(database: D1Database): StoryRepository {
         throw new Error("Media asset is already owned by another user.");
       }
 
+      const mediaAssetId = existing?.id ?? createEntityId("media");
+      const derivativeStatements = createDerivativeStatements(
+        mediaAssetId,
+        input.derivatives ?? [],
+        now,
+      );
+
       if (existing) {
-        await database
+        await database.batch([
+          database
+            .prepare(
+              `UPDATE media_assets SET
+                owner_user_id = ?1, bucket = ?2, mime_type = ?3, size_bytes = ?4,
+                width = ?5, height = ?6, status = ?7, updated_at = ?8
+               WHERE id = ?9 AND (owner_user_id IS NULL OR owner_user_id = ?1)`,
+            )
+            .bind(
+              userId,
+              input.bucket,
+              input.mimeType,
+              input.sizeBytes,
+              input.width ?? null,
+              input.height ?? null,
+              input.status,
+              now.getTime(),
+              mediaAssetId,
+            ),
+          ...derivativeStatements,
+        ]);
+        return mediaAssetId;
+      }
+
+      await database.batch([
+        database
           .prepare(
-            `UPDATE media_assets SET
-              owner_user_id = ?1, bucket = ?2, mime_type = ?3, size_bytes = ?4,
-              width = ?5, height = ?6, status = ?7, updated_at = ?8
-             WHERE id = ?9 AND (owner_user_id IS NULL OR owner_user_id = ?1)`,
+            `INSERT INTO media_assets (
+              id, scene_id, post_id, owner_user_id, object_key, bucket, mime_type,
+              size_bytes, width, height, status, created_at, updated_at
+            ) VALUES (?1, NULL, NULL, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?10)`,
           )
           .bind(
+            mediaAssetId,
             userId,
+            input.objectKey,
             input.bucket,
             input.mimeType,
             input.sizeBytes,
@@ -449,34 +516,10 @@ function createD1StoryRepository(database: D1Database): StoryRepository {
             input.height ?? null,
             input.status,
             now.getTime(),
-            existing.id,
-          )
-          .run();
-        return existing.id;
-      }
-
-      const id = createEntityId("media");
-      await database
-        .prepare(
-          `INSERT INTO media_assets (
-            id, scene_id, post_id, owner_user_id, object_key, bucket, mime_type,
-            size_bytes, width, height, status, created_at, updated_at
-          ) VALUES (?1, NULL, NULL, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?10)`,
-        )
-        .bind(
-          id,
-          userId,
-          input.objectKey,
-          input.bucket,
-          input.mimeType,
-          input.sizeBytes,
-          input.width ?? null,
-          input.height ?? null,
-          input.status,
-          now.getTime(),
-        )
-        .run();
-      return id;
+          ),
+        ...derivativeStatements,
+      ]);
+      return mediaAssetId;
     },
   };
 }
