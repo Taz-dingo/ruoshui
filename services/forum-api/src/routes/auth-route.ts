@@ -1,7 +1,10 @@
 import {
   requestEmailOtpInputSchema,
+  requestNewEmailChangeOtpInputSchema,
   updateUserProfileInputSchema,
+  verifyCurrentEmailChangeOtpInputSchema,
   verifyEmailOtpInputSchema,
+  verifyNewEmailChangeOtpInputSchema,
 } from "@ruoshui/shared";
 import { Hono } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
@@ -63,6 +66,79 @@ function createAuthRoute(options: CreateAuthRouteOptions): Hono {
     const input = updateUserProfileInputSchema.parse(await context.req.json());
     const updatedUser = await options.authService.updateDisplayName(user.id, input.displayName);
     return context.json({ ok: true, user: updatedUser });
+  });
+
+  route.get("/email/change", async (context) => {
+    const sessionToken = getCookie(context, SESSION_COOKIE_NAME);
+    const user = await options.authService.getUserForSessionToken(sessionToken);
+    if (!user) {
+      return context.json({ ok: false, error: "Authentication required." }, 401);
+    }
+    return context.json({
+      ok: true,
+      data: { email: await options.authService.getEmailForUser(user.id) },
+    });
+  });
+
+  route.post("/email/change/current/request-otp", async (context) => {
+    const sessionToken = getCookie(context, SESSION_COOKIE_NAME);
+    const user = await options.authService.getUserForSessionToken(sessionToken);
+    if (!user) {
+      return context.json({ ok: false, error: "Authentication required." }, 401);
+    }
+    const result = await options.authService.requestCurrentEmailChangeOtp(user.id);
+    return context.json({ ok: true, data: result }, 202);
+  });
+
+  route.post("/email/change/current/verify", async (context) => {
+    const sessionToken = getCookie(context, SESSION_COOKIE_NAME);
+    const user = await options.authService.getUserForSessionToken(sessionToken);
+    if (!user) {
+      return context.json({ ok: false, error: "Authentication required." }, 401);
+    }
+    const input = verifyCurrentEmailChangeOtpInputSchema.parse(await context.req.json());
+    const result = await options.authService.verifyCurrentEmailChangeOtp(
+      user.id,
+      sessionToken,
+      input.code,
+    );
+    return context.json({
+      ok: true,
+      data: { proof: result.proof, expiresAt: result.expiresAt.toISOString() },
+    });
+  });
+
+  route.post("/email/change/new/request-otp", async (context) => {
+    const sessionToken = getCookie(context, SESSION_COOKIE_NAME);
+    const user = await options.authService.getUserForSessionToken(sessionToken);
+    if (!user) {
+      return context.json({ ok: false, error: "Authentication required." }, 401);
+    }
+    const input = requestNewEmailChangeOtpInputSchema.parse(await context.req.json());
+    await options.authService.requestNewEmailChangeOtp(
+      user.id,
+      sessionToken,
+      input.proof,
+      input.email,
+    );
+    return context.json({ ok: true }, 202);
+  });
+
+  route.post("/email/change/new/verify", async (context) => {
+    const sessionToken = getCookie(context, SESSION_COOKIE_NAME);
+    const user = await options.authService.getUserForSessionToken(sessionToken);
+    if (!user) {
+      return context.json({ ok: false, error: "Authentication required." }, 401);
+    }
+    const input = verifyNewEmailChangeOtpInputSchema.parse(await context.req.json());
+    const result = await options.authService.verifyNewEmailChangeOtp(
+      user.id,
+      sessionToken,
+      input.proof,
+      input.email,
+      input.code,
+    );
+    return context.json({ ok: true, data: result });
   });
 
   route.post("/logout", async (context) => {
