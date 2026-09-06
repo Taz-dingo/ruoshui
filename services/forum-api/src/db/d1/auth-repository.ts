@@ -62,6 +62,17 @@ function createD1AuthRepository(database: D1Database): AuthRepository {
     return rows[0] ? mapUser(rows[0].user) : null;
   }
 
+  async function getEmailForUserId(userId: string): Promise<string | null> {
+    const rows = await db
+      .select({ subject: authIdentities.subject })
+      .from(authIdentities)
+      .where(and(eq(authIdentities.userId, userId), eq(authIdentities.provider, "email")))
+      .orderBy(authIdentities.createdAt)
+      .limit(1)
+      .all();
+    return rows[0]?.subject ?? null;
+  }
+
   return {
     async createOtpChallenge(record: AuthOtpChallengeRecord): Promise<void> {
       await db
@@ -167,6 +178,71 @@ function createD1AuthRepository(database: D1Database): AuthRepository {
           createdAt: record.createdAt,
         })
         .run();
+    },
+
+    async getEmailForUser(userId: string): Promise<string | null> {
+      return getEmailForUserId(userId);
+    },
+
+    async getUserIdByEmail(email: string): Promise<string | null> {
+      const user = await getUserByEmail(email);
+      return user?.id ?? null;
+    },
+
+    async changeEmailForUser(
+      userId,
+      currentEmail,
+      newEmail,
+      currentSessionTokenHash,
+      now,
+    ) {
+      const storedCurrentEmail = await getEmailForUserId(userId);
+      if (storedCurrentEmail !== currentEmail) {
+        return { status: "stale_current" };
+      }
+
+      const existingUser = await getUserByEmail(newEmail);
+      if (existingUser) {
+        return { status: "email_taken" };
+      }
+
+      try {
+        const results = await database.batch([
+          database
+            .prepare(
+              `UPDATE auth_identities
+               SET subject = ?1, verified_at = ?2
+               WHERE user_id = ?3 AND provider = 'email' AND subject = ?4`,
+            )
+            .bind(newEmail, now.getTime(), userId, currentEmail),
+          database
+            .prepare("UPDATE users SET updated_at = ?1 WHERE id = ?2")
+            .bind(now.getTime(), userId),
+          database
+            .prepare(
+              `UPDATE sessions
+               SET revoked_at = ?1
+               WHERE user_id = ?2 AND token_hash <> ?3 AND revoked_at IS NULL`,
+            )
+            .bind(now.getTime(), userId, currentSessionTokenHash),
+        ]);
+
+        if (!results[0]?.meta?.changes) {
+          return { status: "stale_current" };
+        }
+      } catch (error) {
+        const racedUser = await getUserByEmail(newEmail);
+        if (racedUser && racedUser.id !== userId) {
+          return { status: "email_taken" };
+        }
+        throw error;
+      }
+
+      const user = await getUserById(userId);
+      if (!user) {
+        throw new Error("User not found after email change.");
+      }
+      return { status: "changed", user };
     },
 
     async getUserBySessionTokenHash(tokenHash: string, now: Date): Promise<User | null> {
