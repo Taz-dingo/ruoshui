@@ -10,7 +10,12 @@ import {
   orbitPitchScreenFactor,
   orbitRotateScreenFactor,
   orbitWheelDeltaClamp,
-  orbitZoomExponentialSpeed
+  orbitZoomExponentialSpeed,
+  placeAmbientFocusDistanceRatio,
+  placeAmbientFocusPeriodSeconds,
+  placeAmbientFocusPitchAmplitudeDeg,
+  placeAmbientFocusSettleSeconds,
+  placeAmbientFocusYawAmplitudeDeg
 } from '../config';
 import type { PerformanceMode } from './types';
 import { clamp, degToRad, easeInOutCubic, lerp, lerpAngle } from '../utils/math';
@@ -34,6 +39,14 @@ interface OrbitTransition {
   toPitch: number;
   fromDistance: number;
   toDistance: number;
+}
+
+interface OrbitAmbientFocus {
+  elapsed: number;
+  settleRemaining: number;
+  baseYaw: number;
+  basePitch: number;
+  baseDistance: number;
 }
 
 export interface OrbitSnapshot {
@@ -67,6 +80,7 @@ export interface OrbitController {
   touchCenterX: number;
   touchCenterY: number;
   transition: OrbitTransition | null;
+  ambientFocus: OrbitAmbientFocus | null;
   onManualInput: (() => void) | null;
   tempRight: OrbitVector;
   tempUp: OrbitVector;
@@ -112,6 +126,7 @@ export function createOrbitController(
     touchCenterX: 0,
     touchCenterY: 0,
     transition: null,
+    ambientFocus: null,
     onManualInput: null,
     tempRight: new pc.Vec3(),
     tempUp: new pc.Vec3(),
@@ -121,8 +136,13 @@ export function createOrbitController(
     cancelInteraction: () => {}
   };
 
-  const beginPointer = (event: any) => {
+  const notifyManualInput = () => {
+    cancelOrbitAmbientFocus(orbit);
     orbit.onManualInput?.();
+  };
+
+  const beginPointer = (event: any) => {
+    notifyManualInput();
     orbit.pointerMode =
       event.button === 2 || event.button === 1 || event.shiftKey ? 'pan' : 'rotate';
     if (performanceMode) {
@@ -208,7 +228,7 @@ export function createOrbitController(
 
   const onWheel = (event: WheelEvent) => {
     event.preventDefault();
-    orbit.onManualInput?.();
+    notifyManualInput();
     orbit.transition = null;
     const deltaY = normalizeWheelDelta(event);
     const scale = Math.exp(deltaY * orbit.zoomSpeed);
@@ -224,7 +244,7 @@ export function createOrbitController(
       return;
     }
 
-    orbit.onManualInput?.();
+    notifyManualInput();
     orbit.transition = null;
     if (performanceMode) {
       performanceMode.isInteracting = true;
@@ -252,7 +272,7 @@ export function createOrbitController(
     }
 
     event.preventDefault();
-    orbit.onManualInput?.();
+    notifyManualInput();
 
     if (event.touches.length === 1) {
       const touch = event.touches[0];
@@ -379,6 +399,7 @@ export function restoreOrbitView(
   const clampedPitch = clampOrbitPitch(snapshot.pitch);
   const clampedTarget = clampOrbitTarget(snapshot.target.clone());
   orbit.transition = null;
+  orbit.ambientFocus = null;
   orbit.currentTarget.copy(clampedTarget);
   orbit.desiredTarget.copy(clampedTarget);
   orbit.currentYaw = snapshot.yaw;
@@ -399,6 +420,7 @@ export function setOrbitPreset(
   pc: PlayCanvasModule,
   duration = 1.35
 ) {
+  orbit.ambientFocus = null;
   const clampedTarget = clampOrbitTarget(target.clone());
   const clampedPosition = clampOrbitCameraPosition(position.clone(), clampedTarget);
   const spherical = positionToOrbit(clampedPosition, clampedTarget);
@@ -432,6 +454,42 @@ export function setOrbitPreset(
   };
 }
 
+export function startOrbitAmbientFocus(orbit: OrbitController | null | undefined) {
+  if (!orbit) {
+    return false;
+  }
+
+  orbit.ambientFocus = {
+    elapsed: 0,
+    settleRemaining: placeAmbientFocusSettleSeconds,
+    baseYaw: orbit.transition?.toYaw ?? orbit.desiredYaw,
+    basePitch: clampOrbitPitch(orbit.transition?.toPitch ?? orbit.desiredPitch),
+    baseDistance: clamp(
+      orbit.transition?.toDistance ?? orbit.desiredDistance,
+      orbit.minDistance,
+      orbit.maxDistance
+    )
+  };
+  return true;
+}
+
+export function cancelOrbitAmbientFocus(orbit: OrbitController | null | undefined) {
+  if (!orbit?.ambientFocus) {
+    return false;
+  }
+
+  orbit.ambientFocus = null;
+  orbit.desiredYaw = orbit.currentYaw;
+  orbit.desiredPitch = orbit.currentPitch;
+  orbit.desiredDistance = orbit.currentDistance;
+  orbit.desiredTarget.copy(orbit.currentTarget);
+  return true;
+}
+
+export function hasOrbitAmbientFocus(orbit: OrbitController | null | undefined) {
+  return Boolean(orbit?.ambientFocus);
+}
+
 export function updateOrbitController(
   orbit: OrbitController,
   dt: number,
@@ -456,7 +514,35 @@ export function updateOrbitController(
     }
   }
 
+  updateAmbientFocus(orbit, dt);
   return applyOrbit(orbit, orbit.damping, pc);
+}
+
+function updateAmbientFocus(orbit: OrbitController, dt: number) {
+  const ambient = orbit.ambientFocus;
+  if (!ambient || orbit.transition) {
+    return;
+  }
+
+  if (ambient.settleRemaining > 0) {
+    ambient.settleRemaining = Math.max(0, ambient.settleRemaining - dt);
+    return;
+  }
+
+  ambient.elapsed += dt;
+  const period = Math.max(placeAmbientFocusPeriodSeconds, 0.1);
+  const phase = (ambient.elapsed / period) * Math.PI * 2;
+  orbit.desiredYaw = ambient.baseYaw + degToRad(placeAmbientFocusYawAmplitudeDeg) * Math.sin(phase);
+  orbit.desiredPitch = clampOrbitPitch(
+    ambient.basePitch +
+      degToRad(placeAmbientFocusPitchAmplitudeDeg) * Math.sin(phase * 0.7 + Math.PI / 3)
+  );
+  orbit.desiredDistance = clamp(
+    ambient.baseDistance *
+      (1 + placeAmbientFocusDistanceRatio * Math.sin(phase * 0.55 - Math.PI / 4)),
+    orbit.minDistance,
+    orbit.maxDistance
+  );
 }
 
 function applyOrbit(orbit: OrbitController, damping: number, pc: PlayCanvasModule) {
