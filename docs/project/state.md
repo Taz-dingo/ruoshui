@@ -89,6 +89,7 @@
 
 - 生产 D1 `ruoshui-forum` 已先检查 remote migration ledger；`0002_media_ownership.sql`、`0003_media_derivatives.sql` 按顺序安全 apply，ledger 现为 `0000` 到 `0003`，无待迁移。现有数据核对为 `scenes=1`、`media_assets=0`、`derivatives=0`。
 - 最新 `main` `3a0bf36` 已部署到 `ruoshui-forum-api`，当前 Worker version 为 `91bdbbc0-62d9-4c56-a03a-add0ca320253`。
+- 当前 `main` 的前端已部署到 Cloudflare Pages 生产，deployment 为 `696247b9-a486-4e98-8085-410242050f9a`；`https://ruoshui-web.pages.dev/` 已返回 200 并加载新构建资源。
 - 本次部署核对了既有 Worker secrets 名称，未覆盖或输出 secret 值；D1、R2 和非敏感 SES 配置仍在绑定中。
 
 ### 真实 Place / Story 内容

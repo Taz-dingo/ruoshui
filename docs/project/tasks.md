@@ -19,6 +19,7 @@
 - [x] 给 Worker 配置 `TENCENT_CLOUD_SECRET_ID`、`TENCENT_CLOUD_SECRET_KEY`；Secret 不进入 Git。
 - [ ] 给 Worker 配置审核通过的 `TENCENT_SES_TEMPLATE_ID`；模板 ID 不进入代码逻辑以外的敏感日志。
 - [x] 已部署最新 `main` `3a0bf36` 对应的生产 Worker；当前版本为 `91bdbbc0-62d9-4c56-a03a-add0ca320253`。
+- [x] 当前 `main` 的前端已部署到 Cloudflare Pages 生产；deployment 为 `696247b9-a486-4e98-8085-410242050f9a`。
 - [ ] 模板审核通过后配置 `TENCENT_SES_TEMPLATE_ID`，再重新部署必要配置。
 - [ ] 配置完成后跑真实 smoke：request OTP → 实际收件 → verify → `/me` → StoryDraft create / patch → 跨请求 Session。
 
