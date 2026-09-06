@@ -26,6 +26,11 @@ export const orbitPanDistanceFactor = 1.55;
 export const orbitZoomExponentialSpeed = 0.00085;
 export const orbitWheelDeltaClamp = 220;
 export const orbitDamping = 0.08;
+export const placeAmbientFocusYawAmplitudeDeg = 1.25;
+export const placeAmbientFocusPitchAmplitudeDeg = 0.35;
+export const placeAmbientFocusDistanceRatio = 0.008;
+export const placeAmbientFocusPeriodSeconds = 13;
+export const placeAmbientFocusSettleSeconds = 0.18;
 
 export const frameSampleIndices = {
   elapsedMs: 0,
