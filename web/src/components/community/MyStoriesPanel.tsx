@@ -18,6 +18,7 @@ import {
 } from '../../community/story-author-api';
 import { scrollAreaClassNames } from '../../styles/system';
 import { cn } from '../../utils/cn';
+import { EmailChangeDialog } from './EmailChangeDialog';
 
 type PanelState = 'checking' | 'email' | 'otp' | 'ready' | 'error';
 
@@ -84,6 +85,7 @@ function MyStoriesPanel({
   const [busyStoryId, setBusyStoryId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string | null>(null);
+  const [emailChangeOpen, setEmailChangeOpen] = useState(false);
 
   const counts = useMemo(() => {
     let drafts = 0;
@@ -111,6 +113,7 @@ function MyStoriesPanel({
     setPanelState('checking');
     setMessage(null);
     setOtpCode('');
+    setEmailChangeOpen(false);
 
     void fetchCurrentUser()
       .then(async (user) => {
@@ -255,7 +258,12 @@ function MyStoriesPanel({
               {displayName ? <span className="truncate text-[11px] text-black/35">{displayName}</span> : null}
             </div>
           </div>
-          <button className="h-9 w-9 rounded-full text-[20px] text-black/38 hover:bg-black/5" onClick={() => onOpenChange(false)} type="button">×</button>
+          <div className="flex items-center gap-1">
+            {panelState === 'ready' ? (
+              <button className="rounded-full px-3 py-2 text-[10px] font-medium text-black/45 hover:bg-black/5 hover:text-black/65" onClick={() => setEmailChangeOpen(true)} type="button">账号</button>
+            ) : null}
+            <button className="h-9 w-9 rounded-full text-[20px] text-black/38 hover:bg-black/5" onClick={() => onOpenChange(false)} type="button">×</button>
+          </div>
         </header>
 
         <div className={cn('min-h-0 flex-1 overflow-y-auto', scrollAreaClassNames.thin)}>
@@ -350,6 +358,11 @@ function MyStoriesPanel({
           ) : null}
         </div>
       </div>
+      <EmailChangeDialog
+        onChanged={() => setMessage(null)}
+        onClose={() => setEmailChangeOpen(false)}
+        open={emailChangeOpen}
+      />
     </div>
   );
 }
