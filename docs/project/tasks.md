@@ -13,8 +13,8 @@
 - [x] 保持 `AuthEmailSender` provider abstraction，不改 OTP / User / Session 上层逻辑。
 - [x] Worker 直接调用腾讯云 SES API 3.0 `SendEmail`，使用 `TC3-HMAC-SHA256`。
 - [x] 默认公开配置：`AUTH_EMAIL_FROM=no-reply@auth.tazdingo.net`、`AUTH_EMAIL_FROM_NAME=若水`、`TENCENT_SES_REGION=ap-guangzhou`。
-- [ ] 腾讯云验证 `auth.tazdingo.net` 发信域名并配置 SES 要求的 SPF / DKIM。
-- [ ] 腾讯云创建 / 验证 `no-reply@auth.tazdingo.net` 发信地址。
+- [x] 腾讯云验证 `auth.tazdingo.net` 发信域名并配置 SES 要求的 SPF / DKIM。
+- [x] 腾讯云创建 / 验证 `no-reply@auth.tazdingo.net` 发信地址。
 - [ ] 创建 OTP 模板并通过审核：模板使用单变量 `{{code}}`，静态注明 10 分钟有效。
 - [x] 给 Worker 配置 `TENCENT_CLOUD_SECRET_ID`、`TENCENT_CLOUD_SECRET_KEY`；Secret 不进入 Git。
 - [ ] 给 Worker 配置审核通过的 `TENCENT_SES_TEMPLATE_ID`；模板 ID 不进入代码逻辑以外的敏感日志。
