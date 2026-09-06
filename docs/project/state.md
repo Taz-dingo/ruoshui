@@ -67,8 +67,8 @@
 
 ## 当前生产阻塞 / 已知限制
 
-- 生产 Auth 还不能做真实 OTP smoke：代码已经切到腾讯云 SES，但仍需要在腾讯云完成 `auth.tazdingo.net` 发信域名验证、发信地址、验证码模板审核，并给 Worker 配置 `TENCENT_CLOUD_SECRET_ID`、`TENCENT_CLOUD_SECRET_KEY`、`TENCENT_SES_TEMPLATE_ID`。`AUTH_OTP_SECRET` 已存在。
-- `AUTH_EMAIL_FROM=no-reply@auth.tazdingo.net`、`AUTH_EMAIL_FROM_NAME=若水`、`TENCENT_SES_REGION=ap-guangzhou` 已作为非敏感 Worker vars 写入配置；腾讯云 Secret / Template ID 不进入 Git。
+- 生产 Auth 还不能做真实 OTP smoke：`auth.tazdingo.net` 发信域名、发信地址和腾讯云 API Secret 已配置，但验证码模板仍在审核，尚未配置审核通过的 `TENCENT_SES_TEMPLATE_ID`。
+- `AUTH_EMAIL_FROM=no-reply@auth.tazdingo.net`、`AUTH_EMAIL_FROM_NAME=若水`、`TENCENT_SES_REGION=ap-guangzhou` 已作为非敏感 Worker vars 写入配置；`TENCENT_CLOUD_SECRET_ID`、`TENCENT_CLOUD_SECRET_KEY`、`AUTH_OTP_SECRET` 和 `UPLOAD_SIGNING_SECRET` 已作为 Worker secrets 存在，值不进入 Git。
 - 腾讯云 SES 模板审核通过前不要把 OTP smoke 记为通过。
 - 本次部署后从当前终端直连 `workers.dev/health` 仍无法建立连接；Pages 同源旧 forum bootstrap 已返回 200，不能据此替代完整 Auth / Story smoke。
 - Node/PostgreSQL fallback 尚未同步新的 Auth / Story service runtime；当前 Content & Community 新主路径以 Worker + D1 为准。

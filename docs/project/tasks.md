@@ -16,7 +16,10 @@
 - [ ] 腾讯云验证 `auth.tazdingo.net` 发信域名并配置 SES 要求的 SPF / DKIM。
 - [ ] 腾讯云创建 / 验证 `no-reply@auth.tazdingo.net` 发信地址。
 - [ ] 创建 OTP 模板并通过审核：模板使用单变量 `{{code}}`，静态注明 10 分钟有效。
-- [ ] 给 Worker 配置 `TENCENT_CLOUD_SECRET_ID`、`TENCENT_CLOUD_SECRET_KEY`、`TENCENT_SES_TEMPLATE_ID`；Secret 不进入 Git。
+- [x] 给 Worker 配置 `TENCENT_CLOUD_SECRET_ID`、`TENCENT_CLOUD_SECRET_KEY`；Secret 不进入 Git。
+- [ ] 给 Worker 配置审核通过的 `TENCENT_SES_TEMPLATE_ID`；模板 ID 不进入代码逻辑以外的敏感日志。
+- [x] 已部署 `4c27bec` 对应的生产 Worker；当时版本为 `fc8bf286-6609-46f1-b11e-33c2e054e593`。
+- [ ] 模板审核通过后从最新 `main` 重新部署生产 Worker。
 - [ ] 配置完成后跑真实 smoke：request OTP → 实际收件 → verify → `/me` → StoryDraft create / patch → 跨请求 Session。
 
 ### 2. Auth 后续
