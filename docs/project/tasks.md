@@ -74,15 +74,16 @@
 
 ### 7. Loading
 
-- [ ] 并行请求少量 Story thumbnail，用简单 scale / opacity / blur 生长效果让“记忆先于空间出现”。
-- [ ] 模型 ready 后立即切入 3D；不重启自研 Streamed SOG / progressive splat。
-- [ ] 为 Story 图片生成适合列表 / loading 的小尺寸派生图，避免直接请求原图。
+- [x] 并行请求少量 Published Story thumbnail，按真实图片请求完成时用 scale / opacity / blur 生长效果让“记忆先于空间出现”。
+- [x] 模型 ready 后立即切入 3D，不强制等待动画；不重启自研 Streamed SOG / progressive splat。
+- [x] 新 Story 图片上传时浏览器生成最长边 640px 的 `thumbnail` derivative；Loading 只读 derivative，不 fallback 到原图。
 
 ### 8. Mobile / Release Acceptance
 
+- [ ] 生产 D1 apply `0003_media_derivatives.sql` 后再部署依赖 derivative 表的 Worker；确认旧媒体无 derivative 时仍正常展示。
 - [ ] iPhone Safari 真机验证 viewport、safe area、横竖屏、Place pins、单指 rotate、双指 pan + pinch zoom、Bottom Sheet 与 3D 手势冲突。
 - [ ] 验证 Android Chrome 与 iPad / 触屏核心链路。
-- [ ] production acceptance 覆盖 OTP、Draft 恢复、上传、Review、Revision、My Stories、API / 图片 / 模型失败、Like / Comment、返回场景、Pages / Workers / D1 / R2 / 腾讯云 SES。
+- [ ] production acceptance 覆盖 OTP、Draft 恢复、上传、thumbnail derivative、Review、Revision、My Stories、API / 图片 / 模型失败、Like / Comment、返回场景、Pages / Workers / D1 / R2 / 腾讯云 SES。
 - [ ] 找少量真实校友做可用性测试，并根据真实行为收敛首屏、Place intro、Story 卡片和投稿阻力。
 
 ## 已完成的核心技术闭环
