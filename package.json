@@ -6,7 +6,7 @@
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm --filter @ruoshui/forum-api test",
-    "check:smoke-script": "node --check scripts/production-smoke.mjs",
+    "check:smoke-script": "node --check scripts/production-smoke.mjs && node scripts/production-smoke.mjs --help >/dev/null",
     "check": "pnpm typecheck && pnpm test && pnpm check:smoke-script && pnpm build",
     "smoke:prod": "node scripts/production-smoke.mjs",
     "dev:web": "pnpm --dir web dev",
