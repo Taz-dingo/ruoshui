@@ -18,8 +18,8 @@
 - [ ] 创建 OTP 模板并通过审核：模板使用单变量 `{{code}}`，静态注明 10 分钟有效。
 - [x] 给 Worker 配置 `TENCENT_CLOUD_SECRET_ID`、`TENCENT_CLOUD_SECRET_KEY`；Secret 不进入 Git。
 - [ ] 给 Worker 配置审核通过的 `TENCENT_SES_TEMPLATE_ID`；模板 ID 不进入代码逻辑以外的敏感日志。
-- [x] 已部署 `4c27bec` 对应的生产 Worker；当时版本为 `fc8bf286-6609-46f1-b11e-33c2e054e593`。
-- [ ] 模板审核通过后从最新 `main` 重新部署生产 Worker。
+- [x] 已部署最新 `main` `3a0bf36` 对应的生产 Worker；当前版本为 `91bdbbc0-62d9-4c56-a03a-add0ca320253`。
+- [ ] 模板审核通过后配置 `TENCENT_SES_TEMPLATE_ID`，再重新部署必要配置。
 - [ ] 配置完成后跑真实 smoke：request OTP → 实际收件 → verify → `/me` → StoryDraft create / patch → 跨请求 Session。
 
 ### 2. Auth 后续
@@ -83,7 +83,7 @@
 
 ### 8. Mobile / Release Acceptance
 
-- [ ] 生产 D1 apply `0003_media_derivatives.sql` 后再部署依赖 derivative 表的 Worker；确认旧媒体无 derivative 时仍正常展示。
+- [x] 生产 D1 已按顺序 apply `0002_media_ownership.sql`、`0003_media_derivatives.sql`，remote ledger 与 repo 完全一致后才部署 Worker。
 - [ ] 生产环境真实验证改邮箱：当前邮箱收 OTP → 新邮箱收 OTP → 当前 Session 保持 → 其他 Session 失效 → 新邮箱可登录同一 User。
 - [ ] iPhone Safari 真机验证 viewport、safe area、横竖屏、Place pins、单指 rotate、双指 pan + pinch zoom、Bottom Sheet 与 3D 手势冲突。
 - [ ] 验证 Android Chrome 与 iPad / 触屏核心链路。
