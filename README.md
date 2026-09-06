@@ -40,3 +40,11 @@ pnpm --dir web deploy:pages
 ```
 
 发布前会自动构建 Pages、打包 Functions，并部署到 `https://ruoshui-web.pages.dev`。
+
+生产 Auth / Worker 配置完成并部署后，用现有测试或管理员邮箱跑真实链路 smoke：
+
+```bash
+pnpm smoke:prod -- --email you@example.com
+```
+
+脚本会真实发送 OTP，并交互式读取验证码；随后验证 Pages → Worker 代理、HttpOnly Session、StoryDraft create / patch / 跨请求读取，最后 soft-delete 临时 Story 并 logout。它不会接受命令行 OTP，也不会提交公开 Story。更多参数见 `pnpm smoke:prod -- --help`。
