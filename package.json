@@ -7,7 +7,10 @@
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm --filter @ruoshui/forum-api test",
     "check:smoke-script": "node --check scripts/production-smoke.mjs && node scripts/production-smoke.mjs --help >/dev/null",
-    "check": "pnpm typecheck && pnpm test && pnpm check:smoke-script && pnpm build",
+    "check:deploy-preflight-script": "node --check scripts/production-deploy-preflight.mjs && node scripts/production-deploy-preflight.mjs --help >/dev/null",
+    "check": "pnpm typecheck && pnpm test && pnpm check:smoke-script && pnpm check:deploy-preflight-script && pnpm build",
+    "preflight:forum:prod": "node scripts/production-deploy-preflight.mjs",
+    "deploy:forum:prod": "pnpm preflight:forum:prod && pnpm --filter @ruoshui/forum-api deploy",
     "smoke:prod": "node scripts/production-smoke.mjs",
     "dev:web": "pnpm --dir web dev",
     "dev:forum-api": "pnpm --filter @ruoshui/forum-api dev"
