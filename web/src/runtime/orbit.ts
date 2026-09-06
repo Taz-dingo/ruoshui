@@ -143,6 +143,7 @@ export function createOrbitController(
 
   const beginPointer = (event: any) => {
     notifyManualInput();
+    orbit.transition = null;
     orbit.pointerMode =
       event.button === 2 || event.button === 1 || event.shiftKey ? 'pan' : 'rotate';
     if (performanceMode) {
