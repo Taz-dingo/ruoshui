@@ -1,7 +1,4 @@
 import type {
-  ConfirmMediaAssetInput,
-  CreateForumPostInput,
-  CreateScenePinInput,
   ForumPost,
   ForumPostDetail,
   ListForumPostsInput,
@@ -9,13 +6,11 @@ import type {
   Scene,
   SceneBootstrap,
   ScenePin,
-  UpsertSceneInput,
 } from "@ruoshui/shared";
 import type { D1Database } from "@cloudflare/workers-types";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 
-import { createEntityId } from "../../lib/id.js";
 import type { ForumRepository } from "../../lib/forum-repository.js";
 import { forumPosts, mediaAssets, scenePins, scenes } from "./schema.js";
 
@@ -57,7 +52,10 @@ function mapForumPost(row: ForumPostRow): ForumPost {
   };
 }
 
-function buildPublicUrl(mediaPublicBaseUrl: string | undefined, objectKey: string): string | undefined {
+function buildPublicUrl(
+  mediaPublicBaseUrl: string | undefined,
+  objectKey: string,
+): string | undefined {
   if (!mediaPublicBaseUrl) {
     return undefined;
   }
@@ -162,194 +160,6 @@ function createD1ForumRepository(
   return {
     async checkConnection(): Promise<void> {
       await database.prepare("select 1 as ok").first();
-    },
-
-    async upsertScene(input: UpsertSceneInput): Promise<Scene> {
-      const now = new Date();
-
-      await db
-        .insert(scenes)
-        .values({
-          id: input.id,
-          title: input.title,
-          description: input.description ?? null,
-          assetUrl: input.assetUrl ?? null,
-          previewImage: input.previewImage ?? null,
-          createdAt: now,
-          updatedAt: now,
-        })
-        .onConflictDoUpdate({
-          target: scenes.id,
-          set: {
-            title: input.title,
-            description: input.description ?? null,
-            assetUrl: input.assetUrl ?? null,
-            previewImage: input.previewImage ?? null,
-            updatedAt: now,
-          },
-        })
-        .run();
-
-      return {
-        id: input.id,
-        title: input.title,
-        description: input.description,
-        assetUrl: input.assetUrl,
-        previewImage: input.previewImage,
-      };
-    },
-
-    async createForumPost(input: CreateForumPostInput): Promise<ForumPost> {
-      const now = new Date();
-      const id = createEntityId("post");
-      const coverAssetId = input.coverAssetId ?? input.mediaAssetIds?.[0];
-
-      await db
-        .insert(forumPosts)
-        .values({
-          id,
-          sceneId: input.sceneId ?? null,
-          title: input.title,
-          excerpt: input.excerpt ?? null,
-          body: input.body,
-          coverAssetId: coverAssetId ?? null,
-          status: input.status,
-          createdAt: now,
-          updatedAt: now,
-        })
-        .run();
-
-      if (input.mediaAssetIds?.length) {
-        await db
-          .update(mediaAssets)
-          .set({
-            postId: id,
-            sceneId: input.sceneId ?? null,
-            updatedAt: now,
-          })
-          .where(inArray(mediaAssets.id, input.mediaAssetIds))
-          .run();
-      }
-
-      if (input.pinId) {
-        await db
-          .update(scenePins)
-          .set({
-            postId: id,
-            updatedAt: now,
-          })
-          .where(eq(scenePins.id, input.pinId))
-          .run();
-      }
-
-      return {
-        id,
-        sceneId: input.sceneId,
-        pinId: input.pinId,
-        title: input.title,
-        excerpt: input.excerpt,
-        body: input.body,
-        coverAssetId,
-        status: input.status,
-        createdAt: now.toISOString(),
-        updatedAt: now.toISOString(),
-      };
-    },
-
-    async createScenePin(input: CreateScenePinInput): Promise<ScenePin> {
-      const now = new Date();
-      const id = createEntityId("pin");
-
-      await db
-        .insert(scenePins)
-        .values({
-          id,
-          sceneId: input.sceneId,
-          postId: input.postId ?? null,
-          title: input.title,
-          summary: input.summary ?? null,
-          positionX: input.position.x,
-          positionY: input.position.y,
-          positionZ: input.position.z,
-          targetX: input.target?.x ?? null,
-          targetY: input.target?.y ?? null,
-          targetZ: input.target?.z ?? null,
-          metadata: input.metadata ?? null,
-          createdAt: now,
-          updatedAt: now,
-        })
-        .run();
-
-      return {
-        id,
-        sceneId: input.sceneId,
-        postId: input.postId,
-        title: input.title,
-        summary: input.summary,
-        position: input.position,
-        target: input.target,
-      };
-    },
-
-    async confirmMediaAsset(input: ConfirmMediaAssetInput): Promise<MediaAsset> {
-      const now = new Date();
-      const existing = await db
-        .select()
-        .from(mediaAssets)
-        .where(eq(mediaAssets.objectKey, input.objectKey))
-        .limit(1)
-        .get();
-
-      const mediaId = existing?.id ?? createEntityId("media");
-
-      if (existing) {
-        await db
-          .update(mediaAssets)
-          .set({
-            bucket: input.bucket,
-            height: input.height ?? null,
-            mimeType: input.mimeType,
-            postId: input.postId ?? null,
-            sceneId: input.sceneId ?? null,
-            sizeBytes: input.sizeBytes,
-            status: input.status,
-            updatedAt: now,
-            width: input.width ?? null,
-          })
-          .where(eq(mediaAssets.id, existing.id))
-          .run();
-      } else {
-        await db
-          .insert(mediaAssets)
-          .values({
-            id: mediaId,
-            bucket: input.bucket,
-            objectKey: input.objectKey,
-            mimeType: input.mimeType,
-            sizeBytes: input.sizeBytes,
-            width: input.width ?? null,
-            height: input.height ?? null,
-            status: input.status,
-            sceneId: input.sceneId ?? null,
-            postId: input.postId ?? null,
-            createdAt: now,
-            updatedAt: now,
-          })
-          .run();
-      }
-
-      const row = await db
-        .select()
-        .from(mediaAssets)
-        .where(eq(mediaAssets.id, mediaId))
-        .limit(1)
-        .get();
-
-      if (!row) {
-        throw new Error("Failed to confirm media asset");
-      }
-
-      return mapMediaAsset(row, mediaPublicBaseUrl);
     },
 
     async getSceneBootstrap(sceneId: string): Promise<SceneBootstrap> {
