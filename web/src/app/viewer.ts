@@ -18,6 +18,7 @@ import {
   normalizeRenderScalePercent,
   persistRenderScalePercent
 } from '../performance/render-scale';
+import { cancelOrbitAmbientFocus, startOrbitAmbientFocus } from '../runtime/orbit';
 import {
   applyRuntimePostProcessing,
   isAntiAliasSupported,
@@ -454,8 +455,20 @@ async function initializeViewer({
         },
         false
       );
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (command.ambientFocus && !reduceMotion) {
+        startOrbitAmbientFocus(runtimeState.orbit);
+      } else {
+        cancelOrbitAmbientFocus(runtimeState.orbit);
+      }
       runtimeState.requestRender?.();
       setViewerStatus('回到校园地点', `正在飞向 ${command.title}。`);
+    },
+    cancelSpatialAnchorAmbientFocus: () => {
+      const runtimeState = session.getRuntime();
+      if (cancelOrbitAmbientFocus(runtimeState?.orbit)) {
+        runtimeState?.requestRender?.();
+      }
     },
     setPlacePins: (pins) => {
       placePins = pins;
