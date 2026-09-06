@@ -123,7 +123,7 @@ const mediaAssetDerivativeInputSchema = z.object({
   variant: mediaDerivativeVariantSchema,
   objectKey: z.string().min(1).max(512),
   mimeType: z.string().min(1).max(120),
-  sizeBytes: z.number().int().positive().max(5 * 1024 * 1024),
+  sizeBytes: z.number().int().positive().max(512 * 1024),
   width: z.number().int().positive(),
   height: z.number().int().positive(),
 });
