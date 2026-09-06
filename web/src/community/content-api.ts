@@ -13,6 +13,8 @@ import type {
   User,
 } from '@ruoshui/shared';
 
+import { createStoryThumbnail } from './story-thumbnail';
+
 interface ApiEnvelope<T> {
   data?: T;
   error?: string;
@@ -40,6 +42,14 @@ interface AdminCommentModerationItem {
   createdAt: string;
   updatedAt: string;
 }
+
+interface PendingStoryMediaDerivative {
+  derivatives: NonNullable<ConfirmMediaAssetInput['derivatives']>;
+  sourceHeight: number;
+  sourceWidth: number;
+}
+
+const pendingStoryMediaDerivatives = new Map<string, PendingStoryMediaDerivative>();
 
 class ApiRequestError extends Error {
   readonly status: number;
@@ -154,6 +164,10 @@ function getPublishedStoryMediaUrl(storyId: string, mediaAssetId: string): strin
   return `/api/published-stories/${encodeURIComponent(storyId)}/media/${encodeURIComponent(mediaAssetId)}`;
 }
 
+function getPublishedStoryThumbnailUrl(storyId: string, mediaAssetId: string): string {
+  return `${getPublishedStoryMediaUrl(storyId, mediaAssetId)}/thumbnail`;
+}
+
 async function fetchStorySocial(storyId: string): Promise<StorySocial> {
   return requestData<StorySocial>(`/api/story-social/stories/${encodeURIComponent(storyId)}`);
 }
@@ -246,7 +260,7 @@ async function requestStoryUploadTicket(input: UploadRequest): Promise<UploadTic
   });
 }
 
-async function uploadFileWithTicket(ticket: UploadTicket, file: File): Promise<void> {
+async function uploadObjectWithTicket(ticket: UploadTicket, file: File): Promise<void> {
   if (!ticket.uploadUrl) {
     throw new Error('上传服务没有返回可用地址。');
   }
@@ -266,12 +280,63 @@ async function uploadFileWithTicket(ticket: UploadTicket, file: File): Promise<v
   }
 }
 
+async function uploadFileWithTicket(ticket: UploadTicket, file: File): Promise<void> {
+  await uploadObjectWithTicket(ticket, file);
+
+  const thumbnail = await createStoryThumbnail(file);
+  if (!thumbnail) {
+    return;
+  }
+
+  try {
+    const thumbnailTicket = await requestStoryUploadTicket({
+      fileName: thumbnail.file.name,
+      mimeType: thumbnail.file.type,
+      sizeBytes: thumbnail.file.size,
+      category: 'post-inline',
+    });
+    await uploadObjectWithTicket(thumbnailTicket, thumbnail.file);
+    pendingStoryMediaDerivatives.set(ticket.objectKey, {
+      sourceHeight: thumbnail.sourceHeight,
+      sourceWidth: thumbnail.sourceWidth,
+      derivatives: [
+        {
+          variant: 'thumbnail',
+          objectKey: thumbnailTicket.objectKey,
+          mimeType: thumbnail.file.type,
+          sizeBytes: thumbnail.file.size,
+          width: thumbnail.width,
+          height: thumbnail.height,
+        },
+      ],
+    });
+  } catch {
+    // Thumbnail generation/upload is best-effort. The original photo remains valid Story media.
+  }
+}
+
 async function confirmStoryMedia(input: ConfirmMediaAssetInput): Promise<string> {
+  const pending = pendingStoryMediaDerivatives.get(input.objectKey);
+  const derivativeByVariant = new Map(
+    [...(pending?.derivatives ?? []), ...(input.derivatives ?? [])].map((derivative) => [
+      derivative.variant,
+      derivative,
+    ]),
+  );
+  const payload: ConfirmMediaAssetInput = {
+    ...input,
+    ...(input.width === undefined && pending ? { width: pending.sourceWidth } : {}),
+    ...(input.height === undefined && pending ? { height: pending.sourceHeight } : {}),
+    ...(derivativeByVariant.size > 0
+      ? { derivatives: [...derivativeByVariant.values()] }
+      : {}),
+  };
   const result = await requestData<{ id: string }>('/api/stories/media/confirm', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(input),
+    body: JSON.stringify(payload),
   });
+  pendingStoryMediaDerivatives.delete(input.objectKey);
   return result.id;
 }
 
@@ -355,6 +420,7 @@ export {
   fetchStoryReviewQueue,
   fetchStorySocial,
   getPublishedStoryMediaUrl,
+  getPublishedStoryThumbnailUrl,
   getStoryReviewMediaUrl,
   patchStoryReview,
   rejectStoryReview,
