@@ -45,7 +45,7 @@ const dockMenuSurfaceClassName = cn(
   'max-h-[calc(var(--app-height)-7rem)]'
 );
 const dockPanelClassName = cn(
-  'pointer-events-none invisible absolute bottom-[calc(100%+0.8rem)] left-1/2 w-[min(360px,calc(100vw-2rem))] -translate-x-1/2 translate-y-2 transition-transform duration-150 ease-out',
+  'pointer-events-none invisible absolute bottom-full left-1/2 w-[min(360px,calc(100vw-2rem))] -translate-x-1/2 translate-y-2 pb-[0.8rem] transition-transform duration-150 ease-out',
   'max-[760px]:hidden'
 );
 const dockButtonClassName =
@@ -122,7 +122,11 @@ function DockMenu({
     onOpenChange
   });
   const hover = useHover(context, {
-    handleClose: safePolygon({ buffer: 1 }),
+    delay: { close: 120 },
+    handleClose: safePolygon({
+      buffer: 4,
+      requireIntent: false
+    }),
     mouseOnly: true
   });
   const { getFloatingProps, getReferenceProps } = useInteractions([hover]);
@@ -306,13 +310,15 @@ function App({
                 isMobilePanelOpen && 'max-[760px]:pointer-events-none max-[760px]:opacity-0'
               )}
             >
-              <DockMenu
-                menuId="variants"
-                onOpenChange={(open) => setDockMenuOpen('variants', open)}
-                onTriggerClick={() => openControlPanel('variants')}
-                open={openDockMenu === 'variants'}
-                viewerConfig={viewerConfig}
-              />
+              {viewerConfig.showExperimentalControls ? (
+                <DockMenu
+                  menuId="variants"
+                  onOpenChange={(open) => setDockMenuOpen('variants', open)}
+                  onTriggerClick={() => openControlPanel('variants')}
+                  open={openDockMenu === 'variants'}
+                  viewerConfig={viewerConfig}
+                />
+              ) : null}
               <DockMenu
                 menuId="presets"
                 onOpenChange={(open) => setDockMenuOpen('presets', open)}

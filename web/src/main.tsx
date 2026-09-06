@@ -184,6 +184,7 @@ function writeStoredViewerUiMode(
 function resolveViewerUiFlags(runtimeWindow: Window, isDev: boolean) {
   const searchParams = new URL(runtimeWindow.location.href).searchParams;
   const queryMode = parseViewerUiMode(searchParams.get('ui'));
+  const isAdminLabMode = searchParams.get('admin') === 'lab';
 
   if (queryMode) {
     writeStoredViewerUiMode(runtimeWindow, queryMode);
@@ -191,7 +192,8 @@ function resolveViewerUiFlags(runtimeWindow: Window, isDev: boolean) {
 
   const storedMode = readStoredViewerUiMode(runtimeWindow);
   const mode = queryMode ?? storedMode ?? 'auto';
-  const showDevUi = mode === 'dev' || (mode === 'auto' && isDev);
+  const showDevUi =
+    isAdminLabMode || mode === 'dev' || (mode === 'auto' && isDev);
 
   return {
     showExperimentalControls: showDevUi,
