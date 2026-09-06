@@ -27,7 +27,11 @@ function createPublishedStoryRoute(options: CreatePublishedStoryRouteOptions): H
     });
   });
 
-  route.get("/:storyId/media/:mediaAssetId", async (context) => {
+  async function readMediaObject(
+    context: Parameters<Parameters<Hono["get"]>[1]>[0],
+    media: { mimeType: string; objectKey: string },
+    maxAge: number,
+  ) {
     if (!options.storageProvider.readObject) {
       return context.json(
         { ok: false, error: "Story media reads are not available for the current storage provider." },
@@ -35,9 +39,6 @@ function createPublishedStoryRoute(options: CreatePublishedStoryRouteOptions): H
       );
     }
 
-    const storyId = storyIdSchema.parse(context.req.param("storyId"));
-    const mediaAssetId = mediaAssetIdSchema.parse(context.req.param("mediaAssetId"));
-    const media = await options.readService.getPublishedStoryMediaRef(storyId, mediaAssetId);
     const object = await options.storageProvider.readObject(media.objectKey);
     if (!object) {
       return context.notFound();
@@ -45,7 +46,7 @@ function createPublishedStoryRoute(options: CreatePublishedStoryRouteOptions): H
 
     const headers = new Headers();
     headers.set("content-type", object.contentType ?? media.mimeType);
-    headers.set("cache-control", "public, max-age=300");
+    headers.set("cache-control", `public, max-age=${maxAge}`);
     if (object.contentLength !== undefined) {
       headers.set("content-length", String(object.contentLength));
     }
@@ -60,6 +61,24 @@ function createPublishedStoryRoute(options: CreatePublishedStoryRouteOptions): H
       headers,
       status: 200,
     });
+  }
+
+  route.get("/:storyId/media/:mediaAssetId/thumbnail", async (context) => {
+    const storyId = storyIdSchema.parse(context.req.param("storyId"));
+    const mediaAssetId = mediaAssetIdSchema.parse(context.req.param("mediaAssetId"));
+    const media = await options.readService.getPublishedStoryMediaDerivativeRef(
+      storyId,
+      mediaAssetId,
+      "thumbnail",
+    );
+    return readMediaObject(context, media, 86_400);
+  });
+
+  route.get("/:storyId/media/:mediaAssetId", async (context) => {
+    const storyId = storyIdSchema.parse(context.req.param("storyId"));
+    const mediaAssetId = mediaAssetIdSchema.parse(context.req.param("mediaAssetId"));
+    const media = await options.readService.getPublishedStoryMediaRef(storyId, mediaAssetId);
+    return readMediaObject(context, media, 300);
   });
 
   route.get("/:storyId", async (context) => {
