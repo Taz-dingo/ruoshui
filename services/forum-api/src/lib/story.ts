@@ -79,6 +79,20 @@ function createStoryService(options: CreateStoryServiceOptions): StoryService {
         throw new StoryServiceError("Photo upload does not belong to this user.", 409);
       }
 
+      const derivativeVariants = new Set<string>();
+      for (const derivative of input.derivatives ?? []) {
+        if (
+          !derivative.objectKey.startsWith(expectedPrefix) ||
+          derivative.objectKey === input.objectKey
+        ) {
+          throw new StoryServiceError("Photo derivative does not belong to this user.", 409);
+        }
+        if (derivativeVariants.has(derivative.variant)) {
+          throw new StoryServiceError("Photo derivative variants must be unique.", 409);
+        }
+        derivativeVariants.add(derivative.variant);
+      }
+
       const id = await options.repository.confirmMediaAssetForUser(userId, input, now());
       return { id };
     },

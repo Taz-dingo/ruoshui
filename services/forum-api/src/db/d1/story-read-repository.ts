@@ -9,6 +9,7 @@ import { drizzle } from "drizzle-orm/d1";
 
 import type { StoryReadRepository } from "../../lib/story-read.js";
 import {
+  mediaAssetDerivatives,
   mediaAssets,
   stories,
   storyRevisionMedia,
@@ -122,6 +123,16 @@ function createD1StoryReadRepository(database: D1Database): StoryReadRepository 
       .innerJoin(users, eq(users.id, stories.authorUserId));
   }
 
+  function publishedMediaConditions(storyId: string, mediaAssetId: string) {
+    return and(
+      eq(stories.id, storyId),
+      eq(stories.status, "active"),
+      eq(storyRevisions.status, "published"),
+      eq(storyRevisionMedia.mediaAssetId, mediaAssetId),
+      eq(mediaAssets.status, "ready"),
+    );
+  }
+
   return {
     async getPublishedStory(storyId) {
       const [row] = await publishedBaseQuery()
@@ -151,13 +162,34 @@ function createD1StoryReadRepository(database: D1Database): StoryReadRepository 
           eq(storyRevisionMedia.storyRevisionId, storyRevisions.id),
         )
         .innerJoin(mediaAssets, eq(mediaAssets.id, storyRevisionMedia.mediaAssetId))
+        .where(publishedMediaConditions(storyId, mediaAssetId))
+        .limit(1)
+        .all();
+      return row ?? null;
+    },
+
+    async getPublishedStoryMediaDerivativeRef(storyId, mediaAssetId, variant) {
+      const [row] = await db
+        .select({
+          id: mediaAssets.id,
+          mimeType: mediaAssetDerivatives.mimeType,
+          objectKey: mediaAssetDerivatives.objectKey,
+        })
+        .from(stories)
+        .innerJoin(storyRevisions, eq(storyRevisions.id, stories.publishedRevisionId))
+        .innerJoin(
+          storyRevisionMedia,
+          eq(storyRevisionMedia.storyRevisionId, storyRevisions.id),
+        )
+        .innerJoin(mediaAssets, eq(mediaAssets.id, storyRevisionMedia.mediaAssetId))
+        .innerJoin(
+          mediaAssetDerivatives,
+          eq(mediaAssetDerivatives.mediaAssetId, mediaAssets.id),
+        )
         .where(
           and(
-            eq(stories.id, storyId),
-            eq(stories.status, "active"),
-            eq(storyRevisions.status, "published"),
-            eq(storyRevisionMedia.mediaAssetId, mediaAssetId),
-            eq(mediaAssets.status, "ready"),
+            publishedMediaConditions(storyId, mediaAssetId),
+            eq(mediaAssetDerivatives.variant, variant),
           ),
         )
         .limit(1)

@@ -100,6 +100,26 @@ const mediaAssets = pgTable(
   ],
 );
 
+const mediaAssetDerivatives = pgTable(
+  "media_asset_derivatives",
+  {
+    mediaAssetId: varchar("media_asset_id", { length: 120 })
+      .notNull()
+      .references(() => mediaAssets.id, { onDelete: "cascade" }),
+    variant: varchar("variant", { length: 32 }).$type<"thumbnail">().notNull(),
+    objectKey: varchar("object_key", { length: 512 }).notNull(),
+    mimeType: varchar("mime_type", { length: 120 }).notNull(),
+    sizeBytes: integer("size_bytes").notNull(),
+    width: integer("width").notNull(),
+    height: integer("height").notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    primaryKey({ columns: [table.mediaAssetId, table.variant] }),
+    uniqueIndex("media_asset_derivatives_object_key_idx").on(table.objectKey),
+  ],
+);
+
 const users = pgTable("users", {
   id: varchar("id", { length: 120 }).primaryKey(),
   displayName: varchar("display_name", { length: 80 }),
@@ -324,6 +344,7 @@ export {
   commentLikes,
   comments,
   forumPosts,
+  mediaAssetDerivatives,
   mediaAssets,
   mediaStatusEnum,
   places,

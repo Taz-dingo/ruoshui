@@ -4,6 +4,7 @@ const sceneIdSchema = z.string().min(1).max(120);
 const entityIdSchema = z.string().min(1).max(120);
 const postStatusSchema = z.enum(["draft", "published", "archived"]);
 const mediaStatusSchema = z.enum(["pending", "ready", "failed"]);
+const mediaDerivativeVariantSchema = z.enum(["thumbnail"]);
 
 const vector3Schema = z.object({
   x: z.number(),
@@ -118,6 +119,15 @@ const uploadTicketSchema = z.object({
   note: z.string().optional(),
 });
 
+const mediaAssetDerivativeInputSchema = z.object({
+  variant: mediaDerivativeVariantSchema,
+  objectKey: z.string().min(1).max(512),
+  mimeType: z.string().min(1).max(120),
+  sizeBytes: z.number().int().positive().max(512 * 1024),
+  width: z.number().int().positive(),
+  height: z.number().int().positive(),
+});
+
 const confirmMediaAssetInputSchema = z.object({
   bucket: z.string().min(1).max(120),
   objectKey: z.string().min(1).max(512),
@@ -128,10 +138,13 @@ const confirmMediaAssetInputSchema = z.object({
   sceneId: sceneIdSchema.optional(),
   postId: entityIdSchema.optional(),
   status: mediaStatusSchema.default("ready"),
+  derivatives: z.array(mediaAssetDerivativeInputSchema).max(3).optional(),
 });
 
 type ScenePin = z.infer<typeof scenePinSchema>;
 type MediaAsset = z.infer<typeof mediaAssetSchema>;
+type MediaAssetDerivativeInput = z.infer<typeof mediaAssetDerivativeInputSchema>;
+type MediaDerivativeVariant = z.infer<typeof mediaDerivativeVariantSchema>;
 type ForumPost = z.infer<typeof forumPostSchema>;
 type ForumPostDetail = z.infer<typeof forumPostDetailSchema>;
 type Scene = z.infer<typeof sceneSchema>;
@@ -154,7 +167,9 @@ export {
   forumPostSchema,
   forumPostDetailSchema,
   listForumPostsInputSchema,
+  mediaAssetDerivativeInputSchema,
   mediaAssetSchema,
+  mediaDerivativeVariantSchema,
   mediaStatusSchema,
   postStatusSchema,
   sceneBootstrapSchema,
@@ -176,6 +191,8 @@ export type {
   ForumPostDetail,
   ListForumPostsInput,
   MediaAsset,
+  MediaAssetDerivativeInput,
+  MediaDerivativeVariant,
   Scene,
   SceneBootstrap,
   ScenePin,

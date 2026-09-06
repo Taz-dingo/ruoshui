@@ -97,6 +97,26 @@ const mediaAssets = sqliteTable(
   ],
 );
 
+const mediaAssetDerivatives = sqliteTable(
+  "media_asset_derivatives",
+  {
+    mediaAssetId: text("media_asset_id")
+      .notNull()
+      .references(() => mediaAssets.id, { onDelete: "cascade" }),
+    variant: text("variant", { enum: ["thumbnail"] }).notNull(),
+    objectKey: text("object_key").notNull(),
+    mimeType: text("mime_type").notNull(),
+    sizeBytes: integer("size_bytes").notNull(),
+    width: integer("width").notNull(),
+    height: integer("height").notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    primaryKey({ columns: [table.mediaAssetId, table.variant] }),
+    uniqueIndex("media_asset_derivatives_object_key_idx").on(table.objectKey),
+  ],
+);
+
 const users = sqliteTable("users", {
   id: text("id").primaryKey(),
   displayName: text("display_name"),
@@ -315,6 +335,7 @@ export {
   commentLikes,
   comments,
   forumPosts,
+  mediaAssetDerivatives,
   mediaAssets,
   places,
   scenePins,
