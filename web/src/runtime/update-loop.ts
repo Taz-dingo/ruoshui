@@ -14,7 +14,7 @@ import {
 } from '../benchmark/runtime';
 import { updatePerformanceMode } from '../performance/render-scale';
 import { updateRuntimeEnvironment } from './environment';
-import { updateOrbitController } from './orbit';
+import { hasOrbitAmbientFocus, updateOrbitController } from './orbit';
 import { applyUnifiedGsplatProfile } from './unified-gsplat-profile';
 import { clamp, radToDeg, roundNumber } from '../utils/math';
 
@@ -40,11 +40,24 @@ function createRuntimeUpdateHandler({
   return (dt: number) => {
     const routeChanged = updateBenchmarkRoute(runtimeState, dt);
     const orbitChanged = updateOrbitController(runtimeState.orbit, dt, pc);
+    const hasAmbientFocus = hasOrbitAmbientFocus(runtimeState.orbit);
+    const ambientMotionActive = Boolean(
+      runtimeState.orbit?.ambientFocus &&
+      !runtimeState.orbit?.transition &&
+      runtimeState.orbit.ambientFocus.settleRemaining <= 0
+    );
     updateRuntimeEnvironment(runtimeState);
     const performanceChanged = updatePerformanceMode(runtimeState.performanceMode, runtimeState.app, dt);
-    const isMoving =
-      routeChanged || orbitChanged || runtimeState.performanceMode.isInteracting;
-    const unifiedLodChanged = updateUnifiedLodWarmup(runtimeState, dt, isMoving);
+    const isMeasuredMotion =
+      routeChanged ||
+      (orbitChanged && !ambientMotionActive) ||
+      runtimeState.performanceMode.isInteracting;
+    const unifiedLodChanged = updateUnifiedLodWarmup(
+      runtimeState,
+      dt,
+      isMeasuredMotion,
+      !ambientMotionActive
+    );
     const hasActiveRoutePlayback = Boolean(runtimeState.routePlayback);
 
     if (runtimeState.routeRecord && hasActiveRoutePlayback) {
@@ -58,11 +71,12 @@ function createRuntimeUpdateHandler({
 
     const keepRendering =
       hasActiveRoutePlayback ||
-      isMoving ||
+      hasAmbientFocus ||
+      isMeasuredMotion ||
       performanceChanged ||
       isUnifiedLodWarmupActive(runtimeState);
 
-    if (isMoving) {
+    if (isMeasuredMotion) {
       sampleMotionFrame(runtimeState.benchmark, dt);
     } else if (endMotionSession(runtimeState.benchmark)) {
       publishVariantBenchmark(runtimeState.variantId);
@@ -100,7 +114,12 @@ function createRuntimeUpdateHandler({
   };
 }
 
-function updateUnifiedLodWarmup(runtimeState: any, dt: number, isMoving: boolean) {
+function updateUnifiedLodWarmup(
+  runtimeState: any,
+  dt: number,
+  isMoving: boolean,
+  allowRiskRefresh = true
+) {
   const state = runtimeState?.unifiedLodState;
   const orbit = runtimeState?.orbit;
 
@@ -111,7 +130,7 @@ function updateUnifiedLodWarmup(runtimeState: any, dt: number, isMoving: boolean
   const riskSnapshot = getUnifiedLodRiskSnapshot(orbit);
   state.riskSnapshot = riskSnapshot;
 
-  if (riskSnapshot.shouldPrewarm) {
+  if (allowRiskRefresh && riskSnapshot.shouldPrewarm) {
     const refillSeconds = isMoving ? lowAnglePrewarmLeadSeconds : lowAnglePrewarmHoldSeconds;
     state.warmSecondsRemaining = Math.min(
       lowAnglePrewarmMaxSeconds,

@@ -37,7 +37,7 @@
 - [x] Admin Place Console：列表、新建、name / intro / sortOrder、共用 3D Spatial Anchor Editor 标定与重新校准。
 - [ ] 先创建约 5 个正式 Place，**若水广场优先做到完整**；随后补图书馆、操场、食堂等公共记忆入口。
 - [ ] 为首批 Place 写简短、克制、可长期保留的 intro，并确定展示排序。
-- [ ] 加入轻微 ambient focus 运镜；用户操作立即取消，合适条件下可恢复。
+- [x] 轻微 ambient focus 运镜：人工镜头 transition 完成后只微调 yaw / pitch / distance；用户输入或关闭 Place 立即取消，`prefers-reduced-motion` 下禁用，“回到最佳视角”可重新进入。
 
 ### 4. 首批 Story
 

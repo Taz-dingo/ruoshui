@@ -101,6 +101,11 @@ interface FocusSpatialAnchorCommand {
   position: [number, number, number];
   target: [number, number, number];
   fovDeg?: number;
+  ambientFocus?: boolean;
+}
+
+interface CancelSpatialAnchorAmbientFocusCommand {
+  type: 'cancel-spatial-anchor-ambient-focus';
 }
 
 interface SelectPresetCommand {
@@ -120,6 +125,7 @@ interface SelectVariantCommand {
 
 type ViewerCommand =
   | AntiAliasChangeCommand
+  | CancelSpatialAnchorAmbientFocusCommand
   | CopyRouteAnalysisJsonCommand
   | CopyRouteAnalysisSummaryCommand
   | CopyHighlightDraftCommand
@@ -215,6 +221,10 @@ function requestFocusSpatialAnchor(command: Omit<FocusSpatialAnchorCommand, 'typ
   });
 }
 
+function requestCancelSpatialAnchorAmbientFocus() {
+  emitViewerCommand({ type: 'cancel-spatial-anchor-ambient-focus' });
+}
+
 function requestSetPlacePins(pins: ViewerPlacePin[]) {
   emitViewerCommand({
     type: 'set-place-pins',
@@ -297,6 +307,7 @@ function requestVariantSelection(variantId: string) {
 
 export {
   requestAntiAliasChange,
+  requestCancelSpatialAnchorAmbientFocus,
   requestCaptureCurrentViewSample,
   requestCaptureHighlightPoint,
   requestCapturePresetViewSamples,

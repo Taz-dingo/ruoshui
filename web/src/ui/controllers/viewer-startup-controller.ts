@@ -38,7 +38,9 @@ interface InstallViewerStartupBindingsArgs {
     target: [number, number, number];
     title: string;
     fovDeg?: number;
+    ambientFocus?: boolean;
   }) => void;
+  cancelSpatialAnchorAmbientFocus: () => void;
   setHighlightAuthoringEnabled: (enabled: boolean) => void;
   setHighlightPlaneY: (value: number) => void;
   setPlacePins: (pins: ViewerPlacePin[]) => void;
@@ -86,6 +88,7 @@ function installViewerStartupBindings({
   applySceneLook,
   focusScenePin,
   focusSpatialAnchor,
+  cancelSpatialAnchorAmbientFocus,
   setHighlightAuthoringEnabled,
   setHighlightPlaneY,
   setPlacePins
@@ -149,6 +152,9 @@ function installViewerStartupBindings({
         return;
       case 'focus-spatial-anchor':
         focusSpatialAnchor(command);
+        return;
+      case 'cancel-spatial-anchor-ambient-focus':
+        cancelSpatialAnchorAmbientFocus();
         return;
       case 'set-place-pins':
         setPlacePins(command.pins);

@@ -7,6 +7,7 @@ import {
   getPublishedStoryMediaUrl,
 } from '../../community/content-api';
 import {
+  requestCancelSpatialAnchorAmbientFocus,
   requestFocusSpatialAnchor,
   requestSetPlacePins,
 } from '../../ui/commands/viewer-command-bus';
@@ -60,6 +61,7 @@ function focusPlace(place: Place) {
     position: [cameraPose.position.x, cameraPose.position.y, cameraPose.position.z],
     target: [cameraPose.target.x, cameraPose.target.y, cameraPose.target.z],
     ...(cameraPose.fovDeg ? { fovDeg: cameraPose.fovDeg } : {}),
+    ambientFocus: true,
   });
 }
 
@@ -71,6 +73,7 @@ function focusLocation(location: StoryLocation, placesById: Map<string, Place>, 
       position: [cameraPose.position.x, cameraPose.position.y, cameraPose.position.z],
       target: [cameraPose.target.x, cameraPose.target.y, cameraPose.target.z],
       ...(cameraPose.fovDeg ? { fovDeg: cameraPose.fovDeg } : {}),
+      ambientFocus: true,
     });
     return;
   }
@@ -243,6 +246,7 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
     return () => {
       cancelled = true;
       requestSetPlacePins([]);
+      requestCancelSpatialAnchorAmbientFocus();
     };
   }, [sceneId]);
 
@@ -272,6 +276,7 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
 
   function closePlace() {
     storiesRequestRef.current += 1;
+    requestCancelSpatialAnchorAmbientFocus();
     setActivePlaceId(null);
     setActiveStoryId(null);
     setStories([]);
@@ -281,6 +286,7 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
   }
 
   function handleEditStory(storyId: string) {
+    requestCancelSpatialAnchorAmbientFocus();
     setActiveStoryId(null);
     onOpenStoryComposer(storyId);
   }
