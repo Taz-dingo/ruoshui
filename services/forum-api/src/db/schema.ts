@@ -152,7 +152,7 @@ const authOtpChallenges = pgTable(
     purpose: varchar("purpose", { length: 40 })
       .$type<"login" | "change_email_current" | "change_email_new">()
       .notNull(),
-    codeHash: varchar("code_hash").notNull(),
+    codeHash: varchar("code_hash", { length: 255 }).notNull(),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     consumedAt: timestamp("consumed_at", { withTimezone: true }),
     attemptCount: integer("attempt_count").default(0).notNull(),
