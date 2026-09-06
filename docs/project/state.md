@@ -34,7 +34,7 @@
 - v1 Story location 为 Place / custom Anchor / none 三选一；最终提交 body / media 至少一项、图片最多 12 张；Draft 可以不完整。
 - D1 schema 已包含 users、auth identities、OTP、sessions、places、stories、revisions、revision media、comments、likes、media ownership 与 media derivatives。
 - `0001_content_community_foundation.sql` 有历史记录表明已应用到生产 `ruoshui-forum`；repo 当前还包含后续 migration，其中 `0003_media_derivatives.sql` 尚未在本状态文件中记录为已应用生产。
-- 旧 scene / forum 数据与兼容代码仍保留，正式产品读取路径已转向 Place / Story 新模型。
+- 旧 scene / forum 数据仍为 HighlightLayer 保留只读兼容；`/api/forum/*` 的旧写入、旧 media confirm 与 generic 匿名 upload-ticket issuance 已关闭，正式公开写入只有 User / Story / Place / Social 新主路径。
 
 ### Auth / Account
 
@@ -64,6 +64,7 @@
 - PC 使用窄侧边内容层；Mobile 使用可扩展 Bottom Sheet。
 - Story Detail 在同一内容容器内打开并可返回；支持多图横滑、作者、memoryTime、正文与地点语义。
 - “回到这里”使用 Story custom Anchor 或 Place camera pose 返回 3D。
+- 原“完整社区”入口已切到全校园 Published Story feed / Detail，不再暴露旧 ForumPost composer 或旧 ForumPost read UI。
 - Story Like、Comment Like、文字评论 / 回复已接持久 User；公开写入先登录。
 - Comment / Reply 底层使用 `rootCommentId` + `replyToCommentId`，UI 只保留两层视觉；作者可删除自己的评论，管理员可隐藏 / 恢复评论。
 

@@ -1,12 +1,8 @@
 import { Hono } from "hono";
 import {
-  confirmMediaAssetInputSchema,
-  createForumPostInputSchema,
-  createScenePinInputSchema,
   entityIdSchema,
   listForumPostsInputSchema,
   sceneIdSchema,
-  upsertSceneInputSchema,
 } from "@ruoshui/shared";
 
 import type { ForumRepository } from "../lib/forum-repository.js";
@@ -21,16 +17,13 @@ function createForumRoute(options: CreateForumRouteOptions): Hono {
   forumRoute.get("/bootstrap", (context) =>
     context.json({
       ok: true,
-      message: "论坛底座已接入数据库访问层；下一步可直接把前端打点与内容编辑接过来。",
+      deprecated: true,
+      message: "Legacy forum compatibility is read-only. New public content uses Place / Story APIs.",
       data: {
         routes: [
           "GET /api/forum/scenes/:sceneId/bootstrap",
           "GET /api/forum/posts",
           "GET /api/forum/posts/:postId",
-          "PUT /api/forum/scenes/:sceneId",
-          "POST /api/forum/posts",
-          "POST /api/forum/pins",
-          "POST /api/forum/media/confirm",
           "GET /api/forum/scenes/:sceneId/pins/:pinId/posts",
           "GET /api/forum/posts/:postId/pins",
         ],
@@ -45,22 +38,6 @@ function createForumRoute(options: CreateForumRouteOptions): Hono {
     return context.json({
       ok: true,
       data: bootstrap,
-    });
-  });
-
-  forumRoute.put("/scenes/:sceneId", async (context) => {
-    const sceneId = sceneIdSchema.parse(context.req.param("sceneId"));
-    const payload = await context.req.json();
-    const scene = await options.forumRepository.upsertScene(
-      upsertSceneInputSchema.parse({
-        ...payload,
-        id: sceneId,
-      }),
-    );
-
-    return context.json({
-      ok: true,
-      data: scene,
     });
   });
 
@@ -97,45 +74,6 @@ function createForumRoute(options: CreateForumRouteOptions): Hono {
       ok: true,
       data: post,
     });
-  });
-
-  forumRoute.post("/posts", async (context) => {
-    const payload = createForumPostInputSchema.parse(await context.req.json());
-    const post = await options.forumRepository.createForumPost(payload);
-
-    return context.json(
-      {
-        ok: true,
-        data: post,
-      },
-      201,
-    );
-  });
-
-  forumRoute.post("/media/confirm", async (context) => {
-    const payload = confirmMediaAssetInputSchema.parse(await context.req.json());
-    const mediaAsset = await options.forumRepository.confirmMediaAsset(payload);
-
-    return context.json(
-      {
-        ok: true,
-        data: mediaAsset,
-      },
-      201,
-    );
-  });
-
-  forumRoute.post("/pins", async (context) => {
-    const payload = createScenePinInputSchema.parse(await context.req.json());
-    const pin = await options.forumRepository.createScenePin(payload);
-
-    return context.json(
-      {
-        ok: true,
-        data: pin,
-      },
-      201,
-    );
   });
 
   forumRoute.get("/scenes/:sceneId/pins/:pinId/posts", async (context) => {

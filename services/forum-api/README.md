@@ -1,18 +1,18 @@
 # forum-api
 
-若水广场的最小后端服务底座。
+若水的 Cloudflare Worker 后端。当前正式 Content & Community 主路径使用 **Worker + D1 + R2**；Node/PostgreSQL 只保留明确 fallback / 对照用途。
 
-当前职责：
+## 当前职责
 
-- 提供论坛与点位内容的 API 落点
-- 承接 `D1` schema 与后续迁移
-- 抽象对象存储上传签名接口，并优先对接 `Cloudflare R2`
+- User / Email OTP / Session
+- Place / SpatialAnchor public read 与 admin authoring
+- Story Draft / Revision / Review / Published Story read model
+- Story / Comment Like、Comment / Reply 与 moderation
+- authenticated Story media ticket / confirm / private read
+- R2 signed object upload 与 public published-media read
+- 旧 `/api/forum/*` 仅保留 `HighlightLayer` 仍需要的 **read-only compatibility**
 
-当前不做：
-
-- 完整登录与权限系统
-- 审核流
-- 正式的开放发帖社区规则
+旧 ForumPost 写入、旧 ScenePin 写入、旧 media confirm 和 generic 匿名 upload-ticket issuance 都不再是生产能力。新的公开写入必须经过持久 User 与 Story / Place / Social 的正式 service 边界。
 
 ## 本地开发
 
@@ -23,39 +23,33 @@ pnpm --filter @ruoshui/forum-api db:migrate:local
 pnpm dev:forum-api
 ```
 
-默认本地地址：`http://127.0.0.1:8787`
+默认本地地址：`http://127.0.0.1:8787`。
 
-已提供的最小接口：
+## 主要路由族
 
 - `GET /health`
-- `GET /api/forum/bootstrap`
-- `GET /api/forum/scenes/:sceneId/bootstrap`
-- `GET /api/forum/posts`
-- `GET /api/forum/posts/:postId`
-- `PUT /api/forum/scenes/:sceneId`
-- `POST /api/forum/posts`
-- `POST /api/forum/media/confirm`
-- `POST /api/forum/pins`
-- `GET /api/forum/scenes/:sceneId/pins/:pinId/posts`
-- `GET /api/forum/posts/:postId/pins`
+- `/api/auth/*`
+- `/api/places/*`
+- `/api/stories/*`
+- `/api/published-stories/*`
+- `/api/social/*` 与评论 moderation/admin routes
 - `GET /api/storage/status`
-- `POST /api/storage/upload-requests`
-- `PUT /api/storage/objects/:objectKey`
+- `PUT /api/storage/objects/:objectKey` — 只消费正式流程签发的 upload ticket
+- `GET /api/forum/*` — legacy read-only compatibility
 - `GET /media/*`
 
-## 数据库
+Story 上传 ticket 不从 generic `/api/storage/upload-requests` 获取，而由 authenticated Story route 签发。
 
-已提供：
+## 数据库与部署
 
-- `wrangler.toml`
-- 首个 `D1` migration：`services/forum-api/migrations/`
-- 保留原 `drizzle.config.ts` 与 `PostgreSQL` schema，便于本地 Node fallback 和旧链路对照
-
-常用命令：
+D1 migrations 位于 `services/forum-api/migrations/`。常用命令：
 
 ```bash
-pnpm --filter @ruoshui/forum-api db:generate
-pnpm --filter @ruoshui/forum-api db:migrate
 pnpm --filter @ruoshui/forum-api db:migrate:local
-pnpm --filter @ruoshui/forum-api dev:node
+pnpm --filter @ruoshui/forum-api db:migrations:remote:list
+pnpm --filter @ruoshui/forum-api db:migrate:remote
+pnpm preflight:forum:prod
+pnpm deploy:forum:prod
 ```
+
+生产 Worker deploy 前必须先通过 `pnpm preflight:forum:prod`；它会只读比对 repo migrations 与远端 `d1_migrations`，有 pending migration 或 history drift 时拒绝部署。部署/排障规则以 `docs/project/engineering-memory.md` 为准，当前事实以 `docs/project/state.md` 为准。

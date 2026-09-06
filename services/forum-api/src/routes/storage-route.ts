@@ -16,16 +16,6 @@ function createStorageRoute(options: CreateStorageRouteOptions): Hono {
     }),
   );
 
-  storageRoute.post("/upload-requests", async (context) => {
-    const payload = await context.req.json();
-    const ticket = await options.storageProvider.createUploadTicket(payload);
-
-    return context.json({
-      ok: true,
-      data: ticket,
-    });
-  });
-
   storageRoute.put("/objects/:objectKey", async (context) => {
     if (!options.storageProvider.uploadObject) {
       return context.json(
