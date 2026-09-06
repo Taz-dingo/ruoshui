@@ -38,6 +38,20 @@ function createHarness() {
         objectKey: "story-drafts/user_1/media_1.jpg",
       };
     },
+    async getPublishedStoryMediaDerivativeRef(storyId, mediaAssetId, variant) {
+      if (
+        storyId !== publishedStory.id ||
+        mediaAssetId !== "media_1" ||
+        variant !== "thumbnail"
+      ) {
+        return null;
+      }
+      return {
+        id: mediaAssetId,
+        mimeType: "image/webp",
+        objectKey: "story-drafts/user_1/media_1.thumbnail.webp",
+      };
+    },
     async listPublishedStories(input) {
       lastListInput = input;
       if (input.placeId && input.placeId !== "place_track") return [];
@@ -75,6 +89,27 @@ test("media must belong to the current published Story read model", async () => 
 
   await assert.rejects(
     () => harness.service.getPublishedStoryMediaRef("story_1", "media_foreign"),
+    (error) => error instanceof StoryReadServiceError && error.status === 404,
+  );
+});
+
+test("thumbnail derivatives inherit published Story visibility", async () => {
+  const harness = createHarness();
+  const thumbnail = await harness.service.getPublishedStoryMediaDerivativeRef(
+    "story_1",
+    "media_1",
+    "thumbnail",
+  );
+  assert.equal(thumbnail.mimeType, "image/webp");
+  assert.match(thumbnail.objectKey, /thumbnail/);
+
+  await assert.rejects(
+    () =>
+      harness.service.getPublishedStoryMediaDerivativeRef(
+        "story_1",
+        "media_foreign",
+        "thumbnail",
+      ),
     (error) => error instanceof StoryReadServiceError && error.status === 404,
   );
 });
