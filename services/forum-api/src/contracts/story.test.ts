@@ -184,6 +184,32 @@ test("Story media confirmation must stay inside the current user's upload prefix
   );
 });
 
+test("Story thumbnail derivatives inherit the current user's upload prefix", async () => {
+  const harness = createHarness();
+  const input: ConfirmMediaAssetInput = {
+    bucket: "ruoshui-media",
+    objectKey: "story-drafts/user_1/photo.jpg",
+    mimeType: "image/jpeg",
+    sizeBytes: 1024,
+    status: "ready",
+    derivatives: [
+      {
+        variant: "thumbnail",
+        objectKey: "story-drafts/user_2/photo.thumbnail.webp",
+        mimeType: "image/webp",
+        sizeBytes: 256,
+        width: 320,
+        height: 240,
+      },
+    ],
+  };
+
+  await assert.rejects(
+    () => harness.service.confirmMediaAsset("user_1", input),
+    (error) => error instanceof StoryServiceError && error.status === 409,
+  );
+});
+
 test("users cannot read or edit another user's draft", async () => {
   const harness = createHarness();
   const draft = await harness.service.createDraft("user_1", { body: "我的故事" });
