@@ -139,6 +139,12 @@ function bytesToHex(bytes: Uint8Array): string {
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
+function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  const copy = new Uint8Array(bytes.byteLength);
+  copy.set(bytes);
+  return copy.buffer;
+}
+
 function hexToBytes(value: string): Uint8Array | null {
   if (!/^[0-9a-f]+$/i.test(value) || value.length % 2 !== 0) {
     return null;
@@ -244,8 +250,8 @@ async function readEmailChangeProof(
   const valid = await crypto.subtle.verify(
     "HMAC",
     await importProofKey(secret),
-    signature,
-    new TextEncoder().encode(`ruoshui-email-change-proof:v1:${encodedPayload}`),
+    toArrayBuffer(signature),
+    toArrayBuffer(new TextEncoder().encode(`ruoshui-email-change-proof:v1:${encodedPayload}`)),
   );
   if (!valid) {
     return null;
