@@ -1,5 +1,6 @@
 import type {
   ListPublishedStoriesInput,
+  MediaDerivativeVariant,
   PublishedStory,
 } from "@ruoshui/shared";
 
@@ -15,6 +16,11 @@ interface StoryReadRepository {
     storyId: string,
     mediaAssetId: string,
   ): Promise<PublishedStoryMediaRef | null>;
+  getPublishedStoryMediaDerivativeRef(
+    storyId: string,
+    mediaAssetId: string,
+    variant: MediaDerivativeVariant,
+  ): Promise<PublishedStoryMediaRef | null>;
   listPublishedStories(input: ListPublishedStoriesInput): Promise<PublishedStory[]>;
 }
 
@@ -23,6 +29,11 @@ interface StoryReadService {
   getPublishedStoryMediaRef(
     storyId: string,
     mediaAssetId: string,
+  ): Promise<PublishedStoryMediaRef>;
+  getPublishedStoryMediaDerivativeRef(
+    storyId: string,
+    mediaAssetId: string,
+    variant: MediaDerivativeVariant,
   ): Promise<PublishedStoryMediaRef>;
   listPublishedStories(input: ListPublishedStoriesInput): Promise<PublishedStory[]>;
 }
@@ -51,6 +62,18 @@ function createStoryReadService(repository: StoryReadRepository): StoryReadServi
       const media = await repository.getPublishedStoryMediaRef(storyId, mediaAssetId);
       if (!media) {
         throw new StoryReadServiceError("Published Story media not found.");
+      }
+      return media;
+    },
+
+    async getPublishedStoryMediaDerivativeRef(storyId, mediaAssetId, variant) {
+      const media = await repository.getPublishedStoryMediaDerivativeRef(
+        storyId,
+        mediaAssetId,
+        variant,
+      );
+      if (!media) {
+        throw new StoryReadServiceError("Published Story media derivative not found.");
       }
       return media;
     },
