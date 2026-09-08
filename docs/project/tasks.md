@@ -18,7 +18,8 @@
 - [x] 创建 OTP 模板并通过审核：模板 ID `217132`，使用单变量 `{{code}}`，静态注明 10 分钟有效。
 - [x] 给 Worker 配置 `TENCENT_CLOUD_SECRET_ID`、`TENCENT_CLOUD_SECRET_KEY`；Secret 不进入 Git。
 - [x] 给 Worker 配置审核通过的 `TENCENT_SES_TEMPLATE_ID`；模板 ID 不进入代码逻辑以外的敏感日志。
-- [x] 已部署最新 `main` `c133b5c` 对应的生产 Worker；当前版本为 `06a7723b-1cd8-4c5d-a921-321390b9f29f`。
+- [x] 已部署生产 Worker；当前版本为 `85d40717-b3c0-466e-bb78-688daaceb0c2`。
+- [x] 当前管理员账号的稳定 userId 已配置到生产 Worker 的 `ADMIN_USER_IDS`。
 - [x] 当前 `main` 的前端已部署到 Cloudflare Pages 生产；deployment 为 `696247b9-a486-4e98-8085-410242050f9a`。
 - [x] 真实 smoke 已通过：request OTP → 实际收件 → verify → `/me` → StoryDraft create / patch / read → cleanup → logout。
 

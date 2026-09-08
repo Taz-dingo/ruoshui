@@ -4,6 +4,7 @@ compatibility_date = "2026-04-17"
 
 [vars]
 CORS_ORIGIN = "https://ruoshui.tazdingo.net,https://ruoshui-web.pages.dev"
+ADMIN_USER_IDS = "user_925831348a734e128e93064935207c90"
 AUTH_EMAIL_FROM = "no-reply@auth.tazdingo.net"
 AUTH_EMAIL_FROM_NAME = "若水"
 TENCENT_SES_REGION = "ap-hongkong"
