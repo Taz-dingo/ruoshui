@@ -1,6 +1,6 @@
 # 项目状态快照
 
-最后更新：`2026-09-06`
+最后更新：`2026-09-09`
 
 本文件只记录**当前已经成立的事实与尚未成立的事实**。下一步执行顺序见 [`tasks.md`](tasks.md)。
 
@@ -33,7 +33,7 @@
 - shared contracts 已有 User、SpatialAnchor、Place、Story、StoryRevision、StoryDraft、Comment、Like 等正式领域模型。
 - v1 Story location 为 Place / custom Anchor / none 三选一；最终提交 body / media 至少一项、图片最多 12 张；Draft 可以不完整。
 - D1 schema 已包含 users、auth identities、OTP、sessions、places、stories、revisions、revision media、comments、likes、media ownership 与 media derivatives。
-- `0001_content_community_foundation.sql` 有历史记录表明已应用到生产 `ruoshui-forum`；repo 当前还包含后续 migration，其中 `0003_media_derivatives.sql` 尚未在本状态文件中记录为已应用生产。
+- 生产 `ruoshui-forum` 的 D1 migration ledger 已与 repo 完全一致，包含 `0000` 到 `0003`；`media_asset_derivatives` 表已存在。
 - 旧 scene / forum 数据仍为 HighlightLayer 保留只读兼容；`/api/forum/*` 的旧写入、旧 media confirm 与 generic 匿名 upload-ticket issuance 已关闭，正式公开写入只有 User / Story / Place / Social 新主路径。
 
 ### Auth / Account
@@ -82,13 +82,13 @@
 
 - `auth.tazdingo.net` 发信域名、发信地址和腾讯云 API Secret 已配置；`AUTH_EMAIL_FROM=no-reply@auth.tazdingo.net`、`AUTH_EMAIL_FROM_NAME=若水`、`TENCENT_SES_REGION=ap-guangzhou` 已作为非敏感 Worker vars 配置。
 - `TENCENT_CLOUD_SECRET_ID`、`TENCENT_CLOUD_SECRET_KEY`、`AUTH_OTP_SECRET`、`UPLOAD_SIGNING_SECRET` 已作为 Worker secrets 存在，值不进入 Git。
-- 验证码模板仍在审核，尚未配置审核通过的 `TENCENT_SES_TEMPLATE_ID`；模板通过前不能把真实 OTP smoke 记为通过。
+- 验证码模板 `217132` 已审核通过，并作为非敏感 `TENCENT_SES_TEMPLATE_ID` 配置到 Worker；真实 OTP smoke 尚未完成，不能提前记为通过。
 - 改邮箱虽然代码和自动测试已完成，但还需要生产真实双邮箱 smoke：当前邮箱收到 OTP → 新邮箱收到 OTP → 当前 Session 继续有效 → 其他 Session 失效 → 新邮箱重新登录得到同一 User。
 
 ### 生产 migration / deploy
 
 - 生产 D1 `ruoshui-forum` 已先检查 remote migration ledger；`0002_media_ownership.sql`、`0003_media_derivatives.sql` 按顺序安全 apply，ledger 现为 `0000` 到 `0003`，无待迁移。现有数据核对为 `scenes=1`、`media_assets=0`、`derivatives=0`。
-- 最新 `main` `3a0bf36` 已部署到 `ruoshui-forum-api`，当前 Worker version 为 `91bdbbc0-62d9-4c56-a03a-add0ca320253`。
+- 最新 `main` `9636e30` 的 Worker 内容已部署到 `ruoshui-forum-api`，当前 Worker version 为 `ce155a4e-0b7c-4f92-ae6c-478c7688e06e`；Pages 同源匿名 `/api/auth/me` 已返回 200。
 - 当前 `main` 的前端已部署到 Cloudflare Pages 生产，deployment 为 `696247b9-a486-4e98-8085-410242050f9a`；`https://ruoshui-web.pages.dev/` 已返回 200 并加载新构建资源。
 - 本次部署核对了既有 Worker secrets 名称，未覆盖或输出 secret 值；D1、R2 和非敏感 SES 配置仍在绑定中。
 

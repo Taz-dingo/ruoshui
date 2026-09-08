@@ -1,6 +1,6 @@
 # 当前任务
 
-最后更新：`2026-09-06`
+最后更新：`2026-09-09`
 
 本文件只维护**当前执行顺序**。已经成立的事实写入 [`state.md`](state.md)，稳定产品边界写入 [`spec.md`](spec.md)，阶段结构写入 [`plan.md`](plan.md)，人机协作规则见 [`agent-collaboration.md`](agent-collaboration.md)。
 
@@ -15,12 +15,11 @@
 - [x] 默认公开配置：`AUTH_EMAIL_FROM=no-reply@auth.tazdingo.net`、`AUTH_EMAIL_FROM_NAME=若水`、`TENCENT_SES_REGION=ap-guangzhou`。
 - [x] 腾讯云验证 `auth.tazdingo.net` 发信域名并配置 SES 要求的 SPF / DKIM。
 - [x] 腾讯云创建 / 验证 `no-reply@auth.tazdingo.net` 发信地址。
-- [ ] 创建 OTP 模板并通过审核：模板使用单变量 `{{code}}`，静态注明 10 分钟有效。
+- [x] 创建 OTP 模板并通过审核：模板 ID `217132`，使用单变量 `{{code}}`，静态注明 10 分钟有效。
 - [x] 给 Worker 配置 `TENCENT_CLOUD_SECRET_ID`、`TENCENT_CLOUD_SECRET_KEY`；Secret 不进入 Git。
-- [ ] 给 Worker 配置审核通过的 `TENCENT_SES_TEMPLATE_ID`；模板 ID 不进入代码逻辑以外的敏感日志。
-- [x] 已部署最新 `main` `3a0bf36` 对应的生产 Worker；当前版本为 `91bdbbc0-62d9-4c56-a03a-add0ca320253`。
+- [x] 给 Worker 配置审核通过的 `TENCENT_SES_TEMPLATE_ID`；模板 ID 不进入代码逻辑以外的敏感日志。
+- [x] 已部署最新 `main` `9636e30` 对应的生产 Worker；当前版本为 `ce155a4e-0b7c-4f92-ae6c-478c7688e06e`。
 - [x] 当前 `main` 的前端已部署到 Cloudflare Pages 生产；deployment 为 `696247b9-a486-4e98-8085-410242050f9a`。
-- [ ] 模板审核通过后配置 `TENCENT_SES_TEMPLATE_ID`，再重新部署必要配置。
 - [ ] 配置完成后跑真实 smoke：request OTP → 实际收件 → verify → `/me` → StoryDraft create / patch → 跨请求 Session。
 
 ### 2. Auth 后续
