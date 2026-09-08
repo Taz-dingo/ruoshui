@@ -80,7 +80,7 @@
 
 ### 生产 Auth / SES
 
-- `auth.tazdingo.net` 发信域名、发信地址和腾讯云 API Secret 已配置；`AUTH_EMAIL_FROM=no-reply@auth.tazdingo.net`、`AUTH_EMAIL_FROM_NAME=若水`、`TENCENT_SES_REGION=ap-guangzhou` 已作为非敏感 Worker vars 配置。
+- `auth.tazdingo.net` 发信域名、发信地址和腾讯云 API Secret 已配置；`AUTH_EMAIL_FROM=no-reply@auth.tazdingo.net`、`AUTH_EMAIL_FROM_NAME=若水`、`TENCENT_SES_REGION=ap-hongkong` 已作为非敏感 Worker vars 配置。
 - `TENCENT_CLOUD_SECRET_ID`、`TENCENT_CLOUD_SECRET_KEY`、`AUTH_OTP_SECRET`、`UPLOAD_SIGNING_SECRET` 已作为 Worker secrets 存在，值不进入 Git。
 - 验证码模板 `217132` 已审核通过，并作为非敏感 `TENCENT_SES_TEMPLATE_ID` 配置到 Worker；真实 OTP smoke 尚未完成，不能提前记为通过。
 - 改邮箱虽然代码和自动测试已完成，但还需要生产真实双邮箱 smoke：当前邮箱收到 OTP → 新邮箱收到 OTP → 当前 Session 继续有效 → 其他 Session 失效 → 新邮箱重新登录得到同一 User。
@@ -88,7 +88,8 @@
 ### 生产 migration / deploy
 
 - 生产 D1 `ruoshui-forum` 已先检查 remote migration ledger；`0002_media_ownership.sql`、`0003_media_derivatives.sql` 按顺序安全 apply，ledger 现为 `0000` 到 `0003`，无待迁移。现有数据核对为 `scenes=1`、`media_assets=0`、`derivatives=0`。
-- 最新 `main` `9636e30` 的 Worker 内容已部署到 `ruoshui-forum-api`，当前 Worker version 为 `ce155a4e-0b7c-4f92-ae6c-478c7688e06e`；Pages 同源匿名 `/api/auth/me` 已返回 200。
+- 最新 `main` `c133b5c` 的 Worker 内容已部署到 `ruoshui-forum-api`，当前 Worker version 为 `06a7723b-1cd8-4c5d-a921-321390b9f29f`；Pages 同源匿名 `/api/auth/me` 已返回 200。
+- 生产 smoke 已实际通过：真实 OTP 邮件送达、OTP 登录、跨请求 `/me` Session、StoryDraft create / patch / read、临时 Draft 清理和 logout 全部成功；未创建公开内容。
 - 当前 `main` 的前端已部署到 Cloudflare Pages 生产，deployment 为 `696247b9-a486-4e98-8085-410242050f9a`；`https://ruoshui-web.pages.dev/` 已返回 200 并加载新构建资源。
 - 本次部署核对了既有 Worker secrets 名称，未覆盖或输出 secret 值；D1、R2 和非敏感 SES 配置仍在绑定中。
 

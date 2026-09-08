@@ -12,15 +12,15 @@
 
 - [x] 保持 `AuthEmailSender` provider abstraction，不改 OTP / User / Session 上层逻辑。
 - [x] Worker 直接调用腾讯云 SES API 3.0 `SendEmail`，使用 `TC3-HMAC-SHA256`。
-- [x] 默认公开配置：`AUTH_EMAIL_FROM=no-reply@auth.tazdingo.net`、`AUTH_EMAIL_FROM_NAME=若水`、`TENCENT_SES_REGION=ap-guangzhou`。
+- [x] 默认公开配置：`AUTH_EMAIL_FROM=no-reply@auth.tazdingo.net`、`AUTH_EMAIL_FROM_NAME=若水`、`TENCENT_SES_REGION=ap-hongkong`。
 - [x] 腾讯云验证 `auth.tazdingo.net` 发信域名并配置 SES 要求的 SPF / DKIM。
 - [x] 腾讯云创建 / 验证 `no-reply@auth.tazdingo.net` 发信地址。
 - [x] 创建 OTP 模板并通过审核：模板 ID `217132`，使用单变量 `{{code}}`，静态注明 10 分钟有效。
 - [x] 给 Worker 配置 `TENCENT_CLOUD_SECRET_ID`、`TENCENT_CLOUD_SECRET_KEY`；Secret 不进入 Git。
 - [x] 给 Worker 配置审核通过的 `TENCENT_SES_TEMPLATE_ID`；模板 ID 不进入代码逻辑以外的敏感日志。
-- [x] 已部署最新 `main` `9636e30` 对应的生产 Worker；当前版本为 `ce155a4e-0b7c-4f92-ae6c-478c7688e06e`。
+- [x] 已部署最新 `main` `c133b5c` 对应的生产 Worker；当前版本为 `06a7723b-1cd8-4c5d-a921-321390b9f29f`。
 - [x] 当前 `main` 的前端已部署到 Cloudflare Pages 生产；deployment 为 `696247b9-a486-4e98-8085-410242050f9a`。
-- [ ] 配置完成后跑真实 smoke：request OTP → 实际收件 → verify → `/me` → StoryDraft create / patch → 跨请求 Session。
+- [x] 真实 smoke 已通过：request OTP → 实际收件 → verify → `/me` → StoryDraft create / patch / read → cleanup → logout。
 
 ### 2. Auth 后续
 
