@@ -87,12 +87,17 @@ function getErrorDetail(error: unknown): string {
 
 function createApp(options: CreateAppOptions): Hono {
   const app = new Hono();
+  const allowedCorsOrigins = options.corsOrigin
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
 
   app.use(
     "*",
     cors({
       credentials: true,
-      origin: options.corsOrigin,
+      origin: (origin) =>
+        allowedCorsOrigins.includes(origin) ? origin : undefined,
     }),
   );
 
