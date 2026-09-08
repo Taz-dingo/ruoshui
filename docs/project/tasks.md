@@ -62,6 +62,7 @@
 - [x] 同一内容容器内从 Place Feed 打开 Story Detail，并可返回。
 - [x] Story Detail 支持多图横滑、作者、memoryTime、正文与地点语义。
 - [x] “回到这里”使用 Story custom Anchor 或 Place camera pose 返回 3D。
+- [ ] 明确 custom Anchor 的地图表现：当前已发布 Story 的自定义 Anchor 只用于 Story Detail 的“回到这里”，不会作为独立地图 Pin 显示；需要决定是否让已发布 Story Anchor 成为可见、可点击的地图入口，再单独实现。
 
 ### 6. Social / Revision / 用户工作区
 
