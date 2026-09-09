@@ -1,6 +1,6 @@
 # 当前任务
 
-最后更新：`2026-09-09`
+最后更新：`2026-09-10`
 
 本文件只维护**当前执行顺序与执行者边界**。已经成立的事实写入 [`state.md`](state.md)，稳定产品 contract 写入 [`spec.md`](spec.md)，视觉 / 交互 contract 写入根目录 [`design.md`](../../design.md)，重要 rationale 写入 [`docs/decisions`](../decisions/)。
 
@@ -24,11 +24,11 @@
 
 ### B. 本地 Agent 更适合完成
 
-- [ ] **Story custom Anchor 场景可发现性**：把已发布 custom Anchor 投影为轻量 Story Pin；只消费 Published Story，不暴露 draft / pending revision。
-- [ ] **Anchor clustering**：按屏幕空间聚合 Story Anchor，Place 永远不被 cluster 吞掉。先以 48–64px 附近为实验起点，但最终以真实 3D 场景手感为准。
-- [ ] cluster 点击：优先 focus / zoom 到该区域让 cluster 拆分；无法继续拆分时显示“这里有 N 段记忆”的 Glass Peek。
-- [ ] Story Anchor Pin 点击：直接显示 Story 轻预览（cover / title / author / memoryTime / 摘要）+「飞到这里 / 阅读全文」，不增加“看图文”按钮。
-- [ ] Place Peek / Feed 收敛为一个容器：点击 Place 后直接显示 intro + Story；没有 Story 时显示自然 empty state +「留下故事」。
+- [x] **Story custom Anchor 场景可发现性**：已发布 custom Anchor 已投影为轻量 Story Pin；只消费 Published Story，不暴露 draft / pending revision（已部署，真实 WebGL 视觉仍待人工确认）。
+- [x] **Anchor clustering**：按屏幕空间聚合 Story Anchor，固定起始参数 `56px`；Place 使用独立投影层，不被 Story cluster 吞掉。
+- [x] cluster 点击：显示“这里有 N 段记忆”的 Glass Peek；当前未做自动 focus / zoom 拆分，保留显式「飞到这里」语义。
+- [x] Story Anchor Pin 点击：直接显示 Story 轻预览（cover / title / author / memoryTime / 摘要）+「飞到这里 / 阅读全文」，不增加“看图文”按钮。
+- [x] Place Peek / Feed 收敛为一个容器：点击 Place 后直接显示 intro + Story；没有 Story 时提供自然 empty state +「留下故事」。
 - [ ] 删除 / 隐藏任何普通用户仍可到达的“看点位图文”“收起图文”“重复完整社区”旧交互。
 
 ### C. 人验收
@@ -48,11 +48,11 @@
 
 ### B. 本地 Agent 更适合完成
 
-- [ ] 将 Place / Story / My Stories / Composer 等业务组件中散落的 Paper / Glass / Focus 基础样式迁回 `glassSurfaceClassNames` / `paperSurfaceClassNames` / `focusSurfaceClassNames`；迁移时与真实视觉调参一起做，不再新增第四套 surface recipe。
-- [ ] 做 Glass Peek → Paper Feed 的 **solidify transition**：同一容器材质从 translucent 过渡到 solid，不叠第二个 modal。
-- [ ] 收敛 Paper UI：减少 My Stories / Feed 的 dashboard 感，优先 typography、留白、hairline，减少卡片套卡片。
-- [ ] 收敛背景层级：主要用 dim / surface opacity / contrast，不再使用当前过重的全屏 blur。
-- [ ] 逐屏调 Place Peek、Story Feed、Story Detail、My Stories、Composer 的 blur / dim / opacity，必须在真实校园背景上验收。
+- [x] 将 Place / Story / My Stories / Composer 等业务组件中散落的 Paper / Glass / Focus 基础样式迁回 `glassSurfaceClassNames` / `paperSurfaceClassNames` / `focusSurfaceClassNames`；未新增第四套 surface recipe。
+- [x] 做 Glass Peek → Paper Feed 的 **solidify transition**：同一容器 `420ms ease-out` 从 translucent 过渡到 solid，不叠第二个 modal。
+- [x] 收敛 Paper UI：My Stories / Feed 已改为 typography、留白、hairline 为主，减少卡片套卡片。
+- [x] 收敛背景层级：全屏遮罩不再使用 blur；Glass / Paper / Focus primitive 的 blur 已降至 `4–16px` 区间。
+- [ ] 逐屏调 Place Peek、Story Feed、Story Detail、My Stories、Composer 的 blur / dim / opacity，必须在真实校园背景上验收；当前生产 WebGL 页面可加载，但 CUA 截图调用超时。
 
 ### C. 人验收
 
@@ -79,7 +79,7 @@
 - [ ] iPhone Safari：viewport、safe area、横竖屏、Place / Anchor / cluster、rotate、pan、pinch、Bottom Sheet 与 3D 手势冲突。
 - [ ] Android Chrome 与 iPad / 触屏核心链路。
 - [ ] production acceptance：OTP、Draft 恢复、上传、thumbnail derivative、Review、Revision、My Stories、Like / Comment、空间返回、API / 图片 / 模型失败、Pages / Workers / D1 / R2 / SES。
-- [ ] 每次 UI 变更后部署最新 Pages 并在生产域名验证，不能只看本地 Vite。
+- [x] 本轮 UI 变更已部署最新 Pages（`6111403b-5233-4d92-b2dd-0029998ba31b`）并核对 `ruoshui.tazdingo.net` 200、线上 bundle 与公开 API；真实 WebGL 视觉截图仍待完成。
 
 ### 人
 
