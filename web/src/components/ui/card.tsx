@@ -1,7 +1,7 @@
 import type { HTMLAttributes } from 'react';
 
 import {
-  surfaceClassNames,
+  glassSurfaceClassNames,
   textClassNames
 } from '../../styles/system';
 import { cn } from '../../utils/cn';
@@ -13,7 +13,7 @@ function Card({
   return (
     <div
       className={cn(
-        surfaceClassNames.panel,
+        glassSurfaceClassNames.panel,
         className
       )}
       {...props}

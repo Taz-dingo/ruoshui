@@ -10,14 +10,44 @@ const appShellClassNames = {
   sceneShell: 'sticky top-0 h-[var(--scene-cover-height)] overflow-visible'
 } as const;
 
-const surfaceClassNames = {
-  floating: 'rounded-full border border-ink/20 bg-[linear-gradient(180deg,rgba(255,255,255,0.2),rgba(255,255,255,0.08))] text-ink shadow-panel backdrop-blur-[22px] saturate-[1.1]',
-  lightPanel: 'rounded-panel border border-glass-light-outline/38 bg-[linear-gradient(180deg,rgba(255,255,255,0.76),rgba(242,242,247,0.52))] text-glass-light-ink shadow-panel backdrop-blur-[28px] saturate-[1.15]',
-  lightSubtle: 'rounded-control border border-glass-light-outline/28 bg-white/30 backdrop-blur-[18px]',
-  infoField: 'rounded-control border border-ink/10 bg-ink/6 backdrop-blur-[14px]',
-  panel: 'rounded-panel border border-ink/20 bg-[linear-gradient(180deg,rgba(255,255,255,0.16),rgba(12,13,16,0.42))] shadow-panel backdrop-blur-[24px] saturate-[1.1]',
-  popover: 'rounded-control border border-ink/20 bg-[rgba(28,29,32,0.92)] text-ink shadow-panel backdrop-blur-[24px]',
-  subtle: 'rounded-control border border-ink/10 bg-ink/6 backdrop-blur-[14px]'
+// Surface names describe product role, not appearance. Do not choose a material
+// because a class happens to look convenient: follow design.md first.
+const glassSurfaceClassNames = {
+  capsule:
+    'rounded-full border border-ink/20 bg-[linear-gradient(180deg,rgba(255,255,255,0.2),rgba(255,255,255,0.08))] text-ink shadow-panel backdrop-blur-[22px] saturate-[1.1]',
+  field:
+    'rounded-control border border-ink/10 bg-ink/6 backdrop-blur-[14px]',
+  panel:
+    'rounded-panel border border-ink/20 bg-[linear-gradient(180deg,rgba(255,255,255,0.16),rgba(12,13,16,0.42))] shadow-panel backdrop-blur-[24px] saturate-[1.1]',
+  popover:
+    'rounded-control border border-ink/20 bg-[rgba(28,29,32,0.92)] text-ink shadow-panel backdrop-blur-[24px]',
+  subtle:
+    'rounded-control border border-ink/10 bg-ink/6 backdrop-blur-[14px]'
+} as const;
+
+// These Paper recipes mirror values already used by the live content UI. They
+// centralize the material owner without changing appearance; local visual
+// iteration can tune these after the business components are migrated.
+const paperSurfaceClassNames = {
+  canvas: 'bg-[#f7f7f3] text-[#181916]',
+  legacyTranslucentPanel:
+    'rounded-panel border border-glass-light-outline/38 bg-[linear-gradient(180deg,rgba(255,255,255,0.76),rgba(242,242,247,0.52))] text-glass-light-ink shadow-panel backdrop-blur-[28px] saturate-[1.15]',
+  legacyTranslucentSubtle:
+    'rounded-control border border-glass-light-outline/28 bg-white/30 backdrop-blur-[18px]',
+  stickyHeader:
+    'border-black/[0.055] bg-[#f7f7f3]/94 backdrop-blur-[18px]'
+} as const;
+
+// Focus Sheet currently has two real strengths in production. Keep both exact
+// recipes until they can be tuned against the real 3D scene; the semantic split
+// prevents future components from inventing a third ad-hoc modal material.
+const focusSurfaceClassNames = {
+  editorBackdrop: 'bg-black/38 backdrop-blur-[8px]',
+  editorPanel:
+    'border border-white/55 bg-[rgba(249,249,247,0.96)] text-[#191919] shadow-panel',
+  workspaceBackdrop: 'bg-black/30 backdrop-blur-[7px]',
+  workspacePanel:
+    'border border-white/55 bg-[#f7f7f3]/98 text-[#191a18] shadow-panel'
 } as const;
 
 const scrollAreaClassNames = {
@@ -62,12 +92,12 @@ const sliderFieldClassNames = {
   label:
     'text-[10px] uppercase tracking-[0.04em] text-ink-muted/58 max-[760px]:text-[var(--type-mobile-meta)]',
   root:
-    `${surfaceClassNames.subtle} grid gap-2 px-3 py-2.5 max-[760px]:px-[0.9rem] max-[760px]:py-[0.85rem]`,
+    `${glassSurfaceClassNames.subtle} grid gap-2 px-3 py-2.5 max-[760px]:px-[0.9rem] max-[760px]:py-[0.85rem]`,
   value: 'text-ui-sm font-semibold text-brand-strong'
 } as const;
 
 const selectClassNames = {
-  content: `${surfaceClassNames.popover} z-[20] min-w-[140px] overflow-hidden p-1 text-ui-xs`,
+  content: `${glassSurfaceClassNames.popover} z-[20] min-w-[140px] overflow-hidden p-1 text-ui-xs`,
   item:
     'relative flex w-full cursor-pointer select-none items-center rounded-[10px] px-3 py-2 text-ui-xs outline-none data-[highlighted]:bg-brand/12 data-[highlighted]:text-brand-strong',
   trigger:
@@ -75,14 +105,13 @@ const selectClassNames = {
 } as const;
 
 const settingToggleClassNames = {
-  body:
-    'grid gap-0.5',
+  body: 'grid gap-0.5',
   description:
     'text-[10px] leading-[1.4] text-ink-muted/72 max-[760px]:text-[var(--type-mobile-body)] max-[760px]:leading-[1.55]',
   label:
     'text-[11px] font-semibold text-ink max-[760px]:text-[var(--type-mobile-title)] max-[760px]:leading-[1.28]',
   root:
-    `mt-1 flex items-center justify-between gap-3 ${surfaceClassNames.subtle} px-3 py-2.5 max-[760px]:px-[0.9rem] max-[760px]:py-[0.85rem]`
+    `mt-1 flex items-center justify-between gap-3 ${glassSurfaceClassNames.subtle} px-3 py-2.5 max-[760px]:px-[0.9rem] max-[760px]:py-[0.85rem]`
 } as const;
 
 const buttonVariants = cva(
@@ -90,7 +119,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        floating: `${surfaceClassNames.floating} px-4 py-3`,
+        floating: `${glassSurfaceClassNames.capsule} px-4 py-3`,
         ghost: 'border-transparent bg-transparent px-[13px] py-[9px] text-ink-muted/72 shadow-none',
         primary: 'border-transparent bg-brand px-[13px] py-[9px] text-white',
         secondary: 'border-outline/20 bg-ink/4 px-[13px] py-[9px] text-ink',
@@ -159,14 +188,16 @@ export {
   appShellClassNames,
   badgeVariants,
   buttonVariants,
+  focusSurfaceClassNames,
+  glassSurfaceClassNames,
   inspectorSectionClassNames,
   itemCardButtonVariants,
   itemCardTextClassNames,
+  paperSurfaceClassNames,
   selectClassNames,
   scrollAreaClassNames,
   settingToggleClassNames,
   sliderFieldClassNames,
-  surfaceClassNames,
   switchClassNames,
   textClassNames
 };

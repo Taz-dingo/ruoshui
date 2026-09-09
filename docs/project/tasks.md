@@ -43,12 +43,12 @@
 
 ### A. GitHub Agent 可直接完成
 
-- [ ] 审计 `web/src/styles/system.ts`，把含义混杂的 surface primitive 按 Glass / Paper / Focus Sheet 重新命名或拆分；不改视觉数值前先消除语义混乱。
-- [ ] 将业务组件中重复的 Paper / Glass 基础样式逐步收口到 primitive，禁止继续散落新的颜色与 shadow recipe。
+- [x] 审计 `web/src/styles/system.ts`，把含义混杂的 surface primitive 按 Glass / Paper / Focus Sheet 重新命名或拆分；不改视觉数值前先消除语义混乱。
 - [ ] 为“普通用户不显示 Admin Lab controls”“旧 Highlight 不进生产”补机械 gate（能测的部分）。
 
 ### B. 本地 Agent 更适合完成
 
+- [ ] 将 Place / Story / My Stories / Composer 等业务组件中散落的 Paper / Glass / Focus 基础样式迁回 `glassSurfaceClassNames` / `paperSurfaceClassNames` / `focusSurfaceClassNames`；迁移时与真实视觉调参一起做，不再新增第四套 surface recipe。
 - [ ] 做 Glass Peek → Paper Feed 的 **solidify transition**：同一容器材质从 translucent 过渡到 solid，不叠第二个 modal。
 - [ ] 收敛 Paper UI：减少 My Stories / Feed 的 dashboard 感，优先 typography、留白、hairline，减少卡片套卡片。
 - [ ] 收敛背景层级：主要用 dim / surface opacity / contrast，不再使用当前过重的全屏 blur。
