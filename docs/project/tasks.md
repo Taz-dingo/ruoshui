@@ -2,117 +2,109 @@
 
 最后更新：`2026-09-09`
 
-本文件只维护**当前执行顺序**。已经成立的事实写入 [`state.md`](state.md)，稳定产品边界写入 [`spec.md`](spec.md)，阶段结构写入 [`plan.md`](plan.md)，人机协作规则见 [`agent-collaboration.md`](agent-collaboration.md)。
+本文件只维护**当前执行顺序与执行者边界**。已经成立的事实写入 [`state.md`](state.md)，稳定产品 contract 写入 [`spec.md`](spec.md)，视觉 / 交互 contract 写入根目录 [`design.md`](../../design.md)，重要 rationale 写入 [`docs/decisions`](../decisions/)。
 
-当前目标：技术闭环已经基本成立，接下来把若水从“能跑的产品骨架”推进成**有真实地点、真实照片和真实故事可消费的校园记忆地图**。
+当前目标：生产技术闭环已经成立，下一阶段把若水从“能跑的产品骨架”推进成**空间发现、内容阅读与真实校园记忆真正统一的一版产品**。
 
-## P0：生产 Auth 外部配置
+执行者约定：
 
-### 1. 腾讯云 SES
+- **GitHub Agent**：适合 contract、数据模型、API / state seam、无主观性的结构改动、test / CI、code review。
+- **本地 Agent**：适合需要真实浏览器 / DevTools / 3D 场景 / 鼠标轨迹 / 真机 / Cloudflare 凭证的实现与验收。
+- **人**：最终判断 UI 手感、内容质量、真实 Place / Anchor 标定和取舍。
 
-- [x] 保持 `AuthEmailSender` provider abstraction，不改 OTP / User / Session 上层逻辑。
-- [x] Worker 直接调用腾讯云 SES API 3.0 `SendEmail`，使用 `TC3-HMAC-SHA256`。
-- [x] 默认公开配置：`AUTH_EMAIL_FROM=no-reply@auth.tazdingo.net`、`AUTH_EMAIL_FROM_NAME=若水`、`TENCENT_SES_REGION=ap-hongkong`。
-- [x] 腾讯云验证 `auth.tazdingo.net` 发信域名并配置 SES 要求的 SPF / DKIM。
-- [x] 腾讯云创建 / 验证 `no-reply@auth.tazdingo.net` 发信地址。
-- [x] 创建 OTP 模板并通过审核：模板 ID `217132`，使用单变量 `{{code}}`，静态注明 10 分钟有效。
-- [x] 给 Worker 配置 `TENCENT_CLOUD_SECRET_ID`、`TENCENT_CLOUD_SECRET_KEY`；Secret 不进入 Git。
-- [x] 给 Worker 配置审核通过的 `TENCENT_SES_TEMPLATE_ID`；模板 ID 不进入代码逻辑以外的敏感日志。
-- [x] 已部署生产 Worker；当前版本为 `85d40717-b3c0-466e-bb78-688daaceb0c2`。
-- [x] 当前管理员账号的稳定 userId 已配置到生产 Worker 的 `ADMIN_USER_IDS`。
-- [x] 当前 `main` 的前端已部署到 Cloudflare Pages 生产；deployment 为 `d962c330-6e97-4e64-b895-a38a1f9d1749`。
-- [x] 真实 smoke 已通过：request OTP → 实际收件 → verify → `/me` → StoryDraft create / patch / read → cleanup → logout。
+## P0：统一 Spatial Discovery 与内容层级
 
-### 2. Auth 后续
+### A. GitHub Agent 可直接完成
 
-- [x] 持久 User、Email AuthIdentity、OTP challenge、Session 数据模型。
-- [x] Email OTP 登录 / 注册 backend：OTP 哈希、60 秒 resend、失败次数、10 分钟 TTL、90 天 Session。
-- [x] Web 第一次登录流程：Email OTP；displayName 可设置也可跳过。
-- [x] Story Editor、评论、回复在公开写入前要求登录；点赞触发登录后补做原操作。
-- [x] 管理员权限由 `ADMIN_USER_IDS` 稳定 userId allowlist 在 API 层强制执行。
-- [x] 改邮箱：旧邮箱 OTP → 当前 Session 绑定的短时 proof → 新邮箱 OTP；成功后保持同一 User、保留当前 Session 并 revoke 其他 sessions；旧邮箱不可访问时不提供绕过验证的自助路径。
+- [ ] 普通用户页面彻底退出旧 `HighlightLayer / ForumPost` 交互；旧 Highlight 仅保留在 `?admin=lab` / development。
+- [ ] 普通用户 Dock 增加一级「校园故事」入口，直接打开全校园 Published Story Feed / Detail。
+- [ ] Place 点击取消隐式 camera focus；点击只打开当前 Place 内容，显式「飞到这里」才使用保存的 camera pose。
+- [ ] 对上述行为补最小 contract / component-level 回归验证，避免旧 Highlight 或自动 focus 重新进入生产主路径。
+- [ ] 如 Story Anchor clustering 需要新的 shared view state / command seam，先提供最小、可测试的数据结构，不负责肉眼调参。
 
-## P1：首批真实 Place 与内容生产
+### B. 本地 Agent 更适合完成
 
-### 3. Place 生产
+- [ ] **Story custom Anchor 场景可发现性**：把已发布 custom Anchor 投影为轻量 Story Pin；只消费 Published Story，不暴露 draft / pending revision。
+- [ ] **Anchor clustering**：按屏幕空间聚合 Story Anchor，Place 永远不被 cluster 吞掉。先以 48–64px 附近为实验起点，但最终以真实 3D 场景手感为准。
+- [ ] cluster 点击：优先 focus / zoom 到该区域让 cluster 拆分；无法继续拆分时显示“这里有 N 段记忆”的 Glass Peek。
+- [ ] Story Anchor Pin 点击：直接显示 Story 轻预览（cover / title / author / memoryTime / 摘要）+「飞到这里 / 阅读全文」，不增加“看图文”按钮。
+- [ ] Place Peek / Feed 收敛为一个容器：点击 Place 后直接显示 intro + Story；没有 Story 时显示自然 empty state +「留下故事」。
+- [ ] 删除 / 隐藏任何普通用户仍可到达的“看点位图文”“收起图文”“重复完整社区”旧交互。
 
-- [x] Place API → viewer runtime → PlayCanvas 投影 → React overlay 动态 pins 正式链路。
-- [x] 点击 Place 使用人工保存的完整 camera pose（position / target / fov）。
-- [x] Admin Place Console：列表、新建、name / intro / sortOrder、共用 3D Spatial Anchor Editor 标定与重新校准。
-- [ ] 先创建约 5 个正式 Place，**若水广场优先做到完整**；随后补图书馆、操场、食堂等公共记忆入口。
-- [ ] 为首批 Place 写简短、克制、可长期保留的 intro，并确定展示排序。
-- [x] 轻微 ambient focus 运镜：人工镜头 transition 完成后只微调 yaw / pitch / distance；用户输入或关闭 Place 立即取消，`prefers-reduced-motion` 下禁用，“回到最佳视角”可重新进入。
+### C. 人验收
 
-### 4. 首批 Story
+- [ ] 同一位置只需要一次点击即可看到内容；不会“点一下飞、再点一下看图文”。
+- [ ] 没有 Story 的 Place 看起来像产品 empty state，而不是开发占位页。
+- [ ] 30+ custom Anchors 的场景仍可读，不被 pin 淹没；Place 始终优先。
 
-- [ ] 准备真实照片与文案，先围绕若水广场生产一组可代表产品气质的 Story。
-- [ ] 用真实数据完整跑一次：upload → Draft → submit → review / calibration → publish → Place Feed → Detail → “回到这里”。
-- [ ] 再扩到其余首批 Place，至少让每个地点进入时不是空面板。
-- [ ] 基于第一批真实内容检查卡片裁切、TextCover、标题 fallback、memoryTime 与图文密度是否仍合理。
+## P1：材质系统落地
 
-## P2：消费体验最后收口
+稳定设计 contract 已写入 [`design.md`](../../design.md)：`Scene → Glass Chrome → Paper Content → Focus Sheet`。
 
-### 5. Place → Story
+### A. GitHub Agent 可直接完成
 
-- [x] Place 顶部完整标题 / intro，下方直接 masonry Published Story feed。
-- [x] 下滚后 intro 收缩为 sticky title。
-- [x] PC 使用较窄侧边内容层；Mobile 使用可扩展 Bottom Sheet。
-- [x] Published Story feed 只使用新 `/api/published-stories` read model。
-- [x] 纯文字 Story 使用 TextCover；纯图片 / 无 title Story 使用 fallback display title。
-- [x] 同一内容容器内从 Place Feed 打开 Story Detail，并可返回。
-- [x] Story Detail 支持多图横滑、作者、memoryTime、正文与地点语义。
-- [x] “回到这里”使用 Story custom Anchor 或 Place camera pose 返回 3D。
-- [ ] 明确 custom Anchor 的地图表现：当前已发布 Story 的自定义 Anchor 只用于 Story Detail 的“回到这里”，不会作为独立地图 Pin 显示；需要决定是否让已发布 Story Anchor 成为可见、可点击的地图入口，再单独实现。
+- [ ] 审计 `web/src/styles/system.ts`，把含义混杂的 surface primitive 按 Glass / Paper / Focus Sheet 重新命名或拆分；不改视觉数值前先消除语义混乱。
+- [ ] 将业务组件中重复的 Paper / Glass 基础样式逐步收口到 primitive，禁止继续散落新的颜色与 shadow recipe。
+- [ ] 为“普通用户不显示 Admin Lab controls”“旧 Highlight 不进生产”补机械 gate（能测的部分）。
 
-### 6. Social / Revision / 用户工作区
+### B. 本地 Agent 更适合完成
 
-- [x] Story Like + Comment Like 接持久 User。
-- [x] 文字评论 / 回复登录后写入；UI 只保留两层视觉，底层使用 `rootCommentId` + `replyToCommentId`。
-- [x] 作者可删除自己的评论；管理员可隐藏 / 恢复评论，隐藏顶层时其回复不公开暴露。
-- [x] 已发布 Story 编辑创建新 Revision；审核通过前旧 Published Revision 继续公开。
-- [x] 用户可主动下架；删除先 soft delete。
-- [x] “我的 Story”显示公开状态与工作状态：草稿 / 审核中 / 待修改 / 未通过 / 已发布 / 已下架。
-- [x] Composer 区分智能恢复、新建空白 Story、精确继续指定 Story，支持多草稿。
-- [x] 登录用户可跨会话读取自己 Story 的媒体预览；鉴权同时约束 Story ownership 与 revision membership。
+- [ ] 做 Glass Peek → Paper Feed 的 **solidify transition**：同一容器材质从 translucent 过渡到 solid，不叠第二个 modal。
+- [ ] 收敛 Paper UI：减少 My Stories / Feed 的 dashboard 感，优先 typography、留白、hairline，减少卡片套卡片。
+- [ ] 收敛背景层级：主要用 dim / surface opacity / contrast，不再使用当前过重的全屏 blur。
+- [ ] 逐屏调 Place Peek、Story Feed、Story Detail、My Stories、Composer 的 blur / dim / opacity，必须在真实校园背景上验收。
 
-## P3：Loading、移动端与发布验收
+### C. 人验收
 
-### 7. Loading
+- [ ] Glass 只承载短暂空间控制，长内容不会被迫在复杂背景上阅读。
+- [ ] Paper 出现时像“内容从场景中展开”，而不是突然跳到另一个 SaaS 页面。
+- [ ] Story Feed 背后校园仍然明显可辨；Composer 可以更聚焦但不把场景糊成纯色。
 
-- [x] 并行请求少量 Published Story thumbnail，按真实图片请求完成时用 scale / opacity / blur 生长效果让“记忆先于空间出现”。
-- [x] 模型 ready 后立即切入 3D，不强制等待动画；不重启自研 Streamed SOG / progressive splat。
-- [x] 新 Story 图片上传时浏览器生成最长边 640px 的 `thumbnail` derivative；Loading 只读 derivative，不 fallback 到原图。
+## P2：首批真实 Place 与 Story
 
-### 8. Mobile / Release Acceptance
+### 本地 Agent + 人
 
-- [x] 生产 D1 已按顺序 apply `0002_media_ownership.sql`、`0003_media_derivatives.sql`，remote ledger 与 repo 完全一致后才部署 Worker。
-- [ ] 生产环境真实验证改邮箱：当前邮箱收 OTP → 新邮箱收 OTP → 当前 Session 保持 → 其他 Session 失效 → 新邮箱可登录同一 User。
-- [ ] iPhone Safari 真机验证 viewport、safe area、横竖屏、Place pins、单指 rotate、双指 pan + pinch zoom、Bottom Sheet 与 3D 手势冲突。
-- [ ] 验证 Android Chrome 与 iPad / 触屏核心链路。
-- [ ] production acceptance 覆盖 OTP、Draft 恢复、上传、thumbnail derivative、Review、Revision、My Stories、API / 图片 / 模型失败、Like / Comment、返回场景、Pages / Workers / D1 / R2 / 腾讯云 SES。
-- [ ] 找少量真实校友做可用性测试，并根据真实行为收敛首屏、Place intro、Story 卡片和投稿阻力。
+- [ ] 创建约 5 个正式 Place，若水广场优先；随后图书馆、操场、食堂等。
+- [ ] 每个 Place 人工标定 marker / camera pose / intro / sort order，不虚构坐标。
+- [ ] 准备真实照片和文案，围绕若水广场先生产一组代表产品气质的 Story。
+- [ ] 完整跑一次真实内容链路：upload → Draft → submit → review / calibration → publish → Spatial Pin / Place Feed → Detail → 回到这里。
+- [ ] 再扩到其余首批 Place，避免公共入口为空。
+- [ ] 用真实内容检查卡片裁切、TextCover、标题 fallback、memoryTime 与图文密度。
 
-## 已完成的核心技术闭环
+## P3：生产 / 真机验收
 
-- [x] 根 `pnpm check` + GitHub Actions CI。
-- [x] User / SpatialAnchor / Place / Story / StoryRevision / StoryDraft / Comment / Like shared contracts 与 D1 schema。
-- [x] Story body/media、<=12 图、单主位置、Draft ownership、media ownership、Published Revision 等关键 invariant。
-- [x] StoryDraft create / list / get / patch / submit + autosave / cross-session restore。
-- [x] authenticated Story media upload 与 owner-only private media read。
-- [x] Place public read / admin authoring API 与 Admin Place Console。
-- [x] 共用 3D Spatial Anchor Editor，可供 Story、Review、Place 复用。
-- [x] Review backend + Admin Review Console：queue、受保护 media、校准、approve / request changes / reject。
-- [x] Published Story public read API，只暴露当前 `publishedRevisionId` 及其媒体。
-- [x] Admin Comment Moderation Console。
+### 本地 Agent
+
+- [ ] 生产真实验证改邮箱：旧邮箱 OTP → 新邮箱 OTP → 当前 Session 保持 → 其他 Session 失效 → 新邮箱登录同一 User。
+- [ ] iPhone Safari：viewport、safe area、横竖屏、Place / Anchor / cluster、rotate、pan、pinch、Bottom Sheet 与 3D 手势冲突。
+- [ ] Android Chrome 与 iPad / 触屏核心链路。
+- [ ] production acceptance：OTP、Draft 恢复、上传、thumbnail derivative、Review、Revision、My Stories、Like / Comment、空间返回、API / 图片 / 模型失败、Pages / Workers / D1 / R2 / SES。
+- [ ] 每次 UI 变更后部署最新 Pages 并在生产域名验证，不能只看本地 Vite。
+
+### 人
+
+- [ ] 找少量真实校友做可用性测试；重点观察他们是否理解 Place / Story Anchor / 校园故事三个发现入口，以及投稿阻力。
+
+## 已经完成，不再重复实现
+
+- Email OTP / User / Session / 改邮箱代码；腾讯云 SES 真实 OTP smoke 已通过。
+- D1 `0000–0003`、R2、Worker、Pages 生产主路径。
+- Story Draft / media / autosave / custom Anchor Editor / Review / Revision / Published read。
+- Place API / Admin Place Console / camera pose / ambient focus。
+- Story Like / Comment / Reply / moderation。
+- My Stories / owner media preview。
+- thumbnail derivative + Loading。
+- 旧 Forum 写路径与匿名 generic upload ticket 已关闭。
+- 正式模型为完整 Single SOG；Streamed SOG / Perf HUD 仅实验入口。
 
 ## Later
 
-- [ ] 多地点 Story；Anchor → Place 晋升机制。
-- [ ] QQ / 微信 OAuth、用户主页、收藏、关注、私信、通知中心。
-- [ ] 完整 User Ban / RBAC、评论图片和复杂 moderation。
-- [ ] Story 搜索、复杂筛选、推荐算法。
-- [ ] 校园外围 skyline / 粗模与更精细 X/Z navigation bounds。
-- [ ] 更高级 Loading、Streamed SOG / progressive rendering 的重新评估。
-- [ ] D1 分页、索引、R2 孤儿对象清理和更完整媒体治理按真实规模补齐。
+- 多地点 Story；Anchor → Place 晋升机制。
+- QQ / 微信 OAuth、用户主页、收藏、关注、私信、通知中心。
+- 完整 User Ban / RBAC、评论图片和复杂 moderation。
+- Story 搜索、复杂筛选、推荐算法。
+- 校园外围 skyline / 粗模与更精细 X/Z navigation bounds。
+- Streamed SOG / progressive rendering 的重新评估。
+- D1 分页、索引、R2 孤儿对象清理和更完整媒体治理按真实规模补齐。
 
-训练、旧 progressive runtime PoC 和算法筛选已归档；不要放回当前任务池。
+训练、旧 progressive runtime PoC 和旧 ForumPost 交互不再进入当前产品任务池。
