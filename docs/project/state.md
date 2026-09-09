@@ -82,9 +82,9 @@
 ### Spatial / surface 收口（2026-09-10）
 
 - `PlaceMemoryLayer`、`CommunitySheet`、`MyStoriesPanel`、`StoryComposerFlow`、场景 dock 与通用 Sheet 已迁回 `glassSurfaceClassNames`、`paperSurfaceClassNames`、`focusSurfaceClassNames`；没有新增平行 surface recipe。
-- Place 内容容器实现 Glass Peek → Paper Feed 的同容器 solidify transition：`420ms ease-out`，打开 Story Detail 或滚动收起 Place intro 后切换为 Paper。
-- 当前实际 primitive 参数：Glass capsule `14px`、field/subtle `8px`、panel/popover `16px`；Paper sticky header `8px`；Focus editor/workspace backdrop `4px`，dim 仍分别为 `38%` / `30%`。
-- 代码已通过 `pnpm check`，并以 commit `df564b7` 推送；屏幕空间聚类另以 mocked projection assertion 验证。
+- Place / Story 内容容器实现 Glass Peek → Paper Feed 的同容器 solidify transition：`420ms ease-out`；Story Detail 不再在外层容器内叠一层不透明 Paper。
+- 当前实际 primitive 参数：Glass capsule `8px`、field/subtle `4px`、panel/popover `8px`；Paper sticky header `4px`；Focus backdrop 不再 blur，dim 仍分别为 `38%` / `30%`。
+- Pin command bus 现在会保留最近的 Place / Story Anchor 状态并在 viewer 订阅时回放，避免 React API 请求早于 runtime 订阅而丢点；`pnpm check`、pin replay assertion 均通过，修复以 commit `4db6b67` 推送。
 
 ### Loading / media derivatives
 
@@ -99,12 +99,12 @@
 ### Spatial Discovery 下一步
 
 - Story Anchor Pin、56px screen-space clustering、Story Anchor Peek 与 Place / Story 不自动飞镜头的代码路径已经部署；公开 API 当前实际返回 1 条 custom-anchor Published Story，Place API 当前返回 0 个 Place。
-- 仍需在真实桌面 3D 场景中确认该 Anchor 是否落在默认镜头可见范围、cluster 拆分手感和 Place / Story pin 的遮挡优先级。当前桌面 CUA 页面能加载生产 WebGL tab，但无障碍树 / 截图调用超时，因此没有把这部分记为已完成的视觉验收。
+- 最新生产桌面截图已确认 `1995年在建中的图书馆` Story Anchor Pin 在校园背景中可见；Place API 当前为 0 个 Place，因此没有 Place Pin 属于当前数据事实。仍需人工确认 cluster 拆分手感、Place / Story pin 遮挡优先级和点击后的 Peek 过渡；自动化点击在 WebGL 页面超时，未把这些记为完整视觉验收。
 
 ### 材质与视觉层级
 
 - `system.ts` primitive 语义和业务组件迁移已经完成；Story Feed / My Stories / Composer 已降低背景 blur，My Stories / Feed 已去掉主要的卡片套卡片结构。
-- Glass → Paper 的 `420ms ease-out`、Glass `14/8/16px`、Paper sticky `8px`、Focus backdrop `4px` 参数已部署，但仍需真实 3D 背景上的人工视觉验收。
+- Glass → Paper 的 `420ms ease-out` 已部署；Glass 为 `8/4/8px`，Paper sticky 为 `4px`，Sheet / Focus / Loading 全屏遮罩不再使用 backdrop blur。Anchor Pin 已在真实校园背景截图中确认可见，仍需人工验收各层打开与点击时的最终手感。
 
 ### 生产 Auth / SES
 
@@ -120,7 +120,7 @@
 - 生产图片上传 CORS 已修复并部署：`ruoshui.tazdingo.net` 与 `ruoshui-web.pages.dev` 的 OPTIONS 预检均返回对应 `Access-Control-Allow-Origin`，未授权 Origin 不会获得该 header；修复已合并为 PR #45。
 - 当前管理员账号的稳定 userId 已配置到生产 Worker 的 `ADMIN_USER_IDS`，审核页权限配置已就绪。
 - 生产 smoke 已实际通过：真实 OTP 邮件送达、OTP 登录、跨请求 `/me` Session、StoryDraft create / patch / read、临时 Draft 清理和 logout 全部成功；未创建公开内容。
-- 本轮前端已部署到 Cloudflare Pages 生产，deployment 为 `6111403b-5233-4d92-b2dd-0029998ba31b`（commit `df564b7` 的等价构建）；`https://ruoshui.tazdingo.net/` 返回 200，线上 bundle 已包含 `story-anchor-cluster`、Story Anchor Peek 与 `420ms` transition。当前仅完成 HTTP / bundle / API 核对，真实 WebGL 视觉截图仍待完成。
+- 本轮前端修复已部署到 Cloudflare Pages 生产，deployment 为 `8c4f4137-df6b-4ffb-ac73-4ad2bd3ac4a5`（commit `4db6b67`）；`https://ruoshui.tazdingo.net/` 返回 200，线上 bundle 已包含 Pin replay、`story-anchor-cluster` 与 `420ms` transition；生产 API 返回 1 个 Anchor、0 个 Place，真实桌面截图已确认 Anchor Pin 可见。Peek 点击和全屏视觉细节仍因 CUA WebGL 自动化超时未完成。
 - 本次部署核对了既有 Worker secrets 名称，未覆盖或输出 secret 值；D1、R2 和非敏感 SES 配置仍在绑定中。
 
 ### 真实 Place / Story 内容

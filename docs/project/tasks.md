@@ -20,11 +20,11 @@
 - [x] 普通用户 Dock 增加一级「校园故事」入口，直接打开全校园 Published Story Feed / Detail。
 - [x] Place 点击取消隐式 camera focus；点击只打开当前 Place 内容，显式「飞到这里」才使用保存的 camera pose。
 - [ ] 对上述行为补最小 contract / component-level 回归验证，避免旧 Highlight 或自动 focus 重新进入生产主路径。
-- [ ] 如 Story Anchor clustering 需要新的 shared view state / command seam，先提供最小、可测试的数据结构，不负责肉眼调参。
+- [x] Story Anchor 使用最小 shared view state / command seam，并回放最新 Pin 状态，避免 runtime 订阅竞态丢点。
 
 ### B. 本地 Agent 更适合完成
 
-- [x] **Story custom Anchor 场景可发现性**：已发布 custom Anchor 已投影为轻量 Story Pin；只消费 Published Story，不暴露 draft / pending revision（已部署，真实 WebGL 视觉仍待人工确认）。
+- [x] **Story custom Anchor 场景可发现性**：已发布 custom Anchor 已投影为轻量 Story Pin；只消费 Published Story，不暴露 draft / pending revision；生产截图已确认 Anchor Pin 可见。
 - [x] **Anchor clustering**：按屏幕空间聚合 Story Anchor，固定起始参数 `56px`；Place 使用独立投影层，不被 Story cluster 吞掉。
 - [x] cluster 点击：显示“这里有 N 段记忆”的 Glass Peek；当前未做自动 focus / zoom 拆分，保留显式「飞到这里」语义。
 - [x] Story Anchor Pin 点击：直接显示 Story 轻预览（cover / title / author / memoryTime / 摘要）+「飞到这里 / 阅读全文」，不增加“看图文”按钮。
@@ -51,8 +51,8 @@
 - [x] 将 Place / Story / My Stories / Composer 等业务组件中散落的 Paper / Glass / Focus 基础样式迁回 `glassSurfaceClassNames` / `paperSurfaceClassNames` / `focusSurfaceClassNames`；未新增第四套 surface recipe。
 - [x] 做 Glass Peek → Paper Feed 的 **solidify transition**：同一容器 `420ms ease-out` 从 translucent 过渡到 solid，不叠第二个 modal。
 - [x] 收敛 Paper UI：My Stories / Feed 已改为 typography、留白、hairline 为主，减少卡片套卡片。
-- [x] 收敛背景层级：全屏遮罩不再使用 blur；Glass / Paper / Focus primitive 的 blur 已降至 `4–16px` 区间。
-- [ ] 逐屏调 Place Peek、Story Feed、Story Detail、My Stories、Composer 的 blur / dim / opacity，必须在真实校园背景上验收；当前生产 WebGL 页面可加载，但 CUA 截图调用超时。
+- [x] 收敛背景层级：全屏遮罩不再使用 blur；Glass primitive 调整为 `8/4/8px`，Paper sticky 为 `4px`，Focus backdrop 不再 blur。
+- [ ] 逐屏调 Place Peek、Story Feed、Story Detail、My Stories、Composer 的 blur / dim / opacity，必须在真实校园背景上验收；Anchor Pin 已截图确认，Peek 点击与逐屏细节仍受 CUA WebGL 自动化超时阻塞。
 
 ### C. 人验收
 
@@ -79,7 +79,7 @@
 - [ ] iPhone Safari：viewport、safe area、横竖屏、Place / Anchor / cluster、rotate、pan、pinch、Bottom Sheet 与 3D 手势冲突。
 - [ ] Android Chrome 与 iPad / 触屏核心链路。
 - [ ] production acceptance：OTP、Draft 恢复、上传、thumbnail derivative、Review、Revision、My Stories、Like / Comment、空间返回、API / 图片 / 模型失败、Pages / Workers / D1 / R2 / SES。
-- [x] 本轮 UI 变更已部署最新 Pages（`6111403b-5233-4d92-b2dd-0029998ba31b`）并核对 `ruoshui.tazdingo.net` 200、线上 bundle 与公开 API；真实 WebGL 视觉截图仍待完成。
+- [x] 本轮 UI 修复已部署最新 Pages（`8c4f4137-df6b-4ffb-ac73-4ad2bd3ac4a5`）并核对 `ruoshui.tazdingo.net` 200、线上 bundle 与公开 API；生产桌面截图已确认 Anchor Pin 可见，Peek 点击仍待人工完成。
 
 ### 人
 
