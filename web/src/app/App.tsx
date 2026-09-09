@@ -81,6 +81,16 @@ function DockIcon({ kind }: { kind: 'model' | 'preset' }) {
   );
 }
 
+function CommunityIcon() {
+  return (
+    <svg aria-hidden="true" className="h-[19px] w-[19px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7">
+      <rect x="4" y="5" width="16" height="14" rx="2.5" />
+      <path d="m7.5 15 3.1-3.2 2.4 2.2 2.1-2.1 1.4 1.3" />
+      <circle cx="15.8" cy="9.1" r="1.25" />
+    </svg>
+  );
+}
+
 function StoryIcon() {
   return (
     <svg aria-hidden="true" className="h-[19px] w-[19px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7">
@@ -195,6 +205,7 @@ function App({
   const setRouteControls = useViewerUiStore((store) => store.setRouteControls);
   const perfHud = useViewerUiStore((store) => store.perfHud);
   const adminMode = new URLSearchParams(window.location.search).get('admin');
+  const isAdminLabMode = adminMode === 'lab';
   const isAdminReviewMode = adminMode === 'review';
   const isAdminCommentMode = adminMode === 'comments';
   const isAdminPlaceMode = adminMode === 'places';
@@ -217,6 +228,11 @@ function App({
   };
 
   const openFullCommunity = () => {
+    setOpenDockMenu(null);
+    setIsMobilePanelOpen(false);
+    setIsMyStoriesOpen(false);
+    setIsStoryComposerOpen(false);
+    setStoryComposerTargetId(undefined);
     setIsCommunityOpen(true);
   };
 
@@ -295,11 +311,13 @@ function App({
           id="hud-root"
           className={appShellClassNames.hudRoot}
         >
-          <HighlightLayer
-            highlights={data.highlights ?? []}
-            onOpenFullCommunity={openFullCommunity}
-            sceneId={communitySceneId}
-          />
+          {isAdminLabMode ? (
+            <HighlightLayer
+              highlights={data.highlights ?? []}
+              onOpenFullCommunity={openFullCommunity}
+              sceneId={communitySceneId}
+            />
+          ) : null}
           <PlaceMemoryLayer
             isMobile={isMobileViewport}
             onOpenStoryComposer={openStoryComposer}
@@ -330,6 +348,18 @@ function App({
                 open={openDockMenu === 'presets'}
                 viewerConfig={viewerConfig}
               />
+              <button
+                aria-label="校园故事"
+                className={dockButtonClassName}
+                onClick={openFullCommunity}
+                onMouseDown={stopInteractionPropagation}
+                onPointerDown={stopInteractionPropagation}
+                onTouchStart={stopInteractionPropagation}
+                title="校园故事"
+                type="button"
+              >
+                <CommunityIcon />
+              </button>
               <button
                 aria-label="我的 Story"
                 className={dockButtonClassName}
