@@ -119,7 +119,11 @@ function DockMenu({
 }: DockMenuProps) {
   const { context, refs } = useFloating({
     open,
-    onOpenChange
+    onOpenChange,
+    // 面板用 CSS 定位在触发按钮上方（bottom-full），placement 必须同步声明为
+    // top：safePolygon 依赖它决定三角形朝向。默认的 bottom 会让几何判定反向，
+    // 鼠标从按钮侧边斜向面板时会被判成“已离开安全区”而立刻关闭。
+    placement: 'top'
   });
   const hover = useHover(context, {
     delay: { close: 120 },
