@@ -255,7 +255,6 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
     setActiveStoryId(null);
     setHeaderCollapsed(false);
     setMobileExpanded(false);
-    focusPlace(place);
 
     const requestId = storiesRequestRef.current + 1;
     storiesRequestRef.current = requestId;
@@ -391,7 +390,7 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
                   onClick={() => focusPlace(activePlace)}
                   type="button"
                 >
-                  回到最佳视角
+                  飞到这里
                 </button>
               </header>
 
@@ -407,7 +406,7 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
                   <div className="rounded-[18px] bg-[#fff0ed] px-4 py-4 text-[12px] leading-[1.7] text-[#8d4138]">{storiesError ?? 'Story 加载失败。'}</div>
                 ) : stories.length === 0 ? (
                   <div className="grid min-h-[190px] place-items-center rounded-[20px] border border-dashed border-black/10 bg-white/45 px-6 text-center text-[12px] leading-[1.75] text-black/36">
-                    这里还没有公开的 Story。<br />第一段记忆可以从这里开始。
+                    这里还没有留下故事。<br />第一段记忆，可以从这里开始。
                   </div>
                 ) : (
                   <div className="columns-2 gap-3">
