@@ -20,7 +20,7 @@
 - [x] 给 Worker 配置审核通过的 `TENCENT_SES_TEMPLATE_ID`；模板 ID 不进入代码逻辑以外的敏感日志。
 - [x] 已部署生产 Worker；当前版本为 `85d40717-b3c0-466e-bb78-688daaceb0c2`。
 - [x] 当前管理员账号的稳定 userId 已配置到生产 Worker 的 `ADMIN_USER_IDS`。
-- [x] 当前 `main` 的前端已部署到 Cloudflare Pages 生产；deployment 为 `696247b9-a486-4e98-8085-410242050f9a`。
+- [x] 当前 `main` 的前端已部署到 Cloudflare Pages 生产；deployment 为 `d962c330-6e97-4e64-b895-a38a1f9d1749`。
 - [x] 真实 smoke 已通过：request OTP → 实际收件 → verify → `/me` → StoryDraft create / patch / read → cleanup → logout。
 
 ### 2. Auth 后续
