@@ -6,8 +6,8 @@ import {
 } from 'react';
 
 import {
-  scrollAreaClassNames,
-  surfaceClassNames
+  glassSurfaceClassNames,
+  scrollAreaClassNames
 } from '../../styles/system';
 import { cn } from '../../utils/cn';
 
@@ -71,7 +71,7 @@ const SheetContent = forwardRef<
         className={cn(
           'fixed outline-none will-change-[transform,opacity] data-[side=bottom]:origin-bottom',
           scrollAreaClassNames.thin,
-          surfaceClassNames.panel,
+          glassSurfaceClassNames.panel,
           className
         )}
         data-side={side}
