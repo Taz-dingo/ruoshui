@@ -24,6 +24,37 @@ interface ProjectHighlightPinsArgs {
   highlights: ViewerHighlight[];
 }
 
+interface StoryAnchorProjection {
+  id: string;
+  kind: 'anchor';
+  left: number;
+  top: number;
+  isVisible: boolean;
+  title: string;
+}
+
+interface StoryAnchorClusterProjection {
+  id: string;
+  kind: 'cluster';
+  left: number;
+  top: number;
+  isVisible: boolean;
+  storyIds: string[];
+}
+
+type StoryAnchorProjectionItem = StoryAnchorProjection | StoryAnchorClusterProjection;
+
+interface ProjectStoryAnchorPinsArgs {
+  clusterRadius?: number;
+  pc: any;
+  runtimeState: any;
+  pins: Array<{
+    id: string;
+    title: string;
+    position: [number, number, number];
+  }>;
+}
+
 function projectNamedPins({
   pc,
   runtimeState,
@@ -59,6 +90,84 @@ function projectHighlightPins({
       position: highlight.position
     }))
   });
+}
+
+function projectStoryAnchorPins({
+  clusterRadius = 56,
+  pc,
+  runtimeState,
+  pins
+}: ProjectStoryAnchorPinsArgs): StoryAnchorProjectionItem[] {
+  const projected = pins.map((pin) => ({
+    pin,
+    projected: projectWorldPoint(pc, runtimeState, pin.position)
+  }));
+  const hidden = projected
+    .filter((item) => !item.projected?.isVisible)
+    .map(({ pin, projected: point }) => ({
+      id: pin.id,
+      kind: 'anchor' as const,
+      left: point?.left ?? 0,
+      top: point?.top ?? 0,
+      isVisible: false,
+      title: pin.title
+    }));
+  const visible = projected.filter(
+    (item): item is {
+      pin: (typeof pins)[number];
+      projected: ProjectedWorldPoint;
+    } => Boolean(item.projected?.isVisible)
+  );
+  const groups: Array<{
+    items: typeof visible;
+    left: number;
+    top: number;
+  }> = [];
+
+  // ponytail: O(n²) greedy clustering; use a screen-space grid only if anchor counts reach the low hundreds.
+  for (const item of visible) {
+    const point = item.projected;
+    const group = groups.find((candidate) => {
+      const dx = candidate.left - point.left;
+      const dy = candidate.top - point.top;
+      return Math.hypot(dx, dy) <= clusterRadius;
+    });
+
+    if (!group) {
+      groups.push({ items: [item], left: point.left, top: point.top });
+      continue;
+    }
+
+    group.items.push(item);
+    group.left = group.items.reduce((sum, current) => sum + current.projected.left, 0) / group.items.length;
+    group.top = group.items.reduce((sum, current) => sum + current.projected.top, 0) / group.items.length;
+  }
+
+  const grouped = groups.map((group) => {
+    if (group.items.length === 1) {
+      const item = group.items[0];
+      return {
+        id: item.pin.id,
+        kind: 'anchor' as const,
+        left: item.projected.left,
+        top: item.projected.top,
+        isVisible: true,
+        title: item.pin.title
+      };
+    }
+
+    const storyIds = group.items.map((item) => item.pin.id).sort();
+    return {
+      id: `story-anchor-cluster:${storyIds.join(',')}`,
+      kind: 'cluster' as const,
+      left: group.left,
+      top: group.top,
+      isVisible: true,
+      storyIds
+    };
+  });
+
+  return [...grouped, ...hidden];
 }
 
 function projectWorldPoint(
@@ -111,6 +220,7 @@ function projectWorldPoint(
 export {
   projectHighlightPins,
   projectNamedPins,
+  projectStoryAnchorPins,
   projectWorldPoint
 };
 

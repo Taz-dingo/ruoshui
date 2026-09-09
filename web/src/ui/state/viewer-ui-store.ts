@@ -14,6 +14,7 @@ import type {
   SceneLookViewState,
   SceneMetaViewState,
   SceneMetricsViewState,
+  StoryAnchorOverlayViewState,
   StatusViewState,
   ViewCaptureViewState,
   VariantPanelViewState
@@ -29,6 +30,7 @@ interface ViewerUiStoreState {
   highlightAuthoring: HighlightAuthoringViewState;
   highlightOverlay: HighlightOverlayViewState;
   placeOverlay: PlaceOverlayViewState;
+  storyAnchorOverlay: StoryAnchorOverlayViewState;
   loading: LoadingViewState;
   perfHud: PerfHudViewState;
   renderScale: RenderScaleViewState;
@@ -52,6 +54,7 @@ interface ViewerUiStoreState {
   setHighlightAuthoring: (highlightAuthoring: HighlightAuthoringViewState) => void;
   setHighlightOverlay: (highlightOverlay: HighlightOverlayViewState) => void;
   setPlaceOverlay: (placeOverlay: PlaceOverlayViewState) => void;
+  setStoryAnchorOverlay: (storyAnchorOverlay: StoryAnchorOverlayViewState) => void;
   setLoading: (loading: LoadingViewState) => void;
   setPerfHud: (perfHud: PerfHudViewState) => void;
   setRenderScale: (renderScale: RenderScaleViewState) => void;
@@ -100,6 +103,10 @@ const emptyHighlightOverlayState: HighlightOverlayViewState = {
 };
 
 const emptyPlaceOverlayState: PlaceOverlayViewState = {
+  items: []
+};
+
+const emptyStoryAnchorOverlayState: StoryAnchorOverlayViewState = {
   items: []
 };
 
@@ -186,6 +193,7 @@ const useViewerUiStore = create<ViewerUiStoreState>((set) => ({
   highlightAuthoring: emptyHighlightAuthoringState,
   highlightOverlay: emptyHighlightOverlayState,
   placeOverlay: emptyPlaceOverlayState,
+  storyAnchorOverlay: emptyStoryAnchorOverlayState,
   loading: emptyLoadingState,
   perfHud: emptyPerfHudState,
   renderScale: emptyRenderScaleState,
@@ -203,6 +211,7 @@ const useViewerUiStore = create<ViewerUiStoreState>((set) => ({
   setHighlightAuthoring: (highlightAuthoring) => set({ highlightAuthoring }),
   setHighlightOverlay: (highlightOverlay) => set({ highlightOverlay }),
   setPlaceOverlay: (placeOverlay) => set({ placeOverlay }),
+  setStoryAnchorOverlay: (storyAnchorOverlay) => set({ storyAnchorOverlay }),
   setLoading: (loading) => set({ loading }),
   setPerfHud: (perfHud) => set({ perfHud }),
   setRenderScale: (renderScale) => set({ renderScale }),
@@ -223,6 +232,7 @@ export {
   emptyHighlightAuthoringState,
   emptyHighlightOverlayState,
   emptyPlaceOverlayState,
+  emptyStoryAnchorOverlayState,
   emptyLoadingState,
   emptyPerfHudState,
   emptyRenderScaleState,

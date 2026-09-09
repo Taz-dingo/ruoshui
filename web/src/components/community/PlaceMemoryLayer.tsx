@@ -10,9 +10,15 @@ import {
   requestCancelSpatialAnchorAmbientFocus,
   requestFocusSpatialAnchor,
   requestSetPlacePins,
+  requestSetStoryAnchorPins,
 } from '../../ui/commands/viewer-command-bus';
 import { useViewerUiStore } from '../../ui/state/viewer-ui-store';
-import { scrollAreaClassNames } from '../../styles/system';
+import {
+  buttonVariants,
+  glassSurfaceClassNames,
+  paperSurfaceClassNames,
+  scrollAreaClassNames,
+} from '../../styles/system';
 import { cn } from '../../utils/cn';
 import { StoryAuthorActions } from './StoryAuthorActions';
 import { StoryDiscussion } from './StoryDiscussion';
@@ -65,7 +71,11 @@ function focusPlace(place: Place) {
   });
 }
 
-function focusLocation(location: StoryLocation, placesById: Map<string, Place>, fallbackPlace: Place) {
+function focusLocation(
+  location: StoryLocation,
+  placesById: Map<string, Place>,
+  fallbackPlace?: Place | null,
+) {
   if (location.kind === 'anchor') {
     const { cameraPose } = location.anchor;
     requestFocusSpatialAnchor({
@@ -79,46 +89,177 @@ function focusLocation(location: StoryLocation, placesById: Map<string, Place>, 
   }
 
   if (location.kind === 'place') {
-    focusPlace(placesById.get(location.placeId) ?? fallbackPlace);
+    const place = placesById.get(location.placeId) ?? fallbackPlace;
+    if (place) focusPlace(place);
     return;
   }
 
-  focusPlace(fallbackPlace);
+  if (fallbackPlace) focusPlace(fallbackPlace);
 }
 
-function StoryCard({ story, onOpen }: { story: PublishedStory; onOpen: () => void }) {
+function StoryCard({
+  material = 'paper',
+  onOpen,
+  story,
+}: {
+  material?: 'glass' | 'paper';
+  onOpen: () => void;
+  story: PublishedStory;
+}) {
   const firstMediaId = story.mediaAssetIds[0];
+  const isGlass = material === 'glass';
 
   return (
     <button
-      className="mb-3 block w-full break-inside-avoid overflow-hidden rounded-[18px] bg-white text-left shadow-[0_8px_30px_rgba(30,31,27,0.06)] ring-1 ring-black/[0.045] transition-transform duration-180 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8ba66b]"
+      className={cn(
+        'mb-4 block w-full break-inside-avoid overflow-hidden rounded-[16px] text-left transition-[opacity,transform] duration-180 hover:-translate-y-0.5 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-strong/70',
+        isGlass ? 'text-white' : 'text-[#20221f]',
+      )}
       onClick={onOpen}
       type="button"
     >
       {firstMediaId ? (
         <img
           alt={storyDisplayTitle(story)}
-          className="block aspect-[4/5] w-full bg-black/5 object-cover"
+          className="block aspect-[4/5] w-full rounded-[16px] bg-black/5 object-cover"
           loading="lazy"
           src={getPublishedStoryMediaUrl(story.id, firstMediaId)}
         />
       ) : (
-        <div className="grid aspect-[4/5] place-items-center bg-[linear-gradient(145deg,#edf0e5,#f7f5ee)] px-5 text-center">
-          <p className="m-0 text-[15px] font-medium leading-[1.75] tracking-[-0.02em] text-[#2c3328]">
+        <div className={cn('grid aspect-[4/5] place-items-center rounded-[16px] px-5 text-center', isGlass ? 'bg-white/12' : 'bg-[#edf0e5]')}>
+          <p className={cn('m-0 text-[15px] font-medium leading-[1.75] tracking-[-0.02em]', isGlass ? 'text-white/90' : 'text-[#2c3328]')}>
             {storyTextCover(story)}
           </p>
         </div>
       )}
-      <div className="px-3.5 pb-3.5 pt-3">
-        <div className="line-clamp-2 text-[13px] font-semibold leading-[1.5] tracking-[-0.02em] text-[#20221f]">
+      <div className={cn('px-1.5 pb-1 pt-3', isGlass && 'px-2')}>
+        <div className={cn('line-clamp-2 text-[13px] font-semibold leading-[1.5] tracking-[-0.02em]', isGlass ? 'text-white/94' : 'text-[#20221f]')}>
           {storyDisplayTitle(story)}
         </div>
-        <div className="mt-2 flex items-center justify-between gap-2 text-[10px] text-black/38">
+        <div className={cn('mt-2 flex items-center justify-between gap-2 text-[10px]', isGlass ? 'text-white/56' : 'text-black/38')}>
           <span className="truncate">{fallbackAuthorName(story)}</span>
           {story.memoryTime ? <span className="shrink-0">{story.memoryTime}</span> : null}
         </div>
       </div>
     </button>
+  );
+}
+
+function StoryAnchorPeek({
+  onBack,
+  onRead,
+  onFlyToHere,
+  story,
+}: {
+  onBack: () => void;
+  onRead: () => void;
+  onFlyToHere: () => void;
+  story: PublishedStory;
+}) {
+  const firstMediaId = story.mediaAssetIds[0];
+
+  return (
+    <div className="min-h-full px-5 pb-[calc(2rem+var(--safe-bottom))] pt-6 text-white">
+      <header className="flex items-start justify-between gap-4">
+        <div>
+          <div className="text-[10px] font-semibold uppercase tracking-[0.17em] text-brand-strong">故事锚点</div>
+          <h2 className="mb-0 mt-2 text-[28px] font-semibold leading-[1.12] tracking-[-0.055em]">校园里的一个角落</h2>
+        </div>
+        <button
+          aria-label="关闭故事锚点"
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/18 bg-white/8 text-[20px] leading-none text-white/72 hover:bg-white/14"
+          onClick={onBack}
+          type="button"
+        >
+          ×
+        </button>
+      </header>
+
+      {firstMediaId ? (
+        <img
+          alt={storyDisplayTitle(story)}
+          className="mt-6 block aspect-[4/5] max-h-[42vh] w-full rounded-[18px] object-cover"
+          src={getPublishedStoryMediaUrl(story.id, firstMediaId)}
+        />
+      ) : (
+        <div className="mt-6 grid aspect-[4/5] max-h-[42vh] place-items-center rounded-[18px] bg-white/12 px-8 text-center">
+          <p className="m-0 text-[22px] font-medium leading-[1.65] tracking-[-0.035em] text-white/90">
+            {storyTextCover(story)}
+          </p>
+        </div>
+      )}
+
+      <div className="mt-5">
+        <div className="flex items-center justify-between gap-3 text-[11px] text-white/56">
+          <span className="font-medium text-white/82">{fallbackAuthorName(story)}</span>
+          <span>{story.memoryTime || formatPublishedTime(story.publishedAt)}</span>
+        </div>
+        <h3 className="mb-0 mt-3 text-[21px] font-semibold leading-[1.35] tracking-[-0.035em] text-white">
+          {storyDisplayTitle(story)}
+        </h3>
+        {story.body ? (
+          <p className="mb-0 mt-3 line-clamp-3 whitespace-pre-wrap text-[13px] leading-[1.75] text-white/68">
+            {story.body}
+          </p>
+        ) : null}
+      </div>
+
+      <div className="mt-6 flex flex-wrap gap-2">
+        <button className={cn(buttonVariants({ variant: 'tertiary' }), 'border-brand-strong/45 bg-brand/18 text-brand-strong')} onClick={onFlyToHere} type="button">
+          飞到这里
+        </button>
+        <button className={cn(buttonVariants({ variant: 'secondary' }), 'border-white/18 bg-white/10 text-white/82')} onClick={onRead} type="button">
+          阅读全文
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function StoryAnchorClusterPeek({
+  onBack,
+  onOpenStory,
+  stories,
+}: {
+  onBack: () => void;
+  onOpenStory: (storyId: string) => void;
+  stories: PublishedStory[];
+}) {
+  return (
+    <div className="min-h-full px-5 pb-[calc(2rem+var(--safe-bottom))] pt-6 text-white">
+      <header className="flex items-start justify-between gap-4">
+        <div>
+          <div className="text-[10px] font-semibold uppercase tracking-[0.17em] text-brand-strong">故事聚合</div>
+          <h2 className="mb-0 mt-2 text-[28px] font-semibold leading-[1.12] tracking-[-0.055em]">这里有 {stories.length} 段记忆</h2>
+          <p className="mb-0 mt-3 text-[13px] leading-[1.7] text-white/62">选择一段故事打开预览，镜头不会自动移动。</p>
+        </div>
+        <button
+          aria-label="关闭故事聚合"
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/18 bg-white/8 text-[20px] leading-none text-white/72 hover:bg-white/14"
+          onClick={onBack}
+          type="button"
+        >
+          ×
+        </button>
+      </header>
+
+      <div className="mt-7 divide-y divide-white/10">
+        {stories.map((story) => (
+          <button
+            className="flex w-full items-center justify-between gap-4 py-4 text-left transition-colors hover:text-brand-strong"
+            key={story.id}
+            onClick={() => onOpenStory(story.id)}
+            type="button"
+          >
+            <span className="min-w-0">
+              <span className="block truncate text-[15px] font-semibold text-white/92">{storyDisplayTitle(story)}</span>
+              <span className="mt-1 block truncate text-[11px] text-white/52">{fallbackAuthorName(story)}{story.memoryTime ? ` · ${story.memoryTime}` : ''}</span>
+            </span>
+            <span className="shrink-0 text-[20px] text-white/38">›</span>
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -133,19 +274,21 @@ function StoryDetail({
   onBack: () => void;
   onEditStory: (storyId: string) => void;
   onRemovedStory: (storyId: string) => void;
-  place: Place;
+  place: Place | null;
   placesById: Map<string, Place>;
   story: PublishedStory;
 }) {
+  const locationLabel = place?.name ?? (story.location.kind === 'anchor' ? '校园里的一个角落' : '若水广场');
+
   return (
-    <div className="min-h-full bg-[#f7f7f3]">
-      <div className="sticky top-0 z-[3] flex h-[54px] items-center justify-between border-b border-black/[0.055] bg-[#f7f7f3]/94 px-4 backdrop-blur-[18px]">
+    <div className={cn('min-h-full', paperSurfaceClassNames.canvas)}>
+      <div className={cn('sticky top-0 z-[3] flex h-[54px] items-center justify-between border-b px-4', paperSurfaceClassNames.stickyHeader)}>
         <button className="rounded-full px-2 py-1 text-[13px] text-black/60 hover:bg-black/5" onClick={onBack} type="button">
           ‹ 返回
         </button>
-        <div className="max-w-[58%] truncate text-[12px] font-medium text-black/58">{place.name}</div>
+        <div className="max-w-[58%] truncate text-[12px] font-medium text-black/58">{locationLabel}</div>
         <button
-          className="rounded-full border border-black/8 bg-white px-3 py-1.5 text-[11px] font-medium text-black/62"
+          className={cn(buttonVariants({ variant: 'secondary' }), 'px-3 py-1.5 text-[11px] font-medium')}
           onClick={() => focusLocation(story.location, placesById, place)}
           type="button"
         >
@@ -167,7 +310,7 @@ function StoryDetail({
           ))}
         </div>
       ) : (
-        <div className="grid min-h-[270px] place-items-center bg-[linear-gradient(145deg,#e9eee0,#f6f4eb)] px-8 text-center">
+        <div className="grid min-h-[270px] place-items-center bg-[#e9eee0] px-8 text-center">
           <p className="m-0 max-w-[320px] text-[22px] font-medium leading-[1.7] tracking-[-0.035em] text-[#2b3427]">
             {storyTextCover(story)}
           </p>
@@ -201,21 +344,40 @@ function StoryDetail({
 
 function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemoryLayerProps) {
   const placeOverlay = useViewerUiStore((store) => store.placeOverlay);
+  const storyAnchorOverlay = useViewerUiStore((store) => store.storyAnchorOverlay);
   const highlightAuthoring = useViewerUiStore((store) => store.highlightAuthoring);
   const [places, setPlaces] = useState<Place[]>([]);
   const [placesError, setPlacesError] = useState<string | null>(null);
   const [activePlaceId, setActivePlaceId] = useState<string | null>(null);
+  const [publishedStories, setPublishedStories] = useState<PublishedStory[]>([]);
   const [stories, setStories] = useState<PublishedStory[]>([]);
   const [storiesState, setStoriesState] = useState<StoriesState>('idle');
   const [storiesError, setStoriesError] = useState<string | null>(null);
   const [activeStoryId, setActiveStoryId] = useState<string | null>(null);
+  const [activeAnchorStoryId, setActiveAnchorStoryId] = useState<string | null>(null);
+  const [activeClusterStoryIds, setActiveClusterStoryIds] = useState<string[] | null>(null);
+  const [anchorPeekExpanded, setAnchorPeekExpanded] = useState(false);
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
   const [mobileExpanded, setMobileExpanded] = useState(false);
   const storiesRequestRef = useRef(0);
 
   const placesById = useMemo(() => new Map(places.map((place) => [place.id, place])), [places]);
+  const publishedStoriesById = useMemo(
+    () => new Map(publishedStories.map((story) => [story.id, story])),
+    [publishedStories],
+  );
   const activePlace = activePlaceId ? placesById.get(activePlaceId) ?? null : null;
   const activeStory = activeStoryId ? stories.find((story) => story.id === activeStoryId) ?? null : null;
+  const activeAnchorStory = activeAnchorStoryId
+    ? publishedStoriesById.get(activeAnchorStoryId) ?? null
+    : null;
+  const activeClusterStories = activeClusterStoryIds
+    ? activeClusterStoryIds.flatMap((storyId) => {
+        const story = publishedStoriesById.get(storyId);
+        return story ? [story] : [];
+      })
+    : [];
+  const panelIsPaper = Boolean(activeStory || anchorPeekExpanded || headerCollapsed);
 
   useEffect(() => {
     let cancelled = false;
@@ -250,7 +412,49 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
     };
   }, [sceneId]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    void fetchPublishedStories({ limit: 50 })
+      .then((nextStories) => {
+        if (cancelled) return;
+        setPublishedStories(nextStories);
+        requestSetStoryAnchorPins(
+          nextStories.flatMap((story) =>
+            story.location.kind === 'anchor'
+              ? [{
+                  id: story.id,
+                  title: storyDisplayTitle(story),
+                  position: [
+                    story.location.anchor.markerPosition.x,
+                    story.location.anchor.markerPosition.y,
+                    story.location.anchor.markerPosition.z,
+                  ] as [number, number, number],
+                }]
+              : [],
+          ),
+        );
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setPublishedStories([]);
+        requestSetStoryAnchorPins([]);
+      });
+
+    return () => {
+      cancelled = true;
+      requestSetStoryAnchorPins([]);
+    };
+  }, [sceneId]);
+
+  function clearAnchorSelection() {
+    setActiveAnchorStoryId(null);
+    setActiveClusterStoryIds(null);
+    setAnchorPeekExpanded(false);
+  }
+
   async function openPlace(place: Place) {
+    clearAnchorSelection();
     setActivePlaceId(place.id);
     setActiveStoryId(null);
     setHeaderCollapsed(false);
@@ -278,24 +482,64 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
     requestCancelSpatialAnchorAmbientFocus();
     setActivePlaceId(null);
     setActiveStoryId(null);
+    clearAnchorSelection();
     setStories([]);
     setStoriesState('idle');
     setHeaderCollapsed(false);
     setMobileExpanded(false);
   }
 
+  function openAnchorStory(storyId: string) {
+    setActivePlaceId(null);
+    setActiveStoryId(null);
+    setActiveClusterStoryIds(null);
+    setActiveAnchorStoryId(storyId);
+    setAnchorPeekExpanded(false);
+    setHeaderCollapsed(false);
+    setMobileExpanded(false);
+  }
+
+  function openStoryCluster(storyIds: string[]) {
+    setActivePlaceId(null);
+    setActiveStoryId(null);
+    setActiveAnchorStoryId(null);
+    setActiveClusterStoryIds(storyIds);
+    setAnchorPeekExpanded(false);
+    setHeaderCollapsed(false);
+    setMobileExpanded(false);
+  }
+
+  function closeAnchorContent() {
+    requestCancelSpatialAnchorAmbientFocus();
+    clearAnchorSelection();
+  }
+
   function handleEditStory(storyId: string) {
     requestCancelSpatialAnchorAmbientFocus();
     setActiveStoryId(null);
+    clearAnchorSelection();
     onOpenStoryComposer(storyId);
   }
 
   function handleRemovedStory(storyId: string) {
     setStories((current) => current.filter((story) => story.id !== storyId));
+    setPublishedStories((current) => current.filter((story) => story.id !== storyId));
     setActiveStoryId(null);
+    if (activeAnchorStoryId === storyId) clearAnchorSelection();
+    if (activeClusterStoryIds) {
+      const nextIds = activeClusterStoryIds.filter((id) => id !== storyId);
+      if (nextIds.length === 0) clearAnchorSelection();
+      else setActiveClusterStoryIds(nextIds);
+    }
   }
 
-  if (places.length === 0 && !activePlace) {
+  if (
+    places.length === 0 &&
+    publishedStories.length === 0 &&
+    !activePlace &&
+    !activeAnchorStory &&
+    activeClusterStories.length === 0
+  ) {
     return placesError ? (
       <div className="pointer-events-none absolute left-[calc(1rem+var(--safe-left))] top-[calc(1rem+var(--safe-top))] z-[3] rounded-full bg-black/36 px-3 py-2 text-[10px] text-white/62 backdrop-blur-[12px]">
         地点暂时不可用
@@ -305,10 +549,54 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
 
   return (
     <div className="pointer-events-none absolute inset-0 z-[3]" aria-label="校园地点与记忆">
+      {storyAnchorOverlay.items.map((item) => {
+        if (item.kind === 'cluster') {
+          return (
+            <button
+              aria-label={`打开故事聚合，共 ${item.storyIds.length} 段记忆`}
+              className={cn(
+                'pointer-events-auto absolute inline-flex min-w-9 items-center justify-center gap-1 px-2.5 py-1.5 text-[11px] font-semibold text-white shadow-[0_8px_24px_rgba(0,0,0,0.16)] transition-[opacity,transform,background-color,border-color] duration-180 hover:border-brand-strong/55 hover:bg-brand/24 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-strong/70',
+                glassSurfaceClassNames.subtle,
+                (!item.isVisible || highlightAuthoring.isEnabled) && 'pointer-events-none opacity-0',
+              )}
+              key={item.id}
+              onClick={() => openStoryCluster(item.storyIds)}
+              style={{ transform: `translate3d(${item.left}px, ${item.top}px, 0) translate(-50%, -50%)` }}
+              type="button"
+            >
+              <span className="h-2 w-2 rounded-full bg-[#f2d6a4] shadow-[0_0_0_5px_rgba(242,214,164,0.14)]" />
+              {item.storyIds.length}
+            </button>
+          );
+        }
+
+        const story = publishedStoriesById.get(item.id);
+        if (!story) return null;
+
+        return (
+          <button
+            aria-label={`打开故事：${storyDisplayTitle(story)}`}
+            className={cn(
+              'pointer-events-auto absolute inline-flex max-w-[180px] items-center gap-2 px-2.5 py-1.5 text-left text-white shadow-[0_8px_24px_rgba(0,0,0,0.16)] transition-[opacity,transform,background-color,border-color] duration-180 hover:border-brand-strong/55 hover:bg-brand/24 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-strong/70',
+              glassSurfaceClassNames.subtle,
+              (!item.isVisible || highlightAuthoring.isEnabled) && 'pointer-events-none opacity-0',
+            )}
+            key={item.id}
+            onClick={() => openAnchorStory(item.id)}
+            style={{ transform: `translate3d(${item.left}px, ${item.top}px, 0) translate(-50%, -50%)` }}
+            type="button"
+          >
+            <span className="h-2 w-2 shrink-0 rounded-full bg-[#f2d6a4] shadow-[0_0_0_5px_rgba(242,214,164,0.14)]" />
+            <span className="truncate text-[10px] font-semibold tracking-[-0.01em]">{storyDisplayTitle(story)}</span>
+          </button>
+        );
+      })}
+
       {placeOverlay.items.map((item) => (
         <button
           className={cn(
-            'pointer-events-auto absolute inline-flex items-center gap-2 rounded-full border border-white/16 bg-[rgba(20,24,18,0.44)] px-2.5 py-1.5 text-left text-white shadow-[0_8px_24px_rgba(0,0,0,0.14)] backdrop-blur-[10px] transition-[opacity,transform,background-color,border-color] duration-180 hover:border-[#c5dea5]/50 hover:bg-[rgba(29,39,22,0.72)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c5dea5]/70',
+            'pointer-events-auto absolute inline-flex items-center gap-2 px-2.5 py-1.5 text-left text-white shadow-[0_8px_24px_rgba(0,0,0,0.14)] transition-[opacity,transform,background-color,border-color] duration-180 hover:border-[#c5dea5]/50 hover:bg-[rgba(29,39,22,0.72)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c5dea5]/70',
+            glassSurfaceClassNames.subtle,
             activePlaceId === item.id && 'border-[#c5dea5]/55 bg-[rgba(34,48,25,0.78)]',
             (!item.isVisible || highlightAuthoring.isEnabled) && 'pointer-events-none opacity-0',
           )}
@@ -325,10 +613,13 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
         </button>
       ))}
 
-      {activePlace ? (
+      {activePlace || activeAnchorStory || activeClusterStories.length > 0 ? (
         <aside
           className={cn(
-            'pointer-events-auto z-[8] overflow-hidden border-black/[0.065] bg-[#f7f7f3]/96 text-[#181916] shadow-[0_24px_80px_rgba(18,20,16,0.18)] backdrop-blur-[24px]',
+            'pointer-events-auto z-[8] overflow-hidden border shadow-[0_24px_80px_rgba(18,20,16,0.18)] transition-[background-color,backdrop-filter,box-shadow,color] duration-[420ms] ease-out',
+            panelIsPaper
+              ? cn(paperSurfaceClassNames.canvas, 'border-black/[0.065]')
+              : cn(glassSurfaceClassNames.panel, 'border-white/16 text-white'),
             isMobile
               ? 'fixed bottom-0 left-0 right-0 rounded-t-[26px] border-t transition-[height] duration-300 ease-out'
               : 'absolute bottom-[calc(1rem+var(--safe-bottom))] right-[calc(1rem+var(--safe-right))] top-[calc(1rem+var(--safe-top))] w-[min(490px,calc(100vw-2rem))] rounded-[26px] border',
@@ -342,7 +633,7 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
               onClick={() => setMobileExpanded((value) => !value)}
               type="button"
             >
-              <span className="h-1 w-10 rounded-full bg-black/16" />
+              <span className={cn('h-1 w-10 rounded-full', panelIsPaper ? 'bg-black/16' : 'bg-white/28')} />
             </button>
           ) : null}
 
@@ -357,15 +648,48 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
                 story={activeStory}
               />
             </div>
-          ) : (
+          ) : activeAnchorStory ? (
+            <div className={cn('h-full overflow-y-auto', scrollAreaClassNames.thin)}>
+              {anchorPeekExpanded ? (
+                <StoryDetail
+                  onBack={() => setAnchorPeekExpanded(false)}
+                  onEditStory={handleEditStory}
+                  onRemovedStory={handleRemovedStory}
+                  place={null}
+                  placesById={placesById}
+                  story={activeAnchorStory}
+                />
+              ) : (
+                <StoryAnchorPeek
+                  onBack={closeAnchorContent}
+                  onFlyToHere={() => {
+                    focusLocation(activeAnchorStory.location, placesById);
+                    clearAnchorSelection();
+                  }}
+                  onRead={() => setAnchorPeekExpanded(true)}
+                  story={activeAnchorStory}
+                />
+              )}
+            </div>
+          ) : activeClusterStories.length > 0 ? (
+            <div className={cn('h-full overflow-y-auto', scrollAreaClassNames.thin)}>
+              <StoryAnchorClusterPeek
+                onBack={closeAnchorContent}
+                onOpenStory={openAnchorStory}
+                stories={activeClusterStories}
+              />
+            </div>
+          ) : activePlace ? (
             <div
               className={cn('h-full overflow-y-auto overscroll-contain', scrollAreaClassNames.thin)}
               onScroll={(event) => setHeaderCollapsed(event.currentTarget.scrollTop > 78)}
             >
               <div
                 className={cn(
-                  'sticky top-0 z-[5] flex items-center justify-between border-b bg-[#f7f7f3]/94 px-4 backdrop-blur-[18px] transition-[height,opacity,border-color] duration-180',
-                  headerCollapsed ? 'h-[54px] border-black/[0.055] opacity-100' : 'h-0 border-transparent opacity-0 pointer-events-none',
+                  'sticky top-0 z-[5] flex items-center justify-between border-b px-4 transition-[height,opacity,border-color,background-color,backdrop-filter] duration-180',
+                  headerCollapsed
+                    ? cn('h-[54px] border-black/[0.055] opacity-100', paperSurfaceClassNames.stickyHeader)
+                    : 'pointer-events-none h-0 border-transparent bg-transparent opacity-0',
                 )}
               >
                 <div className="truncate text-[13px] font-semibold">{activePlace.name}</div>
@@ -386,7 +710,7 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
                   <p className="mb-0 mt-4 text-[12px] leading-[1.7] text-black/34">这里的故事正在一点点补回来。</p>
                 )}
                 <button
-                  className="mt-4 rounded-full border border-black/8 bg-white px-3.5 py-2 text-[11px] font-medium text-black/58"
+                  className={cn(buttonVariants({ variant: 'secondary' }), 'mt-4 px-3.5 py-2 text-[11px] font-medium')}
                   onClick={() => focusPlace(activePlace)}
                   type="button"
                 >
@@ -403,21 +727,24 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
                 {storiesState === 'loading' ? (
                   <div className="grid min-h-[180px] place-items-center text-[12px] text-black/34">正在把这里的记忆找回来…</div>
                 ) : storiesState === 'error' ? (
-                  <div className="rounded-[18px] bg-[#fff0ed] px-4 py-4 text-[12px] leading-[1.7] text-[#8d4138]">{storiesError ?? 'Story 加载失败。'}</div>
+                  <div className="rounded-[14px] bg-[#fff0ed] px-4 py-4 text-[12px] leading-[1.7] text-[#8d4138]">{storiesError ?? 'Story 加载失败。'}</div>
                 ) : stories.length === 0 ? (
-                  <div className="grid min-h-[190px] place-items-center rounded-[20px] border border-dashed border-black/10 bg-white/45 px-6 text-center text-[12px] leading-[1.75] text-black/36">
-                    这里还没有留下故事。<br />第一段记忆，可以从这里开始。
+                  <div className="grid min-h-[190px] place-items-center gap-3 border-y border-dashed border-black/10 px-6 py-8 text-center text-[12px] leading-[1.75] text-black/36">
+                    <div>这里还没有留下故事。<br />第一段记忆，可以从这里开始。</div>
+                    <button className={cn(buttonVariants({ variant: 'tertiary' }), 'px-3.5 py-2 text-[11px]')} onClick={() => onOpenStoryComposer()} type="button">
+                      留下故事
+                    </button>
                   </div>
                 ) : (
                   <div className="columns-2 gap-3">
                     {stories.map((story) => (
-                      <StoryCard key={story.id} onOpen={() => setActiveStoryId(story.id)} story={story} />
+                      <StoryCard material={panelIsPaper ? 'paper' : 'glass'} key={story.id} onOpen={() => setActiveStoryId(story.id)} story={story} />
                     ))}
                   </div>
                 )}
               </section>
             </div>
-          )}
+          ) : null}
         </aside>
       ) : null}
     </div>

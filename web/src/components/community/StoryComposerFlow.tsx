@@ -33,7 +33,7 @@ import {
   fetchOwnedStoryDraft,
   getOwnedStoryMediaUrl,
 } from '../../community/my-stories-api';
-import { scrollAreaClassNames } from '../../styles/system';
+import { focusSurfaceClassNames, scrollAreaClassNames } from '../../styles/system';
 import { cn } from '../../utils/cn';
 import { SpatialAnchorEditorOverlay } from './SpatialAnchorEditorOverlay';
 
@@ -573,10 +573,10 @@ function StoryComposerFlow({
     <div
       aria-label="留下你的故事"
       aria-modal="true"
-      className="fixed inset-0 z-[20] flex items-center justify-center bg-black/38 p-4 backdrop-blur-[8px] max-[760px]:items-end max-[760px]:p-0"
+      className={cn('fixed inset-0 z-[20] flex items-center justify-center p-4 max-[760px]:items-end max-[760px]:p-0', focusSurfaceClassNames.editorBackdrop)}
       role="dialog"
     >
-      <div className="relative flex max-h-[min(860px,calc(var(--app-height)-2rem))] w-[min(760px,calc(100vw-2rem))] flex-col overflow-hidden rounded-[30px] border border-white/55 bg-[rgba(249,249,247,0.96)] text-[#191919] shadow-panel max-[760px]:h-[calc(var(--app-height)-var(--safe-top))] max-[760px]:max-h-none max-[760px]:w-full max-[760px]:rounded-b-none max-[760px]:rounded-t-[28px]">
+      <div className={cn('relative flex max-h-[min(860px,calc(var(--app-height)-2rem))] w-[min(760px,calc(100vw-2rem))] flex-col overflow-hidden rounded-[30px] max-[760px]:h-[calc(var(--app-height)-var(--safe-top))] max-[760px]:max-h-none max-[760px]:w-full max-[760px]:rounded-b-none max-[760px]:rounded-t-[28px]', focusSurfaceClassNames.editorPanel)}>
         <header className="flex min-h-16 items-center justify-between gap-3 border-b border-black/8 px-5 max-[760px]:px-4">
           <button
             className="h-10 rounded-full px-3 text-[14px] text-black/60 transition-colors hover:bg-black/5 hover:text-black"

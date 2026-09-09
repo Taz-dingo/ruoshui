@@ -20,6 +20,7 @@ import { MobileControlPanel } from '../components/viewer/MobileControlPanel';
 import { Sheet, SheetContent } from '../components/ui/sheet';
 import {
   appShellClassNames,
+  glassSurfaceClassNames,
   scrollAreaClassNames
 } from '../styles/system';
 import { useViewerUiStore } from '../ui/state/viewer-ui-store';
@@ -40,7 +41,8 @@ const hudClassName = cn(
   'pointer-events-none relative z-[4] h-full min-h-0 overflow-hidden'
 );
 const dockMenuSurfaceClassName = cn(
-  'w-full rounded-[26px] border border-ink/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.13),rgba(12,13,16,0.32))] px-0 py-2 opacity-100 shadow-none backdrop-blur-[24px] saturate-[1.1]',
+  glassSurfaceClassNames.panel,
+  'w-full px-0 py-2 opacity-100 shadow-none',
   scrollAreaClassNames.thin,
   'max-h-[calc(var(--app-height)-7rem)]'
 );
@@ -49,9 +51,13 @@ const dockPanelClassName = cn(
   'max-[760px]:hidden'
 );
 const dockButtonClassName =
-  'pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full border border-ink/18 bg-[rgba(14,16,20,0.58)] text-ink-muted/76 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_10px_22px_rgba(0,0,0,0.24)] backdrop-blur-[18px] transition-[border-color,background-color,color] duration-180 ease-out hover:border-brand/46 hover:bg-[rgba(26,30,34,0.72)] hover:text-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-strong/70';
+  cn(
+    glassSurfaceClassNames.capsule,
+    'pointer-events-auto flex h-11 w-11 items-center justify-center text-ink-muted/76 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_10px_22px_rgba(0,0,0,0.24)] transition-[border-color,background-color,color] duration-180 ease-out hover:border-brand/46 hover:bg-[rgba(26,30,34,0.72)] hover:text-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-strong/70',
+  );
 const mobileSheetClassName = cn(
-  'fixed z-[7] left-[calc(0.45rem+var(--safe-left))] right-[calc(0.45rem+var(--safe-right))] bottom-[calc(0.35rem+var(--safe-bottom))] h-[min(calc(var(--app-height)*0.78),680px)] max-h-none overflow-hidden rounded-[28px] border border-ink/20 bg-[linear-gradient(180deg,rgba(255,255,255,0.18),rgba(10,11,14,0.88))] px-0 py-0 shadow-panel backdrop-blur-[28px] saturate-[1.1] [touch-action:pan-y] overscroll-none',
+  glassSurfaceClassNames.panel,
+  'fixed z-[7] left-[calc(0.45rem+var(--safe-left))] right-[calc(0.45rem+var(--safe-right))] bottom-[calc(0.35rem+var(--safe-bottom))] h-[min(calc(var(--app-height)*0.78),680px)] max-h-none overflow-hidden px-0 py-0 [touch-action:pan-y] overscroll-none',
   'data-[state=closed]:pointer-events-none data-[state=closed]:animate-[ruoshui-sheet-bottom-out_220ms_cubic-bezier(0.4,0,1,1)_forwards] data-[state=open]:pointer-events-auto data-[state=open]:animate-[ruoshui-sheet-bottom-in_340ms_cubic-bezier(0.16,1,0.3,1)_forwards]'
 );
 

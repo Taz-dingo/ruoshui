@@ -90,9 +90,20 @@ interface ViewerPlacePin {
   position: [number, number, number];
 }
 
+interface ViewerStoryAnchorPin {
+  id: string;
+  title: string;
+  position: [number, number, number];
+}
+
 interface SetPlacePinsCommand {
   type: 'set-place-pins';
   pins: ViewerPlacePin[];
+}
+
+interface SetStoryAnchorPinsCommand {
+  type: 'set-story-anchor-pins';
+  pins: ViewerStoryAnchorPin[];
 }
 
 interface FocusSpatialAnchorCommand {
@@ -145,6 +156,7 @@ type ViewerCommand =
   | SetHighlightAuthoringEnabledCommand
   | SetHighlightPlaneYCommand
   | SetPlacePinsCommand
+  | SetStoryAnchorPinsCommand
   | SelectPresetCommand
   | SelectRouteCommand
   | SelectVariantCommand;
@@ -228,6 +240,13 @@ function requestCancelSpatialAnchorAmbientFocus() {
 function requestSetPlacePins(pins: ViewerPlacePin[]) {
   emitViewerCommand({
     type: 'set-place-pins',
+    pins
+  });
+}
+
+function requestSetStoryAnchorPins(pins: ViewerStoryAnchorPin[]) {
+  emitViewerCommand({
+    type: 'set-story-anchor-pins',
     pins
   });
 }
@@ -329,11 +348,13 @@ export {
   requestSetHighlightAuthoringEnabled,
   requestSetHighlightPlaneY,
   requestSetPlacePins,
+  requestSetStoryAnchorPins,
   requestVariantSelection,
   subscribeViewerCommands
 };
 
 export type {
   ViewerCommand,
-  ViewerPlacePin
+  ViewerPlacePin,
+  ViewerStoryAnchorPin
 };

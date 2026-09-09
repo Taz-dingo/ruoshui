@@ -1,6 +1,7 @@
 import {
   projectHighlightPins,
   projectNamedPins,
+  projectStoryAnchorPins,
   projectWorldPoint
 } from '../../runtime/highlight-projection';
 import { syncCameraState, syncHighlightOverlayState } from '../state/viewer-ui-sync';
@@ -13,12 +14,16 @@ import {
 import { useViewerUiStore } from '../state/viewer-ui-store';
 import type { VariantBenchmark } from '../../benchmark/types';
 import type { ViewerHighlight, ViewerVariant } from '../../content/types';
-import type { ViewerPlacePin } from '../commands/viewer-command-bus';
+import type {
+  ViewerPlacePin,
+  ViewerStoryAnchorPin
+} from '../commands/viewer-command-bus';
 
 interface CreateViewerShellControllerArgs {
   pc: any;
   highlights: ViewerHighlight[];
   getPlacePins: () => ViewerPlacePin[];
+  getStoryAnchorPins: () => ViewerStoryAnchorPin[];
   showPerfHud: boolean;
   publishVariantPanel: () => void;
   getVariantBenchmark: (variantId: string | null | undefined) => VariantBenchmark | null;
@@ -32,6 +37,7 @@ function createViewerShellController({
   pc,
   highlights,
   getPlacePins,
+  getStoryAnchorPins,
   showPerfHud,
   publishVariantPanel,
   getVariantBenchmark,
@@ -90,6 +96,7 @@ function createViewerShellController({
     if (!runtimeState?.camera || !runtimeState?.canvasElement) {
       syncHighlightOverlayState({ items: [] });
       useViewerUiStore.getState().setPlaceOverlay({ items: [] });
+      useViewerUiStore.getState().setStoryAnchorOverlay({ items: [] });
       const highlightAuthoring = useViewerUiStore.getState().highlightAuthoring;
       if (highlightAuthoring.previewVisible) {
         useViewerUiStore.getState().setHighlightAuthoring({
@@ -163,6 +170,26 @@ function createViewerShellController({
     if (runtimeState.lastPlaceOverlaySnapshot !== placeSnapshot) {
       runtimeState.lastPlaceOverlaySnapshot = placeSnapshot;
       useViewerUiStore.getState().setPlaceOverlay({ items: placeItems });
+    }
+
+    const storyAnchorPins = getStoryAnchorPins();
+    const storyAnchorItems = storyAnchorPins.length > 0
+      ? projectStoryAnchorPins({
+          clusterRadius: 56,
+          pc,
+          runtimeState,
+          pins: storyAnchorPins
+        })
+      : [];
+    const storyAnchorSnapshot = storyAnchorItems
+      .map((item) =>
+        `${item.id}:${item.isVisible ? 1 : 0}:${Math.round(item.left)}:${Math.round(item.top)}`
+      )
+      .join('|');
+
+    if (runtimeState.lastStoryAnchorOverlaySnapshot !== storyAnchorSnapshot) {
+      runtimeState.lastStoryAnchorOverlaySnapshot = storyAnchorSnapshot;
+      useViewerUiStore.getState().setStoryAnchorOverlay({ items: storyAnchorItems });
     }
   };
 

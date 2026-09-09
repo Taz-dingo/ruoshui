@@ -44,7 +44,10 @@ import {
   installViewerStartupBindings
 } from '../ui/controllers/viewer-startup-controller';
 import { createViewerShellController } from '../ui/controllers/viewer-shell-controller';
-import type { ViewerPlacePin } from '../ui/commands/viewer-command-bus';
+import type {
+  ViewerPlacePin,
+  ViewerStoryAnchorPin
+} from '../ui/commands/viewer-command-bus';
 import { createViewCaptureController } from '../capture/view-capture-controller';
 import {
   clearViewerLoading,
@@ -95,6 +98,7 @@ async function initializeViewer({
     maxRouteRunHistory
   );
   let placePins: ViewerPlacePin[] = [];
+  let storyAnchorPins: ViewerStoryAnchorPin[] = [];
 
   initLongTaskObserver(longTaskBuffer);
 
@@ -138,6 +142,7 @@ async function initializeViewer({
     pc,
     highlights: data.highlights ?? [],
     getPlacePins: () => placePins,
+    getStoryAnchorPins: () => storyAnchorPins,
     showPerfHud: viewerConfig.showPerfHud,
     publishVariantPanel,
     getVariantBenchmark,
@@ -472,6 +477,12 @@ async function initializeViewer({
     },
     setPlacePins: (pins) => {
       placePins = pins;
+      const runtimeState = session.getRuntime();
+      renderHighlightOverlay(runtimeState);
+      runtimeState?.requestRender?.();
+    },
+    setStoryAnchorPins: (pins) => {
+      storyAnchorPins = pins;
       const runtimeState = session.getRuntime();
       renderHighlightOverlay(runtimeState);
       runtimeState?.requestRender?.();
