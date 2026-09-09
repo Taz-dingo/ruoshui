@@ -1,17 +1,17 @@
 # 项目 Spec
 
-最后更新：`2026-09-06`
+最后更新：`2026-09-09`
 
 ## 产品定义
 
 `若水` 是一个以常州老校区为对象的 Web 数字纪念项目：**3D 校园是空间入口，Place / Anchor 是空间定位，Story 是内容最小单位，讨论与点赞构成轻社交。**
 
-它不是“3D 场景旁边挂一个论坛”，也不是先做规模化社区；第一目标是让校友低门槛地重新进入校园空间、留下真实记忆，并围绕具体 Story 继续交流。
+它不是“3D 场景旁边挂一个论坛”，也不是先做规模化社区；第一目标是让校友低门槛地重新进入校园空间、发现真实记忆、留下自己的故事，并能从内容自然回到它发生的地方。
 
 ## 必须成立
 
 - 浏览器中稳定展示已验收的高质量空中场景；正式生产默认使用完整 Single SOG。
-- 用户能从 3D Place 进入地点介绍与 Story，也能从 Story 回到其 Place / Anchor。
+- 用户能从 3D Place / 已发布 Story custom Anchor 发现内容，也能从 Story 回到其 Place / Anchor。
 - 真实校友能通过 Email OTP 建立持久 User，创建 Story、提交审核，并在 Story 下点赞、评论和回复。
 - Story 投稿者自己完成文字、照片和位置录入；管理员主要负责审核、轻量校准与发布，不重新录入。
 - Cloudflare Pages + Workers + D1 + R2 提供可维护的页面、API、关系数据和媒体路径。
@@ -25,6 +25,8 @@
 - Story 可选择一个已有 Place、一个自定义 Anchor，或不绑定位置。
 - v1 一个 Story 最多一个主要位置；多地点关联延后。
 - 用户提交的自定义 Anchor 在审核前只是 proposed anchor，不直接成为公共 Place。
+- **审核发布后的 custom Anchor 是公共空间入口的一部分**：它应可在 3D 场景被发现，而不是只存在于 Story Detail 的“回到这里”。
+- Place 与 Story Anchor 有视觉层级差异；Place 永远高于 Story Anchor，Story Anchor 可按屏幕空间聚合为 cluster。
 
 ### Story
 
@@ -64,13 +66,37 @@
 
 ## 核心交互
 
+### Spatial discovery
+
+生产公开空间层统一为：`Place Pin + Published Story Anchor Pin + Story Anchor Cluster`。
+
+- **点击 Place / Story Anchor 只打开内容预览，不自动飞镜头。** Camera focus 必须由用户显式点击“飞到这里”。
+- Place Pin 是稳定公共地点，优先级最高，不被 Story cluster 吞掉。
+- Story Anchor Pin 更轻量；远景或高密度区域按屏幕距离聚合，避免大量点覆盖场景。
+- 点击 cluster 优先 focus / zoom 到该区域并尝试拆分；无法继续拆分时显示“这里有 N 段记忆”的轻预览。
+- 旧 Highlight / ForumPost demo 不属于普通用户生产交互；如保留，仅作为 Admin Lab / development 历史实验能力。
+
 ### Place → Story
 
-- 点击 Place 后镜头过渡到人工保存的 focus camera，并可有轻微 ambient 运镜；用户手动操作时立即退出自动运镜。
-- Place 内容层顶部展示地点名称和介绍，下方直接是 Story masonry feed。
-- 只有滚到顶部时展示完整介绍；下滚后收缩为 sticky title。
+- 点击 Place 后打开当前地点的轻量内容层；**不自动执行 camera transition**。
+- Place 内容层直接展示地点名称、intro 与对应 Published Story 预览 / feed；不提供“看点位图文”二次按钮。
+- “飞到这里”是显式操作，使用人工保存的完整 camera pose；focus 完成后可进入轻微 ambient 运镜，用户手动操作时立即退出。
+- Place 无 Story 时显示自然 empty state，并优先提供“留下故事”，不显示开发占位文案。
+- 阅读更多 Story 时在同一容器中从 Glass Peek 过渡 / solidify 为 Paper Content，不再叠第二个 modal。
 - PC 使用较窄侧边内容层；移动端使用可扩展 Bottom Sheet。
 - Story Detail 在同一内容容器中打开并支持返回；从全局 Story 入口进入时可直接打开 Story。
+
+### Story Anchor → Story
+
+- 点击已发布 custom Anchor 后直接展示 Story 的轻预览：cover / title / author / memoryTime / 短摘要。
+- 预览中提供“飞到这里”和“阅读全文”；不存在额外“看图文”按钮。
+- “阅读全文”在同一内容容器中进入 Paper Story Detail；“回到这里”使用该 custom Anchor camera pose。
+
+### Global Community
+
+- 普通用户底部 Dock 提供“校园故事”入口，与导览镜头、我的 Story、留下故事并列。
+- “校园故事”打开全校园 Published Story Feed / Detail，交互心智可参考成熟图片社区，但仍保留若水的地点语义和设计 contract。
+- 全局社区是内容发现补充，不替代 3D 场景中的 Place / Anchor 空间发现。
 
 ### Story Editor
 
@@ -95,18 +121,21 @@
 ## 体验原则
 
 - 场景是第一屏，UI 不压过纪念空间。
+- 内容层按注意力从 Glass Chrome 逐步 solidify 为 Paper Content；不要用弹窗层叠表达层级。
+- 背景强弱关系优先通过 surface opacity、dim、排版和对比度建立，避免全屏重 blur。
 - 文案克制、温暖，不把页面做成技术 benchmark 面板。
 - Story 的空间关系有意义，但允许无位置 Story；不要为了数据整齐强迫用户伪造地点。
 - 移动端尊重 safe area、横竖屏和 rotate / pan / pinch zoom 手势。
 - Loading v1 只需用少量 Story thumbnail 做真实、轻量的生长 / 淡入等待体验；模型 ready 后立即进入，不追求重工程动画。
-- 自研 Streamed SOG、复杂 LOD、外围 skyline / 粗模均不阻塞 Content & Community v1。
+- 自研 Streamed SOG、复杂 LOD、外围 skyline / 粗模均不阻塞 Content & Community v1；实验能力只进入 Admin Lab / development。
 
-视觉约束以仓库根目录 [`design.md`](../../design.md) 为准；本次产品取舍的 rationale 见 [`../decisions/2026-09-06-content-community-v1.md`](../decisions/2026-09-06-content-community-v1.md)。
+视觉与交互材质约束以仓库根目录 [`design.md`](../../design.md) 为准；本次产品取舍 rationale 见相关 [`docs/decisions`](../decisions/) 记录。
 
 ## 上线成功标准
 
 - 一个真实用户能完成：Email OTP → StoryDraft → Place / Anchor → 提交审核 → 管理员审核 → Published Story。
-- 其他用户能完成：浏览 Place Story Feed → Story Detail → Like → Comment → Reply → 回到空间。
+- 其他用户能完成：从 3D Place / Story Anchor 发现内容 → Story Detail → Like → Comment → Reply → 回到空间。
+- Published custom Anchor 在场景中可发现，并在高密度时通过 cluster 保持可用。
 - Published Revision 在新修改审核期间保持稳定可见。
 - 桌面端核心链路稳定；iPhone Safari、Android Chrome、iPad / 触屏完成真实设备验收。
 - API、模型、媒体和上传失败时都有明确兜底；生产 Pages / Workers / D1 / R2 全链路可复验。
