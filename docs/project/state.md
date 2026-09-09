@@ -6,9 +6,11 @@
 
 ## 当前阶段
 
-若水的 **Content & Community v1 代码闭环已经基本完成**。当前 `main` 已具备正式 User/Auth、Place/SpatialAnchor、Story Draft/Revision/Review、Published Story read model、Place → Story 消费体验、轻社交、作者工作区、ambient focus 与 Story thumbnail loading。项目重心已经从“补产品骨架”转向 **生产配置、真实内容生产和真实设备验收**。
+若水的 **Content & Community v1 技术闭环已经基本完成**。当前 `main` 已具备正式 User/Auth、Place/SpatialAnchor、Story Draft/Revision/Review、Published Story read model、Place → Story 消费体验、轻社交、作者工作区、ambient focus 与 Story thumbnail loading。生产 Auth / D1 / Worker / Pages 已真实 smoke；项目重心已经从“补产品骨架”转向 **统一 Spatial Discovery、统一材质设计语言、真实内容生产和真实设备验收**。
 
-正式场景继续使用完整 Single SOG，经同源 `/edge-models/hhuc-original.sog` 从 R2 提供。自研 Streamed SOG / LOD 只保留历史实验，不作为当前产品主线。
+正式场景继续使用完整 Single SOG，经同源 `/edge-models/hhuc-original.sog` 从 R2 提供。自研 Streamed SOG / LOD 只保留实验入口，不作为当前产品主线。
+
+视觉与交互设计 contract 已统一为：`Scene → Glass Chrome → Paper Content → Focus Sheet`。具体规则见根目录 [`design.md`](../../design.md)，rationale 见 [`2026-09-09-scene-glass-paper-spatial-discovery.md`](../decisions/2026-09-09-scene-glass-paper-spatial-discovery.md)。
 
 ## 已经具备
 
@@ -17,9 +19,10 @@
 - `web/`：React + TypeScript + Vite + Zustand + PlayCanvas/SOG viewer。
 - 场景基础：镜头预设、小地图、动态 Place pins、加载反馈、按需渲染。
 - 手机 3D 交互逻辑：单指 rotate、双指 pan + pinch zoom；逻辑已具备，仍需真机验收。
-- Place focus 使用人工保存的完整 camera pose；transition 完成后可进入极轻 ambient focus，用户 mouse / wheel / touch 输入或关闭 Place 会立即取消，`prefers-reduced-motion` 下禁用。
+- Place focus 使用人工保存的完整 camera pose；显式 focus 后可进入极轻 ambient focus，用户 mouse / wheel / touch 输入或关闭 Place 会立即取消，`prefers-reduced-motion` 下禁用。
 - 服务主路径：Cloudflare Pages + Workers + D1 + R2；Node/PostgreSQL 仅作明确 fallback。
 - Pages `/api/*` 同源代理可透传 Worker response headers，包括 Session cookie。
+- 普通用户只使用完整 Single SOG；模型 variant / Streamed SOG / Perf HUD 只在 `?admin=lab` / development 暴露。
 
 ### Agent / Gate 基础
 
@@ -28,6 +31,7 @@
 - `.github/workflows/ci.yml` 已在 PR 和 main push 上执行完整 gate。
 - `web/scripts/visual-check.mjs --dock-hover` 用真实鼠标轨迹断言 dock 菜单 hover 行为（斜向移入面板保持打开、移开关闭），失败时非零退出；需要桌面视口与已运行的前端服务，未接入 CI。
 - Story、Auth、Place、Review、Social 等关键 invariant 已被 shared schema / service tests 固化，不再只靠 prose。
+- `AGENTS.md` 已要求任何用户可见 UI 改动先读取 `design.md`，并明确属于 Scene / Glass / Paper / Focus Sheet / Admin Lab 中哪一层。
 
 ### Content & Community 领域
 
@@ -35,7 +39,7 @@
 - v1 Story location 为 Place / custom Anchor / none 三选一；最终提交 body / media 至少一项、图片最多 12 张；Draft 可以不完整。
 - D1 schema 已包含 users、auth identities、OTP、sessions、places、stories、revisions、revision media、comments、likes、media ownership 与 media derivatives。
 - 生产 `ruoshui-forum` 的 D1 migration ledger 已与 repo 完全一致，包含 `0000` 到 `0003`；`media_asset_derivatives` 表已存在。
-- 旧 scene / forum 数据仍为 HighlightLayer 保留只读兼容；`/api/forum/*` 的旧写入、旧 media confirm 与 generic 匿名 upload-ticket issuance 已关闭，正式公开写入只有 User / Story / Place / Social 新主路径。
+- 旧 scene / forum 数据仍为 Admin Lab 的 HighlightLayer 保留只读兼容；`/api/forum/*` 的旧写入、旧 media confirm 与 generic 匿名 upload-ticket issuance 已关闭，正式公开写入只有 User / Story / Place / Social 新主路径。
 
 ### Auth / Account
 
@@ -59,9 +63,12 @@
 - 作者可以编辑已发布 Story 生成新 Revision；审核完成前旧 published revision 继续公开。
 - 作者可以主动下架，删除使用 soft delete；“我的 Story”展示草稿 / 审核中 / 待修改 / 未通过 / 已发布 / 已下架等状态。
 
-### Place → Story 消费与 Social
+### Spatial Discovery / Place → Story / Social
 
+- 普通用户生产空间层已经不再渲染旧 `HighlightLayer / ForumPost` demo；旧 Highlight 仅在 `?admin=lab` 中可见。
+- 普通用户 Dock 已有一级「校园故事」入口，直接打开全校园 Published Story Feed / Detail，不再依赖旧 Highlight 进入完整社区。
 - Place Memory Layer 已完成：Place intro + masonry Published Story feed；向下滚动后 intro 收缩为 sticky title。
+- **点击 Place 现在只打开 Place 内容，不自动飞镜头；“飞到这里”是显式 camera focus 操作。**
 - PC 使用窄侧边内容层；Mobile 使用可扩展 Bottom Sheet。
 - Story Detail 在同一内容容器内打开并可返回；支持多图横滑、作者、memoryTime、正文与地点语义。
 - “回到这里”使用 Story custom Anchor 或 Place camera pose 返回 3D。
@@ -78,6 +85,19 @@
 - Loading 不 fallback 到多 MB 原图；SOG ready 后立即进入 3D，不强制等动画播完。
 
 ## 尚未成立 / 仍需真实环境完成
+
+### Spatial Discovery 下一步
+
+- 已发布 Story 的 custom Anchor **目前仍未投影成普通用户可见的 Story Pin**；目前只有 Story Detail 的“回到这里”会消费其 camera pose。
+- Story Anchor 的屏幕空间 clustering 尚未实现；目标是远景 / 高密度聚合，Place 永远不被 cluster 吞掉。
+- Story Anchor Peek 尚未实现；目标是直接展示 Story 轻预览 +“飞到这里 / 阅读全文”，不再增加“看图文”门槛。
+- Place 当前已经直接展示新 Published Story 内容，但 Glass Peek → Paper Feed 的材质递进与更自然的 empty-state CTA 仍需在真实场景里继续视觉收敛。
+
+### 材质与视觉层级
+
+- `design.md` 已经锁定 Scene / Glass / Paper / Focus Sheet contract，但现有 `system.ts` primitive 仍混有旧玻璃和新 Paper 的语义，需要后续收口。
+- Story Feed / My Stories / Composer 当前背景 blur 偏重；需要在真实 3D 背景上主要改用 dim / surface opacity / contrast 建立层级。
+- Glass → Paper solidify 的具体 animation curve、opacity、blur、dim 参数尚未验收，不应在没有真实浏览器视觉循环时拍脑袋定死。
 
 ### 生产 Auth / SES
 
@@ -100,14 +120,14 @@
 
 - 仍需人工在真实 3D 场景中创建首批正式 Place；若水广场优先，然后补图书馆、操场、食堂等公共记忆入口。
 - 每个 Place 的 marker / camera pose / intro / sort order 都应真实人工标定，不允许为了填数据而虚构坐标。
-- 仍需准备真实照片和 Story，并完整跑一次 upload → Draft → submit → review / calibration → publish → Place Feed → Detail → 回到这里。
+- 仍需准备真实照片和 Story，并完整跑一次 upload → Draft → submit → review / calibration → publish → Place / Anchor spatial discovery → Feed → Detail → 回到这里。
 - 只有真实内容进入后，才能最终判断 masonry 裁切、TextCover、标题 fallback、memoryTime 和图文密度是否需要再调。
 
 ### Mobile / release acceptance
 
-- iPhone Safari 仍需真机验证 viewport、safe area、横竖屏、Place pins、单指 rotate、双指 pan + pinch、Bottom Sheet 与 3D 手势冲突。
+- iPhone Safari 仍需真机验证 viewport、safe area、横竖屏、Place / Anchor / cluster、单指 rotate、双指 pan + pinch、Bottom Sheet 与 3D 手势冲突。
 - Android Chrome、iPad / 触屏仍需核心链路验收。
-- production acceptance 仍需覆盖 OTP、改邮箱、Draft 恢复、上传、thumbnail derivative、Review、Revision、My Stories、Like / Comment、API / 图片 / 模型失败、返回场景以及 Pages / Workers / D1 / R2 / 腾讯云 SES 整条链路。
+- production acceptance 仍需覆盖 OTP、改邮箱、Draft 恢复、上传、thumbnail derivative、Review、Revision、My Stories、Like / Comment、API / 图片 / 模型失败、空间返回以及 Pages / Workers / D1 / R2 / 腾讯云 SES 整条链路。
 - 仍需找少量真实校友做可用性测试，基于真实行为收敛首屏、Place intro、Story 卡片和投稿阻力。
 
 ## 已知限制 / Later
@@ -120,6 +140,8 @@
 
 ## 当前判断
 
-现在不应继续无目的扩产品功能。下一阶段按 [`tasks.md`](tasks.md) 执行：**生产 SES / migration / deploy smoke + 首批真实 Place / Story + 真机 release acceptance**。只有真实链路暴露问题时，再做针对性代码修正。
+现在不应继续扩独立功能，而应按 [`tasks.md`](tasks.md) 执行：**Spatial Discovery 统一 + 材质系统落地 + 首批真实 Place / Story + 真机 release acceptance**。
 
-产品边界见 [`spec.md`](spec.md)；执行顺序见 [`tasks.md`](tasks.md)；人机协作规则见 [`agent-collaboration.md`](agent-collaboration.md)；部署 / 排障规则见 [`engineering-memory.md`](engineering-memory.md)。
+其中 custom Anchor clustering、Glass → Paper 动画、blur / dim 参数和真机手感必须在真实浏览器 / 3D 场景里迭代；纯 GitHub Agent 不应替人拍脑袋定这些视觉参数。
+
+产品边界见 [`spec.md`](spec.md)；视觉 contract 见 [`design.md`](../../design.md)；执行顺序见 [`tasks.md`](tasks.md)；人机协作规则见 [`agent-collaboration.md`](agent-collaboration.md)；部署 / 排障规则见 [`engineering-memory.md`](engineering-memory.md)。

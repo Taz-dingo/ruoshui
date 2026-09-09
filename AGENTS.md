@@ -11,7 +11,7 @@
 - 保持迭代小而聚焦；新 feature 用分支，完成后优先经 PR 交付。
 - 人负责产品意图、架构边界、关键 invariant 和验收；Agent 可自由选择实现细节，但不得静默扩大 scope 或改变 contract。
 - 能机械判断的重要规则优先变成类型、schema、test 或 script gate，不长期只依赖 prompt / prose。
-- UI 改动先读根目录 `design.md`；它是 viewer 的 agent 可读设计契约，外部 Apple 参考在 `docs/design/apple-reference/DESIGN.md`。
+- **任何用户可见 UI 改动都必须先读根目录 `design.md`，并明确它属于 Scene / Glass Chrome / Paper Content / Focus Sheet / Admin Lab 哪一层；再按需读 `docs/design/apple-reference/DESIGN.md`。禁止脱离 design contract 另起一套视觉语言。**
 - 提交前运行覆盖当前修改面的最小相关验证；用户可见流程至少走一次真实入口 / 真实副作用的 smoke，不能只相信自报成功。临时 Vite 进程必须停止。
 - 代码改动完成并通过最小验证后，默认立即部署到生产环境并核对线上结果；只有用户明确要求不发布时才跳过部署。
 - 每次代码或配置改动完成并通过最小验证后，立即创建聚焦 commit、push 当前分支并部署；若工作区有无关改动，只提交当前范围文件。
