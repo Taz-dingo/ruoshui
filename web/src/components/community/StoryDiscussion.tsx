@@ -389,7 +389,7 @@ function StoryDiscussion({ storyId }: { storyId: string }) {
       </div>
 
       {authOpen ? (
-        <div className="fixed inset-0 z-[30] grid place-items-end bg-black/24 p-3 backdrop-blur-[4px] min-[761px]:place-items-center" onMouseDown={() => setAuthOpen(false)} role="presentation">
+        <div className="fixed inset-0 z-[30] grid place-items-end bg-black/24 p-3 min-[761px]:place-items-center" onMouseDown={() => setAuthOpen(false)} role="presentation">
           <div className="w-full max-w-[390px] rounded-[24px] bg-[#fbfbf8] p-5 shadow-[0_24px_70px_rgba(0,0,0,0.2)]" onMouseDown={(event) => event.stopPropagation()} role="dialog" aria-modal="true" aria-label="登录若水">
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>

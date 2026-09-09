@@ -281,7 +281,7 @@ function StoryDetail({
   const locationLabel = place?.name ?? (story.location.kind === 'anchor' ? '校园里的一个角落' : '若水广场');
 
   return (
-    <div className={cn('min-h-full', paperSurfaceClassNames.canvas)}>
+    <div className="min-h-full">
       <div className={cn('sticky top-0 z-[3] flex h-[54px] items-center justify-between border-b px-4', paperSurfaceClassNames.stickyHeader)}>
         <button className="rounded-full px-2 py-1 text-[13px] text-black/60 hover:bg-black/5" onClick={onBack} type="button">
           ‹ 返回
@@ -359,6 +359,7 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
   const [anchorPeekExpanded, setAnchorPeekExpanded] = useState(false);
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
   const [mobileExpanded, setMobileExpanded] = useState(false);
+  const [panelSurfaceIsSolid, setPanelSurfaceIsSolid] = useState(false);
   const storiesRequestRef = useRef(0);
 
   const placesById = useMemo(() => new Map(places.map((place) => [place.id, place])), [places]);
@@ -378,6 +379,15 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
       })
     : [];
   const panelIsPaper = Boolean(activeStory || anchorPeekExpanded || headerCollapsed);
+
+  useEffect(() => {
+    if (!panelIsPaper) {
+      setPanelSurfaceIsSolid(false);
+      return;
+    }
+    const frame = window.requestAnimationFrame(() => setPanelSurfaceIsSolid(true));
+    return () => window.cancelAnimationFrame(frame);
+  }, [panelIsPaper]);
 
   useEffect(() => {
     let cancelled = false;
@@ -617,9 +627,14 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
         <aside
           className={cn(
             'pointer-events-auto z-[8] overflow-hidden border shadow-[0_24px_80px_rgba(18,20,16,0.18)] transition-[background-color,backdrop-filter,box-shadow,color] duration-[420ms] ease-out',
-            panelIsPaper
+            panelSurfaceIsSolid
               ? cn(paperSurfaceClassNames.canvas, 'border-black/[0.065]')
-              : cn(glassSurfaceClassNames.panel, 'border-white/16 text-white'),
+              : cn(
+                  glassSurfaceClassNames.panel,
+                  activeStory
+                    ? 'border-black/10 bg-white/[0.72] text-[#181916] [background-image:none]'
+                    : 'border-white/16 text-white',
+                ),
             isMobile
               ? 'fixed bottom-0 left-0 right-0 rounded-t-[26px] border-t transition-[height] duration-300 ease-out'
               : 'absolute bottom-[calc(1rem+var(--safe-bottom))] right-[calc(1rem+var(--safe-right))] top-[calc(1rem+var(--safe-top))] w-[min(490px,calc(100vw-2rem))] rounded-[26px] border',
@@ -633,7 +648,7 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
               onClick={() => setMobileExpanded((value) => !value)}
               type="button"
             >
-              <span className={cn('h-1 w-10 rounded-full', panelIsPaper ? 'bg-black/16' : 'bg-white/28')} />
+              <span className={cn('h-1 w-10 rounded-full', panelSurfaceIsSolid ? 'bg-black/16' : 'bg-white/28')} />
             </button>
           ) : null}
 
@@ -687,7 +702,7 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
               <div
                 className={cn(
                   'sticky top-0 z-[5] flex items-center justify-between border-b px-4 transition-[height,opacity,border-color,background-color,backdrop-filter] duration-180',
-                  headerCollapsed
+                  headerCollapsed && panelSurfaceIsSolid
                     ? cn('h-[54px] border-black/[0.055] opacity-100', paperSurfaceClassNames.stickyHeader)
                     : 'pointer-events-none h-0 border-transparent bg-transparent opacity-0',
                 )}
@@ -738,7 +753,7 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
                 ) : (
                   <div className="columns-2 gap-3">
                     {stories.map((story) => (
-                      <StoryCard material={panelIsPaper ? 'paper' : 'glass'} key={story.id} onOpen={() => setActiveStoryId(story.id)} story={story} />
+                      <StoryCard material={panelSurfaceIsSolid ? 'paper' : 'glass'} key={story.id} onOpen={() => setActiveStoryId(story.id)} story={story} />
                     ))}
                   </div>
                 )}

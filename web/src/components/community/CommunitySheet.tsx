@@ -150,7 +150,7 @@ function StoryDetail({
   const canReturn = canReturnToStory(story, placesById);
 
   return (
-    <div className={cn('min-h-full', paperSurfaceClassNames.canvas)}>
+    <div className="min-h-full">
       <div className={cn('sticky top-0 z-[3] flex h-[54px] items-center justify-between gap-2 border-b px-4', paperSurfaceClassNames.stickyHeader)}>
         <button
           className="shrink-0 rounded-full px-2 py-1 text-[13px] text-black/60 hover:bg-black/5"
@@ -232,6 +232,7 @@ function CommunitySheet({
   const [activeStoryId, setActiveStoryId] = useState<string | null>(null);
   const [loadState, setLoadState] = useState<LoadState>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isSurfaceSolid, setIsSurfaceSolid] = useState(false);
   const requestRef = useRef(0);
 
   const placesById = useMemo(
@@ -279,12 +280,19 @@ function CommunitySheet({
     if (!open) {
       requestRef.current += 1;
       setActiveStoryId(null);
+      setIsSurfaceSolid(false);
       return;
     }
 
     setActiveStoryId(null);
     void refreshStories();
   }, [open, sceneId]);
+
+  useEffect(() => {
+    if (!open) return;
+    const frame = window.requestAnimationFrame(() => setIsSurfaceSolid(true));
+    return () => window.cancelAnimationFrame(frame);
+  }, [open]);
 
   function returnToStory(story: PublishedStory) {
     if (!focusStoryLocation(story, placesById)) return;
@@ -302,9 +310,13 @@ function CommunitySheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         aria-label="校园故事"
-        className={sheetClassName}
+        className={cn(
+          sheetClassName,
+          'transition-[background-color,backdrop-filter,box-shadow,color,border-color] duration-[420ms] ease-out',
+          !isSurfaceSolid && 'bg-white/[0.72] text-[#181916] [background-image:none]'
+        )}
         side={isMobile ? 'bottom' : 'right'}
-        surface="paper"
+        surface={isSurfaceSolid ? 'paper' : 'glass'}
       >
         {activeStory ? (
           <div className={cn('h-full overflow-y-auto', scrollAreaClassNames.thin)}>

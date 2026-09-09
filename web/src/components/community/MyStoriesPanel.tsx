@@ -16,7 +16,7 @@ import {
   deleteOwnedStory,
   unpublishOwnedStory,
 } from '../../community/story-author-api';
-import { buttonVariants, focusSurfaceClassNames, scrollAreaClassNames } from '../../styles/system';
+import { buttonVariants, focusSurfaceClassNames, glassSurfaceClassNames, scrollAreaClassNames } from '../../styles/system';
 import { cn } from '../../utils/cn';
 import { EmailChangeDialog } from './EmailChangeDialog';
 
@@ -86,6 +86,16 @@ function MyStoriesPanel({
   const [message, setMessage] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [emailChangeOpen, setEmailChangeOpen] = useState(false);
+  const [isSurfaceSolid, setIsSurfaceSolid] = useState(false);
+
+  useEffect(() => {
+    if (!open) {
+      setIsSurfaceSolid(false);
+      return;
+    }
+    const frame = window.requestAnimationFrame(() => setIsSurfaceSolid(true));
+    return () => window.cancelAnimationFrame(frame);
+  }, [open]);
 
   const counts = useMemo(() => {
     let drafts = 0;
@@ -249,7 +259,12 @@ function MyStoriesPanel({
       className={cn('fixed inset-0 z-[18] flex items-center justify-center p-4 max-[760px]:items-end max-[760px]:p-0', focusSurfaceClassNames.workspaceBackdrop)}
       role="dialog"
     >
-      <div className={cn('flex max-h-[min(760px,calc(var(--app-height)-2rem))] w-[min(640px,calc(100vw-2rem))] flex-col overflow-hidden rounded-[28px] max-[760px]:h-[82dvh] max-[760px]:max-h-none max-[760px]:w-full max-[760px]:rounded-b-none max-[760px]:rounded-t-[28px]', focusSurfaceClassNames.workspacePanel)}>
+      <div className={cn(
+        'flex max-h-[min(760px,calc(var(--app-height)-2rem))] w-[min(640px,calc(100vw-2rem))] flex-col overflow-hidden rounded-[28px] transition-[background-color,backdrop-filter,box-shadow,color,border-color] duration-[420ms] ease-out max-[760px]:h-[82dvh] max-[760px]:max-h-none max-[760px]:w-full max-[760px]:rounded-b-none max-[760px]:rounded-t-[28px]',
+        isSurfaceSolid
+          ? focusSurfaceClassNames.workspacePanel
+          : cn(glassSurfaceClassNames.panel, 'bg-white/[0.72] text-[#181a18] [background-image:none]')
+      )}>
         <header className="flex min-h-[68px] items-center justify-between gap-4 border-b border-black/[0.065] px-5">
           <div className="min-w-0">
             <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#708653]">若水</div>

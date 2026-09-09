@@ -31,7 +31,7 @@ function MobileControlPanel({
 
   return (
     <div className="grid h-full grid-rows-[auto_minmax(0,1fr)]">
-      <div className="relative z-[1] border-b border-ink/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.12),rgba(255,255,255,0.04))] px-0 pb-2 pt-2 shadow-[inset_0_-1px_0_rgba(255,255,255,0.08)] backdrop-blur-[18px]">
+      <div className="relative z-[1] border-b border-ink/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.12),rgba(255,255,255,0.04))] px-0 pb-2 pt-2 shadow-[inset_0_-1px_0_rgba(255,255,255,0.08)] backdrop-blur-[8px]">
         <div className="mx-auto h-1.5 w-10 rounded-full bg-ink-muted/18" />
       </div>
 

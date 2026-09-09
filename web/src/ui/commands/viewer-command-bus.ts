@@ -164,6 +164,8 @@ type ViewerCommand =
 type ViewerCommandListener = (command: ViewerCommand) => void;
 
 const listeners = new Set<ViewerCommandListener>();
+let latestPlacePins: ViewerPlacePin[] = [];
+let latestStoryAnchorPins: ViewerStoryAnchorPin[] = [];
 
 function emitViewerCommand(command: ViewerCommand) {
   listeners.forEach((listener) => {
@@ -173,6 +175,8 @@ function emitViewerCommand(command: ViewerCommand) {
 
 function subscribeViewerCommands(listener: ViewerCommandListener) {
   listeners.add(listener);
+  listener({ type: 'set-place-pins', pins: latestPlacePins });
+  listener({ type: 'set-story-anchor-pins', pins: latestStoryAnchorPins });
 
   return () => {
     listeners.delete(listener);
@@ -238,6 +242,7 @@ function requestCancelSpatialAnchorAmbientFocus() {
 }
 
 function requestSetPlacePins(pins: ViewerPlacePin[]) {
+  latestPlacePins = pins;
   emitViewerCommand({
     type: 'set-place-pins',
     pins
@@ -245,6 +250,7 @@ function requestSetPlacePins(pins: ViewerPlacePin[]) {
 }
 
 function requestSetStoryAnchorPins(pins: ViewerStoryAnchorPin[]) {
+  latestStoryAnchorPins = pins;
   emitViewerCommand({
     type: 'set-story-anchor-pins',
     pins

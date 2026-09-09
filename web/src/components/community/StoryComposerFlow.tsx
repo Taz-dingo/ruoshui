@@ -33,7 +33,7 @@ import {
   fetchOwnedStoryDraft,
   getOwnedStoryMediaUrl,
 } from '../../community/my-stories-api';
-import { focusSurfaceClassNames, scrollAreaClassNames } from '../../styles/system';
+import { focusSurfaceClassNames, glassSurfaceClassNames, scrollAreaClassNames } from '../../styles/system';
 import { cn } from '../../utils/cn';
 import { SpatialAnchorEditorOverlay } from './SpatialAnchorEditorOverlay';
 
@@ -132,6 +132,16 @@ function StoryComposerFlow({
   const saveTimerRef = useRef<number | null>(null);
   const saveQueueRef = useRef<Promise<unknown>>(Promise.resolve());
   const mediaRef = useRef<LocalMedia[]>([]);
+  const [isSurfaceSolid, setIsSurfaceSolid] = useState(false);
+
+  useEffect(() => {
+    if (!open) {
+      setIsSurfaceSolid(false);
+      return;
+    }
+    const frame = window.requestAnimationFrame(() => setIsSurfaceSolid(true));
+    return () => window.cancelAnimationFrame(frame);
+  }, [open]);
 
   useEffect(() => {
     mediaRef.current = media;
@@ -576,7 +586,12 @@ function StoryComposerFlow({
       className={cn('fixed inset-0 z-[20] flex items-center justify-center p-4 max-[760px]:items-end max-[760px]:p-0', focusSurfaceClassNames.editorBackdrop)}
       role="dialog"
     >
-      <div className={cn('relative flex max-h-[min(860px,calc(var(--app-height)-2rem))] w-[min(760px,calc(100vw-2rem))] flex-col overflow-hidden rounded-[30px] max-[760px]:h-[calc(var(--app-height)-var(--safe-top))] max-[760px]:max-h-none max-[760px]:w-full max-[760px]:rounded-b-none max-[760px]:rounded-t-[28px]', focusSurfaceClassNames.editorPanel)}>
+      <div className={cn(
+        'relative flex max-h-[min(860px,calc(var(--app-height)-2rem))] w-[min(760px,calc(100vw-2rem))] flex-col overflow-hidden rounded-[30px] transition-[background-color,backdrop-filter,box-shadow,color,border-color] duration-[420ms] ease-out max-[760px]:h-[calc(var(--app-height)-var(--safe-top))] max-[760px]:max-h-none max-[760px]:w-full max-[760px]:rounded-b-none max-[760px]:rounded-t-[28px]',
+        isSurfaceSolid
+          ? focusSurfaceClassNames.editorPanel
+          : cn(glassSurfaceClassNames.panel, 'bg-white/[0.72] text-[#191919] [background-image:none]')
+      )}>
         <header className="flex min-h-16 items-center justify-between gap-3 border-b border-black/8 px-5 max-[760px]:px-4">
           <button
             className="h-10 rounded-full px-3 text-[14px] text-black/60 transition-colors hover:bg-black/5 hover:text-black"

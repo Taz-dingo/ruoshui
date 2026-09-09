@@ -123,7 +123,7 @@ function EmailChangeDialog({ onChanged, onClose, open }: EmailChangeDialogProps)
     <div
       aria-label="更换登录邮箱"
       aria-modal="true"
-      className="fixed inset-0 z-[24] grid place-items-center bg-black/35 p-4 backdrop-blur-[8px] max-[760px]:items-end max-[760px]:p-0"
+      className="fixed inset-0 z-[24] grid place-items-center bg-black/35 p-4 max-[760px]:items-end max-[760px]:p-0"
       role="dialog"
     >
       <div className="w-[min(470px,calc(100vw-2rem))] overflow-hidden rounded-[26px] border border-white/55 bg-[#f8f8f5]/98 text-[#191a18] shadow-panel max-[760px]:w-full max-[760px]:rounded-b-none max-[760px]:rounded-t-[26px]">
