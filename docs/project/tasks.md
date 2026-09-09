@@ -16,9 +16,9 @@
 
 ### A. GitHub Agent 可直接完成
 
-- [ ] 普通用户页面彻底退出旧 `HighlightLayer / ForumPost` 交互；旧 Highlight 仅保留在 `?admin=lab` / development。
-- [ ] 普通用户 Dock 增加一级「校园故事」入口，直接打开全校园 Published Story Feed / Detail。
-- [ ] Place 点击取消隐式 camera focus；点击只打开当前 Place 内容，显式「飞到这里」才使用保存的 camera pose。
+- [x] 普通用户页面彻底退出旧 `HighlightLayer / ForumPost` 交互；旧 Highlight 仅保留在 `?admin=lab` / development。
+- [x] 普通用户 Dock 增加一级「校园故事」入口，直接打开全校园 Published Story Feed / Detail。
+- [x] Place 点击取消隐式 camera focus；点击只打开当前 Place 内容，显式「飞到这里」才使用保存的 camera pose。
 - [ ] 对上述行为补最小 contract / component-level 回归验证，避免旧 Highlight 或自动 focus 重新进入生产主路径。
 - [ ] 如 Story Anchor clustering 需要新的 shared view state / command seam，先提供最小、可测试的数据结构，不负责肉眼调参。
 
