@@ -9,6 +9,7 @@
  * 用法：
  *   node web/scripts/visual-check.mjs --url http://localhost:5173
  *   node web/scripts/visual-check.mjs --url https://ruoshui-web.pages.dev/ --backend webgl2
+ *   node web/scripts/visual-check.mjs --url http://localhost:5173 --dock-hover
  *
  * 说明：
  *   - 输出目录默认 web/.visual-check/，内含 shot.png 与 report.json。
@@ -16,6 +17,10 @@
  *     脚本改用 CDP 整页截图，再回灌到页面里用 Image+canvas 统计像素。
  *   - 真实「天空是否黑」的判断建议配合视觉模型读 shot.png；本脚本只提供
  *     确定性信号（就绪状态、canvas 尺寸、报错、亮度统计）。
+ *   - `--dock-hover` 额外跑一次 dock 菜单 hover 轨迹断言：从图标沿真实鼠标
+ *     路径移入玻璃面板时菜单必须保持打开，移开后必须关闭。失败时脚本以
+ *     非零退出码结束，结果写入 report.json 的 dockHover 字段。它需要桌面
+ *     宽度视口与已运行的前端服务，因此不默认开启。
  */
 import { spawn } from 'node:child_process';
 import { mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs';
@@ -238,6 +243,15 @@ async function main() {
     returnByValue: true
   });
 
+  let dockHover = null;
+  if (ARGS.dockHover) {
+    dockHover = await runDockHoverCheck();
+    logs.push(`[dock-hover] ${JSON.stringify(dockHover)}`);
+    if (!dockHover.skipped && !dockHover.pass) {
+      process.exitCode = 1;
+    }
+  }
+
   const report = {
     url: ARGS.url,
     requestedBackend: ARGS.backend,
@@ -249,6 +263,7 @@ async function main() {
     bodyText,
     dom: JSON.parse(domProbe.result.value ?? '{}'),
     pixelStats,
+    dockHover,
     consoleErrors: logs.filter((l) => l.startsWith('[console.error') || l.startsWith('[exception') || l.startsWith('[net-fail')),
     requests
   };
@@ -256,6 +271,115 @@ async function main() {
   writeFileSync(reportPath, JSON.stringify(report, null, 2));
   console.log(JSON.stringify(report, null, 2));
   return report;
+}
+
+/**
+ * dock 菜单 hover 轨迹断言。
+ *
+ * 回归背景：`useFloating` 不传 `placement` 时默认 `bottom`，而面板用 CSS
+ * 定位在按钮上方（`bottom-full`），`safePolygon()` 的安全三角方向因此相反，
+ * 鼠标从图标斜向面板时菜单会在离开按钮后被误判为离开安全区而关闭。
+ * 这里用 CDP 真实鼠标事件逐像素走一遍路径，确保菜单行为不再回退。
+ */
+async function runDockHoverCheck() {
+  const evaluate = async (expression) => {
+    const res = await send('Runtime.evaluate', {
+      expression,
+      returnByValue: true,
+      awaitPromise: true
+    });
+    if (res.exceptionDetails) {
+      throw new Error(res.exceptionDetails.text ?? 'dock-hover evaluate failed');
+    }
+    return res.result?.value;
+  };
+  const moveMouse = (x, y) =>
+    send('Input.dispatchMouseEvent', {
+      type: 'mouseMoved',
+      x,
+      y,
+      button: 'none',
+      buttons: 0
+    });
+
+  const buttonJson = await evaluate(`(() => {
+    const btn = document.querySelector('button[title="导览镜头"]');
+    if (!btn) return null;
+    const b = btn.getBoundingClientRect();
+    return JSON.stringify({ cx: b.x + b.width / 2, cy: b.y + b.height / 2 });
+  })()`);
+  if (!buttonJson) {
+    return { skipped: true, reason: '未找到 dock 导览镜头按钮（移动端视口或非生产 UI）' };
+  }
+  const button = JSON.parse(buttonJson);
+
+  const isOpen = () =>
+    evaluate(`(() => {
+      const btn = document.querySelector('button[title="导览镜头"]');
+      const panel = document.querySelector('#dock-menu-presets');
+      return Boolean(btn && panel) &&
+        btn.getAttribute('aria-expanded') === 'true' &&
+        getComputedStyle(panel).visibility === 'visible';
+    })()`);
+
+  const openMenu = async () => {
+    await moveMouse(20, 20);
+    await sleep(400);
+    await moveMouse(button.cx, button.cy);
+    await sleep(500);
+    return isOpen();
+  };
+
+  if (!(await openMenu())) {
+    return { skipped: false, pass: false, reason: 'hover dock 图标后菜单没有打开' };
+  }
+
+  // 面板 rect 必须在打开状态读取：关闭时还带 translate-y-2 偏移。
+  const panel = JSON.parse(await evaluate(`(() => {
+    const p = document.querySelector('#dock-menu-presets').getBoundingClientRect();
+    return JSON.stringify({ left: p.left, right: p.right, top: p.top, bottom: p.bottom });
+  })()`));
+
+  const runPath = async (label, points, expectOpen) => {
+    const opened = await openMenu();
+    let closedAt = null;
+    let from = { x: button.cx, y: button.cy };
+    for (const target of points) {
+      for (let i = 1; i <= 16; i++) {
+        const x = from.x + (target.x - from.x) * (i / 16);
+        const y = from.y + (target.y - from.y) * (i / 16);
+        await moveMouse(x, y);
+        await sleep(40);
+        if (!(await isOpen()) && !closedAt) {
+          closedAt = { x: Math.round(x), y: Math.round(y) };
+        }
+      }
+      from = target;
+    }
+    const endOpen = await isOpen();
+    return {
+      label,
+      opened,
+      closedAt,
+      endOpen,
+      pass: opened && endOpen === expectOpen
+    };
+  };
+
+  const paths = [
+    await runPath('straight-up', [{ x: button.cx, y: (panel.top + panel.bottom) / 2 }], true),
+    // 回归路径：斜向面板右上区域，缺少 placement: 'top' 时会在离开按钮后立刻关闭。
+    await runPath('diagonal-right', [{ x: panel.right - 24, y: panel.bottom - 28 }], true),
+    await runPath('leave-away', [{ x: 40, y: 300 }], false)
+  ];
+
+  return {
+    skipped: false,
+    pass: paths.every((path) => path.pass),
+    button,
+    panel,
+    paths
+  };
 }
 
 async function analyzePixels(base64Png) {
@@ -308,7 +432,8 @@ function parseArgs(argv) {
     bridgeSettleMs: 15000,
     window: '1400x900',
     noSandbox: true,
-    hideLoading: true
+    hideLoading: true,
+    dockHover: false
   };
   for (let i = 0; i < argv.length; i++) {
     const flag = argv[i];
@@ -322,6 +447,7 @@ function parseArgs(argv) {
     else if (flag === '--window') out.window = value;
     else if (flag === '--sandbox') out.noSandbox = false;
     else if (flag === '--keep-loading') out.hideLoading = false;
+    else if (flag === '--dock-hover') out.dockHover = true;
   }
   return out;
 }
