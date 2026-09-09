@@ -26,6 +26,7 @@
 - 人机协作长期规则已沉淀到 [`agent-collaboration.md`](agent-collaboration.md)。
 - 根 `pnpm check` 统一执行 typecheck + tests + build。
 - `.github/workflows/ci.yml` 已在 PR 和 main push 上执行完整 gate。
+- `web/scripts/visual-check.mjs --dock-hover` 用真实鼠标轨迹断言 dock 菜单 hover 行为（斜向移入面板保持打开、移开关闭），失败时非零退出；需要桌面视口与已运行的前端服务，未接入 CI。
 - Story、Auth、Place、Review、Social 等关键 invariant 已被 shared schema / service tests 固化，不再只靠 prose。
 
 ### Content & Community 领域
@@ -92,7 +93,7 @@
 - 生产图片上传 CORS 已修复并部署：`ruoshui.tazdingo.net` 与 `ruoshui-web.pages.dev` 的 OPTIONS 预检均返回对应 `Access-Control-Allow-Origin`，未授权 Origin 不会获得该 header；修复已合并为 PR #45。
 - 当前管理员账号的稳定 userId 已配置到生产 Worker 的 `ADMIN_USER_IDS`，审核页权限配置已就绪。
 - 生产 smoke 已实际通过：真实 OTP 邮件送达、OTP 登录、跨请求 `/me` Session、StoryDraft create / patch / read、临时 Draft 清理和 logout 全部成功；未创建公开内容。
-- 当前 `main` 的前端已部署到 Cloudflare Pages 生产，deployment 为 `696247b9-a486-4e98-8085-410242050f9a`；`https://ruoshui-web.pages.dev/` 已返回 200 并加载新构建资源。
+- 当前 `main` 的前端已部署到 Cloudflare Pages 生产，deployment 为 `d962c330-6e97-4e64-b895-a38a1f9d1749`；`https://ruoshui-web.pages.dev/` 已返回 200，线上 bundle 与本地构建逐字节一致，`--dock-hover` 三条 hover 路径在生产实测通过。
 - 本次部署核对了既有 Worker secrets 名称，未覆盖或输出 secret 值；D1、R2 和非敏感 SES 配置仍在绑定中。
 
 ### 真实 Place / Story 内容
