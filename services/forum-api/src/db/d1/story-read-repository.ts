@@ -1,6 +1,7 @@
 import type {
   ListPublishedStoriesInput,
   PublishedStory,
+  PublishedStorySpatialAnchor,
   StoryLocation,
 } from "@ruoshui/shared";
 import type { D1Database } from "@cloudflare/workers-types";
@@ -68,6 +69,19 @@ function mapLocation(row: StoryRevisionRow): StoryLocation {
   }
 
   return { kind: "none" };
+}
+
+function spatialAnchorTitle(row: StoryRevisionRow): string {
+  const title = row.title?.trim();
+  if (title) return title;
+
+  const body = row.body?.replace(/\s+/g, " ").trim();
+  if (body) return body.length > 60 ? `${body.slice(0, 60)}…` : body;
+
+  const memoryTime = row.memoryTime?.trim();
+  if (memoryTime) return memoryTime;
+
+  return "一段校园记忆";
 }
 
 function createD1StoryReadRepository(database: D1Database): StoryReadRepository {
@@ -212,6 +226,35 @@ function createD1StoryReadRepository(database: D1Database): StoryReadRepository 
         .limit(input.limit)
         .all();
       return Promise.all(rows.map(hydrate));
+    },
+
+    async listPublishedStorySpatialAnchors(): Promise<PublishedStorySpatialAnchor[]> {
+      const rows = await db
+        .select({
+          storyId: stories.id,
+          revision: storyRevisions,
+        })
+        .from(stories)
+        .innerJoin(storyRevisions, eq(storyRevisions.id, stories.publishedRevisionId))
+        .where(
+          and(
+            eq(stories.status, "active"),
+            eq(storyRevisions.status, "published"),
+            eq(storyRevisions.locationKind, "anchor"),
+          ),
+        )
+        .orderBy(desc(storyRevisions.updatedAt))
+        .all();
+
+      return rows.flatMap((row) => {
+        const location = mapLocation(row.revision);
+        if (location.kind !== "anchor") return [];
+        return [{
+          id: row.storyId,
+          title: spatialAnchorTitle(row.revision),
+          anchor: location.anchor,
+        }];
+      });
     },
   };
 }
