@@ -40,6 +40,7 @@ interface StoryAnchorClusterProjection {
   top: number;
   isVisible: boolean;
   storyIds: string[];
+  position: [number, number, number];
 }
 
 type StoryAnchorProjectionItem = StoryAnchorProjection | StoryAnchorClusterProjection;
@@ -158,13 +159,19 @@ function projectStoryAnchorPins({
     }
 
     const storyIds = group.items.map((item) => item.pin.id).sort();
+    const position: [number, number, number] = [
+      group.items.reduce((sum, item) => sum + item.pin.position[0], 0) / group.items.length,
+      group.items.reduce((sum, item) => sum + item.pin.position[1], 0) / group.items.length,
+      group.items.reduce((sum, item) => sum + item.pin.position[2], 0) / group.items.length,
+    ];
     return {
       id: `story-anchor-cluster:${storyIds.join(',')}`,
       kind: 'cluster' as const,
       left: group.left,
       top: group.top,
       isVisible: true,
-      storyIds
+      storyIds,
+      position
     };
   });
 
@@ -209,8 +216,6 @@ function projectWorldPoint(
   // React overlay is laid out in CSS pixels. These spaces diverge whenever
   // devicePixelRatio or render scale is not exactly 1, so map explicitly from
   // backing-store pixels into the canvas client rect before positioning pins.
-  // The original highlight implementation did this conversion; removing it
-  // made pins appear to drift relative to the scene during camera motion.
   const left = rect.left + (screenPosition.x / canvasWidth) * rect.width;
   const top = rect.top + (screenPosition.y / canvasHeight) * rect.height;
   const isVisible =
