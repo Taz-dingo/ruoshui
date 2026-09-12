@@ -626,15 +626,12 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
       {activePlace || activeAnchorStory || activeClusterStories.length > 0 ? (
         <aside
           className={cn(
-            'pointer-events-auto z-[8] overflow-hidden border shadow-[0_24px_80px_rgba(18,20,16,0.18)] transition-[background-color,backdrop-filter,box-shadow,color] duration-[420ms] ease-out',
+            'pointer-events-auto z-[8] overflow-hidden border shadow-[0_24px_80px_rgba(18,20,16,0.18)] transition-[background-color,backdrop-filter,box-shadow,color,border-color] duration-[420ms] ease-out',
             panelSurfaceIsSolid
-              ? cn(paperSurfaceClassNames.canvas, 'border-black/[0.065]')
-              : cn(
-                  glassSurfaceClassNames.panel,
-                  activeStory
-                    ? 'border-black/10 bg-white/[0.72] text-[#181916] [background-image:none]'
-                    : 'border-white/16 text-white',
-                ),
+              ? cn(paperSurfaceClassNames.canvas, 'border-black/[0.065] backdrop-blur-0')
+              : activeClusterStories.length > 0
+                ? cn(glassSurfaceClassNames.panel, 'border-white/16 text-white')
+                : glassSurfaceClassNames.readingPanel,
             isMobile
               ? 'fixed bottom-0 left-0 right-0 rounded-t-[26px] border-t transition-[height] duration-300 ease-out'
               : 'absolute bottom-[calc(1rem+var(--safe-bottom))] right-[calc(1rem+var(--safe-right))] top-[calc(1rem+var(--safe-top))] w-[min(490px,calc(100vw-2rem))] rounded-[26px] border',
@@ -648,7 +645,7 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
               onClick={() => setMobileExpanded((value) => !value)}
               type="button"
             >
-              <span className={cn('h-1 w-10 rounded-full', panelSurfaceIsSolid ? 'bg-black/16' : 'bg-white/28')} />
+              <span className={cn('h-1 w-10 rounded-full', activeClusterStories.length > 0 ? 'bg-white/28' : 'bg-black/16')} />
             </button>
           ) : null}
 
@@ -705,7 +702,7 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
                     <div className="text-[10px] font-semibold uppercase tracking-[0.17em] text-[#718653]">校园地点</div>
                     <h2 className="mb-0 mt-2 text-[30px] font-semibold leading-[1.12] tracking-[-0.055em]">{activePlace.name}</h2>
                   </div>
-                  <button className="h-9 w-9 shrink-0 rounded-full border border-black/7 bg-white text-[20px] leading-none text-black/42 hover:bg-black/[0.035]" onClick={closePlace} type="button">×</button>
+                  <button className="h-9 w-9 shrink-0 rounded-full border border-black/7 bg-white/72 text-[20px] leading-none text-black/42 hover:bg-white/90" onClick={closePlace} type="button">×</button>
                 </div>
                 {activePlace.intro ? (
                   <p className="mb-0 mt-4 whitespace-pre-wrap text-[13px] leading-[1.78] text-black/55">{activePlace.intro}</p>
@@ -741,7 +738,7 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
                 ) : (
                   <div className="columns-2 gap-3">
                     {stories.map((story) => (
-                      <StoryCard material={panelSurfaceIsSolid ? 'paper' : 'glass'} key={story.id} onOpen={() => setActiveStoryId(story.id)} story={story} />
+                      <StoryCard material="paper" key={story.id} onOpen={() => setActiveStoryId(story.id)} story={story} />
                     ))}
                   </div>
                 )}
