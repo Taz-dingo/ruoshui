@@ -29,13 +29,6 @@ function createUserProfileRoute(options: CreateUserProfileRouteOptions): Hono {
     );
   }
 
-  async function buildProfile(userId: string): Promise<UserProfile> {
-    const details = await options.profileService.getProfile(userId);
-    const user = await options.authService.getUserForSessionToken(undefined);
-    void user;
-    throw new Error("buildProfile requires current user context");
-  }
-
   route.get("/me/profile", async (context) => {
     const user = await getCurrentUser(context);
     if (!user) {
@@ -78,10 +71,13 @@ function createUserProfileRoute(options: CreateUserProfileRouteOptions): Hono {
       return context.json({ ok: false, error: "Authentication required." }, 401);
     }
     const input = profileAvatarUploadInputSchema.parse(await context.req.json());
-    return context.json({
-      ok: true,
-      data: await options.profileService.createAvatarUploadTicket(user.id, input),
-    }, 201);
+    return context.json(
+      {
+        ok: true,
+        data: await options.profileService.createAvatarUploadTicket(user.id, input),
+      },
+      201,
+    );
   });
 
   route.put("/me/avatar", async (context) => {
