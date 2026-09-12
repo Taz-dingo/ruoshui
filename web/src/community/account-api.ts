@@ -76,8 +76,20 @@ async function verifyNewEmailChangeOtp(
   });
 }
 
+async function logout(): Promise<void> {
+  const response = await fetch('/api/auth/logout', {
+    method: 'POST',
+    credentials: 'same-origin',
+  });
+  const payload = await readJson<ApiEnvelope<never>>(response);
+  if (!response.ok) {
+    throw new Error(payload?.error ?? `HTTP ${response.status}`);
+  }
+}
+
 export {
   fetchEmailChangeStatus,
+  logout,
   requestCurrentEmailChangeOtp,
   requestNewEmailChangeOtp,
   verifyCurrentEmailChangeOtp,

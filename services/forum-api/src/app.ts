@@ -10,6 +10,7 @@ import {
 } from "./lib/comment-moderation.js";
 import type { ForumRepository } from "./lib/forum-repository.js";
 import { PlaceServiceError, type PlaceService } from "./lib/place.js";
+import { UserProfileServiceError, type UserProfileService } from "./lib/profile.js";
 import { StorageProviderError, type StorageProvider } from "./lib/storage.js";
 import type { StoryAuthorService } from "./lib/story-author.js";
 import type { StoryOwnerReadService } from "./lib/story-owner-read.js";
@@ -36,6 +37,7 @@ import { createStorageRoute } from "./routes/storage-route.js";
 import { createStoryReviewRoute } from "./routes/story-review-route.js";
 import { createStorySocialRoute } from "./routes/story-social-route.js";
 import { createStoryRoute } from "./routes/story-route.js";
+import { createUserProfileRoute } from "./routes/user-profile-route.js";
 
 interface CreateAppOptions {
   adminUserIds?: ReadonlySet<string>;
@@ -44,6 +46,7 @@ interface CreateAppOptions {
   corsOrigin: string;
   forumRepository: ForumRepository;
   placeService?: PlaceService;
+  profileService?: UserProfileService;
   runtime: "node" | "cloudflare";
   storageProvider: StorageProvider;
   storyAuthorService?: StoryAuthorService;
@@ -113,6 +116,15 @@ function createApp(options: CreateAppOptions): Hono {
       "/api/auth",
       createAuthRoute({
         authService: options.authService,
+      }),
+    );
+  }
+  if (options.authService && options.profileService) {
+    app.route(
+      "/api/users",
+      createUserProfileRoute({
+        authService: options.authService,
+        profileService: options.profileService,
       }),
     );
   }
@@ -255,6 +267,7 @@ function createApp(options: CreateAppOptions): Hono {
       error instanceof StoryReviewServiceError ||
       error instanceof StorySocialServiceError ||
       error instanceof PlaceServiceError ||
+      error instanceof UserProfileServiceError ||
       error instanceof AdminAccessError
     ) {
       return context.json(

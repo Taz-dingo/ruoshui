@@ -1,6 +1,6 @@
 # 项目 Spec
 
-最后更新：`2026-09-09`
+最后更新：`2026-09-13`
 
 ## 产品定义
 
@@ -37,12 +37,16 @@
 - `memoryTime` 是可选的人类可读模糊时间，不把 `createdAt` 当作故事发生时间。
 - Story 正文使用普通多行文本，不提供复杂富文本、Markdown 或格式工具栏。
 
-### User / Auth
+### User / Auth / Profile
 
-- 业务内容只引用稳定 `userId`；email 和 displayName 都不是业务 identity。
-- v1 认证方式为 Email OTP，不设密码。
+- 业务内容只引用稳定 `userId`；email、displayName 和 Profile 字段都不是业务 identity。
+- v1 认证方式为 Email OTP，不设密码；email 只是登录 identity。
+- `displayName` 是可重复的展示昵称，不引入唯一 username / `@handle`。
+- 第一次登录后可提示设置 displayName，但允许跳过并使用默认展示名。
+- Profile v1 提供头像、昵称和可选校友身份；账号安全继续提供改邮箱和退出登录。
+- 校友身份由用户自述、完全可选，不代表学校认证；字段为入学年份、毕业年份、学院 / 系、专业。没有填写的字段不强制展示。
+- Profile 扩展数据与稳定 `users` 主记录分离；头像对象使用当前 user 独立 R2 prefix，确认时必须校验对象归属、存在性和图片类型。
 - 进入 Story Editor 前必须登录；评论 / 回复也必须先登录；点赞可以在点击时触发登录并在成功后补做。
-- 第一次登录后可提示设置 displayName，但允许跳过并使用默认展示名；昵称允许重复。
 - Story 与评论 v1 不支持匿名展示。
 - 修改邮箱采用旧邮箱 OTP + 新邮箱 OTP；成功后 revoke 其他 sessions。旧邮箱不可访问时由管理员人工处理。
 - 管理员由环境变量 `ADMIN_USER_IDS` 的稳定 userId allowlist 产生；完整 RBAC 延后。
@@ -98,6 +102,13 @@
 - “校园故事”打开全校园 Published Story Feed / Detail，交互心智可参考成熟图片社区，但仍保留若水的地点语义和设计 contract。
 - 全局社区是内容发现补充，不替代 3D 场景中的 Place / Anchor 空间发现。
 
+### Profile / Account
+
+- “我的 Story”中的账号入口进入一个 Focus Sheet；同一容器承载头像、昵称、可选校友身份、登录邮箱和退出登录。
+- 更换邮箱在同一 Focus Sheet 内切换验证步骤，不再叠第二层 modal。
+- 头像支持上传、更换和恢复默认；头像不是认证凭证，也不影响 `userId`。
+- 校友身份不作为权限、审核或认证依据；未来公开用户主页可消费这些字段，但当前不因缺失校友信息限制任何功能。
+
 ### Story Editor
 
 - 交互心智参考成熟图片内容平台：顶部媒体区、标题、正文、时间、地点、提交审核。
@@ -134,6 +145,7 @@
 ## 上线成功标准
 
 - 一个真实用户能完成：Email OTP → StoryDraft → Place / Anchor → 提交审核 → 管理员审核 → Published Story。
+- 一个真实用户能完成：设置 / 修改昵称与可选校友身份 → 上传 / 更换 / 删除头像 → 更换登录邮箱 → 仍保持同一稳定 User。
 - 其他用户能完成：从 3D Place / Story Anchor 发现内容 → Story Detail → Like → Comment → Reply → 回到空间。
 - Published custom Anchor 在场景中可发现，并在高密度时通过 cluster 保持可用。
 - Published Revision 在新修改审核期间保持稳定可见。

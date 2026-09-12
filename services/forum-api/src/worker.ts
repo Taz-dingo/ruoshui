@@ -5,6 +5,7 @@ import { createD1AuthRepository } from "./db/d1/auth-repository.js";
 import { createD1CommentModerationRepository } from "./db/d1/comment-moderation-repository.js";
 import { createD1ForumRepository } from "./db/d1/forum-repository.js";
 import { createD1PlaceRepository } from "./db/d1/place-repository.js";
+import { createD1UserProfileRepository } from "./db/d1/profile-repository.js";
 import { createD1StoryAuthorRepository } from "./db/d1/story-author-repository.js";
 import { createD1StoryOwnerReadRepository } from "./db/d1/story-owner-read-repository.js";
 import { createD1StoryReadRepository } from "./db/d1/story-read-repository.js";
@@ -16,6 +17,7 @@ import { createAuthService, type AuthService } from "./lib/auth.js";
 import { createTencentSesAuthEmailSender } from "./lib/auth-email.js";
 import { createCommentModerationService } from "./lib/comment-moderation.js";
 import { createPlaceService } from "./lib/place.js";
+import { createUserProfileService } from "./lib/profile.js";
 import { createR2StorageProvider } from "./lib/storage.js";
 import { createStoryAuthorService } from "./lib/story-author.js";
 import { createStoryOwnerReadService } from "./lib/story-owner-read.js";
@@ -63,6 +65,13 @@ export default {
   fetch(request: Request, env: CloudflareForumApiBindings, executionContext: ExecutionContext) {
     const authService = createConfiguredAuthService(env);
     const storyRepository = createD1StoryRepository(env.DB);
+    const storageProvider = createR2StorageProvider({
+      bucket: env.MEDIA_BUCKET,
+      bucketName: env.MEDIA_BUCKET_NAME ?? "ruoshui-media",
+      publicApiBaseUrl: env.PUBLIC_API_BASE_URL,
+      publicBaseUrl: env.MEDIA_PUBLIC_BASE_URL,
+      uploadSigningSecret: env.UPLOAD_SIGNING_SECRET,
+    });
     const app = createApp({
       adminUserIds: parseAdminUserIds(env.ADMIN_USER_IDS),
       authService,
@@ -74,14 +83,14 @@ export default {
         mediaPublicBaseUrl: env.MEDIA_PUBLIC_BASE_URL,
       }),
       placeService: createPlaceService({ repository: createD1PlaceRepository(env.DB) }),
+      profileService: authService
+        ? createUserProfileService({
+            repository: createD1UserProfileRepository(env.DB),
+            storageProvider,
+          })
+        : undefined,
       runtime: "cloudflare",
-      storageProvider: createR2StorageProvider({
-        bucket: env.MEDIA_BUCKET,
-        bucketName: env.MEDIA_BUCKET_NAME ?? "ruoshui-media",
-        publicApiBaseUrl: env.PUBLIC_API_BASE_URL,
-        publicBaseUrl: env.MEDIA_PUBLIC_BASE_URL,
-        uploadSigningSecret: env.UPLOAD_SIGNING_SECRET,
-      }),
+      storageProvider,
       storyAuthorService: authService
         ? createStoryAuthorService({
             repository: createD1StoryAuthorRepository(env.DB, storyRepository),
