@@ -19,6 +19,8 @@ const glassSurfaceClassNames = {
     'rounded-control border border-ink/10 bg-ink/6 backdrop-blur-[4px]',
   panel:
     'rounded-panel border border-ink/20 bg-[linear-gradient(180deg,rgba(255,255,255,0.16),rgba(12,13,16,0.42))] shadow-panel backdrop-blur-[8px] saturate-[1.05]',
+  readingPanel:
+    'rounded-panel border border-white/50 bg-[rgba(247,247,243,0.58)] text-[#181916] shadow-panel backdrop-blur-[8px] saturate-[1.04]',
   popover:
     'rounded-control border border-ink/20 bg-[rgba(28,29,32,0.92)] text-ink shadow-panel backdrop-blur-[8px]',
   subtle:
