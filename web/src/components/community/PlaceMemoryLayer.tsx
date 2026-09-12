@@ -145,77 +145,6 @@ function StoryCard({
   );
 }
 
-function StoryAnchorPeek({
-  onBack,
-  onRead,
-  onFlyToHere,
-  story,
-}: {
-  onBack: () => void;
-  onRead: () => void;
-  onFlyToHere: () => void;
-  story: PublishedStory;
-}) {
-  const firstMediaId = story.mediaAssetIds[0];
-
-  return (
-    <div className="min-h-full px-5 pb-[calc(2rem+var(--safe-bottom))] pt-6 text-white">
-      <header className="flex items-start justify-between gap-4">
-        <div>
-          <div className="text-[10px] font-semibold uppercase tracking-[0.17em] text-brand-strong">故事锚点</div>
-          <h2 className="mb-0 mt-2 text-[28px] font-semibold leading-[1.12] tracking-[-0.055em]">校园里的一个角落</h2>
-        </div>
-        <button
-          aria-label="关闭故事锚点"
-          className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/18 bg-white/8 text-[20px] leading-none text-white/72 hover:bg-white/14"
-          onClick={onBack}
-          type="button"
-        >
-          ×
-        </button>
-      </header>
-
-      {firstMediaId ? (
-        <img
-          alt={storyDisplayTitle(story)}
-          className="mt-6 block aspect-[4/5] max-h-[42vh] w-full rounded-[18px] object-cover"
-          src={getPublishedStoryMediaUrl(story.id, firstMediaId)}
-        />
-      ) : (
-        <div className="mt-6 grid aspect-[4/5] max-h-[42vh] place-items-center rounded-[18px] bg-white/12 px-8 text-center">
-          <p className="m-0 text-[22px] font-medium leading-[1.65] tracking-[-0.035em] text-white/90">
-            {storyTextCover(story)}
-          </p>
-        </div>
-      )}
-
-      <div className="mt-5">
-        <div className="flex items-center justify-between gap-3 text-[11px] text-white/56">
-          <span className="font-medium text-white/82">{fallbackAuthorName(story)}</span>
-          <span>{story.memoryTime || formatPublishedTime(story.publishedAt)}</span>
-        </div>
-        <h3 className="mb-0 mt-3 text-[21px] font-semibold leading-[1.35] tracking-[-0.035em] text-white">
-          {storyDisplayTitle(story)}
-        </h3>
-        {story.body ? (
-          <p className="mb-0 mt-3 line-clamp-3 whitespace-pre-wrap text-[13px] leading-[1.75] text-white/68">
-            {story.body}
-          </p>
-        ) : null}
-      </div>
-
-      <div className="mt-6 flex flex-wrap gap-2">
-        <button className={cn(buttonVariants({ variant: 'tertiary' }), 'border-brand-strong/45 bg-brand/18 text-brand-strong')} onClick={onFlyToHere} type="button">
-          飞到这里
-        </button>
-        <button className={cn(buttonVariants({ variant: 'secondary' }), 'border-white/18 bg-white/10 text-white/82')} onClick={onRead} type="button">
-          阅读全文
-        </button>
-      </div>
-    </div>
-  );
-}
-
 function StoryAnchorClusterPeek({
   onBack,
   onOpenStory,
@@ -231,7 +160,7 @@ function StoryAnchorClusterPeek({
         <div>
           <div className="text-[10px] font-semibold uppercase tracking-[0.17em] text-brand-strong">故事聚合</div>
           <h2 className="mb-0 mt-2 text-[28px] font-semibold leading-[1.12] tracking-[-0.055em]">这里有 {stories.length} 段记忆</h2>
-          <p className="mb-0 mt-3 text-[13px] leading-[1.7] text-white/62">选择一段故事打开预览，镜头不会自动移动。</p>
+          <p className="mb-0 mt-3 text-[13px] leading-[1.7] text-white/62">选择一段故事直接阅读，镜头不会自动移动。</p>
         </div>
         <button
           aria-label="关闭故事聚合"
@@ -288,11 +217,11 @@ function StoryDetail({
         </button>
         <div className="max-w-[58%] truncate text-[12px] font-medium text-black/58">{locationLabel}</div>
         <button
-          className={cn(buttonVariants({ variant: 'secondary' }), 'px-3 py-1.5 text-[11px] font-medium')}
+          className="rounded-full px-2.5 py-1.5 text-[11px] font-medium text-[#718653] transition-colors hover:bg-black/[0.045] hover:text-[#4f6437]"
           onClick={() => focusLocation(story.location, placesById, place)}
           type="button"
         >
-          回到这里
+          飞到这里
         </button>
       </div>
 
@@ -356,7 +285,6 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
   const [activeStoryId, setActiveStoryId] = useState<string | null>(null);
   const [activeAnchorStoryId, setActiveAnchorStoryId] = useState<string | null>(null);
   const [activeClusterStoryIds, setActiveClusterStoryIds] = useState<string[] | null>(null);
-  const [anchorPeekExpanded, setAnchorPeekExpanded] = useState(false);
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
   const [mobileExpanded, setMobileExpanded] = useState(false);
   const [panelSurfaceIsSolid, setPanelSurfaceIsSolid] = useState(false);
@@ -378,7 +306,7 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
         return story ? [story] : [];
       })
     : [];
-  const panelIsPaper = Boolean(activeStory || anchorPeekExpanded || headerCollapsed);
+  const panelIsPaper = Boolean(activeStory || activeAnchorStory || headerCollapsed);
 
   useEffect(() => {
     if (!panelIsPaper) {
@@ -460,7 +388,6 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
   function clearAnchorSelection() {
     setActiveAnchorStoryId(null);
     setActiveClusterStoryIds(null);
-    setAnchorPeekExpanded(false);
   }
 
   async function openPlace(place: Place) {
@@ -504,7 +431,6 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
     setActiveStoryId(null);
     setActiveClusterStoryIds(null);
     setActiveAnchorStoryId(storyId);
-    setAnchorPeekExpanded(false);
     setHeaderCollapsed(false);
     setMobileExpanded(false);
   }
@@ -514,7 +440,6 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
     setActiveStoryId(null);
     setActiveAnchorStoryId(null);
     setActiveClusterStoryIds(storyIds);
-    setAnchorPeekExpanded(false);
     setHeaderCollapsed(false);
     setMobileExpanded(false);
   }
@@ -565,7 +490,7 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
             <button
               aria-label={`打开故事聚合，共 ${item.storyIds.length} 段记忆`}
               className={cn(
-                'pointer-events-auto absolute inline-flex min-w-9 items-center justify-center gap-1 px-2.5 py-1.5 text-[11px] font-semibold text-white shadow-[0_8px_24px_rgba(0,0,0,0.16)] transition-[opacity,transform,background-color,border-color] duration-180 hover:border-brand-strong/55 hover:bg-brand/24 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-strong/70',
+                'pointer-events-auto absolute inline-flex min-w-9 items-center justify-center gap-1 px-2.5 py-1.5 text-[11px] font-semibold text-white shadow-[0_8px_24px_rgba(0,0,0,0.16)] transition-[opacity,background-color,border-color] duration-180 hover:border-brand-strong/55 hover:bg-brand/24 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-strong/70',
                 glassSurfaceClassNames.subtle,
                 (!item.isVisible || highlightAuthoring.isEnabled) && 'pointer-events-none opacity-0',
               )}
@@ -587,7 +512,7 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
           <button
             aria-label={`打开故事：${storyDisplayTitle(story)}`}
             className={cn(
-              'pointer-events-auto absolute inline-flex max-w-[180px] items-center gap-2 px-2.5 py-1.5 text-left text-white shadow-[0_8px_24px_rgba(0,0,0,0.16)] transition-[opacity,transform,background-color,border-color] duration-180 hover:border-brand-strong/55 hover:bg-brand/24 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-strong/70',
+              'pointer-events-auto absolute inline-flex max-w-[180px] items-center gap-2 px-2.5 py-1.5 text-left text-white shadow-[0_8px_24px_rgba(0,0,0,0.16)] transition-[opacity,background-color,border-color] duration-180 hover:border-brand-strong/55 hover:bg-brand/24 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-strong/70',
               glassSurfaceClassNames.subtle,
               (!item.isVisible || highlightAuthoring.isEnabled) && 'pointer-events-none opacity-0',
             )}
@@ -605,7 +530,7 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
       {placeOverlay.items.map((item) => (
         <button
           className={cn(
-            'pointer-events-auto absolute inline-flex items-center gap-2 px-2.5 py-1.5 text-left text-white shadow-[0_8px_24px_rgba(0,0,0,0.14)] transition-[opacity,transform,background-color,border-color] duration-180 hover:border-[#c5dea5]/50 hover:bg-[rgba(29,39,22,0.72)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c5dea5]/70',
+            'pointer-events-auto absolute inline-flex items-center gap-2 px-2.5 py-1.5 text-left text-white shadow-[0_8px_24px_rgba(0,0,0,0.14)] transition-[opacity,background-color,border-color] duration-180 hover:border-[#c5dea5]/50 hover:bg-[rgba(29,39,22,0.72)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c5dea5]/70',
             glassSurfaceClassNames.subtle,
             activePlaceId === item.id && 'border-[#c5dea5]/55 bg-[rgba(34,48,25,0.78)]',
             (!item.isVisible || highlightAuthoring.isEnabled) && 'pointer-events-none opacity-0',
@@ -665,26 +590,14 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
             </div>
           ) : activeAnchorStory ? (
             <div className={cn('h-full overflow-y-auto', scrollAreaClassNames.thin)}>
-              {anchorPeekExpanded ? (
-                <StoryDetail
-                  onBack={() => setAnchorPeekExpanded(false)}
-                  onEditStory={handleEditStory}
-                  onRemovedStory={handleRemovedStory}
-                  place={null}
-                  placesById={placesById}
-                  story={activeAnchorStory}
-                />
-              ) : (
-                <StoryAnchorPeek
-                  onBack={closeAnchorContent}
-                  onFlyToHere={() => {
-                    focusLocation(activeAnchorStory.location, placesById);
-                    clearAnchorSelection();
-                  }}
-                  onRead={() => setAnchorPeekExpanded(true)}
-                  story={activeAnchorStory}
-                />
-              )}
+              <StoryDetail
+                onBack={closeAnchorContent}
+                onEditStory={handleEditStory}
+                onRemovedStory={handleRemovedStory}
+                place={null}
+                placesById={placesById}
+                story={activeAnchorStory}
+              />
             </div>
           ) : activeClusterStories.length > 0 ? (
             <div className={cn('h-full overflow-y-auto', scrollAreaClassNames.thin)}>
@@ -725,11 +638,11 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
                   <p className="mb-0 mt-4 text-[12px] leading-[1.7] text-black/34">这里的故事正在一点点补回来。</p>
                 )}
                 <button
-                  className={cn(buttonVariants({ variant: 'secondary' }), 'mt-4 px-3.5 py-2 text-[11px] font-medium')}
+                  className="mt-4 rounded-full px-1 py-1 text-[11px] font-medium text-[#718653] transition-colors hover:text-[#4f6437]"
                   onClick={() => focusPlace(activePlace)}
                   type="button"
                 >
-                  飞到这里
+                  飞到这里 →
                 </button>
               </header>
 
