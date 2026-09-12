@@ -124,7 +124,8 @@ function projectStoryAnchorPins({
     top: number;
   }> = [];
 
-  // ponytail: O(n²) greedy clustering; use a screen-space grid only if anchor counts reach the low hundreds.
+  // O(n²) greedy clustering is acceptable for the current scale. Move to a
+  // screen-space grid only when real anchor counts make this measurable.
   for (const item of visible) {
     const point = item.projected;
     const group = groups.find((candidate) => {
@@ -183,9 +184,11 @@ function projectWorldPoint(
     return null;
   }
 
+  const canvasWidth = canvasElement.width;
+  const canvasHeight = canvasElement.height;
   const rect = canvasElement.getBoundingClientRect();
 
-  if (!rect.width || !rect.height) {
+  if (!canvasWidth || !canvasHeight || !rect.width || !rect.height) {
     return null;
   }
 
@@ -201,8 +204,15 @@ function projectWorldPoint(
     worldPosition,
     new pc.Vec3()
   );
-  const left = rect.left + screenPosition.x;
-  const top = rect.top + screenPosition.y;
+
+  // PlayCanvas projects into the canvas backing-store coordinate space. The
+  // React overlay is laid out in CSS pixels. These spaces diverge whenever
+  // devicePixelRatio or render scale is not exactly 1, so map explicitly from
+  // backing-store pixels into the canvas client rect before positioning pins.
+  // The original highlight implementation did this conversion; removing it
+  // made pins appear to drift relative to the scene during camera motion.
+  const left = rect.left + (screenPosition.x / canvasWidth) * rect.width;
+  const top = rect.top + (screenPosition.y / canvasHeight) * rect.height;
   const isVisible =
     facingDot > 0 &&
     left >= rect.left + 20 &&
