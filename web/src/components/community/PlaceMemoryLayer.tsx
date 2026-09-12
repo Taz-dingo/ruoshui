@@ -1,13 +1,21 @@
-import type { Place, PublishedStory, StoryLocation } from '@ruoshui/shared';
+import type {
+  Place,
+  PublishedStory,
+  PublishedStorySpatialAnchor,
+  StoryLocation,
+} from '@ruoshui/shared';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   fetchPlaces,
   fetchPublishedStories,
+  fetchPublishedStory,
+  fetchPublishedStorySpatialAnchors,
   getPublishedStoryMediaUrl,
 } from '../../community/content-api';
 import {
   requestCancelSpatialAnchorAmbientFocus,
+  requestFocusScenePin,
   requestFocusSpatialAnchor,
   requestSetPlacePins,
   requestSetStoryAnchorPins,
@@ -97,6 +105,18 @@ function focusLocation(
   if (fallbackPlace) focusPlace(fallbackPlace);
 }
 
+function toViewerAnchorPin(anchor: PublishedStorySpatialAnchor) {
+  return {
+    id: anchor.id,
+    title: anchor.title,
+    position: [
+      anchor.anchor.markerPosition.x,
+      anchor.anchor.markerPosition.y,
+      anchor.anchor.markerPosition.z,
+    ] as [number, number, number],
+  };
+}
+
 function StoryCard({
   material = 'paper',
   onOpen,
@@ -160,7 +180,7 @@ function StoryAnchorClusterPeek({
         <div>
           <div className="text-[10px] font-semibold uppercase tracking-[0.17em] text-brand-strong">故事聚合</div>
           <h2 className="mb-0 mt-2 text-[28px] font-semibold leading-[1.12] tracking-[-0.055em]">这里有 {stories.length} 段记忆</h2>
-          <p className="mb-0 mt-3 text-[13px] leading-[1.7] text-white/62">选择一段故事直接阅读，镜头不会自动移动。</p>
+          <p className="mb-0 mt-3 text-[13px] leading-[1.7] text-white/62">镜头靠近后仍然重叠，所以把这一小片的故事列在这里。</p>
         </div>
         <button
           aria-label="关闭故事聚合"
@@ -277,6 +297,7 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
   const highlightAuthoring = useViewerUiStore((store) => store.highlightAuthoring);
   const [places, setPlaces] = useState<Place[]>([]);
   const [placesError, setPlacesError] = useState<string | null>(null);
+  const [spatialAnchors, setSpatialAnchors] = useState<PublishedStorySpatialAnchor[]>([]);
   const [activePlaceId, setActivePlaceId] = useState<string | null>(null);
   const [publishedStories, setPublishedStories] = useState<PublishedStory[]>([]);
   const [stories, setStories] = useState<PublishedStory[]>([]);
@@ -285,10 +306,12 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
   const [activeStoryId, setActiveStoryId] = useState<string | null>(null);
   const [activeAnchorStoryId, setActiveAnchorStoryId] = useState<string | null>(null);
   const [activeClusterStoryIds, setActiveClusterStoryIds] = useState<string[] | null>(null);
+  const [focusedClusterId, setFocusedClusterId] = useState<string | null>(null);
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
   const [mobileExpanded, setMobileExpanded] = useState(false);
   const [panelSurfaceIsSolid, setPanelSurfaceIsSolid] = useState(false);
   const storiesRequestRef = useRef(0);
+  const anchorStoryRequestRef = useRef(0);
 
   const placesById = useMemo(() => new Map(places.map((place) => [place.id, place])), [places]);
   const publishedStoriesById = useMemo(
@@ -316,6 +339,16 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
     const frame = window.requestAnimationFrame(() => setPanelSurfaceIsSolid(true));
     return () => window.cancelAnimationFrame(frame);
   }, [panelIsPaper]);
+
+  useEffect(() => {
+    if (!focusedClusterId) return;
+    const clusterStillExists = storyAnchorOverlay.items.some(
+      (item) => item.kind === 'cluster' && item.id === focusedClusterId && item.isVisible,
+    );
+    if (!clusterStillExists) {
+      setFocusedClusterId(null);
+    }
+  }, [focusedClusterId, storyAnchorOverlay.items]);
 
   useEffect(() => {
     let cancelled = false;
@@ -353,29 +386,15 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
   useEffect(() => {
     let cancelled = false;
 
-    void fetchPublishedStories({ limit: 50 })
-      .then((nextStories) => {
+    void fetchPublishedStorySpatialAnchors()
+      .then((nextAnchors) => {
         if (cancelled) return;
-        setPublishedStories(nextStories);
-        requestSetStoryAnchorPins(
-          nextStories.flatMap((story) =>
-            story.location.kind === 'anchor'
-              ? [{
-                  id: story.id,
-                  title: storyDisplayTitle(story),
-                  position: [
-                    story.location.anchor.markerPosition.x,
-                    story.location.anchor.markerPosition.y,
-                    story.location.anchor.markerPosition.z,
-                  ] as [number, number, number],
-                }]
-              : [],
-          ),
-        );
+        setSpatialAnchors(nextAnchors);
+        requestSetStoryAnchorPins(nextAnchors.map(toViewerAnchorPin));
       })
       .catch(() => {
         if (cancelled) return;
-        setPublishedStories([]);
+        setSpatialAnchors([]);
         requestSetStoryAnchorPins([]);
       });
 
@@ -386,8 +405,10 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
   }, [sceneId]);
 
   function clearAnchorSelection() {
+    anchorStoryRequestRef.current += 1;
     setActiveAnchorStoryId(null);
     setActiveClusterStoryIds(null);
+    setFocusedClusterId(null);
   }
 
   async function openPlace(place: Place) {
@@ -426,22 +447,70 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
     setMobileExpanded(false);
   }
 
-  function openAnchorStory(storyId: string) {
+  async function openAnchorStory(storyId: string) {
     setActivePlaceId(null);
     setActiveStoryId(null);
     setActiveClusterStoryIds(null);
+    setFocusedClusterId(null);
     setActiveAnchorStoryId(storyId);
     setHeaderCollapsed(false);
     setMobileExpanded(false);
+
+    if (publishedStoriesById.has(storyId)) return;
+
+    const requestId = anchorStoryRequestRef.current + 1;
+    anchorStoryRequestRef.current = requestId;
+    try {
+      const story = await fetchPublishedStory(storyId);
+      if (anchorStoryRequestRef.current !== requestId) return;
+      setPublishedStories((current) =>
+        current.some((item) => item.id === story.id) ? current : [...current, story],
+      );
+    } catch {
+      if (anchorStoryRequestRef.current === requestId) {
+        setActiveAnchorStoryId(null);
+      }
+    }
   }
 
-  function openStoryCluster(storyIds: string[]) {
+  async function openStoryCluster(storyIds: string[]) {
     setActivePlaceId(null);
     setActiveStoryId(null);
     setActiveAnchorStoryId(null);
-    setActiveClusterStoryIds(storyIds);
+    setFocusedClusterId(null);
     setHeaderCollapsed(false);
     setMobileExpanded(false);
+
+    const missingIds = storyIds.filter((storyId) => !publishedStoriesById.has(storyId));
+    if (missingIds.length > 0) {
+      const fetched = await Promise.all(
+        missingIds.map((storyId) => fetchPublishedStory(storyId).catch(() => null)),
+      );
+      const nextStories = fetched.filter((story): story is PublishedStory => Boolean(story));
+      if (nextStories.length > 0) {
+        setPublishedStories((current) => {
+          const byId = new Map(current.map((story) => [story.id, story]));
+          nextStories.forEach((story) => byId.set(story.id, story));
+          return [...byId.values()];
+        });
+      }
+    }
+    setActiveClusterStoryIds(storyIds);
+  }
+
+  function handleClusterClick(item: Extract<(typeof storyAnchorOverlay.items)[number], { kind: 'cluster' }>) {
+    if (focusedClusterId === item.id) {
+      void openStoryCluster(item.storyIds);
+      return;
+    }
+
+    clearAnchorSelection();
+    setFocusedClusterId(item.id);
+    requestFocusScenePin({
+      pinId: item.id,
+      position: item.position,
+      title: `${item.storyIds.length} 段记忆`,
+    });
   }
 
   function closeAnchorContent() {
@@ -459,6 +528,11 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
   function handleRemovedStory(storyId: string) {
     setStories((current) => current.filter((story) => story.id !== storyId));
     setPublishedStories((current) => current.filter((story) => story.id !== storyId));
+    setSpatialAnchors((current) => {
+      const next = current.filter((anchor) => anchor.id !== storyId);
+      requestSetStoryAnchorPins(next.map(toViewerAnchorPin));
+      return next;
+    });
     setActiveStoryId(null);
     if (activeAnchorStoryId === storyId) clearAnchorSelection();
     if (activeClusterStoryIds) {
@@ -470,7 +544,7 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
 
   if (
     places.length === 0 &&
-    publishedStories.length === 0 &&
+    spatialAnchors.length === 0 &&
     !activePlace &&
     !activeAnchorStory &&
     activeClusterStories.length === 0
@@ -486,16 +560,20 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
     <div className="pointer-events-none absolute inset-0 z-[3]" aria-label="校园地点与记忆">
       {storyAnchorOverlay.items.map((item) => {
         if (item.kind === 'cluster') {
+          const hasBeenFocused = focusedClusterId === item.id;
           return (
             <button
-              aria-label={`打开故事聚合，共 ${item.storyIds.length} 段记忆`}
+              aria-label={hasBeenFocused
+                ? `打开故事聚合，共 ${item.storyIds.length} 段记忆`
+                : `靠近故事聚合，共 ${item.storyIds.length} 段记忆`}
               className={cn(
                 'pointer-events-auto absolute inline-flex min-w-9 items-center justify-center gap-1 px-2.5 py-1.5 text-[11px] font-semibold text-white shadow-[0_8px_24px_rgba(0,0,0,0.16)] transition-[opacity,background-color,border-color] duration-180 hover:border-brand-strong/55 hover:bg-brand/24 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-strong/70',
                 glassSurfaceClassNames.subtle,
+                hasBeenFocused && 'border-brand-strong/55 bg-brand/20',
                 (!item.isVisible || highlightAuthoring.isEnabled) && 'pointer-events-none opacity-0',
               )}
               key={item.id}
-              onClick={() => openStoryCluster(item.storyIds)}
+              onClick={() => handleClusterClick(item)}
               style={{ transform: `translate3d(${item.left}px, ${item.top}px, 0) translate(-50%, -50%)` }}
               type="button"
             >
@@ -505,24 +583,21 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
           );
         }
 
-        const story = publishedStoriesById.get(item.id);
-        if (!story) return null;
-
         return (
           <button
-            aria-label={`打开故事：${storyDisplayTitle(story)}`}
+            aria-label={`打开故事：${item.title}`}
             className={cn(
               'pointer-events-auto absolute inline-flex max-w-[180px] items-center gap-2 px-2.5 py-1.5 text-left text-white shadow-[0_8px_24px_rgba(0,0,0,0.16)] transition-[opacity,background-color,border-color] duration-180 hover:border-brand-strong/55 hover:bg-brand/24 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-strong/70',
               glassSurfaceClassNames.subtle,
               (!item.isVisible || highlightAuthoring.isEnabled) && 'pointer-events-none opacity-0',
             )}
             key={item.id}
-            onClick={() => openAnchorStory(item.id)}
+            onClick={() => void openAnchorStory(item.id)}
             style={{ transform: `translate3d(${item.left}px, ${item.top}px, 0) translate(-50%, -50%)` }}
             type="button"
           >
             <span className="h-2 w-2 shrink-0 rounded-full bg-[#f2d6a4] shadow-[0_0_0_5px_rgba(242,214,164,0.14)]" />
-            <span className="truncate text-[10px] font-semibold tracking-[-0.01em]">{storyDisplayTitle(story)}</span>
+            <span className="truncate text-[10px] font-semibold tracking-[-0.01em]">{item.title}</span>
           </button>
         );
       })}
@@ -603,7 +678,7 @@ function PlaceMemoryLayer({ isMobile, onOpenStoryComposer, sceneId }: PlaceMemor
             <div className={cn('h-full overflow-y-auto', scrollAreaClassNames.thin)}>
               <StoryAnchorClusterPeek
                 onBack={closeAnchorContent}
-                onOpenStory={openAnchorStory}
+                onOpenStory={(storyId) => void openAnchorStory(storyId)}
                 stories={activeClusterStories}
               />
             </div>
