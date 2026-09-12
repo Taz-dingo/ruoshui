@@ -27,6 +27,13 @@ function createPublishedStoryRoute(options: CreatePublishedStoryRouteOptions): H
     });
   });
 
+  route.get("/spatial-anchors", async (context) => {
+    return context.json({
+      ok: true,
+      data: await options.readService.listPublishedStorySpatialAnchors(),
+    });
+  });
+
   async function readMediaObject(
     media: { mimeType: string; objectKey: string },
     maxAge: number,
