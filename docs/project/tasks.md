@@ -1,6 +1,6 @@
 # 当前任务
 
-最后更新：`2026-09-10`
+最后更新：`2026-09-12`
 
 本文件只维护**当前执行顺序与执行者边界**。已经成立的事实写入 [`state.md`](state.md)，稳定产品 contract 写入 [`spec.md`](spec.md)，视觉 / 交互 contract 写入根目录 [`design.md`](../../design.md)，重要 rationale 写入 [`docs/decisions`](../decisions/)。
 
@@ -16,10 +16,10 @@
 
 ### A. GitHub Agent 可直接完成
 
-- [x] 普通用户页面彻底退出旧 `HighlightLayer / ForumPost` 交互；旧 Highlight 仅保留在 `?admin=lab` / development。
+- [x] 普通用户页面彻底退出旧 `HighlightLayer / ForumPost` 交互；旧 Highlight 仅保留在 `?admin=lab`。
 - [x] 普通用户 Dock 增加一级「校园故事」入口，直接打开全校园 Published Story Feed / Detail。
 - [x] Place 点击取消隐式 camera focus；点击只打开当前 Place 内容，显式「飞到这里」才使用保存的 camera pose。
-- [ ] 对上述行为补最小 contract / component-level 回归验证，避免旧 Highlight 或自动 focus 重新进入生产主路径。
+- [x] 已补 `web/scripts/public-ui-contract.test.mjs`：机械断言旧 Highlight 仍只挂在 `?admin=lab`、Place / 单 Story Anchor 点击不触发隐式 camera focus。
 - [x] Story Anchor 使用最小 shared view state / command seam，并回放最新 Pin 状态，避免 runtime 订阅竞态丢点。
 
 ### B. 本地 Agent 更适合完成
@@ -29,7 +29,7 @@
 - [x] cluster 点击：显示“这里有 N 段记忆”的 Glass Peek；当前未做自动 focus / zoom 拆分，保留显式「飞到这里」语义。
 - [x] Story Anchor Pin 点击：直接显示 Story 轻预览（cover / title / author / memoryTime / 摘要）+「飞到这里 / 阅读全文」，不增加“看图文”按钮。
 - [x] Place Peek / Feed 收敛为一个容器：点击 Place 后直接显示 intro + Story；没有 Story 时提供自然 empty state +「留下故事」。
-- [ ] 删除 / 隐藏任何普通用户仍可到达的“看点位图文”“收起图文”“重复完整社区”旧交互。
+- [x] 普通用户路径已无“看点位图文”“收起图文”“完整社区”旧交互；这些文案仅保留在 Admin Lab `HighlightLayer`，并由 source gate 防回流。
 
 ### C. 人验收
 
@@ -44,7 +44,7 @@
 ### A. GitHub Agent 可直接完成
 
 - [x] 审计 `web/src/styles/system.ts`，把含义混杂的 surface primitive 按 Glass / Paper / Focus Sheet 重新命名或拆分；不改视觉数值前先消除语义混乱。
-- [ ] 为“普通用户不显示 Admin Lab controls”“旧 Highlight 不进生产”补机械 gate（能测的部分）。
+- [x] `public-ui-contract` 已机械化“普通用户不显示 Admin Lab controls / 旧 Highlight 不进生产”：生产忽略 `?ui=dev` 与历史 localStorage dev 模式，实验 UI 仅由 `?admin=lab` 开启；development 仍保留 `ui=prod/dev/auto` 调试。
 
 ### B. 本地 Agent 更适合完成
 
