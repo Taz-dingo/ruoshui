@@ -104,6 +104,7 @@ interface StoryAnchorClusterView {
   top: number;
   isVisible: boolean;
   storyIds: string[];
+  position: [number, number, number];
 }
 
 type StoryAnchorOverlayItem = StoryAnchorPinView | StoryAnchorClusterView;
