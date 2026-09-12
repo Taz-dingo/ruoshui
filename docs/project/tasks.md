@@ -4,7 +4,7 @@
 
 本文件只维护**当前执行顺序与执行者边界**。已经成立的事实写入 [`state.md`](state.md)，稳定产品 contract 写入 [`spec.md`](spec.md)，视觉 / 交互 contract 写入根目录 [`design.md`](../../design.md)，重要 rationale 写入 [`docs/decisions`](../decisions/)。
 
-当前目标：生产技术闭环已经成立，下一阶段把若水从“能跑的产品骨架”推进成**空间发现、内容阅读与真实校园记忆真正统一的一版产品**。
+当前目标：生产技术闭环已经成立，下一阶段先补齐**用户个人资料 / 账号基础能力**，再继续真实校园内容生产与真机验收。
 
 执行者约定：
 
@@ -60,7 +60,25 @@
 - [ ] Paper 出现时像“内容从场景中展开”，而不是突然跳到另一个 SaaS 页面。
 - [ ] Story Feed 背后校园仍然明显可辨；Composer 可以更聚焦但不把场景糊成纯色。
 
-## P2：首批真实 Place 与 Story
+## P2：Profile v1 / 账号基础
+
+### GitHub Agent
+
+- [ ] 将“账号”入口收敛为一个 Focus Sheet：头像、昵称、可选校友身份、登录邮箱、退出登录；改邮箱在同一 Sheet 内切步骤，不叠第二层 modal。
+- [ ] 昵称继续使用现有 `displayName`，允许重复；`userId` 仍是稳定业务 identity，email 仍只作为登录 identity。
+- [ ] 增加可选、用户自述的校友身份：入学年份、毕业年份、学院 / 系、专业；不做学校认证，不填写时完全不展示。
+- [ ] 增加头像上传 / 更换 / 恢复默认；头像对象必须绑定当前 user 的独立 R2 prefix，并由服务端确认对象存在、类型合法。
+- [ ] Profile contract / service / D1 repository 形成独立 seam；关键约束有 schema / unit test。
+
+### 本地 Agent + 人
+
+- [ ] review 并 apply `0004_user_profiles.sql` 后部署 Worker / Pages。
+- [ ] 生产真实 smoke：修改昵称、填写 / 清空校友身份、上传 / 更换 / 删除头像、更换邮箱、退出后重新登录，确认仍为同一 User。
+- [ ] 真实校园背景下验收 Profile Focus Sheet 的信息密度、移动端滚动与键盘弹起行为。
+
+## P3：首批真实 Place 与 Story（暂缓内容生产）
+
+当前先不推进内容创作；Profile v1 与产品基础能力完成后再恢复。
 
 ### 本地 Agent + 人
 
@@ -71,14 +89,14 @@
 - [ ] 再扩到其余首批 Place，避免公共入口为空。
 - [ ] 用真实内容检查卡片裁切、TextCover、标题 fallback、memoryTime 与图文密度。
 
-## P3：生产 / 真机验收
+## P4：生产 / 真机验收
 
 ### 本地 Agent
 
 - [ ] 生产真实验证改邮箱：旧邮箱 OTP → 新邮箱 OTP → 当前 Session 保持 → 其他 Session 失效 → 新邮箱登录同一 User。
 - [ ] iPhone Safari：viewport、safe area、横竖屏、Place / Anchor / cluster、rotate、pan、pinch、Bottom Sheet 与 3D 手势冲突。
 - [ ] Android Chrome 与 iPad / 触屏核心链路。
-- [ ] production acceptance：OTP、Draft 恢复、上传、thumbnail derivative、Review、Revision、My Stories、Like / Comment、空间返回、API / 图片 / 模型失败、Pages / Workers / D1 / R2 / SES。
+- [ ] production acceptance：OTP、Draft 恢复、上传、thumbnail derivative、Review、Revision、My Stories、Like / Comment、空间返回、Profile、API / 图片 / 模型失败、Pages / Workers / D1 / R2 / SES。
 - [x] 空间 Pin 投影修复已部署最新 Pages（`e6adadf5-9a70-4851-b6a1-4349e2e6f281`，commit `0f2c931`），并核对 `ruoshui.tazdingo.net` 200、远端 bundle 与本地构建一致、公开 spatial-anchor API 返回 1 个 Anchor；修复后的 Pin 位置仍待真实浏览器人工复核。
 
 ### 人
@@ -100,7 +118,8 @@
 ## Later
 
 - 多地点 Story；Anchor → Place 晋升机制。
-- QQ / 微信 OAuth、用户主页、收藏、关注、私信、通知中心。
+- 用户公开主页，以及校友身份在公开作者页中的更完整展示。
+- QQ / 微信 OAuth、收藏、关注、私信、通知中心。
 - 完整 User Ban / RBAC、评论图片和复杂 moderation。
 - Story 搜索、复杂筛选、推荐算法。
 - 校园外围 skyline / 粗模与更精细 X/Z navigation bounds。
