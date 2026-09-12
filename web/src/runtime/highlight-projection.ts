@@ -113,20 +113,22 @@ function projectStoryAnchorPins({
       isVisible: false,
       title: pin.title
     }));
-  const visible = projected.filter(
-    (item): item is {
-      pin: (typeof pins)[number];
-      projected: ProjectedWorldPoint;
-    } => Boolean(item.projected?.isVisible)
-  );
+  const visible = projected
+    .filter(
+      (item): item is {
+        pin: (typeof pins)[number];
+        projected: ProjectedWorldPoint;
+      } => Boolean(item.projected?.isVisible)
+    )
+    .sort((a, b) => a.pin.id.localeCompare(b.pin.id));
   const groups: Array<{
     items: typeof visible;
     left: number;
     top: number;
   }> = [];
 
-  // O(n²) greedy clustering is acceptable for the current scale. Move to a
-  // screen-space grid only when real anchor counts make this measurable.
+  // O(n²) greedy clustering is acceptable for the current scale. Sorting by
+  // stable Story id first makes membership deterministic across API orderings.
   for (const item of visible) {
     const point = item.projected;
     const group = groups.find((candidate) => {
