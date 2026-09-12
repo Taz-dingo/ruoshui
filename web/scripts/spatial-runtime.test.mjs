@@ -66,11 +66,11 @@ function visiblePin(id, x, y = 200) {
   };
 }
 
-test('world projection maps backing-store pixels into CSS pixels', () => {
+test('world projection keeps PlayCanvas client pixels in CSS overlay space', () => {
   const point = projectWorldPoint(pc, createRuntime(), [400, 200, 1]);
   assert.deepEqual(point, {
-    left: 210,
-    top: 120,
+    left: 410,
+    top: 220,
     isVisible: true,
   });
 });
@@ -95,14 +95,14 @@ test('nearby anchors cluster and expose their world centroid', () => {
   const items = projectStoryAnchorPins({
     pc,
     runtimeState: createRuntime(),
-    pins: [visiblePin('story-b', 480), visiblePin('story-a', 400)],
+    pins: [visiblePin('story-b', 440), visiblePin('story-a', 400)],
   });
   assert.equal(items.length, 1);
   const cluster = items[0];
   assert.equal(cluster?.kind, 'cluster');
   if (cluster?.kind !== 'cluster') return;
   assert.deepEqual(cluster.storyIds, ['story-a', 'story-b']);
-  assert.deepEqual(cluster.position, [440, 200, 1]);
+  assert.deepEqual(cluster.position, [420, 200, 1]);
 });
 
 test('cluster membership is stable across API ordering', () => {

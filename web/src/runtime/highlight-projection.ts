@@ -193,11 +193,9 @@ function projectWorldPoint(
     return null;
   }
 
-  const canvasWidth = canvasElement.width;
-  const canvasHeight = canvasElement.height;
   const rect = canvasElement.getBoundingClientRect();
 
-  if (!canvasWidth || !canvasHeight || !rect.width || !rect.height) {
+  if (!rect.width || !rect.height) {
     return null;
   }
 
@@ -214,12 +212,12 @@ function projectWorldPoint(
     new pc.Vec3()
   );
 
-  // PlayCanvas projects into the canvas backing-store coordinate space. The
-  // React overlay is laid out in CSS pixels. These spaces diverge whenever
-  // devicePixelRatio or render scale is not exactly 1, so map explicitly from
-  // backing-store pixels into the canvas client rect before positioning pins.
-  const left = rect.left + (screenPosition.x / canvasWidth) * rect.width;
-  const top = rect.top + (screenPosition.y / canvasHeight) * rect.height;
+  // CameraComponent.worldToScreen already uses PlayCanvas' client rect, so
+  // the result is CSS pixels relative to the canvas. The React overlay uses
+  // the same coordinate space; applying a backing-store scale here would
+  // move pins toward the top-left on high-DPI displays.
+  const left = rect.left + screenPosition.x;
+  const top = rect.top + screenPosition.y;
   const isVisible =
     facingDot > 0 &&
     left >= rect.left + 20 &&
