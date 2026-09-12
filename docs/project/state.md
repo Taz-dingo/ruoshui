@@ -1,6 +1,6 @@
 # 项目状态快照
 
-最后更新：`2026-09-10`
+最后更新：`2026-09-12`
 
 本文件只记录**当前已经成立的事实与尚未成立的事实**。下一步执行顺序见 [`tasks.md`](tasks.md)。
 
@@ -29,6 +29,7 @@
 - 人机协作长期规则已沉淀到 [`agent-collaboration.md`](agent-collaboration.md)。
 - 根 `pnpm check` 统一执行 typecheck + tests + build。
 - `.github/workflows/ci.yml` 已在 PR 和 main push 上执行完整 gate。
+- `web/scripts/public-ui-contract.test.mjs` 已接入根 `pnpm check`：生产忽略 `?ui=dev` 与历史 localStorage dev 模式；旧 `HighlightLayer` 必须继续只挂在 `?admin=lab`；旧“看点位图文 / 收起图文 / 完整社区”文案不得回流普通用户源码；Place / 单 Story Anchor 打开内容时不得隐式触发 camera focus。
 - `web/scripts/visual-check.mjs --dock-hover` 用真实鼠标轨迹断言 dock 菜单 hover 行为（斜向移入面板保持打开、移开关闭），失败时非零退出；需要桌面视口与已运行的前端服务，未接入 CI。
 - Story、Auth、Place、Review、Social 等关键 invariant 已被 shared schema / service tests 固化，不再只靠 prose。
 - `AGENTS.md` 已要求任何用户可见 UI 改动先读取 `design.md`，并明确属于 Scene / Glass / Paper / Focus Sheet / Admin Lab 中哪一层。
