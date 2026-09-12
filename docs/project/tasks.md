@@ -1,6 +1,6 @@
 # 当前任务
 
-最后更新：`2026-09-12`
+最后更新：`2026-09-13`
 
 本文件只维护**当前执行顺序与执行者边界**。已经成立的事实写入 [`state.md`](state.md)，稳定产品 contract 写入 [`spec.md`](spec.md)，视觉 / 交互 contract 写入根目录 [`design.md`](../../design.md)，重要 rationale 写入 [`docs/decisions`](../decisions/)。
 
@@ -79,7 +79,7 @@
 - [ ] iPhone Safari：viewport、safe area、横竖屏、Place / Anchor / cluster、rotate、pan、pinch、Bottom Sheet 与 3D 手势冲突。
 - [ ] Android Chrome 与 iPad / 触屏核心链路。
 - [ ] production acceptance：OTP、Draft 恢复、上传、thumbnail derivative、Review、Revision、My Stories、Like / Comment、空间返回、API / 图片 / 模型失败、Pages / Workers / D1 / R2 / SES。
-- [x] 本轮 UI 修复已部署最新 Pages（`8c4f4137-df6b-4ffb-ac73-4ad2bd3ac4a5`）并核对 `ruoshui.tazdingo.net` 200、线上 bundle 与公开 API；生产桌面截图已确认 Anchor Pin 可见，Peek 点击仍待人工完成。
+- [x] 空间 Pin 投影修复已部署最新 Pages（`e6adadf5-9a70-4851-b6a1-4349e2e6f281`，commit `0f2c931`），并核对 `ruoshui.tazdingo.net` 200、远端 bundle 与本地构建一致、公开 spatial-anchor API 返回 1 个 Anchor；修复后的 Pin 位置仍待真实浏览器人工复核。
 
 ### 人
 

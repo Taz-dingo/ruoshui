@@ -1,6 +1,6 @@
 # 项目状态快照
 
-最后更新：`2026-09-12`
+最后更新：`2026-09-13`
 
 本文件只记录**当前已经成立的事实与尚未成立的事实**。下一步执行顺序见 [`tasks.md`](tasks.md)。
 
@@ -121,7 +121,7 @@
 - 生产图片上传 CORS 已修复并部署：`ruoshui.tazdingo.net` 与 `ruoshui-web.pages.dev` 的 OPTIONS 预检均返回对应 `Access-Control-Allow-Origin`，未授权 Origin 不会获得该 header；修复已合并为 PR #45。
 - 当前管理员账号的稳定 userId 已配置到生产 Worker 的 `ADMIN_USER_IDS`，审核页权限配置已就绪。
 - 生产 smoke 已实际通过：真实 OTP 邮件送达、OTP 登录、跨请求 `/me` Session、StoryDraft create / patch / read、临时 Draft 清理和 logout 全部成功；未创建公开内容。
-- 本轮前端修复已部署到 Cloudflare Pages 生产，deployment 为 `8c4f4137-df6b-4ffb-ac73-4ad2bd3ac4a5`（commit `4db6b67`）；`https://ruoshui.tazdingo.net/` 返回 200，线上 bundle 已包含 Pin replay、`story-anchor-cluster` 与 `420ms` transition；生产 API 返回 1 个 Anchor、0 个 Place，真实桌面截图已确认 Anchor Pin 可见。Peek 点击和全屏视觉细节仍因 CUA WebGL 自动化超时未完成。
+- 本次空间 Pin 投影修复已合并为 `0f2c931` 并部署到 Cloudflare Pages 生产，deployment 为 `e6adadf5-9a70-4851-b6a1-4349e2e6f281`；`https://ruoshui.tazdingo.net/` 返回 200，远端构建 bundle 与本地构建 hash 一致，spatial-anchor API 返回 1 个 Anchor、0 个 Place。修复后的真实浏览器 Pin 位置仍需人工视觉复核，不能用本次 HTTP 核对替代。
 - 本次部署核对了既有 Worker secrets 名称，未覆盖或输出 secret 值；D1、R2 和非敏感 SES 配置仍在绑定中。
 
 ### 真实 Place / Story 内容
