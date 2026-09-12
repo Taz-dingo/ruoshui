@@ -10,9 +10,11 @@
     "check:web-public-ui": "node --experimental-strip-types --test web/scripts/public-ui-contract.test.mjs",
     "check:smoke-script": "node --check scripts/production-smoke.mjs && node scripts/production-smoke.mjs --help >/dev/null",
     "check:deploy-preflight-script": "node --check scripts/production-deploy-preflight.mjs && node scripts/production-deploy-preflight.mjs --help >/dev/null",
-    "check": "pnpm typecheck && pnpm test && pnpm check:web-spatial && pnpm check:web-public-ui && pnpm check:smoke-script && pnpm check:deploy-preflight-script && pnpm build",
+    "check:source-preflight-script": "node --check scripts/production-source-preflight.mjs && node scripts/production-source-preflight.mjs --help >/dev/null",
+    "check": "pnpm typecheck && pnpm test && pnpm check:web-spatial && pnpm check:web-public-ui && pnpm check:smoke-script && pnpm check:deploy-preflight-script && pnpm check:source-preflight-script && pnpm build",
+    "preflight:source:prod": "node scripts/production-source-preflight.mjs",
     "preflight:forum:prod": "node scripts/production-deploy-preflight.mjs",
-    "deploy:forum:prod": "pnpm preflight:forum:prod && pnpm --filter @ruoshui/forum-api run deploy",
+    "deploy:forum:prod": "pnpm preflight:source:prod && pnpm preflight:forum:prod && pnpm --filter @ruoshui/forum-api run deploy",
     "smoke:prod": "node scripts/production-smoke.mjs",
     "dev:web": "pnpm --dir web dev",
     "dev:forum-api": "pnpm --filter @ruoshui/forum-api dev"
