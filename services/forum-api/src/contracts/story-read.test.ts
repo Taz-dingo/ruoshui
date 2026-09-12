@@ -3,6 +3,7 @@ import test from "node:test";
 import type {
   ListPublishedStoriesInput,
   PublishedStory,
+  PublishedStorySpatialAnchor,
 } from "@ruoshui/shared";
 
 import {
@@ -20,6 +21,19 @@ const publishedStory: PublishedStory = {
   mediaAssetIds: ["media_1"],
   location: { kind: "place", placeId: "place_track" },
   publishedAt: "2026-09-06T03:00:00.000Z",
+};
+
+const spatialAnchor: PublishedStorySpatialAnchor = {
+  id: "story_anchor_1",
+  title: "图书馆旁的旧路",
+  anchor: {
+    markerPosition: { x: 1, y: 2, z: 3 },
+    cameraPose: {
+      position: { x: 4, y: 5, z: 6 },
+      target: { x: 1, y: 2, z: 3 },
+      fovDeg: 48,
+    },
+  },
 };
 
 function createHarness() {
@@ -57,6 +71,9 @@ function createHarness() {
       if (input.placeId && input.placeId !== "place_track") return [];
       return [publishedStory];
     },
+    async listPublishedStorySpatialAnchors() {
+      return [spatialAnchor];
+    },
   };
   return {
     getLastListInput: () => lastListInput,
@@ -72,6 +89,12 @@ test("published Story list preserves place and limit filters", async () => {
   });
   assert.equal(result[0]?.id, "story_1");
   assert.deepEqual(harness.getLastListInput(), { placeId: "place_track", limit: 12 });
+});
+
+test("spatial anchor index is independent from feed pagination", async () => {
+  const harness = createHarness();
+  const result = await harness.service.listPublishedStorySpatialAnchors();
+  assert.deepEqual(result, [spatialAnchor]);
 });
 
 test("unpublished or unknown Story ids are not readable", async () => {

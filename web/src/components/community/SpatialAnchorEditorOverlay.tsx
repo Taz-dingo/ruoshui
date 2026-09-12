@@ -94,20 +94,20 @@ function SpatialAnchorEditorOverlay({
     <div className="pointer-events-none fixed inset-0 z-[24] text-white">
       <div className="pointer-events-auto absolute left-[calc(1rem+var(--safe-left))] right-[calc(1rem+var(--safe-right))] top-[calc(1rem+var(--safe-top))] flex items-center justify-between gap-3">
         <button
-          className="h-11 rounded-full border border-white/20 bg-black/55 px-4 text-[13px] font-medium text-white backdrop-blur-[18px]"
+          className="h-11 rounded-full border border-white/20 bg-black/55 px-4 text-[13px] font-medium text-white backdrop-blur-[6px]"
           onClick={step === 'point' ? handleCancel : handleBackToPoint}
           type="button"
         >
           {step === 'point' ? (isPlace ? '返回地点编辑' : '返回故事') : '重新标位置'}
         </button>
-        <div className="rounded-full border border-white/18 bg-black/52 px-4 py-2 text-center text-[12px] leading-[1.45] text-white/88 backdrop-blur-[18px]">
+        <div className="rounded-full border border-white/18 bg-black/52 px-4 py-2 text-center text-[12px] leading-[1.45] text-white/88 backdrop-blur-[6px]">
           {step === 'point' ? `1 / 2 · 标记${subject}的位置` : '2 / 2 · 保存最佳视角'}
         </div>
         <div className="w-[88px]" />
       </div>
 
       <div className="absolute bottom-[calc(1.25rem+var(--safe-bottom))] left-1/2 w-[min(520px,calc(100vw-2rem))] -translate-x-1/2">
-        <div className="pointer-events-auto rounded-[24px] border border-white/18 bg-black/58 p-4 shadow-panel backdrop-blur-[22px]">
+        <div className="pointer-events-auto rounded-[24px] border border-white/18 bg-black/58 p-4 shadow-panel backdrop-blur-[8px]">
           {step === 'point' ? (
             <>
               <div className="text-[16px] font-semibold">

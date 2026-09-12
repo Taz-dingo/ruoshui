@@ -24,6 +24,38 @@ interface ProjectHighlightPinsArgs {
   highlights: ViewerHighlight[];
 }
 
+interface StoryAnchorProjection {
+  id: string;
+  kind: 'anchor';
+  left: number;
+  top: number;
+  isVisible: boolean;
+  title: string;
+}
+
+interface StoryAnchorClusterProjection {
+  id: string;
+  kind: 'cluster';
+  left: number;
+  top: number;
+  isVisible: boolean;
+  storyIds: string[];
+  position: [number, number, number];
+}
+
+type StoryAnchorProjectionItem = StoryAnchorProjection | StoryAnchorClusterProjection;
+
+interface ProjectStoryAnchorPinsArgs {
+  clusterRadius?: number;
+  pc: any;
+  runtimeState: any;
+  pins: Array<{
+    id: string;
+    title: string;
+    position: [number, number, number];
+  }>;
+}
+
 function projectNamedPins({
   pc,
   runtimeState,
@@ -61,6 +93,93 @@ function projectHighlightPins({
   });
 }
 
+function projectStoryAnchorPins({
+  clusterRadius = 56,
+  pc,
+  runtimeState,
+  pins
+}: ProjectStoryAnchorPinsArgs): StoryAnchorProjectionItem[] {
+  const projected = pins.map((pin) => ({
+    pin,
+    projected: projectWorldPoint(pc, runtimeState, pin.position)
+  }));
+  const hidden = projected
+    .filter((item) => !item.projected?.isVisible)
+    .map(({ pin, projected: point }) => ({
+      id: pin.id,
+      kind: 'anchor' as const,
+      left: point?.left ?? 0,
+      top: point?.top ?? 0,
+      isVisible: false,
+      title: pin.title
+    }));
+  const visible = projected
+    .filter(
+      (item): item is {
+        pin: (typeof pins)[number];
+        projected: ProjectedWorldPoint;
+      } => Boolean(item.projected?.isVisible)
+    )
+    .sort((a, b) => a.pin.id.localeCompare(b.pin.id));
+  const groups: Array<{
+    items: typeof visible;
+    left: number;
+    top: number;
+  }> = [];
+
+  // O(n²) greedy clustering is acceptable for the current scale. Sorting by
+  // stable Story id first makes membership deterministic across API orderings.
+  for (const item of visible) {
+    const point = item.projected;
+    const group = groups.find((candidate) => {
+      const dx = candidate.left - point.left;
+      const dy = candidate.top - point.top;
+      return Math.hypot(dx, dy) <= clusterRadius;
+    });
+
+    if (!group) {
+      groups.push({ items: [item], left: point.left, top: point.top });
+      continue;
+    }
+
+    group.items.push(item);
+    group.left = group.items.reduce((sum, current) => sum + current.projected.left, 0) / group.items.length;
+    group.top = group.items.reduce((sum, current) => sum + current.projected.top, 0) / group.items.length;
+  }
+
+  const grouped = groups.map((group) => {
+    if (group.items.length === 1) {
+      const item = group.items[0];
+      return {
+        id: item.pin.id,
+        kind: 'anchor' as const,
+        left: item.projected.left,
+        top: item.projected.top,
+        isVisible: true,
+        title: item.pin.title
+      };
+    }
+
+    const storyIds = group.items.map((item) => item.pin.id).sort();
+    const position: [number, number, number] = [
+      group.items.reduce((sum, item) => sum + item.pin.position[0], 0) / group.items.length,
+      group.items.reduce((sum, item) => sum + item.pin.position[1], 0) / group.items.length,
+      group.items.reduce((sum, item) => sum + item.pin.position[2], 0) / group.items.length,
+    ];
+    return {
+      id: `story-anchor-cluster:${storyIds.join(',')}`,
+      kind: 'cluster' as const,
+      left: group.left,
+      top: group.top,
+      isVisible: true,
+      storyIds,
+      position
+    };
+  });
+
+  return [...grouped, ...hidden];
+}
+
 function projectWorldPoint(
   pc: any,
   runtimeState: any,
@@ -74,9 +193,11 @@ function projectWorldPoint(
     return null;
   }
 
+  const canvasWidth = canvasElement.width;
+  const canvasHeight = canvasElement.height;
   const rect = canvasElement.getBoundingClientRect();
 
-  if (!rect.width || !rect.height) {
+  if (!canvasWidth || !canvasHeight || !rect.width || !rect.height) {
     return null;
   }
 
@@ -92,8 +213,13 @@ function projectWorldPoint(
     worldPosition,
     new pc.Vec3()
   );
-  const left = rect.left + screenPosition.x;
-  const top = rect.top + screenPosition.y;
+
+  // PlayCanvas projects into the canvas backing-store coordinate space. The
+  // React overlay is laid out in CSS pixels. These spaces diverge whenever
+  // devicePixelRatio or render scale is not exactly 1, so map explicitly from
+  // backing-store pixels into the canvas client rect before positioning pins.
+  const left = rect.left + (screenPosition.x / canvasWidth) * rect.width;
+  const top = rect.top + (screenPosition.y / canvasHeight) * rect.height;
   const isVisible =
     facingDot > 0 &&
     left >= rect.left + 20 &&
@@ -111,6 +237,7 @@ function projectWorldPoint(
 export {
   projectHighlightPins,
   projectNamedPins,
+  projectStoryAnchorPins,
   projectWorldPoint
 };
 

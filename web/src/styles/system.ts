@@ -14,15 +14,17 @@ const appShellClassNames = {
 // because a class happens to look convenient: follow design.md first.
 const glassSurfaceClassNames = {
   capsule:
-    'rounded-full border border-ink/20 bg-[linear-gradient(180deg,rgba(255,255,255,0.2),rgba(255,255,255,0.08))] text-ink shadow-panel backdrop-blur-[22px] saturate-[1.1]',
+    'rounded-full border border-ink/20 bg-[linear-gradient(180deg,rgba(255,255,255,0.2),rgba(255,255,255,0.08))] text-ink shadow-panel backdrop-blur-[8px] saturate-[1.05]',
   field:
-    'rounded-control border border-ink/10 bg-ink/6 backdrop-blur-[14px]',
+    'rounded-control border border-ink/10 bg-ink/6 backdrop-blur-[4px]',
   panel:
-    'rounded-panel border border-ink/20 bg-[linear-gradient(180deg,rgba(255,255,255,0.16),rgba(12,13,16,0.42))] shadow-panel backdrop-blur-[24px] saturate-[1.1]',
+    'rounded-panel border border-ink/20 bg-[linear-gradient(180deg,rgba(255,255,255,0.16),rgba(12,13,16,0.42))] shadow-panel backdrop-blur-[8px] saturate-[1.05]',
+  readingPanel:
+    'rounded-panel border border-white/50 bg-[rgba(247,247,243,0.58)] text-[#181916] shadow-panel backdrop-blur-[8px] saturate-[1.04]',
   popover:
-    'rounded-control border border-ink/20 bg-[rgba(28,29,32,0.92)] text-ink shadow-panel backdrop-blur-[24px]',
+    'rounded-control border border-ink/20 bg-[rgba(28,29,32,0.92)] text-ink shadow-panel backdrop-blur-[8px]',
   subtle:
-    'rounded-control border border-ink/10 bg-ink/6 backdrop-blur-[14px]'
+    'rounded-control border border-ink/10 bg-ink/6 backdrop-blur-[4px]'
 } as const;
 
 // These Paper recipes mirror values already used by the live content UI. They
@@ -31,21 +33,21 @@ const glassSurfaceClassNames = {
 const paperSurfaceClassNames = {
   canvas: 'bg-[#f7f7f3] text-[#181916]',
   legacyTranslucentPanel:
-    'rounded-panel border border-glass-light-outline/38 bg-[linear-gradient(180deg,rgba(255,255,255,0.76),rgba(242,242,247,0.52))] text-glass-light-ink shadow-panel backdrop-blur-[28px] saturate-[1.15]',
+    'rounded-panel border border-glass-light-outline/38 bg-[linear-gradient(180deg,rgba(255,255,255,0.76),rgba(242,242,247,0.52))] text-glass-light-ink shadow-panel backdrop-blur-[8px] saturate-[1.08]',
   legacyTranslucentSubtle:
-    'rounded-control border border-glass-light-outline/28 bg-white/30 backdrop-blur-[18px]',
+    'rounded-control border border-glass-light-outline/28 bg-white/30 backdrop-blur-[4px]',
   stickyHeader:
-    'border-black/[0.055] bg-[#f7f7f3]/94 backdrop-blur-[18px]'
+    'border-black/[0.055] bg-[#f7f7f3]/94 backdrop-blur-[4px]'
 } as const;
 
 // Focus Sheet currently has two real strengths in production. Keep both exact
 // recipes until they can be tuned against the real 3D scene; the semantic split
 // prevents future components from inventing a third ad-hoc modal material.
 const focusSurfaceClassNames = {
-  editorBackdrop: 'bg-black/38 backdrop-blur-[8px]',
+  editorBackdrop: 'bg-black/38',
   editorPanel:
     'border border-white/55 bg-[rgba(249,249,247,0.96)] text-[#191919] shadow-panel',
-  workspaceBackdrop: 'bg-black/30 backdrop-blur-[7px]',
+  workspaceBackdrop: 'bg-black/30',
   workspacePanel:
     'border border-white/55 bg-[#f7f7f3]/98 text-[#191a18] shadow-panel'
 } as const;

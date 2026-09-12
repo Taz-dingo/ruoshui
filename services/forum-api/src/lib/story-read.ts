@@ -2,6 +2,7 @@ import type {
   ListPublishedStoriesInput,
   MediaDerivativeVariant,
   PublishedStory,
+  PublishedStorySpatialAnchor,
 } from "@ruoshui/shared";
 
 interface PublishedStoryMediaRef {
@@ -22,6 +23,7 @@ interface StoryReadRepository {
     variant: MediaDerivativeVariant,
   ): Promise<PublishedStoryMediaRef | null>;
   listPublishedStories(input: ListPublishedStoriesInput): Promise<PublishedStory[]>;
+  listPublishedStorySpatialAnchors(): Promise<PublishedStorySpatialAnchor[]>;
 }
 
 interface StoryReadService {
@@ -36,6 +38,7 @@ interface StoryReadService {
     variant: MediaDerivativeVariant,
   ): Promise<PublishedStoryMediaRef>;
   listPublishedStories(input: ListPublishedStoriesInput): Promise<PublishedStory[]>;
+  listPublishedStorySpatialAnchors(): Promise<PublishedStorySpatialAnchor[]>;
 }
 
 class StoryReadServiceError extends Error {
@@ -80,6 +83,10 @@ function createStoryReadService(repository: StoryReadRepository): StoryReadServi
 
     async listPublishedStories(input) {
       return repository.listPublishedStories(input);
+    },
+
+    async listPublishedStorySpatialAnchors() {
+      return repository.listPublishedStorySpatialAnchors();
     },
   };
 }

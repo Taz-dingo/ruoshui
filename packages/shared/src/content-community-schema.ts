@@ -189,6 +189,12 @@ const publishedStorySchema = storyContentFieldsSchema.extend({
   publishedAt: z.string().datetime(),
 });
 
+const publishedStorySpatialAnchorSchema = z.object({
+  id: storyIdSchema,
+  title: z.string().trim().min(1).max(160),
+  anchor: spatialAnchorSchema,
+});
+
 const listPublishedStoriesInputSchema = z.object({
   placeId: placeIdSchema.optional(),
   limit: z.coerce.number().int().positive().max(50).default(24),
@@ -289,6 +295,7 @@ type Place = z.infer<typeof placeSchema>;
 type PublishedComment = z.infer<typeof publishedCommentSchema>;
 type PublishedStory = z.infer<typeof publishedStorySchema>;
 type PublishedStoryAuthor = z.infer<typeof publishedStoryAuthorSchema>;
+type PublishedStorySpatialAnchor = z.infer<typeof publishedStorySpatialAnchorSchema>;
 type RejectStoryRevisionInput = z.infer<typeof rejectStoryRevisionInputSchema>;
 type RequestEmailOtpInput = z.infer<typeof requestEmailOtpInputSchema>;
 type RequestStoryChangesInput = z.infer<typeof requestStoryChangesInputSchema>;
@@ -330,6 +337,7 @@ export {
   publishedCommentSchema,
   publishedStoryAuthorSchema,
   publishedStorySchema,
+  publishedStorySpatialAnchorSchema,
   rejectStoryRevisionInputSchema,
   requestEmailOtpInputSchema,
   requestStoryChangesInputSchema,
@@ -371,6 +379,7 @@ export type {
   PublishedComment,
   PublishedStory,
   PublishedStoryAuthor,
+  PublishedStorySpatialAnchor,
   RejectStoryRevisionInput,
   RequestEmailOtpInput,
   RequestStoryChangesInput,

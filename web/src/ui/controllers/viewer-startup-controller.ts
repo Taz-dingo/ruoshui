@@ -5,7 +5,8 @@ import type { ViewerVariant } from '../../content/types';
 import {
   subscribeViewerCommands,
   type ViewerCommand,
-  type ViewerPlacePin
+  type ViewerPlacePin,
+  type ViewerStoryAnchorPin
 } from '../commands/viewer-command-bus';
 
 interface InstallViewerStartupBindingsArgs {
@@ -44,6 +45,7 @@ interface InstallViewerStartupBindingsArgs {
   setHighlightAuthoringEnabled: (enabled: boolean) => void;
   setHighlightPlaneY: (value: number) => void;
   setPlacePins: (pins: ViewerPlacePin[]) => void;
+  setStoryAnchorPins: (pins: ViewerStoryAnchorPin[]) => void;
 }
 
 interface InitializeViewerStartupArgs {
@@ -91,7 +93,8 @@ function installViewerStartupBindings({
   cancelSpatialAnchorAmbientFocus,
   setHighlightAuthoringEnabled,
   setHighlightPlaneY,
-  setPlacePins
+  setPlacePins,
+  setStoryAnchorPins
 }: InstallViewerStartupBindingsArgs) {
   const unsubscribe = subscribeViewerCommands((command: ViewerCommand) => {
     switch (command.type) {
@@ -158,6 +161,9 @@ function installViewerStartupBindings({
         return;
       case 'set-place-pins':
         setPlacePins(command.pins);
+        return;
+      case 'set-story-anchor-pins':
+        setStoryAnchorPins(command.pins);
         return;
       case 'set-highlight-authoring-enabled':
         setHighlightAuthoringEnabled(command.enabled);

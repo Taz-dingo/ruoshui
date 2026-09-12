@@ -88,6 +88,31 @@ interface PlaceOverlayViewState {
   items: PlacePinView[];
 }
 
+interface StoryAnchorPinView {
+  id: string;
+  kind: 'anchor';
+  left: number;
+  top: number;
+  isVisible: boolean;
+  title: string;
+}
+
+interface StoryAnchorClusterView {
+  id: string;
+  kind: 'cluster';
+  left: number;
+  top: number;
+  isVisible: boolean;
+  storyIds: string[];
+  position: [number, number, number];
+}
+
+type StoryAnchorOverlayItem = StoryAnchorPinView | StoryAnchorClusterView;
+
+interface StoryAnchorOverlayViewState {
+  items: StoryAnchorOverlayItem[];
+}
+
 interface HighlightAuthoringViewState {
   isEnabled: boolean;
   planeY: number;
@@ -225,6 +250,10 @@ export type {
   PerfHudViewState,
   PlaceOverlayViewState,
   PlacePinView,
+  StoryAnchorClusterView,
+  StoryAnchorOverlayItem,
+  StoryAnchorOverlayViewState,
+  StoryAnchorPinView,
   PresetPanelItemView,
   PresetPanelViewState,
   RenderScaleViewState,

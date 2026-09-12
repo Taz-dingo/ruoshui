@@ -3,6 +3,7 @@ import type {
   CreateStoryDraftInput,
   Place,
   PublishedStory,
+  PublishedStorySpatialAnchor,
   StoryDraft,
   StoryDraftPatch,
   StoryReviewItem,
@@ -152,6 +153,10 @@ async function fetchPublishedStories(input: {
   if (input.limit) query.set('limit', String(input.limit));
   const suffix = query.size > 0 ? `?${query.toString()}` : '';
   return requestData<PublishedStory[]>(`/api/published-stories${suffix}`);
+}
+
+async function fetchPublishedStorySpatialAnchors(): Promise<PublishedStorySpatialAnchor[]> {
+  return requestData<PublishedStorySpatialAnchor[]>('/api/published-stories/spatial-anchors');
 }
 
 async function fetchPublishedStory(storyId: string): Promise<PublishedStory> {
@@ -415,6 +420,7 @@ export {
   fetchPlaces,
   fetchPublishedStories,
   fetchPublishedStory,
+  fetchPublishedStorySpatialAnchors,
   fetchStoryDrafts,
   fetchStoryReviewItem,
   fetchStoryReviewQueue,

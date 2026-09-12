@@ -1,6 +1,6 @@
 # 项目状态快照
 
-最后更新：`2026-09-09`
+最后更新：`2026-09-12`
 
 本文件只记录**当前已经成立的事实与尚未成立的事实**。下一步执行顺序见 [`tasks.md`](tasks.md)。
 
@@ -29,6 +29,7 @@
 - 人机协作长期规则已沉淀到 [`agent-collaboration.md`](agent-collaboration.md)。
 - 根 `pnpm check` 统一执行 typecheck + tests + build。
 - `.github/workflows/ci.yml` 已在 PR 和 main push 上执行完整 gate。
+- `web/scripts/public-ui-contract.test.mjs` 已接入根 `pnpm check`：生产忽略 `?ui=dev` 与历史 localStorage dev 模式；旧 `HighlightLayer` 必须继续只挂在 `?admin=lab`；旧“看点位图文 / 收起图文 / 完整社区”文案不得回流普通用户源码；Place / 单 Story Anchor 打开内容时不得隐式触发 camera focus。
 - `web/scripts/visual-check.mjs --dock-hover` 用真实鼠标轨迹断言 dock 菜单 hover 行为（斜向移入面板保持打开、移开关闭），失败时非零退出；需要桌面视口与已运行的前端服务，未接入 CI。
 - Story、Auth、Place、Review、Social 等关键 invariant 已被 shared schema / service tests 固化，不再只靠 prose。
 - `AGENTS.md` 已要求任何用户可见 UI 改动先读取 `design.md`，并明确属于 Scene / Glass / Paper / Focus Sheet / Admin Lab 中哪一层。
@@ -69,12 +70,22 @@
 - 普通用户 Dock 已有一级「校园故事」入口，直接打开全校园 Published Story Feed / Detail，不再依赖旧 Highlight 进入完整社区。
 - Place Memory Layer 已完成：Place intro + masonry Published Story feed；向下滚动后 intro 收缩为 sticky title。
 - **点击 Place 现在只打开 Place 内容，不自动飞镜头；“飞到这里”是显式 camera focus 操作。**
+- 已发布 custom Anchor 现在会作为普通用户可发现的 Story Anchor Pin 投影；只读取 Published Story，不读取 draft / pending revision。
+- Story Anchor 使用 56px 屏幕空间聚类；Place pin 使用独立投影层，不会被 Story cluster 吞掉。cluster 和单个 Anchor 点击只打开内容，Story Peek 内的「飞到这里」才触发 camera focus。
+- Story Anchor Peek 已接入 cover / title / author / memoryTime / 摘要，并提供「飞到这里 / 阅读全文」；Place 空状态提供「留下故事」入口。
 - PC 使用窄侧边内容层；Mobile 使用可扩展 Bottom Sheet。
 - Story Detail 在同一内容容器内打开并可返回；支持多图横滑、作者、memoryTime、正文与地点语义。
 - “回到这里”使用 Story custom Anchor 或 Place camera pose 返回 3D。
 - 原“完整社区”入口已切到全校园 Published Story feed / Detail，不再暴露旧 ForumPost composer 或旧 ForumPost read UI。
 - Story Like、Comment Like、文字评论 / 回复已接持久 User；公开写入先登录。
 - Comment / Reply 底层使用 `rootCommentId` + `replyToCommentId`，UI 只保留两层视觉；作者可删除自己的评论，管理员可隐藏 / 恢复评论。
+
+### Spatial / surface 收口（2026-09-10）
+
+- `PlaceMemoryLayer`、`CommunitySheet`、`MyStoriesPanel`、`StoryComposerFlow`、场景 dock 与通用 Sheet 已迁回 `glassSurfaceClassNames`、`paperSurfaceClassNames`、`focusSurfaceClassNames`；没有新增平行 surface recipe。
+- Place / Story 内容容器实现 Glass Peek → Paper Feed 的同容器 solidify transition：`420ms ease-out`；Story Detail 不再在外层容器内叠一层不透明 Paper。
+- 当前实际 primitive 参数：Glass capsule `8px`、field/subtle `4px`、panel/popover `8px`；Paper sticky header `4px`；Focus backdrop 不再 blur，dim 仍分别为 `38%` / `30%`。
+- Pin command bus 现在会保留最近的 Place / Story Anchor 状态并在 viewer 订阅时回放，避免 React API 请求早于 runtime 订阅而丢点；`pnpm check`、pin replay assertion 均通过，修复以 commit `4db6b67` 推送。
 
 ### Loading / media derivatives
 
@@ -88,16 +99,13 @@
 
 ### Spatial Discovery 下一步
 
-- 已发布 Story 的 custom Anchor **目前仍未投影成普通用户可见的 Story Pin**；目前只有 Story Detail 的“回到这里”会消费其 camera pose。
-- Story Anchor 的屏幕空间 clustering 尚未实现；目标是远景 / 高密度聚合，Place 永远不被 cluster 吞掉。
-- Story Anchor Peek 尚未实现；目标是直接展示 Story 轻预览 +“飞到这里 / 阅读全文”，不再增加“看图文”门槛。
-- Place 当前已经直接展示新 Published Story 内容，但 Glass Peek → Paper Feed 的材质递进与更自然的 empty-state CTA 仍需在真实场景里继续视觉收敛。
+- Story Anchor Pin、56px screen-space clustering、Story Anchor Peek 与 Place / Story 不自动飞镜头的代码路径已经部署；公开 API 当前实际返回 1 条 custom-anchor Published Story，Place API 当前返回 0 个 Place。
+- 最新生产桌面截图已确认 `1995年在建中的图书馆` Story Anchor Pin 在校园背景中可见；Place API 当前为 0 个 Place，因此没有 Place Pin 属于当前数据事实。仍需人工确认 cluster 拆分手感、Place / Story pin 遮挡优先级和点击后的 Peek 过渡；自动化点击在 WebGL 页面超时，未把这些记为完整视觉验收。
 
 ### 材质与视觉层级
 
-- `design.md` 已经锁定 Scene / Glass / Paper / Focus Sheet contract，但现有 `system.ts` primitive 仍混有旧玻璃和新 Paper 的语义，需要后续收口。
-- Story Feed / My Stories / Composer 当前背景 blur 偏重；需要在真实 3D 背景上主要改用 dim / surface opacity / contrast 建立层级。
-- Glass → Paper solidify 的具体 animation curve、opacity、blur、dim 参数尚未验收，不应在没有真实浏览器视觉循环时拍脑袋定死。
+- `system.ts` primitive 语义和业务组件迁移已经完成；Story Feed / My Stories / Composer 已降低背景 blur，My Stories / Feed 已去掉主要的卡片套卡片结构。
+- Glass → Paper 的 `420ms ease-out` 已部署；Glass 为 `8/4/8px`，Paper sticky 为 `4px`，Sheet / Focus / Loading 全屏遮罩不再使用 backdrop blur。Anchor Pin 已在真实校园背景截图中确认可见，仍需人工验收各层打开与点击时的最终手感。
 
 ### 生产 Auth / SES
 
@@ -113,7 +121,7 @@
 - 生产图片上传 CORS 已修复并部署：`ruoshui.tazdingo.net` 与 `ruoshui-web.pages.dev` 的 OPTIONS 预检均返回对应 `Access-Control-Allow-Origin`，未授权 Origin 不会获得该 header；修复已合并为 PR #45。
 - 当前管理员账号的稳定 userId 已配置到生产 Worker 的 `ADMIN_USER_IDS`，审核页权限配置已就绪。
 - 生产 smoke 已实际通过：真实 OTP 邮件送达、OTP 登录、跨请求 `/me` Session、StoryDraft create / patch / read、临时 Draft 清理和 logout 全部成功；未创建公开内容。
-- 当前 `main` 的前端已部署到 Cloudflare Pages 生产，deployment 为 `d962c330-6e97-4e64-b895-a38a1f9d1749`；`https://ruoshui-web.pages.dev/` 已返回 200，线上 bundle 与本地构建逐字节一致，`--dock-hover` 三条 hover 路径在生产实测通过。
+- 本轮前端修复已部署到 Cloudflare Pages 生产，deployment 为 `8c4f4137-df6b-4ffb-ac73-4ad2bd3ac4a5`（commit `4db6b67`）；`https://ruoshui.tazdingo.net/` 返回 200，线上 bundle 已包含 Pin replay、`story-anchor-cluster` 与 `420ms` transition；生产 API 返回 1 个 Anchor、0 个 Place，真实桌面截图已确认 Anchor Pin 可见。Peek 点击和全屏视觉细节仍因 CUA WebGL 自动化超时未完成。
 - 本次部署核对了既有 Worker secrets 名称，未覆盖或输出 secret 值；D1、R2 和非敏感 SES 配置仍在绑定中。
 
 ### 真实 Place / Story 内容

@@ -6,7 +6,7 @@ import {
   fetchPublishedStories,
   getPublishedStoryMediaUrl,
 } from '../../community/content-api';
-import { scrollAreaClassNames } from '../../styles/system';
+import { buttonVariants, paperSurfaceClassNames, scrollAreaClassNames } from '../../styles/system';
 import { requestFocusSpatialAnchor } from '../../ui/commands/viewer-command-bus';
 import { cn } from '../../utils/cn';
 import { Sheet, SheetContent } from '../ui/sheet';
@@ -104,25 +104,25 @@ function StoryCard({ story, onOpen }: { story: PublishedStory; onOpen: () => voi
 
   return (
     <button
-      className="mb-3 block w-full break-inside-avoid overflow-hidden rounded-[18px] bg-white text-left shadow-[0_8px_30px_rgba(30,31,27,0.06)] ring-1 ring-black/[0.045] transition-transform duration-180 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#a8c97d]"
+      className="mb-4 block w-full break-inside-avoid overflow-hidden text-left transition-[opacity,transform] duration-180 hover:-translate-y-0.5 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#a8c97d]"
       onClick={onOpen}
       type="button"
     >
       {firstMediaId ? (
         <img
           alt={storyDisplayTitle(story)}
-          className="block aspect-[4/5] w-full bg-black/5 object-cover"
+          className="block aspect-[4/5] w-full rounded-[16px] bg-black/5 object-cover"
           loading="lazy"
           src={getPublishedStoryMediaUrl(story.id, firstMediaId)}
         />
       ) : (
-        <div className="grid aspect-[4/5] place-items-center bg-[#eef0e8] px-5 text-center">
+        <div className="grid aspect-[4/5] place-items-center rounded-[16px] bg-[#eef0e8] px-5 text-center">
           <p className="m-0 text-[15px] font-medium leading-[1.75] tracking-[-0.02em] text-[#2c3328]">
             {storyTextCover(story)}
           </p>
         </div>
       )}
-      <div className="px-3.5 pb-3.5 pt-3">
+      <div className="px-1.5 pb-1 pt-3">
         <div className="line-clamp-2 text-[13px] font-semibold leading-[1.5] tracking-[-0.02em] text-[#20221f]">
           {storyDisplayTitle(story)}
         </div>
@@ -150,8 +150,8 @@ function StoryDetail({
   const canReturn = canReturnToStory(story, placesById);
 
   return (
-    <div className="min-h-full bg-[#f7f7f3]">
-      <div className="sticky top-0 z-[3] flex h-[54px] items-center justify-between gap-2 border-b border-black/[0.055] bg-[#f7f7f3]/94 px-4 backdrop-blur-[18px]">
+    <div className="min-h-full">
+      <div className={cn('sticky top-0 z-[3] flex h-[54px] items-center justify-between gap-2 border-b px-4', paperSurfaceClassNames.stickyHeader)}>
         <button
           className="shrink-0 rounded-full px-2 py-1 text-[13px] text-black/60 hover:bg-black/5"
           onClick={onBack}
@@ -164,7 +164,7 @@ function StoryDetail({
         </div>
         {canReturn ? (
           <button
-            className="shrink-0 rounded-full border border-black/8 bg-white px-3 py-1.5 text-[11px] font-medium text-black/62"
+            className={cn(buttonVariants({ variant: 'secondary' }), 'shrink-0 px-3 py-1.5 text-[11px] font-medium')}
             onClick={onReturnToScene}
             type="button"
           >
@@ -232,6 +232,7 @@ function CommunitySheet({
   const [activeStoryId, setActiveStoryId] = useState<string | null>(null);
   const [loadState, setLoadState] = useState<LoadState>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isSurfaceSolid, setIsSurfaceSolid] = useState(false);
   const requestRef = useRef(0);
 
   const placesById = useMemo(
@@ -279,6 +280,7 @@ function CommunitySheet({
     if (!open) {
       requestRef.current += 1;
       setActiveStoryId(null);
+      setIsSurfaceSolid(false);
       return;
     }
 
@@ -286,13 +288,19 @@ function CommunitySheet({
     void refreshStories();
   }, [open, sceneId]);
 
+  useEffect(() => {
+    if (!open) return;
+    const frame = window.requestAnimationFrame(() => setIsSurfaceSolid(true));
+    return () => window.cancelAnimationFrame(frame);
+  }, [open]);
+
   function returnToStory(story: PublishedStory) {
     if (!focusStoryLocation(story, placesById)) return;
     onOpenChange(false);
   }
 
   const sheetClassName = cn(
-    'fixed z-[8] overflow-hidden border border-black/[0.07] bg-[#f7f7f3]/96 p-0 text-[#181916] shadow-[0_24px_80px_rgba(18,20,16,0.18)] backdrop-blur-[24px]',
+    'fixed z-[8] overflow-hidden border border-black/[0.07] p-0 text-[#181916] shadow-[0_24px_80px_rgba(18,20,16,0.18)]',
     isMobile
       ? 'bottom-[calc(0.35rem+var(--safe-bottom))] left-[calc(0.45rem+var(--safe-left))] right-[calc(0.45rem+var(--safe-right))] top-auto h-[min(calc(var(--app-height)*0.86),780px)] rounded-[28px]'
       : 'bottom-[calc(1rem+var(--safe-bottom))] right-[calc(1rem+var(--safe-right))] top-[calc(1rem+var(--safe-top))] w-[min(560px,calc(100vw-2rem))] rounded-[28px]',
@@ -302,8 +310,13 @@ function CommunitySheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         aria-label="校园故事"
-        className={sheetClassName}
+        className={cn(
+          sheetClassName,
+          'transition-[background-color,backdrop-filter,box-shadow,color,border-color] duration-[420ms] ease-out',
+          !isSurfaceSolid && 'bg-white/[0.72] text-[#181916] [background-image:none]'
+        )}
         side={isMobile ? 'bottom' : 'right'}
+        surface={isSurfaceSolid ? 'paper' : 'glass'}
       >
         {activeStory ? (
           <div className={cn('h-full overflow-y-auto', scrollAreaClassNames.thin)}>

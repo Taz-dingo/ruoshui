@@ -90,9 +90,20 @@ interface ViewerPlacePin {
   position: [number, number, number];
 }
 
+interface ViewerStoryAnchorPin {
+  id: string;
+  title: string;
+  position: [number, number, number];
+}
+
 interface SetPlacePinsCommand {
   type: 'set-place-pins';
   pins: ViewerPlacePin[];
+}
+
+interface SetStoryAnchorPinsCommand {
+  type: 'set-story-anchor-pins';
+  pins: ViewerStoryAnchorPin[];
 }
 
 interface FocusSpatialAnchorCommand {
@@ -145,6 +156,7 @@ type ViewerCommand =
   | SetHighlightAuthoringEnabledCommand
   | SetHighlightPlaneYCommand
   | SetPlacePinsCommand
+  | SetStoryAnchorPinsCommand
   | SelectPresetCommand
   | SelectRouteCommand
   | SelectVariantCommand;
@@ -152,6 +164,8 @@ type ViewerCommand =
 type ViewerCommandListener = (command: ViewerCommand) => void;
 
 const listeners = new Set<ViewerCommandListener>();
+let latestPlacePins: ViewerPlacePin[] = [];
+let latestStoryAnchorPins: ViewerStoryAnchorPin[] = [];
 
 function emitViewerCommand(command: ViewerCommand) {
   listeners.forEach((listener) => {
@@ -161,6 +175,8 @@ function emitViewerCommand(command: ViewerCommand) {
 
 function subscribeViewerCommands(listener: ViewerCommandListener) {
   listeners.add(listener);
+  listener({ type: 'set-place-pins', pins: latestPlacePins });
+  listener({ type: 'set-story-anchor-pins', pins: latestStoryAnchorPins });
 
   return () => {
     listeners.delete(listener);
@@ -226,8 +242,17 @@ function requestCancelSpatialAnchorAmbientFocus() {
 }
 
 function requestSetPlacePins(pins: ViewerPlacePin[]) {
+  latestPlacePins = pins;
   emitViewerCommand({
     type: 'set-place-pins',
+    pins
+  });
+}
+
+function requestSetStoryAnchorPins(pins: ViewerStoryAnchorPin[]) {
+  latestStoryAnchorPins = pins;
+  emitViewerCommand({
+    type: 'set-story-anchor-pins',
     pins
   });
 }
@@ -329,11 +354,13 @@ export {
   requestSetHighlightAuthoringEnabled,
   requestSetHighlightPlaneY,
   requestSetPlacePins,
+  requestSetStoryAnchorPins,
   requestVariantSelection,
   subscribeViewerCommands
 };
 
 export type {
   ViewerCommand,
-  ViewerPlacePin
+  ViewerPlacePin,
+  ViewerStoryAnchorPin
 };

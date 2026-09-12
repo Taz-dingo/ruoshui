@@ -156,6 +156,7 @@ async function createViewerRuntime({
     unifiedLodState: null,
     lastCameraSnapshot: '',
     lastHighlightOverlaySnapshot: '',
+    lastStoryAnchorOverlaySnapshot: '',
     cameraMetaElapsed: 0,
     perfHudElapsed: 0,
     perfHudFrames: 0,

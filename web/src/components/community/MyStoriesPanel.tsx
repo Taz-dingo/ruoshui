@@ -16,7 +16,7 @@ import {
   deleteOwnedStory,
   unpublishOwnedStory,
 } from '../../community/story-author-api';
-import { scrollAreaClassNames } from '../../styles/system';
+import { buttonVariants, focusSurfaceClassNames, glassSurfaceClassNames, scrollAreaClassNames } from '../../styles/system';
 import { cn } from '../../utils/cn';
 import { EmailChangeDialog } from './EmailChangeDialog';
 
@@ -86,6 +86,16 @@ function MyStoriesPanel({
   const [message, setMessage] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [emailChangeOpen, setEmailChangeOpen] = useState(false);
+  const [isSurfaceSolid, setIsSurfaceSolid] = useState(false);
+
+  useEffect(() => {
+    if (!open) {
+      setIsSurfaceSolid(false);
+      return;
+    }
+    const frame = window.requestAnimationFrame(() => setIsSurfaceSolid(true));
+    return () => window.cancelAnimationFrame(frame);
+  }, [open]);
 
   const counts = useMemo(() => {
     let drafts = 0;
@@ -246,10 +256,15 @@ function MyStoriesPanel({
     <div
       aria-label="我的 Story"
       aria-modal="true"
-      className="fixed inset-0 z-[18] flex items-center justify-center bg-black/30 p-4 backdrop-blur-[7px] max-[760px]:items-end max-[760px]:p-0"
+      className={cn('fixed inset-0 z-[18] flex items-center justify-center p-4 max-[760px]:items-end max-[760px]:p-0', focusSurfaceClassNames.workspaceBackdrop)}
       role="dialog"
     >
-      <div className="flex max-h-[min(760px,calc(var(--app-height)-2rem))] w-[min(640px,calc(100vw-2rem))] flex-col overflow-hidden rounded-[28px] border border-white/55 bg-[#f7f7f3]/98 text-[#191a18] shadow-panel max-[760px]:h-[82dvh] max-[760px]:max-h-none max-[760px]:w-full max-[760px]:rounded-b-none max-[760px]:rounded-t-[28px]">
+      <div className={cn(
+        'flex max-h-[min(760px,calc(var(--app-height)-2rem))] w-[min(640px,calc(100vw-2rem))] flex-col overflow-hidden rounded-[28px] transition-[background-color,backdrop-filter,box-shadow,color,border-color] duration-[420ms] ease-out max-[760px]:h-[82dvh] max-[760px]:max-h-none max-[760px]:w-full max-[760px]:rounded-b-none max-[760px]:rounded-t-[28px]',
+        isSurfaceSolid
+          ? focusSurfaceClassNames.workspacePanel
+          : cn(glassSurfaceClassNames.panel, 'bg-white/[0.72] text-[#181a18] [background-image:none]')
+      )}>
         <header className="flex min-h-[68px] items-center justify-between gap-4 border-b border-black/[0.065] px-5">
           <div className="min-w-0">
             <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#708653]">若水</div>
@@ -301,7 +316,7 @@ function MyStoriesPanel({
 
           {panelState === 'ready' ? (
             <div className="px-5 pb-[calc(1.5rem+var(--safe-bottom))] pt-5">
-              <div className="mb-5 grid grid-cols-3 gap-2 rounded-[18px] bg-black/[0.035] p-3 text-center">
+              <div className="mb-5 grid grid-cols-3 border-y border-black/[0.065] py-3 text-center">
                 <div><div className="text-[18px] font-semibold">{counts.drafts}</div><div className="mt-0.5 text-[9px] text-black/32">待继续</div></div>
                 <div><div className="text-[18px] font-semibold">{counts.reviewing}</div><div className="mt-0.5 text-[9px] text-black/32">审核中</div></div>
                 <div><div className="text-[18px] font-semibold">{counts.published}</div><div className="mt-0.5 text-[9px] text-black/32">已发布</div></div>
@@ -309,20 +324,20 @@ function MyStoriesPanel({
 
               <div className="mb-4 flex items-center justify-between gap-3">
                 <div className="text-[12px] font-semibold">全部 Story</div>
-                <button className="rounded-full bg-[#20251d] px-4 py-2 text-[10px] font-medium text-white" onClick={createFreshStory} type="button">＋ 新 Story</button>
+                <button className={cn(buttonVariants({ variant: 'primary' }), 'px-4 py-2 text-[10px] font-medium')} onClick={createFreshStory} type="button">＋ 新 Story</button>
               </div>
 
               {stories.length === 0 ? (
-                <div className="grid min-h-[240px] place-items-center rounded-[20px] border border-dashed border-black/10 px-6 text-center text-[12px] leading-[1.7] text-black/34">这里还没有 Story。<br />第一段记忆可以从校园里开始。</div>
+                <div className="grid min-h-[240px] place-items-center border-y border-dashed border-black/10 px-6 text-center text-[12px] leading-[1.7] text-black/34">这里还没有 Story。<br />第一段记忆可以从校园里开始。</div>
               ) : (
-                <div className="grid gap-3">
+                <div>
                   {stories.map((item) => {
                     const revision = item.workingRevision ?? item.publishedRevision;
                     const work = workLabel(item);
                     const canContinue = item.workingRevision?.state !== 'pending_review';
                     const isBusy = busyStoryId === item.id;
                     return (
-                      <article className="rounded-[19px] border border-black/[0.065] bg-white/72 px-4 py-4" key={item.id}>
+                      <article className="border-b border-black/[0.065] px-1 py-4 first:border-t" key={item.id}>
                         <div className="flex items-start justify-between gap-4">
                           <div className="min-w-0 flex-1">
                             <div className="flex flex-wrap items-center gap-1.5 text-[9px]">

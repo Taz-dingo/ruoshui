@@ -7,6 +7,7 @@ import {
 
 import {
   glassSurfaceClassNames,
+  paperSurfaceClassNames,
   scrollAreaClassNames
 } from '../../styles/system';
 import { cn } from '../../utils/cn';
@@ -20,6 +21,7 @@ interface SheetContentProps
   extends ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
   description?: string;
   side?: 'bottom' | 'left' | 'right' | 'top';
+  surface?: 'glass' | 'paper';
   title?: string;
 }
 
@@ -31,7 +33,7 @@ const SheetOverlay = forwardRef<
     <DialogPrimitive.Overlay
       ref={ref}
       className={cn(
-        'fixed inset-0 z-[7] bg-[rgba(9,11,15,0.24)] backdrop-blur-[3px] data-[state=closed]:pointer-events-none data-[state=closed]:animate-[ruoshui-sheet-overlay-out_180ms_ease_forwards] data-[state=open]:animate-[ruoshui-sheet-overlay-in_240ms_ease_forwards]',
+        'fixed inset-0 z-[7] bg-[rgba(9,11,15,0.24)] data-[state=closed]:pointer-events-none data-[state=closed]:animate-[ruoshui-sheet-overlay-out_180ms_ease_forwards] data-[state=open]:animate-[ruoshui-sheet-overlay-in_240ms_ease_forwards]',
         className
       )}
       {...props}
@@ -48,6 +50,7 @@ const SheetContent = forwardRef<
     className,
     description,
     side = 'right',
+    surface = 'glass',
     title,
     'aria-describedby': ariaDescribedBy,
     ...props
@@ -71,7 +74,7 @@ const SheetContent = forwardRef<
         className={cn(
           'fixed outline-none will-change-[transform,opacity] data-[side=bottom]:origin-bottom',
           scrollAreaClassNames.thin,
-          glassSurfaceClassNames.panel,
+          surface === 'paper' ? paperSurfaceClassNames.canvas : glassSurfaceClassNames.panel,
           className
         )}
         data-side={side}
