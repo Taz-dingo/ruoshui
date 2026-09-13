@@ -1,0 +1,259 @@
+{
+  "scene": {
+    "title": "若水广场",
+    "subtitle": "把那几年，安静地留在这一眼俯瞰里。",
+    "summary": "以《知天下AI》交付的高质量 `SOG` 成果，呈现可浏览、可停留、可承接故事的校园纪念场景。",
+    "format": "Spatially Ordered Gaussians (SOG)",
+    "bounds": "3.08 × 1.45 × 3.17",
+    "defaultVariantId": "original",
+    "miniMap": {
+      "label": "常州老校区",
+      "subtitle": "若水广场 · 顶视示意",
+      "imageUrl": "/edge-media/images/minimap/hhuc-map-processed.png",
+      "imageAspectRatio": 1.399825,
+      "bounds": {
+        "minX": -3.52,
+        "maxX": 3.52,
+        "minZ": -3.45,
+        "maxZ": 3.59
+      },
+      "contentRect": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "imageTransform": {
+        "rotationDeg": 178,
+        "scale": 0.73,
+        "translateX": -5,
+        "translateY": 1,
+        "flipX": false,
+        "flipY": false,
+        "invertWorldX": false,
+        "invertWorldZ": true,
+        "invertHeadingX": false
+      },
+      "northAngleDeg": 0,
+      "landmarks": [
+        {
+          "id": "ruoshui-square",
+          "name": "若水广场",
+          "x": 0.12,
+          "z": 0.12
+        },
+        {
+          "id": "main-axis",
+          "name": "主楼中轴",
+          "x": 0.0,
+          "z": 0.08
+        },
+        {
+          "id": "stadium",
+          "name": "操场",
+          "x": 1.92,
+          "z": -1.18
+        }
+      ]
+    }
+  },
+  "variants": [
+    {
+      "id": "original",
+      "name": "原始版",
+      "summary": "正式场景模型，优先保真。",
+      "assetUrl": "/edge-models/hhuc-original.sog",
+      "size": "27.13 MiB",
+      "splats": "1,868,855",
+      "retention": "100%",
+      "kind": "Production",
+      "note": "生产默认：稳定单次加载，作为当前正式画质与性能基线。"
+    },
+    {
+      "id": "lodstream",
+      "name": "LOD 流式",
+      "summary": "实验性的按视角和距离分块加载方案。",
+      "assetUrl": "/edge-models/hhuc-streamed-v2/lod-meta.json",
+      "size": "43 MiB（按需加载，首帧 1.8 MiB）",
+      "splats": "1,728,347",
+      "retention": "100% / 25% / 8% / 2.5%",
+      "kind": "Experimental Streamed SOG",
+      "note": "实验保留，不作为生产默认；当前暂停继续投入自研 progressive / streaming。",
+      "streamed": true,
+      "splatBudget": 700000
+    }
+  ],
+  "visualThesis": "夜色、玻璃与纪念感组成一块全屏展陈幕布，场景本身就是首页。",
+  "interactionThesis": [
+    "加载前先给出纪念语境，而不是技术噪音。",
+    "镜头预设像策展导览一样切换，让用户马上知道看哪里。",
+    "场景与内容层保持轻量，让目光停留在校园本身。"
+  ],
+  "presets": [
+    {
+      "id": "arrival",
+      "name": "初见校园",
+      "summary": "从东南上空切入，先把主体校园和北侧城市边界一起交代清楚。",
+      "position": [1.55, 1.15, 2.05],
+      "target": [0.05, 0.0, 0.18]
+    },
+    {
+      "id": "axis",
+      "name": "中轴俯瞰",
+      "summary": "抬高到更稳定的斜俯视角，适合读出道路、林荫和建筑排布。",
+      "position": [1.12, 1.88, 1.66],
+      "target": [0.0, 0.0, 0.07]
+    },
+    {
+      "id": "stadium",
+      "name": "操场回望",
+      "summary": "从西北斜看操场与球场，适合确认开放区域和外围关系。",
+      "position": [-1.55, 1.25, 1.35],
+      "target": [-0.18, 0.0, 0.28]
+    },
+    {
+      "id": "hover",
+      "name": "悬停全览",
+      "summary": "更高、更稳，用作加载后默认停留镜头。",
+      "position": [0.62, 2.15, 1.38],
+      "target": [0.0, 0.0, 0.07]
+    }
+  ],
+  "benchmarkRoutes": [
+    {
+      "id": "tour",
+      "name": "导览漫游",
+      "summary": "东南入场 → 高位悬停 → 操场回望 → 中部收束，更偏展示而不是压测。",
+      "steps": [
+        {
+          "position": [1.55, 1.15, 2.05],
+          "target": [0.05, 0.0, 0.18],
+          "duration": 0.0,
+          "hold": 0.6
+        },
+        {
+          "position": [0.62, 2.15, 1.38],
+          "target": [0.0, 0.0, 0.07],
+          "duration": 2.2,
+          "hold": 0.55
+        },
+        {
+          "position": [-1.55, 1.25, 1.35],
+          "target": [-0.18, 0.0, 0.28],
+          "duration": 2.35,
+          "hold": 0.55
+        },
+        {
+          "position": [0.92, 1.12, 1.32],
+          "target": [0.16, 0.0, 0.12],
+          "duration": 2.0,
+          "hold": 0.75
+        }
+      ]
+    },
+    {
+      "id": "survey",
+      "name": "结构巡航",
+      "summary": "高位总览 → 东侧斜俯 → 西北回望，适合统一比较整体结构稳定度。",
+      "steps": [
+        {
+          "position": [0.62, 2.15, 1.38],
+          "target": [0.0, 0.0, 0.07],
+          "duration": 0.0,
+          "hold": 0.45
+        },
+        {
+          "position": [1.12, 1.88, 1.66],
+          "target": [0.0, 0.0, 0.07],
+          "duration": 1.8,
+          "hold": 0.45
+        },
+        {
+          "position": [-1.55, 1.25, 1.35],
+          "target": [-0.18, 0.0, 0.28],
+          "duration": 2.0,
+          "hold": 0.55
+        }
+      ]
+    },
+    {
+      "id": "parallax",
+      "name": "侧向扫视",
+      "summary": "东南上空 → 中轴 → 西北斜看，适合比较拖影、切换和结构保持。",
+      "steps": [
+        {
+          "position": [1.55, 1.15, 2.05],
+          "target": [0.05, 0.0, 0.18],
+          "duration": 0.0,
+          "hold": 0.4
+        },
+        {
+          "position": [0.22, 1.6, 1.82],
+          "target": [0.0, 0.0, 0.07],
+          "duration": 1.45,
+          "hold": 0.35
+        },
+        {
+          "position": [-1.55, 1.25, 1.35],
+          "target": [-0.18, 0.0, 0.28],
+          "duration": 2.1,
+          "hold": 0.55
+        }
+      ]
+    },
+    {
+      "id": "detail",
+      "name": "近景逼近",
+      "summary": "从稳定全览推近到中部主体区，适合统一比较细节爬升速度。",
+      "steps": [
+        {
+          "position": [0.62, 2.15, 1.38],
+          "target": [0.0, 0.0, 0.07],
+          "duration": 0.0,
+          "hold": 0.35
+        },
+        {
+          "position": [1.2, 1.38, 1.56],
+          "target": [0.08, 0.0, 0.14],
+          "duration": 1.7,
+          "hold": 0.35
+        },
+        {
+          "position": [0.82, 0.98, 1.18],
+          "target": [0.18, 0.0, 0.12],
+          "duration": 1.35,
+          "hold": 0.7
+        }
+      ]
+    }
+  ],
+  "highlights": [
+    {
+      "id": "square",
+      "name": "若水广场",
+      "title": "把“项目名”直接还给场景本身",
+      "body": "首页不再单独做重信息密度的介绍页，而是让场景成为第一屏。用户打开网页，就已经站在纪念馆里。",
+      "presetId": "arrival",
+      "communityPinTitle": "若水广场",
+      "position": [0.08, 0.06, 0.08]
+    },
+    {
+      "id": "route",
+      "name": "校园路径",
+      "title": "先保住空间关系，再补故事点位",
+      "body": "这版 MVP 先回答“看不看得成、飞不飞得动、能不能分享”。点位内容先做成轻量面板，等主结构稳定后再逐步扩写。",
+      "presetId": "axis",
+      "communityPinTitle": "校园路径",
+      "position": [-0.34, 0.08, 0.24]
+    },
+    {
+      "id": "delivery",
+      "name": "Web 交付",
+      "title": "把优化重点从训练转到交付",
+      "body": "既然现在已经拿到质量更好的压缩模型，当前更值得投入的是首屏加载、镜头预设和叙事层，而不是继续围绕旧的重资产链路兜圈子。",
+      "presetId": "hover",
+      "communityPinTitle": "Web 交付",
+      "position": [0.5, 0.1, -0.18]
+    }
+  ]
+}

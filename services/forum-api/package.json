@@ -1,0 +1,38 @@
+{
+  "name": "@ruoshui/forum-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "scripts": {
+    "build:shared": "pnpm --filter @ruoshui/shared build",
+    "build": "pnpm run build:shared && tsc -p tsconfig.json --noEmit false",
+    "dev": "pnpm run build:shared && wrangler dev --local",
+    "dev:node": "pnpm run build:shared && tsx watch src/index.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:migrate:local": "wrangler d1 migrations apply ruoshui-forum --local",
+    "db:migrations:remote:list": "wrangler d1 migrations list DB --remote",
+    "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
+    "deploy": "wrangler deploy",
+    "test": "pnpm run build:shared && tsx --test src/**/*.test.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.19.4",
+    "@ruoshui/shared": "workspace:*",
+    "dotenv": "^17.2.3",
+    "drizzle-orm": "^0.44.6",
+    "hono": "^4.9.8",
+    "postgres": "^3.4.7",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260404.0",
+    "@types/node": "^24.7.2",
+    "drizzle-kit": "^0.31.5",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "wrangler": "^4.12.0"
+  }
+}

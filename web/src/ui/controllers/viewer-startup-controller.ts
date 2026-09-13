@@ -1,0 +1,232 @@
+import type { SceneLookSettings } from '../../runtime/scene-look';
+import type { PostProcessingSettings } from '../../runtime/postprocessing';
+import type { GraphicsBackendPreference } from '../../runtime/bootstrap';
+import type { ViewerVariant } from '../../content/types';
+import {
+  subscribeViewerCommands,
+  type ViewerCommand,
+  type ViewerPlacePin,
+  type ViewerStoryAnchorPin
+} from '../commands/viewer-command-bus';
+
+interface InstallViewerStartupBindingsArgs {
+  activatePreset: (presetId: string) => void;
+  activateVariant: (variantId: string) => void | Promise<unknown>;
+  activateBenchmarkRoute: (routeId: string) => void;
+  captureCurrentViewSample: () => void | Promise<unknown>;
+  capturePresetViewSamples: () => void | Promise<unknown>;
+  runCurrentVariantRouteBenchmark: () => void | Promise<unknown>;
+  runRouteBenchmarkSuite: () => void | Promise<unknown>;
+  captureHighlightPoint: (clientX: number, clientY: number) => void;
+  clearViewCapture: () => void;
+  copyHighlightDraft: () => void | Promise<unknown>;
+  copyLatestRouteAnalysisSummary: () => void | Promise<unknown>;
+  copyLatestRouteAnalysisJson: () => void | Promise<unknown>;
+  downloadLatestRouteAnalysisJson: () => void;
+  downloadViewCaptureJson: () => void;
+  activateRenderScale: (nextPercent: number) => void;
+  setGraphicsBackendPreference: (preference: GraphicsBackendPreference) => void;
+  setAntiAliasEnabled: (enabled: boolean) => void;
+  applySceneLook: (sceneLook: SceneLookSettings) => void;
+  focusScenePin: (command: {
+    pinId: string;
+    position: [number, number, number];
+    target?: [number, number, number];
+    title: string;
+  }) => void;
+  focusSpatialAnchor: (command: {
+    position: [number, number, number];
+    target: [number, number, number];
+    title: string;
+    fovDeg?: number;
+    ambientFocus?: boolean;
+  }) => void;
+  cancelSpatialAnchorAmbientFocus: () => void;
+  setHighlightAuthoringEnabled: (enabled: boolean) => void;
+  setHighlightPlaneY: (value: number) => void;
+  setPlacePins: (pins: ViewerPlacePin[]) => void;
+  setStoryAnchorPins: (pins: ViewerStoryAnchorPin[]) => void;
+}
+
+interface InitializeViewerStartupArgs {
+  updatePresetButtons: () => void;
+  updateVariantButtons: () => void;
+  updateRouteButtons: () => void;
+  publishRouteControls: () => void;
+  renderVariantMeta: (variant: ViewerVariant) => void;
+  defaultVariant: ViewerVariant;
+  renderRenderScaleMeta: (percent: number) => void;
+  activeRenderScalePercent: number;
+  activePostProcessing: PostProcessingSettings;
+  renderSceneLookMeta: (sceneLook: SceneLookSettings) => void;
+  activeSceneLook: SceneLookSettings;
+  renderCameraMeta: (runtimeState: any) => void;
+  renderHighlightOverlay: (runtimeState: any) => void;
+  renderPerfHud: (runtimeState: any) => void;
+  publishRouteDiagnostics: () => void;
+  installRouteAnalysisBridge: () => void;
+  setLoading: (mode: 'boot' | 'switch') => void;
+  setStatus: (title: string, detail: string) => void;
+}
+
+function installViewerStartupBindings({
+  activatePreset,
+  activateVariant,
+  activateBenchmarkRoute,
+  captureCurrentViewSample,
+  capturePresetViewSamples,
+  runCurrentVariantRouteBenchmark,
+  runRouteBenchmarkSuite,
+  captureHighlightPoint,
+  clearViewCapture,
+  copyHighlightDraft,
+  copyLatestRouteAnalysisSummary,
+  copyLatestRouteAnalysisJson,
+  downloadLatestRouteAnalysisJson,
+  downloadViewCaptureJson,
+  activateRenderScale,
+  setGraphicsBackendPreference,
+  setAntiAliasEnabled,
+  applySceneLook,
+  focusScenePin,
+  focusSpatialAnchor,
+  cancelSpatialAnchorAmbientFocus,
+  setHighlightAuthoringEnabled,
+  setHighlightPlaneY,
+  setPlacePins,
+  setStoryAnchorPins
+}: InstallViewerStartupBindingsArgs) {
+  const unsubscribe = subscribeViewerCommands((command: ViewerCommand) => {
+    switch (command.type) {
+      case 'select-preset':
+        activatePreset(command.presetId);
+        return;
+      case 'select-variant':
+        void activateVariant(command.variantId);
+        return;
+      case 'select-route':
+        activateBenchmarkRoute(command.routeId);
+        return;
+      case 'copy-route-analysis-summary':
+        void copyLatestRouteAnalysisSummary();
+        return;
+      case 'copy-route-analysis-json':
+        void copyLatestRouteAnalysisJson();
+        return;
+      case 'copy-highlight-draft':
+        void copyHighlightDraft();
+        return;
+      case 'capture-highlight-point':
+        captureHighlightPoint(command.clientX, command.clientY);
+        return;
+      case 'capture-current-view-sample':
+        void captureCurrentViewSample();
+        return;
+      case 'capture-preset-view-samples':
+        void capturePresetViewSamples();
+        return;
+      case 'clear-view-capture':
+        clearViewCapture();
+        return;
+      case 'download-route-analysis-json':
+        downloadLatestRouteAnalysisJson();
+        return;
+      case 'download-view-capture-json':
+        downloadViewCaptureJson();
+        return;
+      case 'set-render-scale':
+        activateRenderScale(command.value);
+        return;
+      case 'set-graphics-backend-preference':
+        setGraphicsBackendPreference(command.preference);
+        return;
+      case 'set-anti-alias':
+        setAntiAliasEnabled(command.enabled);
+        return;
+      case 'set-scene-look':
+        applySceneLook({
+          brightnessPercent: command.brightnessPercent,
+          contrastPercent: command.contrastPercent,
+          saturationPercent: command.saturationPercent
+        });
+        return;
+      case 'focus-scene-pin':
+        focusScenePin(command);
+        return;
+      case 'focus-spatial-anchor':
+        focusSpatialAnchor(command);
+        return;
+      case 'cancel-spatial-anchor-ambient-focus':
+        cancelSpatialAnchorAmbientFocus();
+        return;
+      case 'set-place-pins':
+        setPlacePins(command.pins);
+        return;
+      case 'set-story-anchor-pins':
+        setStoryAnchorPins(command.pins);
+        return;
+      case 'set-highlight-authoring-enabled':
+        setHighlightAuthoringEnabled(command.enabled);
+        return;
+      case 'set-highlight-plane-y':
+        setHighlightPlaneY(command.value);
+        return;
+      case 'run-current-route-benchmark':
+        void runCurrentVariantRouteBenchmark();
+        return;
+      case 'run-route-suite':
+        void runRouteBenchmarkSuite();
+        return;
+      default:
+        return;
+    }
+  });
+
+  return {
+    destroy() {
+      unsubscribe();
+    }
+  };
+}
+
+function initializeViewerStartup({
+  updatePresetButtons,
+  updateVariantButtons,
+  updateRouteButtons,
+  publishRouteControls,
+  renderVariantMeta,
+  defaultVariant,
+  renderRenderScaleMeta,
+  activeRenderScalePercent,
+  activePostProcessing,
+  renderSceneLookMeta,
+  activeSceneLook,
+  renderCameraMeta,
+  renderHighlightOverlay,
+  renderPerfHud,
+  publishRouteDiagnostics,
+  installRouteAnalysisBridge,
+  setLoading,
+  setStatus
+}: InitializeViewerStartupArgs) {
+  updatePresetButtons();
+  updateVariantButtons();
+  updateRouteButtons();
+  publishRouteControls();
+  renderVariantMeta(defaultVariant);
+  renderRenderScaleMeta(activeRenderScalePercent);
+  void activePostProcessing;
+  renderSceneLookMeta(activeSceneLook);
+  renderCameraMeta(null);
+  renderHighlightOverlay(null);
+  renderPerfHud(null);
+  publishRouteDiagnostics();
+  installRouteAnalysisBridge();
+  setLoading('boot');
+  setStatus('加载中', '准备场景资源');
+}
+
+export {
+  initializeViewerStartup,
+  installViewerStartupBindings
+};
