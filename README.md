@@ -80,3 +80,13 @@ pnpm check
 若水仍在持续迭代。当前重点是空间发现、内容阅读、个人资料与真实设备体验，而不是构建一个通用论坛或完整社交网络。
 
 如果你只是想看看项目，直接打开在线体验即可；如果你想研究实现，可以从 `web/`、`services/forum-api/` 和 `docs/decisions/` 开始。
+
+## 参与贡献
+
+贡献流程见 [`CONTRIBUTING.md`](CONTRIBUTING.md)。安全问题请按 [`SECURITY.md`](SECURITY.md) 私下报告，不要在公开 Issue 中披露敏感信息。
+
+## License
+
+仓库中的源代码采用 [MIT License](LICENSE)。
+
+运行时加载的 3D 模型、照片、用户生成内容与其他外部托管媒体不属于本仓库源码，也不因本仓库采用 MIT License 而获得授权；除非对应资源另有明确许可说明。
