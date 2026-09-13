@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { alumniIdentitySchema } from "./user-profile-schema.js";
+
 const entityIdSchema = z.string().min(1).max(120);
 const userIdSchema = entityIdSchema;
 const storyIdSchema = entityIdSchema;
@@ -181,6 +183,8 @@ const storyDraftSchema = z.object({
 const publishedStoryAuthorSchema = z.object({
   id: userIdSchema,
   displayName: z.string().trim().min(1).max(80).nullable(),
+  avatarUrl: z.string().max(1024).nullable(),
+  alumniIdentity: alumniIdentitySchema.nullable(),
 });
 
 const publishedStorySchema = storyContentFieldsSchema.extend({
