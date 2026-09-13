@@ -7,6 +7,8 @@
 - 已归档
 - 原因：这条分支完成了“单文件 `SOG` 无法提供连续生长式渐进体验”的技术验证，也完成了 `SOG -> PLY -> KSPLAT` 的可行性打样；但当前产品主线已重新收口为 `PlayCanvas/SOG` 正式交付与功能迭代，不再继续把渐进式加载当作近期目标
 
+> 本文记录的是当时的本地实验环境。当前正式场景已迁到 Cloudflare R2，并通过同源 `/edge-models/hhuc-original.sog` 提供；下文不再保留旧本地资产文件名和机器绝对路径。
+
 ## 目标
 
 把“丝滑渐进加载”从伪体验优化切回真正的技术路径：改用支持 progressive append / progressively rendered scene 的资产与 loader 链路。
@@ -24,14 +26,14 @@
 
 ## 现实阻塞
 
-- 当前高质量第三方模型手头只有 `.sog`
-- 当前 repo 里并没有与之等质量对应的 `.ply / .splat / .ksplat / .spz`
+- 当时手头的高质量第三方模型只有 `.sog`
+- 当时 repo 里没有与之等质量对应的 `.ply / .splat / .ksplat / .spz`
 - 因此若要切到 progressive runtime，下一步必须先解决输入格式问题
 
 ## 新增实证
 
-- `assets/hhuc.sog` 已确认不是完全不可读黑盒，而是一个 zip 包
-- 当前包内结构为：
+- 当时的本地 SOG 资产已确认不是完全不可读黑盒，而是一个 zip 包
+- 包内结构为：
   - `meta.json`
   - `means_l.webp`
   - `means_u.webp`
@@ -73,22 +75,20 @@
 
 ## 当前产出
 
-- 已新增 converter 脚本：
-  - `/Users/tazdingo/Dingo Projetcts/ruoshui/web/scripts/sog-to-ply.mjs`
-  - `/Users/tazdingo/Dingo Projetcts/ruoshui/web/scripts/ply-to-ksplat.mjs`
-- 已新增 progressive runtime 页面：
-  - `/Users/tazdingo/Dingo Projetcts/ruoshui/web/progressive.html`
-  - `/Users/tazdingo/Dingo Projetcts/ruoshui/web/src/progressive/ProgressiveApp.tsx`
-- 已新增脚本入口：
-  - `/Users/tazdingo/Dingo Projetcts/ruoshui/web/package.json`
-  - `pnpm --dir web run convert:sog:ply -- --input ../assets/hhuc.sog --output ../outputs/iteration-005-progressive-runtime/hhuc-from-sog.ply --degree 2`
+- 当时新增 converter 脚本：
+  - `web/scripts/sog-to-ply.mjs`
+  - `web/scripts/ply-to-ksplat.mjs`
+- 当时新增 progressive runtime 页面：
+  - `web/progressive.html`
+  - `web/src/progressive/ProgressiveApp.tsx`
+- 当时新增脚本入口：
+  - `web/package.json`
+  - 转换命令形态为 `pnpm --dir web run convert:sog:ply -- --input <local-sog> --output <output-ply> --degree 2`
 - 已完成两次验证：
   - 小样本 `128` splats smoke test
   - 完整 `1868855` splats 全量转换
 - 已完成 `GaussianSplats3D progressiveLoad` 页面接入，并确认 `vite build` 已产出 `dist/progressive.html`
-- 当前全量产物：
-  - `/Users/tazdingo/Dingo Projetcts/ruoshui/outputs/iteration-005-progressive-runtime/hhuc-from-sog.ply`
-  - `/Users/tazdingo/Dingo Projetcts/ruoshui/outputs/iteration-005-progressive-runtime/hhuc-from-sog.ksplat`
+- 当时全量产物包括约 `292 MiB` 的 PLY 与约 `120 MiB` 的 KSPLAT；这些只是旧实验产物，不属于当前 Web 交付源
 
 ## 当前体积对比
 
