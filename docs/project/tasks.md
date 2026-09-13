@@ -4,7 +4,7 @@
 
 本文件只维护**当前执行顺序与执行者边界**。已经成立的事实写入 [`state.md`](state.md)，稳定产品 contract 写入 [`spec.md`](spec.md)，视觉 / 交互 contract 写入根目录 [`design.md`](../../design.md)，重要 rationale 写入 [`docs/decisions`](../decisions/)。
 
-当前目标：生产技术闭环已经成立，下一阶段先补齐**用户个人资料 / 账号基础能力**，再继续真实校园内容生产与真机验收。
+当前目标：Profile v1 / Author Identity v1 的代码闭环已经成立；下一步完成生产 migration / smoke 与真实设备验收，再恢复真实校园内容生产。
 
 执行者约定：
 
@@ -60,25 +60,29 @@
 - [ ] Paper 出现时像“内容从场景中展开”，而不是突然跳到另一个 SaaS 页面。
 - [ ] Story Feed 背后校园仍然明显可辨；Composer 可以更聚焦但不把场景糊成纯色。
 
-## P2：Profile v1 / 账号基础
+## P2：Profile v1 / Author Identity v1
 
 ### GitHub Agent
 
-- [ ] 将“账号”入口收敛为一个 Focus Sheet：头像、昵称、可选校友身份、登录邮箱、退出登录；改邮箱在同一 Sheet 内切步骤，不叠第二层 modal。
-- [ ] 昵称继续使用现有 `displayName`，允许重复；`userId` 仍是稳定业务 identity，email 仍只作为登录 identity。
-- [ ] 增加可选、用户自述的校友身份：入学年份、毕业年份、学院 / 系、专业；不做学校认证，不填写时完全不展示。
-- [ ] 增加头像上传 / 更换 / 恢复默认；头像对象必须绑定当前 user 的独立 R2 prefix，并由服务端确认对象存在、类型合法。
-- [ ] Profile contract / service / D1 repository 形成独立 seam；关键约束有 schema / unit test。
+- [x] 将“账号”入口收敛为一个 Focus Sheet：头像、昵称、可选校友身份、登录邮箱、退出登录；改邮箱在同一 Sheet 内切步骤，不叠第二层 modal。
+- [x] 昵称继续使用现有 `displayName`，允许重复；`userId` 仍是稳定业务 identity，email 仍只作为登录 identity。
+- [x] 增加可选、用户自述的校友身份：入学年份、毕业年份、学院 / 系、专业；不做学校认证，不填写时完全不展示。
+- [x] 增加头像上传 / 更换 / 恢复默认；头像对象绑定当前 user 的独立 R2 prefix，并由服务端确认对象存在、类型合法。
+- [x] Profile contract / service / D1 repository 形成独立 seam；关键约束有 schema / unit test。
+- [x] Public author summary 统一为 `userId / displayName / avatarUrl / optional alumniIdentity`；Story 与 Comment 使用同一 contract，公开头像只返回受控 API URL，不暴露 R2 object key。
+- [x] 校园 Story Feed / Detail、Place / Story Anchor / cluster 与 Comment / Reply 已消费同一 Author Identity；校友身份为空时不额外展示。
+- [x] Profile 已说明校友身份为本人自述，并可能展示在公开 Story / 评论旁；本阶段不增加公开用户主页。
 
 ### 本地 Agent + 人
 
 - [ ] review 并 apply `0004_user_profiles.sql` 后部署 Worker / Pages。
-- [ ] 生产真实 smoke：修改昵称、填写 / 清空校友身份、上传 / 更换 / 删除头像、更换邮箱、退出后重新登录，确认仍为同一 User。
-- [ ] 真实校园背景下验收 Profile Focus Sheet 的信息密度、移动端滚动与键盘弹起行为。
+- [ ] 生产真实 smoke：修改昵称、填写 / 清空校友身份、上传 / 更换 / 删除头像；确认 Story Feed / Detail、Anchor / Place 与评论作者信息同步更新。
+- [ ] 完成改邮箱 / 退出 / 重新登录 smoke，确认仍为同一 User。
+- [ ] 真实校园背景下验收 Profile Focus Sheet 与 Author Identity 的信息密度、移动端滚动和长学院 / 专业文本截断。
 
 ## P3：首批真实 Place 与 Story（暂缓内容生产）
 
-当前先不推进内容创作；Profile v1 与产品基础能力完成后再恢复。
+当前先不推进内容创作；Profile / Author Identity 的生产 smoke 与产品基础能力完成后再恢复。
 
 ### 本地 Agent + 人
 
@@ -96,7 +100,7 @@
 - [ ] 生产真实验证改邮箱：旧邮箱 OTP → 新邮箱 OTP → 当前 Session 保持 → 其他 Session 失效 → 新邮箱登录同一 User。
 - [ ] iPhone Safari：viewport、safe area、横竖屏、Place / Anchor / cluster、rotate、pan、pinch、Bottom Sheet 与 3D 手势冲突。
 - [ ] Android Chrome 与 iPad / 触屏核心链路。
-- [ ] production acceptance：OTP、Draft 恢复、上传、thumbnail derivative、Review、Revision、My Stories、Like / Comment、空间返回、Profile、API / 图片 / 模型失败、Pages / Workers / D1 / R2 / SES。
+- [ ] production acceptance：OTP、Draft 恢复、上传、thumbnail derivative、Review、Revision、My Stories、Like / Comment、空间返回、Profile、Author Identity、API / 图片 / 模型失败、Pages / Workers / D1 / R2 / SES。
 - [x] 空间 Pin 投影修复已部署最新 Pages（`e6adadf5-9a70-4851-b6a1-4349e2e6f281`，commit `0f2c931`），并核对 `ruoshui.tazdingo.net` 200、远端 bundle 与本地构建一致、公开 spatial-anchor API 返回 1 个 Anchor；修复后的 Pin 位置仍待真实浏览器人工复核。
 
 ### 人
