@@ -16,9 +16,15 @@ node_modules
 dist
 .turbo
 .DS_Store
+
+# Local environment and credentials.
 .env
 .env.local
 .env.*.local
+*.pem
+*.key
+*.p12
+*.pfx
 .wrangler
 services/forum-api/.dev.vars
 
