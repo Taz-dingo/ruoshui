@@ -310,7 +310,7 @@ function EmailChangeDialog({ onChanged, onClose, open }: EmailChangeDialogProps)
 
               <section className="border-t border-black/[0.065] pt-6">
                 <div className={sectionLabelClassName}>校友身份 · 可选</div>
-                <p className="mb-0 mt-2 text-[11px] leading-[1.65] text-black/35">由本人填写，不代表学校认证。没有想填的内容可以全部留空。</p>
+                <p className="mb-0 mt-2 text-[11px] leading-[1.65] text-black/35">由本人填写，不代表学校认证。没有想填的内容可以全部留空。填写后的校友身份可能展示在你发布的 Story 和评论旁。</p>
                 <div className="mt-4 grid grid-cols-2 gap-x-5 gap-y-4 max-[520px]:grid-cols-1">
                   <label>
                     <span className="text-[11px] text-black/42">入学年份</span>

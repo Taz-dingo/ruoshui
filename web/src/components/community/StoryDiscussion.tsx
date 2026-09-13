@@ -13,6 +13,7 @@ import {
   verifyEmailOtp,
 } from '../../community/content-api';
 import { cn } from '../../utils/cn';
+import { AuthorIdentity, fallbackAuthorName } from './AuthorIdentity';
 
 type AuthStep = 'email' | 'otp';
 type PendingAction =
@@ -20,10 +21,6 @@ type PendingAction =
   | { kind: 'comment-like'; commentId: string; liked: boolean }
   | { kind: 'comment'; replyToCommentId?: string }
   | null;
-
-function displayName(user: { id: string; displayName?: string | null }) {
-  return user.displayName ?? `若水用户 ${user.id.slice(-4).toUpperCase()}`;
-}
 
 function formatCommentTime(value: string) {
   const date = new Date(value);
@@ -274,14 +271,12 @@ function StoryDiscussion({ storyId }: { storyId: string }) {
         key={comment.id}
       >
         <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0 truncate text-[11px] font-medium text-black/48">
-            {displayName(comment.author)}
-          </div>
+          <AuthorIdentity author={comment.author} className="min-w-0" />
           <div className="shrink-0 text-[9px] text-black/26">{formatCommentTime(comment.createdAt)}</div>
         </div>
         <div className="text-[13px] leading-[1.7] text-black/72">
           {isReply && repliedComment && repliedComment.id !== comment.rootCommentId ? (
-            <span className="mr-1 text-[#728853]">回复 {displayName(repliedComment.author)}</span>
+            <span className="mr-1 text-[#728853]">回复 {fallbackAuthorName(repliedComment.author)}</span>
           ) : null}
           {comment.body}
         </div>
@@ -343,7 +338,7 @@ function StoryDiscussion({ storyId }: { storyId: string }) {
       <form className="mt-4" onSubmit={handleSubmitComment}>
         {replyTarget ? (
           <div className="mb-2 flex items-center justify-between rounded-[10px] bg-[#eef3e8] px-3 py-2 text-[10px] text-[#617447]">
-            <span>回复 {displayName(replyTarget.author)}</span>
+            <span>回复 {fallbackAuthorName(replyTarget.author)}</span>
             <button onClick={() => setReplyToCommentId(null)} type="button">取消</button>
           </div>
         ) : null}

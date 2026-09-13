@@ -6,7 +6,7 @@
 
 ## 当前阶段
 
-若水的 **Content & Community v1 技术闭环已经基本完成**。当前 `main` 已具备正式 User/Auth、Place/SpatialAnchor、Story Draft/Revision/Review、Published Story read model、Place → Story 消费体验、轻社交、作者工作区、ambient focus 与 Story thumbnail loading。生产 Auth / D1 / Worker / Pages 已真实 smoke；项目重心已经从“补产品骨架”转向 **统一 Spatial Discovery、统一材质设计语言、真实内容生产和真实设备验收**。
+若水的 **Content & Community v1 技术闭环已经基本完成**。当前 `main` 已具备正式 User/Auth、Place/SpatialAnchor、Story Draft/Revision/Review、Published Story read model、Place → Story 消费体验、轻社交、作者工作区、ambient focus 与 Story thumbnail loading。Profile v1 / Author Identity v1 的代码闭环也已形成；下一步重点是生产 migration / smoke、真实内容生产和真实设备验收。
 
 正式场景继续使用完整 Single SOG，经同源 `/edge-models/hhuc-original.sog` 从 R2 提供。自研 Streamed SOG / LOD 只保留实验入口，不作为当前产品主线。
 
@@ -38,18 +38,22 @@
 
 - shared contracts 已有 User、SpatialAnchor、Place、Story、StoryRevision、StoryDraft、Comment、Like 等正式领域模型。
 - v1 Story location 为 Place / custom Anchor / none 三选一；最终提交 body / media 至少一项、图片最多 12 张；Draft 可以不完整。
-- D1 schema 已包含 users、auth identities、OTP、sessions、places、stories、revisions、revision media、comments、likes、media ownership 与 media derivatives。
-- 生产 `ruoshui-forum` 的 D1 migration ledger 已与 repo 完全一致，包含 `0000` 到 `0003`；`media_asset_derivatives` 表已存在。
+- D1 schema 已包含 users、auth identities、OTP、sessions、places、stories、revisions、revision media、comments、likes、media ownership、media derivatives 与 user profiles。
+- 最后已确认的生产 `ruoshui-forum` D1 migration ledger 为 `0000` 到 `0003`；repo 已有 `0004_user_profiles.sql`，部署 Profile / Author Identity 前必须重新核对远端并在 pending 时显式 apply。
 - 旧 scene / forum 数据仍为 Admin Lab 的 HighlightLayer 保留只读兼容；`/api/forum/*` 的旧写入、旧 media confirm 与 generic 匿名 upload-ticket issuance 已关闭，正式公开写入只有 User / Story / Place / Social 新主路径。
 
-### Auth / Account
+### Auth / Account / Profile
 
 - Email OTP 登录 / 注册 backend 已完成：邮箱 normalization、随机 6 位 OTP、purpose-bound 服务端哈希、60 秒 resend、错误尝试计数、10 分钟 TTL、90 天 Session。
 - 登录成功创建 / 复用持久 User；Session 明文 token 只在客户端 cookie，数据库只存 token hash。
 - Web 第一次登录已接 Email OTP；displayName 可设置也可跳过。
 - 邮件 provider 为 **腾讯云 SES API 3.0**；Worker 使用 `TC3-HMAC-SHA256` 调用 `SendEmail`，模板数据只传 `{ code }`。
 - 自助改邮箱代码已完成：旧邮箱 OTP → 当前 User / 当前邮箱 / 当前 Session 绑定的短时 HMAC proof → 新邮箱 OTP → 原 User 的 Email AuthIdentity 改绑；成功后当前 Session 保留、该 User 的其他 Session revoke。
-- 改邮箱入口位于 `我的 Story → 账号 → 更换登录邮箱`。旧邮箱不可访问时不提供绕过旧邮箱验证的自助路径。
+- 账号入口已收敛为同一 Focus Sheet：头像、昵称、可选校友身份、登录邮箱、改邮箱步骤与退出登录都在同一产品面完成。
+- Profile v1 已有独立 shared contract / service / D1 repository；可选校友身份为入学年份、毕业年份、学院 / 系、专业，全部由用户自述，不做学校认证。
+- 头像支持上传 / 更换 / 恢复默认；对象按当前 user 的 R2 prefix 隔离，公开侧只暴露 `/api/users/:userId/avatar`，不暴露 R2 object key。
+- Public author summary 已统一为 `id / displayName / avatarUrl / optional alumniIdentity`；Published Story 与 Comment 共用同一 contract。校园 Story Feed / Detail、Place / Story Anchor / cluster 与 Comment / Reply 都消费同一 Author Identity；未填写校友身份时不额外展示。
+- Profile UI 已明确校友身份可能展示在公开 Story / 评论旁；当前不增加公开用户主页。
 - 相关腾讯云决定和生产配置要求见 [`../decisions/2026-09-06-tencent-ses-auth-email.md`](../decisions/2026-09-06-tencent-ses-auth-email.md)。
 
 ### Story 生产 / 审核 / 作者工作区
@@ -107,19 +111,20 @@
 - `system.ts` primitive 语义和业务组件迁移已经完成；Story Feed / My Stories / Composer 已降低背景 blur，My Stories / Feed 已去掉主要的卡片套卡片结构。
 - Glass → Paper 的 `420ms ease-out` 已部署；Glass 为 `8/4/8px`，Paper sticky 为 `4px`，Sheet / Focus / Loading 全屏遮罩不再使用 backdrop blur。Anchor Pin 已在真实校园背景截图中确认可见，仍需人工验收各层打开与点击时的最终手感。
 
-### 生产 Auth / SES
+### 生产 Auth / Profile / SES
 
 - `auth.tazdingo.net` 发信域名、发信地址和腾讯云 API Secret 已配置；`AUTH_EMAIL_FROM=no-reply@auth.tazdingo.net`、`AUTH_EMAIL_FROM_NAME=若水`、`TENCENT_SES_REGION=ap-hongkong` 已作为非敏感 Worker vars 配置。
 - `TENCENT_CLOUD_SECRET_ID`、`TENCENT_CLOUD_SECRET_KEY`、`AUTH_OTP_SECRET`、`UPLOAD_SIGNING_SECRET` 已作为 Worker secrets 存在，值不进入 Git。
 - 验证码模板 `217132` 已审核通过，并作为非敏感 `TENCENT_SES_TEMPLATE_ID` 配置到 Worker；真实 OTP smoke 结果见生产部署记录。
 - 改邮箱虽然代码和自动测试已完成，但还需要生产真实双邮箱 smoke：当前邮箱收到 OTP → 新邮箱收到 OTP → 当前 Session 继续有效 → 其他 Session 失效 → 新邮箱重新登录得到同一 User。
+- Profile / Author Identity 仍需生产真实 smoke：确认 `0004_user_profiles.sql` 已 apply，修改 / 清空校友身份、上传 / 更换 / 删除头像后，Story Feed / Detail、Place / Anchor / cluster 与评论作者信息同步更新。
 
 ### 生产 migration / deploy
 
-- 生产 D1 `ruoshui-forum` 已先检查 remote migration ledger；`0002_media_ownership.sql`、`0003_media_derivatives.sql` 按顺序安全 apply，ledger 现为 `0000` 到 `0003`，无待迁移。现有数据核对为 `scenes=1`、`media_assets=0`、`derivatives=0`。
-- 生产 Worker 当前版本为 `85d40717-b3c0-466e-bb78-688daaceb0c2`；Pages 同源匿名 `/api/auth/me` 已返回 200。
+- 最后已确认的生产 D1 ledger 为 `0000` 到 `0003`；`0004_user_profiles.sql` 是否已经由本地流程 apply 需要在本次部署前重新读取远端 ledger，不从旧记录推断。
+- 生产 Worker 当前已知版本为 `85d40717-b3c0-466e-bb78-688daaceb0c2`；Pages 同源匿名 `/api/auth/me` 已返回 200。
 - 生产图片上传 CORS 已修复并部署：`ruoshui.tazdingo.net` 与 `ruoshui-web.pages.dev` 的 OPTIONS 预检均返回对应 `Access-Control-Allow-Origin`，未授权 Origin 不会获得该 header；修复已合并为 PR #45。
-- 当前管理员账号的稳定 userId 已配置到生产 Worker 的 `ADMIN_USER_IDS`，审核页权限配置已就绪。
+- 当前管理员账号的稳定 userId 已配置到生产 Worker 的 `ADMIN_USER_IDS` secret；审核页权限配置已就绪，真实值不进入 Git。
 - 生产 smoke 已实际通过：真实 OTP 邮件送达、OTP 登录、跨请求 `/me` Session、StoryDraft create / patch / read、临时 Draft 清理和 logout 全部成功；未创建公开内容。
 - 本次空间 Pin 投影修复已合并为 `0f2c931` 并部署到 Cloudflare Pages 生产，deployment 为 `e6adadf5-9a70-4851-b6a1-4349e2e6f281`；`https://ruoshui.tazdingo.net/` 返回 200，远端构建 bundle 与本地构建 hash 一致，spatial-anchor API 返回 1 个 Anchor、0 个 Place。修复后的真实浏览器 Pin 位置仍需人工视觉复核，不能用本次 HTTP 核对替代。
 - 本次部署核对了既有 Worker secrets 名称，未覆盖或输出 secret 值；D1、R2 和非敏感 SES 配置仍在绑定中。
@@ -135,7 +140,7 @@
 
 - iPhone Safari 仍需真机验证 viewport、safe area、横竖屏、Place / Anchor / cluster、单指 rotate、双指 pan + pinch、Bottom Sheet 与 3D 手势冲突。
 - Android Chrome、iPad / 触屏仍需核心链路验收。
-- production acceptance 仍需覆盖 OTP、改邮箱、Draft 恢复、上传、thumbnail derivative、Review、Revision、My Stories、Like / Comment、API / 图片 / 模型失败、空间返回以及 Pages / Workers / D1 / R2 / 腾讯云 SES 整条链路。
+- production acceptance 仍需覆盖 OTP、改邮箱、Draft 恢复、上传、thumbnail derivative、Review、Revision、My Stories、Like / Comment、Profile / Author Identity、API / 图片 / 模型失败、空间返回以及 Pages / Workers / D1 / R2 / 腾讯云 SES 整条链路。
 - 仍需找少量真实校友做可用性测试，基于真实行为收敛首屏、Place intro、Story 卡片和投稿阻力。
 
 ## 已知限制 / Later
@@ -148,8 +153,8 @@
 
 ## 当前判断
 
-现在不应继续扩独立功能，而应按 [`tasks.md`](tasks.md) 执行：**Spatial Discovery 统一 + 材质系统落地 + 首批真实 Place / Story + 真机 release acceptance**。
+现在不应继续扩收藏、关注、通知、搜索等独立功能，而应按 [`tasks.md`](tasks.md) 执行：**Profile / Author Identity 生产 smoke + Spatial / 材质真实验收 + 首批真实 Place / Story + 真机 release acceptance**。
 
-其中 custom Anchor clustering、Glass → Paper 动画、blur / dim 参数和真机手感必须在真实浏览器 / 3D 场景里迭代；纯 GitHub Agent 不应替人拍脑袋定这些视觉参数。
+其中 custom Anchor clustering、Glass → Paper 动画、Author Identity 的信息密度和真机手感必须在真实浏览器 / 3D 场景里迭代；纯 GitHub Agent 不应替人拍脑袋定这些视觉参数。
 
 产品边界见 [`spec.md`](spec.md)；视觉 contract 见 [`design.md`](../../design.md)；执行顺序见 [`tasks.md`](tasks.md)；人机协作规则见 [`agent-collaboration.md`](agent-collaboration.md)；部署 / 排障规则见 [`engineering-memory.md`](engineering-memory.md)。

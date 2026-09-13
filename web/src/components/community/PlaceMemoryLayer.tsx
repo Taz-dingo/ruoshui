@@ -28,6 +28,7 @@ import {
   scrollAreaClassNames,
 } from '../../styles/system';
 import { cn } from '../../utils/cn';
+import { AuthorIdentity } from './AuthorIdentity';
 import { StoryAuthorActions } from './StoryAuthorActions';
 import { StoryDiscussion } from './StoryDiscussion';
 
@@ -38,10 +39,6 @@ interface PlaceMemoryLayerProps {
 }
 
 type StoriesState = 'idle' | 'loading' | 'ready' | 'error';
-
-function fallbackAuthorName(story: PublishedStory) {
-  return story.author.displayName ?? `若水用户 ${story.author.id.slice(-4).toUpperCase()}`;
-}
 
 function storyDisplayTitle(story: PublishedStory) {
   if (story.title?.trim()) return story.title.trim();
@@ -157,7 +154,12 @@ function StoryCard({
           {storyDisplayTitle(story)}
         </div>
         <div className={cn('mt-2 flex items-center justify-between gap-2 text-[10px]', isGlass ? 'text-white/56' : 'text-black/38')}>
-          <span className="truncate">{fallbackAuthorName(story)}</span>
+          <AuthorIdentity
+            author={story.author}
+            className="min-w-0 flex-1"
+            compact
+            tone={isGlass ? 'glass' : 'paper'}
+          />
           {story.memoryTime ? <span className="shrink-0">{story.memoryTime}</span> : null}
         </div>
       </div>
@@ -200,9 +202,12 @@ function StoryAnchorClusterPeek({
             onClick={() => onOpenStory(story.id)}
             type="button"
           >
-            <span className="min-w-0">
+            <span className="min-w-0 flex-1">
               <span className="block truncate text-[15px] font-semibold text-white/92">{storyDisplayTitle(story)}</span>
-              <span className="mt-1 block truncate text-[11px] text-white/52">{fallbackAuthorName(story)}{story.memoryTime ? ` · ${story.memoryTime}` : ''}</span>
+              <span className="mt-2 flex min-w-0 items-center gap-2">
+                <AuthorIdentity author={story.author} className="min-w-0 flex-1" compact tone="glass" />
+                {story.memoryTime ? <span className="shrink-0 text-[10px] text-white/42">{story.memoryTime}</span> : null}
+              </span>
             </span>
             <span className="shrink-0 text-[20px] text-white/38">›</span>
           </button>
@@ -268,8 +273,8 @@ function StoryDetail({
 
       <article className="px-5 pb-[calc(2rem+var(--safe-bottom))] pt-6">
         <div className="mb-5 flex items-center justify-between gap-4 text-[11px] text-black/42">
-          <span className="font-medium text-black/64">{fallbackAuthorName(story)}</span>
-          <span>{story.memoryTime || formatPublishedTime(story.publishedAt)}</span>
+          <AuthorIdentity author={story.author} className="min-w-0 flex-1" />
+          <span className="shrink-0">{story.memoryTime || formatPublishedTime(story.publishedAt)}</span>
         </div>
         {story.title ? (
           <h2 className="mb-4 mt-0 text-[24px] font-semibold leading-[1.28] tracking-[-0.045em] text-[#191a18]">

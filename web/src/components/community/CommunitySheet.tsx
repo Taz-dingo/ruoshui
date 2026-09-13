@@ -10,6 +10,7 @@ import { buttonVariants, paperSurfaceClassNames, scrollAreaClassNames } from '..
 import { requestFocusSpatialAnchor } from '../../ui/commands/viewer-command-bus';
 import { cn } from '../../utils/cn';
 import { Sheet, SheetContent } from '../ui/sheet';
+import { AuthorIdentity } from './AuthorIdentity';
 import { StoryDiscussion } from './StoryDiscussion';
 
 interface CommunitySheetProps {
@@ -24,10 +25,6 @@ interface CommunitySheetProps {
 }
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error';
-
-function fallbackAuthorName(story: PublishedStory) {
-  return story.author.displayName ?? `若水用户 ${story.author.id.slice(-4).toUpperCase()}`;
-}
 
 function storyDisplayTitle(story: PublishedStory) {
   if (story.title?.trim()) return story.title.trim();
@@ -127,7 +124,7 @@ function StoryCard({ story, onOpen }: { story: PublishedStory; onOpen: () => voi
           {storyDisplayTitle(story)}
         </div>
         <div className="mt-2 flex items-center justify-between gap-2 text-[10px] text-black/38">
-          <span className="truncate">{fallbackAuthorName(story)}</span>
+          <AuthorIdentity author={story.author} className="min-w-0 flex-1" compact />
           {story.memoryTime ? <span className="shrink-0">{story.memoryTime}</span> : null}
         </div>
       </div>
@@ -198,8 +195,8 @@ function StoryDetail({
 
       <article className="px-5 pb-[calc(2rem+var(--safe-bottom))] pt-6">
         <div className="mb-5 flex items-center justify-between gap-4 text-[11px] text-black/42">
-          <span className="font-medium text-black/64">{fallbackAuthorName(story)}</span>
-          <span>{story.memoryTime || formatPublishedTime(story.publishedAt)}</span>
+          <AuthorIdentity author={story.author} className="min-w-0 flex-1" />
+          <span className="shrink-0">{story.memoryTime || formatPublishedTime(story.publishedAt)}</span>
         </div>
         {story.title ? (
           <h2 className="mb-4 mt-0 text-[24px] font-semibold leading-[1.28] tracking-[-0.045em] text-[#191a18]">

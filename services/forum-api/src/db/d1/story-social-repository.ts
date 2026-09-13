@@ -6,12 +6,18 @@ import type {
   CreateSocialCommentRecord,
   StorySocialRepository,
 } from "../../lib/story-social.js";
+import { mapPublicAuthor } from "./public-author.js";
 
 interface CommentRow {
   id: string;
   storyId: string;
   authorUserId: string;
   displayName: string | null;
+  avatarObjectKey: string | null;
+  enrollmentYear: number | null;
+  graduationYear: number | null;
+  department: string | null;
+  major: string | null;
   rootCommentId: string | null;
   replyToCommentId: string | null;
   body: string;
@@ -45,6 +51,11 @@ function createD1StorySocialRepository(database: D1Database): StorySocialReposit
          c.story_id AS storyId,
          c.author_user_id AS authorUserId,
          u.display_name AS displayName,
+         up.avatar_object_key AS avatarObjectKey,
+         up.alumni_enrollment_year AS enrollmentYear,
+         up.alumni_graduation_year AS graduationYear,
+         up.alumni_department AS department,
+         up.alumni_major AS major,
          c.root_comment_id AS rootCommentId,
          c.reply_to_comment_id AS replyToCommentId,
          c.body AS body,
@@ -53,6 +64,7 @@ function createD1StorySocialRepository(database: D1Database): StorySocialReposit
          ${viewerCommentLikeExpression} AS viewerHasLiked
        FROM comments c
        INNER JOIN users u ON u.id = c.author_user_id
+       LEFT JOIN user_profiles up ON up.user_id = u.id
        WHERE c.story_id = ?1
          AND c.status = 'visible'
          AND (
@@ -71,10 +83,15 @@ function createD1StorySocialRepository(database: D1Database): StorySocialReposit
     const comments = (commentRows.results ?? []).map((row) => ({
       id: row.id,
       storyId: row.storyId,
-      author: {
-        id: row.authorUserId,
+      author: mapPublicAuthor({
+        authorId: row.authorUserId,
         displayName: row.displayName,
-      },
+        avatarObjectKey: row.avatarObjectKey,
+        enrollmentYear: row.enrollmentYear,
+        graduationYear: row.graduationYear,
+        department: row.department,
+        major: row.major,
+      }),
       rootCommentId: row.rootCommentId,
       replyToCommentId: row.replyToCommentId,
       body: row.body,
