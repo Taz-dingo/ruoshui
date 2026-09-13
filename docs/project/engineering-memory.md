@@ -6,6 +6,7 @@
 
 ## 当前规则
 
+- `2026-09-13`：生产身份与凭据不进入 Git。`ADMIN_USER_IDS` 必须通过 Cloudflare Worker secret / 部署环境注入，真实 userId 不写入 `wrangler.toml`、示例配置、文档或日志；API keys、OTP/upload signing secret 等同理只保存变量名和占位示例。
 - `2026-09-13`：生产 Pages / Worker deploy 必须从**干净且与 `origin/main` 完全一致的 `main`** 发；`scripts/production-source-preflight.mjs` 会检查 branch、working tree 与远端 HEAD，不满足即拒绝部署。Pages preview 若显式设置 `RUOSHUI_PAGES_BRANCH`，则要求本地 checkout 与该远端 branch 完全一致。不要从未合并 PR、detached HEAD、旧 checkout 或带本地改动的工作区覆盖生产。
 - `2026-09-09`：`pnpm --dir web deploy:pages` 用 `~/Library/Preferences/.wrangler/config/default.toml` 里的 `oauth_token` 认证（脚本 `web/scripts/deploy-cloudflare-pages.mjs`）。构建成功后若报 `Cloudflare API request failed (401)`，先比对同文件 `expiration_time` 与当前 UTC 时间；过期时 Agent 无法代跑，需人工执行 `services/forum-api/node_modules/.bin/wrangler login` 后重试。
 - `2026-09-06`：生产 `forum-api` 默认使用根命令 `pnpm deploy:forum:prod`；它会先读取远端 D1 `d1_migrations` 并与 repo migration 文件精确比对。存在 pending migration 或远端未知 migration 时禁止 deploy；migration 必须先人工 review，再显式执行 `pnpm --filter @ruoshui/forum-api db:migrate:remote`。
