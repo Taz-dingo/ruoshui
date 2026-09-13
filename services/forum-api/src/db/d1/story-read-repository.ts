@@ -9,6 +9,7 @@ import { and, asc, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 
 import type { StoryReadRepository } from "../../lib/story-read.js";
+import { mapPublicAuthor } from "./public-author.js";
 import {
   mediaAssetDerivatives,
   mediaAssets,
@@ -17,6 +18,7 @@ import {
   storyRevisions,
   users,
 } from "./schema.js";
+import { userProfiles } from "./user-profile-schema.js";
 
 type StoryRevisionRow = typeof storyRevisions.$inferSelect;
 
@@ -107,14 +109,16 @@ function createD1StoryReadRepository(database: D1Database): StoryReadRepository 
     storyId: string;
     authorId: string;
     displayName: string | null;
+    avatarObjectKey: string | null;
+    enrollmentYear: number | null;
+    graduationYear: number | null;
+    department: string | null;
+    major: string | null;
     revision: StoryRevisionRow;
   }): Promise<PublishedStory> {
     return {
       id: row.storyId,
-      author: {
-        id: row.authorId,
-        displayName: row.displayName,
-      },
+      author: mapPublicAuthor(row),
       title: row.revision.title ?? undefined,
       body: row.revision.body ?? undefined,
       memoryTime: row.revision.memoryTime ?? undefined,
@@ -130,11 +134,17 @@ function createD1StoryReadRepository(database: D1Database): StoryReadRepository 
         storyId: stories.id,
         authorId: users.id,
         displayName: users.displayName,
+        avatarObjectKey: userProfiles.avatarObjectKey,
+        enrollmentYear: userProfiles.alumniEnrollmentYear,
+        graduationYear: userProfiles.alumniGraduationYear,
+        department: userProfiles.alumniDepartment,
+        major: userProfiles.alumniMajor,
         revision: storyRevisions,
       })
       .from(stories)
       .innerJoin(storyRevisions, eq(storyRevisions.id, stories.publishedRevisionId))
-      .innerJoin(users, eq(users.id, stories.authorUserId));
+      .innerJoin(users, eq(users.id, stories.authorUserId))
+      .leftJoin(userProfiles, eq(userProfiles.userId, users.id));
   }
 
   function publishedMediaConditions(storyId: string, mediaAssetId: string) {
