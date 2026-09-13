@@ -14,7 +14,17 @@ import {
 
 const publishedStory: PublishedStory = {
   id: "story_1",
-  author: { id: "user_1", displayName: "小河" },
+  author: {
+    id: "user_1",
+    displayName: "小河",
+    avatarUrl: "/api/users/user_1/avatar",
+    alumniIdentity: {
+      enrollmentYear: 2019,
+      graduationYear: 2023,
+      department: "计算机学院",
+      major: "计算机科学与技术",
+    },
+  },
   title: "操场边的夏天",
   body: "一段已经审核通过的校园记忆。",
   memoryTime: "2022 年夏",
@@ -88,6 +98,8 @@ test("published Story list preserves place and limit filters", async () => {
     limit: 12,
   });
   assert.equal(result[0]?.id, "story_1");
+  assert.equal(result[0]?.author.avatarUrl, "/api/users/user_1/avatar");
+  assert.equal(result[0]?.author.alumniIdentity?.enrollmentYear, 2019);
   assert.deepEqual(harness.getLastListInput(), { placeId: "place_track", limit: 12 });
 });
 
